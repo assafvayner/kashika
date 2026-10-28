@@ -1,0 +1,5 @@
+// spec: 7
+// A `}` that follows a failed declaration is reported once.
+diagram "stray brace" size (200,100)
+box }
+box a at (10,10) size (40,30)

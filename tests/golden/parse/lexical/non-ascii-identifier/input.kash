@@ -1,0 +1,5 @@
+// spec: 1, 7
+// A run of non-ASCII characters is one error, with a help line about the id charset.
+diagram "non ascii" size (200,100)
+box café at (10,10) size (40,30)
+box naïve2 at (60,10) size (40,30)

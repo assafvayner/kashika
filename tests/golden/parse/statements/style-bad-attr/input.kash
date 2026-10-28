@@ -1,0 +1,8 @@
+// spec: 3a, 7
+// A bad attribute inside a style block is one error; the rest of the block still parses.
+diagram "style bad attr" size (200,100)
+style s {
+  fill=
+  stroke=#000
+}
+box a at (10,10) size (40,30) style=s

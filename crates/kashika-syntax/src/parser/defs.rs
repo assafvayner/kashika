@@ -12,7 +12,7 @@ type PathBody = (
     Option<([f64; 4], Span)>,
 );
 
-impl Parser {
+impl Parser<'_> {
     pub(super) fn import(&mut self, start: Span) -> PResult<Import> {
         let path_span = self.span();
         let path = self.string()?;

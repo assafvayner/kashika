@@ -1,1 +1,1 @@
-error[parse] 4:8-4:24: in `lib/outer.kash` at 1:8: in `broken.kash` at 2:1: expected an attribute, found end of file
+error[parse] 4:8-4:24: in `lib/outer.kash` at 1:8: in `broken.kash` at 2:1: expected `}`, found end of file

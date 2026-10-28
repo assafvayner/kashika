@@ -1,0 +1,5 @@
+// spec: 1, 7
+// Exponent notation is not supported; the literal is one error.
+diagram "exponent" size (200,100)
+box a at (1e5,10) size (40,30)
+box b at (2.5E-3,60) size (40,30)

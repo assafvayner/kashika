@@ -67,7 +67,11 @@ pub fn lex(src: &str) -> (Vec<Token>, Vec<Diagnostic>) {
 
 /// Like [`lex`], but also returns the comments, which the parser never sees.
 pub fn lex_with_comments(src: &str) -> (Vec<Token>, Vec<Comment>, Vec<Diagnostic>) {
-    let src = src.strip_prefix('\u{feff}').unwrap_or(src);
+    lex_raw(src.strip_prefix('\u{feff}').unwrap_or(src))
+}
+
+/// Lexes `src`, which has no byte order mark.
+pub(crate) fn lex_raw(src: &str) -> (Vec<Token>, Vec<Comment>, Vec<Diagnostic>) {
     let mut lx = Lexer {
         chars: src.chars().collect(),
         pos: 0,
@@ -186,6 +190,7 @@ impl Lexer {
                     };
                     self.push(tok, line, col);
                 }
+                other if !other.is_ascii() => self.non_ascii(line, col),
                 other => {
                     self.bump();
                     self.diags.push(Diagnostic::error(
@@ -201,6 +206,38 @@ impl Lexer {
             tok: Tok::Eof,
             span: Span::new(line, col, line, col),
         });
+    }
+
+    /// Swallows a run of non-ASCII characters, and the ASCII identifier characters stuck
+    /// to it, as one error.
+    fn non_ascii(&mut self, line: u32, col: u32) {
+        let in_ident = self.toks.last().is_some_and(|t| {
+            matches!(t.tok, Tok::Ident(_)) && (t.span.end_line, t.span.end_col) == (line, col)
+        });
+        let mut run = String::new();
+        while let Some(c) = self
+            .peek(0)
+            .filter(|c| !c.is_ascii() || c.is_ascii_alphanumeric() || matches!(c, '_' | '-'))
+        {
+            if c == '-' && matches!(self.peek(1), Some('>' | '(')) {
+                break;
+            }
+            run.push(c);
+            self.bump();
+        }
+        let help = if in_ident {
+            "ids are ASCII letters, digits, `_` and `-`"
+        } else {
+            "only ASCII is allowed outside strings and comments"
+        };
+        self.diags.push(
+            Diagnostic::error(
+                "parse",
+                Span::new(line, col, self.line, self.col),
+                format!("unexpected non-ASCII text `{run}`"),
+            )
+            .with_help(help),
+        );
     }
 
     fn number(&mut self, line: u32, col: u32) {
@@ -220,6 +257,25 @@ impl Lexer {
                 s.push(c);
                 self.bump();
             }
+        }
+        if matches!(self.peek(0), Some('e' | 'E'))
+            && (self.peek(1).is_some_and(|c| c.is_ascii_digit())
+                || (matches!(self.peek(1), Some('+' | '-'))
+                    && self.peek(2).is_some_and(|c| c.is_ascii_digit())))
+        {
+            self.bump();
+            self.bump();
+            while self.peek(0).is_some_and(|c| c.is_ascii_digit()) {
+                self.bump();
+            }
+            self.diags.push(
+                Diagnostic::error(
+                    "parse",
+                    Span::new(line, col, self.line, self.col),
+                    "exponent notation is not supported",
+                )
+                .with_help("write the number out in full, e.g. `100000` instead of `1e5`"),
+            );
         }
         let n = s
             .parse::<f64>()
@@ -333,6 +389,7 @@ impl Lexer {
             span: Span::new(line, col, self.line, self.col),
         });
         if multiline {
+            // A multi-line block comment ends its line; the Newline sits on the opening `/*`.
             self.toks.push(Token {
                 tok: Tok::Newline,
                 span: Span::new(line, col, line, col + 2),

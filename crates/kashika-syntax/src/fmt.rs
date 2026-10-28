@@ -1,18 +1,18 @@
 use kashika_diag::{Diagnostic, Span};
 
-use crate::lexer::{Tok, Token, lex, lex_with_comments};
+use crate::lexer::{Tok, Token, lex, lex_raw};
 
 /// Rewrites `src` in canonical layout. Only whitespace changes: indentation, the spacing
 /// between tokens, blank lines and trailing whitespace. Line breaks, comments and the
 /// spelling of numbers, strings and colors are kept. Input with `parse` errors is refused.
 pub fn format(src: &str) -> Result<String, Vec<Diagnostic>> {
     let src = src.strip_prefix('\u{feff}').unwrap_or(src);
-    let (_, diags) = crate::parse(src);
+    let (_, diags) = crate::parser::parse_stripped(src);
     let errors: Vec<Diagnostic> = diags.into_iter().filter(|d| d.code == "parse").collect();
     if !errors.is_empty() {
         return Err(errors);
     }
-    let (toks, comments, _) = lex_with_comments(src);
+    let (toks, comments, _) = lex_raw(src);
     let lines: Vec<Vec<char>> = src.split('\n').map(|l| l.chars().collect()).collect();
     let mut items: Vec<Item> = toks
         .iter()
@@ -26,7 +26,7 @@ pub fn format(src: &str) -> Result<String, Vec<Diagnostic>> {
         .collect();
     items.extend(comments.into_iter().map(|c| Item {
         line_comment: c.text.starts_with("//"),
-        text: c.text,
+        text: c.text.replace("\r\n", "\n"),
         span: c.span,
         tok: None,
     }));
@@ -173,20 +173,26 @@ fn continues(row: &[Item]) -> bool {
 
 fn join(row: &[Item]) -> String {
     let mut s = String::new();
+    let mut open = 0i32;
     for (i, it) in row.iter().enumerate() {
         if i > 0 {
             if it.line_comment {
                 s.push_str("  ");
-            } else if space(row, i) {
+            } else if space(row, i, open > 0) {
                 s.push(' ');
             }
+        }
+        if it.is(&Tok::LParen) {
+            open += 1;
+        } else if it.is(&Tok::RParen) {
+            open -= 1;
         }
         s.push_str(&it.text);
     }
     s
 }
 
-fn space(row: &[Item], i: usize) -> bool {
+fn space(row: &[Item], i: usize, in_parens: bool) -> bool {
     let (Some(p), Some(n)) = (&row[i - 1].tok, &row[i].tok) else {
         return true;
     };
@@ -205,11 +211,8 @@ fn space(row: &[Item], i: usize) -> bool {
     }
     match p {
         Tok::Comma => {
-            let before = &row[..i];
-            let open = before.iter().filter(|t| t.is(&Tok::LParen)).count();
-            let close = before.iter().filter(|t| t.is(&Tok::RParen)).count();
             let ident = |t: Option<&Tok>| matches!(t, Some(Tok::Ident(_)));
-            open > close && ((i >= 2 && ident(row[i - 2].tok.as_ref())) || ident(Some(n)))
+            in_parens && ((i >= 2 && ident(row[i - 2].tok.as_ref())) || ident(Some(n)))
         }
         Tok::LParen | Tok::Dot | Tok::At | Tok::Eq | Tok::Plus | Tok::Minus | Tok::Colon => false,
         _ => true,

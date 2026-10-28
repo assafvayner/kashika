@@ -1,7 +1,9 @@
+use std::cell::OnceCell;
+
 use kashika_diag::{Diagnostic, Span, did_you_mean};
 
 use crate::ast::*;
-use crate::lexer::{Tok, Token, lex};
+use crate::lexer::{Tok, Token, lex_raw};
 
 mod defs;
 
@@ -10,18 +12,25 @@ const STATEMENTS: &[&str] = &[
 ];
 const LINE_FLAGS: &[&str] = &["ortho"];
 /// Segment keywords; an id with one of these names could not be a bare segment target.
-pub const RESERVED_IDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve"];
-pub const MAX_GROUP_DEPTH: usize = 64;
+const RESERVED_IDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve"];
+const MAX_GROUP_DEPTH: usize = 64;
 
 pub fn parse(src: &str) -> (File, Vec<Diagnostic>) {
-    let (toks, mut diags) = lex(src);
+    parse_stripped(src.strip_prefix('\u{feff}').unwrap_or(src))
+}
+
+/// Parses `src`, which has no byte order mark.
+pub(crate) fn parse_stripped(src: &str) -> (File, Vec<Diagnostic>) {
+    let (toks, _, mut diags) = lex_raw(src);
     let first_stmt = first_stmt(&toks);
     let mut p = Parser {
         toks,
         pos: 0,
         depth: 0,
         diags: Vec::new(),
-        lines: src.split('\n').map(|l| l.chars().collect()).collect(),
+        src,
+        lines: OnceCell::new(),
+        skip_recover: false,
     };
     let stmts = p.stmts(false);
     diags.append(&mut p.diags);
@@ -80,15 +89,17 @@ struct Tail {
     attrs: Vec<Attr>,
 }
 
-struct Parser {
+struct Parser<'a> {
     toks: Vec<Token>,
     pos: usize,
     depth: usize,
     diags: Vec<Diagnostic>,
-    lines: Vec<Vec<char>>,
+    src: &'a str,
+    lines: OnceCell<Vec<Vec<char>>>,
+    skip_recover: bool,
 }
 
-impl Parser {
+impl Parser<'_> {
     fn tok(&self) -> &Tok {
         &self.toks[self.pos].tok
     }
@@ -105,12 +116,12 @@ impl Parser {
         self.toks[self.pos.saturating_sub(1)].span
     }
 
-    fn bump(&mut self) -> Token {
-        let t = self.toks[self.pos].clone();
+    fn bump(&mut self) -> Span {
+        let span = self.toks[self.pos].span;
         if self.pos < self.toks.len() - 1 {
             self.pos += 1;
         }
-        t
+        span
     }
 
     fn error<T>(&mut self, expected: &str) -> PResult<T> {
@@ -125,9 +136,12 @@ impl Parser {
 
     /// The source text from the start of `from` to the end of `to`.
     fn source(&self, from: Span, to: Span) -> String {
+        let lines = self
+            .lines
+            .get_or_init(|| self.src.split('\n').map(|l| l.chars().collect()).collect());
         let mut out = String::new();
         for line in from.line..=to.end_line {
-            let Some(chars) = self.lines.get(line as usize - 1) else {
+            let Some(chars) = lines.get(line as usize - 1) else {
                 break;
             };
             let a = if line == from.line {
@@ -180,8 +194,10 @@ impl Parser {
                 }
                 Tok::RBrace if in_block => break,
                 Tok::RBrace => {
-                    self.diags
-                        .push(Diagnostic::error("parse", self.span(), "unexpected `}`"));
+                    if self.diags.last().is_none_or(|d| d.span != self.span()) {
+                        self.diags
+                            .push(Diagnostic::error("parse", self.span(), "unexpected `}`"));
+                    }
                     self.bump();
                     continue;
                 }
@@ -190,7 +206,11 @@ impl Parser {
             match self.stmt() {
                 Ok(Some(s)) => out.push(s),
                 Ok(None) => {}
-                Err(()) => self.recover(),
+                Err(()) => {
+                    if !std::mem::take(&mut self.skip_recover) {
+                        self.recover();
+                    }
+                }
             }
         }
         out
@@ -365,7 +385,7 @@ impl Parser {
     fn ident(&mut self, what: &str) -> PResult<Ident> {
         match self.tok().clone() {
             Tok::Ident(name) => {
-                let span = self.bump().span;
+                let span = self.bump();
                 Ok(Ident { name, span })
             }
             _ => self.error(what),
@@ -396,7 +416,7 @@ impl Parser {
 
     fn expect(&mut self, tok: Tok) -> PResult<Span> {
         if *self.tok() == tok {
-            Ok(self.bump().span)
+            Ok(self.bump())
         } else {
             self.error(&tok.describe())
         }
@@ -448,11 +468,18 @@ impl Parser {
         let mut attrs = Vec::new();
         loop {
             self.skip_newlines();
-            if *self.tok() == Tok::RBrace {
-                self.bump();
-                break;
+            match self.tok() {
+                Tok::RBrace => {
+                    self.bump();
+                    break;
+                }
+                Tok::Eof => return self.error("`}`"),
+                _ => {}
             }
-            attrs.push(self.attr()?);
+            match self.attr() {
+                Ok(a) => attrs.push(a),
+                Err(()) => self.recover(),
+            }
         }
         Ok(StyleDef {
             name: name.name,
@@ -563,7 +590,7 @@ impl Parser {
         let mut colon_diag = None;
         let mut id = if matches!(self.tok(), Tok::Ident(_)) && *self.tok_at(1) == Tok::Colon {
             let id = self.decl_id("a line id")?;
-            let colon = self.bump().span;
+            let colon = self.bump();
             let rest = if matches!(self.tok(), Tok::Newline | Tok::Eof) {
                 "a.right -> b.left".to_string()
             } else {
@@ -618,7 +645,10 @@ impl Parser {
             if *self.tok() != Tok::Arrow {
                 break;
             }
-            self.bump();
+            let arrow = self.bump();
+            if matches!(self.tok(), Tok::Newline | Tok::Eof) {
+                return self.dangling_arrow(arrow);
+            }
             segs.push(self.seg()?);
         }
         if segs.is_empty() {
@@ -632,6 +662,45 @@ impl Parser {
             attrs,
             span: start.to(self.prev_span()),
         })
+    }
+
+    /// Reports a `->` that ends its line. A next line that is only a segment target is
+    /// swallowed with it, so one mistake is one error.
+    fn dangling_arrow<T>(&mut self, arrow: Span) -> PResult<T> {
+        self.diags.push(
+            Diagnostic::error(
+                "parse",
+                arrow,
+                "`->` must be followed by a segment on the same line",
+            )
+            .with_help(
+                "to continue a line, start the next physical line with `->`, \
+                 e.g. `line a x.right` then `  -> y.left`",
+            ),
+        );
+        let mut n = 0;
+        while *self.tok_at(n) == Tok::Newline {
+            n += 1;
+        }
+        let target = match self.tok_at(n) {
+            Tok::LParen => true,
+            Tok::Ident(s) => {
+                !STATEMENTS.contains(&s.as_str())
+                    && matches!(
+                        self.tok_at(n + 1),
+                        Tok::Dot | Tok::Plus | Tok::Minus | Tok::Newline | Tok::Eof
+                    )
+            }
+            _ => false,
+        };
+        if target {
+            for _ in 0..n {
+                self.bump();
+            }
+            self.recover();
+            self.skip_recover = true;
+        }
+        Err(())
     }
 
     /// Joins the next physical line onto this statement when it starts with `->`
@@ -663,11 +732,11 @@ impl Parser {
             self.continuation(false, &[]);
             let clause = !matches!(self.tok_at(1), Tok::Eq | Tok::At);
             if clauses.at && clause && self.is_kw("at") {
-                let kw = self.bump().span;
+                let kw = self.bump();
                 let at = self.point()?;
                 self.once(&mut tail.at, at, "at", kw)?;
             } else if clauses.size && clause && self.is_kw("size") {
-                let kw = self.bump().span;
+                let kw = self.bump();
                 let size = self.pair()?;
                 self.once(&mut tail.size, size, "size", kw)?;
             } else if matches!(self.tok(), Tok::Ident(_)) {
@@ -803,7 +872,8 @@ impl Parser {
         }
         let r = self.reference()?;
         let offset = if matches!(self.tok(), Tok::Plus | Tok::Minus) {
-            let neg = self.bump().tok == Tok::Minus;
+            let neg = *self.tok() == Tok::Minus;
+            self.bump();
             let (dx, dy) = self.pair()?;
             Some(Offset { neg, dx, dy })
         } else {
@@ -924,8 +994,8 @@ impl Parser {
         } else {
             return self.error("`left <N>`, `right <N>` or `via`");
         };
-        let side_span = self.bump().span;
-        let colon = (*self.tok() == Tok::Colon).then(|| self.bump().span);
+        let side_span = self.bump();
+        let colon = (*self.tok() == Tok::Colon).then(|| self.bump());
         let amount_span = self.span();
         let amount = self.number();
         let to = amount.and_then(|_| self.point());

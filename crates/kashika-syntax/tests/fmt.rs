@@ -147,3 +147,60 @@ fn keeps_at_size_and_attribute_order() {
         "box a \"A\" style=service size (9,9) at (1,2)\njunction j dot at (0,0)\n"
     );
 }
+
+#[test]
+fn crlf_is_normalized_inside_block_comments() {
+    let out = format("box a at (1,1) size (1,1)\r\n/* x\r\n y */\r\nbox b at (5,5) size (1,1)\r\n")
+        .unwrap();
+    assert!(!out.contains('\r'), "{out:?}");
+    assert_eq!(format(&out).unwrap(), out);
+}
+
+fn example_sources() -> Vec<String> {
+    fn walk(dir: &std::path::Path, out: &mut Vec<String>) {
+        for entry in std::fs::read_dir(dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                walk(&path, out);
+            } else if path.extension().is_some_and(|e| e == "kash") {
+                out.push(std::fs::read_to_string(&path).unwrap());
+            }
+        }
+    }
+    let mut out = Vec::new();
+    walk(
+        &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples"),
+        &mut out,
+    );
+    assert!(!out.is_empty());
+    out
+}
+
+#[test]
+fn examples_format_idempotently() {
+    for src in example_sources() {
+        let once = format(&src).unwrap_or_else(|d| panic!("{d:#?}"));
+        assert_eq!(format(&once).unwrap(), once, "not idempotent");
+    }
+}
+
+#[test]
+fn truncated_examples_never_panic_and_format_idempotently() {
+    for src in example_sources() {
+        let ends: Vec<usize> = src
+            .char_indices()
+            .map(|(i, _)| i)
+            .chain([src.len()])
+            .collect();
+        for end in ends.into_iter().step_by(7) {
+            let prefix = &src[..end];
+            if let Ok(once) = format(prefix) {
+                assert_eq!(
+                    format(&once).as_deref(),
+                    Ok(once.as_str()),
+                    "not idempotent for prefix of {end} bytes"
+                );
+            }
+        }
+    }
+}

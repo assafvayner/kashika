@@ -1,0 +1,2 @@
+error[parse] 6:16-6:18: `->` must be followed by a segment on the same line
+  = help: to continue a line, start the next physical line with `->`, e.g. `line a x.right` then `  -> y.left`

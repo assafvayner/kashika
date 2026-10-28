@@ -1,0 +1,4 @@
+error[parse] 4:11-4:14: exponent notation is not supported
+  = help: write the number out in full, e.g. `100000` instead of `1e5`
+error[parse] 5:11-5:17: exponent notation is not supported
+  = help: write the number out in full, e.g. `100000` instead of `1e5`

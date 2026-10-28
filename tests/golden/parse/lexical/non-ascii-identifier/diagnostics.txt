@@ -1,0 +1,4 @@
+error[parse] 4:8-4:9: unexpected non-ASCII text `é`
+  = help: ids are ASCII letters, digits, `_` and `-`
+error[parse] 5:7-5:11: unexpected non-ASCII text `ïve2`
+  = help: ids are ASCII letters, digits, `_` and `-`

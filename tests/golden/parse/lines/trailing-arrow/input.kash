@@ -1,0 +1,8 @@
+// spec: 5, 7
+// A `->` that ends its line is one error that points at the leading-`->` form.
+diagram "trailing arrow" size (300,100)
+box p at (10,10) size (40,30)
+box q at (150,10) size (40,30)
+line a p.right ->
+  q.left
+box z at (10,60) size (40,30)

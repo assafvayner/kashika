@@ -154,7 +154,7 @@ fn recovers_and_reports_multiple_errors() {
             .iter()
             .any(|h| h.contains("did you mean `box`?"))
     );
-    assert!(diags[1].message.contains("found end of line"));
+    assert!(diags[1].message.contains("must be followed by a segment"));
     assert_eq!(f.stmts.len(), 2);
 }
 
@@ -788,4 +788,12 @@ fn kashika_version_statement_is_an_error_with_help() {
         ]
     );
     assert_eq!(f.first_stmt.map(|s| s.line), Some(2));
+}
+
+#[test]
+fn bom_does_not_shift_help_text() {
+    let (_, diags) = parse("\u{feff}kashika==\"0.1\"\n");
+    assert_eq!(diags.len(), 1, "{diags:#?}");
+    let (_, plain) = parse("kashika==\"0.1\"\n");
+    assert_eq!(diags[0].help, plain[0].help);
 }
