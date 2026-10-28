@@ -1,0 +1,14 @@
+---
+source: crates/kashika-render/tests/svg.rs
+expression: svg(BASIC)
+---
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="240" viewBox="0 0 480 240">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<rect x="40" y="40" width="120" height="60" rx="0" fill="#e8f0fe" stroke="#1a73e8" stroke-width="1.5"/>
+<text x="100" y="70" font-family="Inter, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f172a" text-anchor="middle" dominant-baseline="central">API</text>
+<rect x="320" y="40" width="120" height="60" rx="0" fill="#e6f4ea" stroke="#137333" stroke-width="1.5"/>
+<text x="380" y="70" font-family="Inter, Helvetica, Arial, sans-serif" font-size="14" font-weight="normal" fill="#0f172a" text-anchor="middle" dominant-baseline="central">Postgres</text>
+<path d="M 160 70 L 310 70" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
+<polygon points="320,70 310,74 310,66" fill="#334155"/>
+<text x="240" y="70" font-family="Inter, Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#0f172a" text-anchor="middle" dominant-baseline="central" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" paint-order="stroke">SQL</text>
+</svg>
