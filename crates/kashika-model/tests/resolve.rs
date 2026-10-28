@@ -436,3 +436,15 @@ fn children_of_duplicate_group_are_not_reference_targets() {
     assert!(d.iter().any(|x| x.code == "duplicate-id"), "{d:#?}");
     assert!(d.iter().any(|x| x.code == "unknown-id"), "{d:#?}");
 }
+
+#[test]
+fn grandchildren_of_duplicate_group_are_not_reference_targets() {
+    let d = errors(
+        "group g at (0,0) size (100,100) {\n}\ngroup g at (200,0) size (100,100) {\n  group h at (0,0) size (50,50) {\n    box b at (0,0) size (10,10)\n  }\n}\nline l: (0,0) -> b.left\n",
+    );
+    assert!(
+        d.iter()
+            .any(|d| d.code == "unknown-id" && d.message.contains("`b`")),
+        "{d:#?}"
+    );
+}

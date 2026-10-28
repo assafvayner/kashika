@@ -256,8 +256,9 @@ impl<'a> Resolver<'a> {
                 parent,
                 depth,
             });
-            let parent_skipped = parent.is_some_and(|p| self.skipped.contains(&p));
-            if let Some(id) = item.id().filter(|_| !parent_skipped) {
+            if parent.is_some_and(|p| self.skipped.contains(&p)) {
+                self.skipped.insert(idx);
+            } else if let Some(id) = item.id() {
                 self.register(id, idx);
             }
             if let Stmt::Group(g) = stmt {
