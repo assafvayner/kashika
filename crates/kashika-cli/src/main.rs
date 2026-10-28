@@ -1,5 +1,6 @@
 mod fmt_cmd;
 mod measure;
+mod ref_cmd;
 mod report;
 mod route_cmd;
 
@@ -40,6 +41,14 @@ enum Cmd {
     Route(route_cmd::RouteArgs),
     /// Print the exact width and height of a label, with markup applied
     Measure(measure::MeasureArgs),
+    /// Print the language reference, or one topic of it
+    Ref {
+        /// syntax, anchors, paths, shapes, styles, metrics, lints, examples, cli, or a diagnostic code
+        topic: Option<String>,
+        /// Wrap the page in a JSON envelope
+        #[arg(long)]
+        json: bool,
+    },
     /// Rewrite a .kash file in canonical layout (whitespace only)
     Fmt {
         /// The .kash file to format
@@ -98,6 +107,7 @@ fn main() -> ExitCode {
         } => run(&common, Some((output, force))),
         Cmd::Route(args) => route_cmd::run(&args),
         Cmd::Measure(args) => measure::run(&args),
+        Cmd::Ref { topic, json } => ref_cmd::run(topic.as_deref(), json),
     }
 }
 
