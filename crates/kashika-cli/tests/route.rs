@@ -56,10 +56,12 @@ fn json_output() {
     assert_eq!(v["style"], "corner");
     assert_eq!(v["from"]["side"], "top");
     assert_eq!(v["candidates"][0]["segments"], 3);
-    assert!(v["candidates"][0]["statement"]
-        .as_str()
-        .unwrap()
-        .starts_with("line a_b "));
+    assert!(
+        v["candidates"][0]["statement"]
+            .as_str()
+            .unwrap()
+            .starts_with("line a_b ")
+    );
 }
 
 #[test]

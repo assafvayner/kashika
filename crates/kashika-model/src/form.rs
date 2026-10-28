@@ -1,8 +1,8 @@
-use kashika_geom::{arc_to_cubics, flatten, horizontal_hits, vertical_hits, PathSeg, Pt, Rect};
+use kashika_geom::{PathSeg, Pt, Rect, arc_to_cubics, flatten, horizontal_hits, vertical_hits};
 use serde::Serialize;
 
 use crate::anchor;
-use crate::scene::{corner_radius, Asset, Fit, Outline, Shape, ShapeKind};
+use crate::scene::{Asset, Fit, Outline, Shape, ShapeKind, corner_radius};
 use crate::shapes::UnitShape;
 
 /// The geometry of a non-rectangular shape, in canvas coordinates.

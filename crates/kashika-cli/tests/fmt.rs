@@ -1,3 +1,5 @@
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
 use assert_cmd::Command;
@@ -159,17 +161,18 @@ fn writes_through_symlink() {
         .args(["fmt", link.to_str().unwrap()])
         .assert()
         .code(0);
-    assert!(std::fs::symlink_metadata(&link)
-        .unwrap()
-        .file_type()
-        .is_symlink());
+    assert!(
+        std::fs::symlink_metadata(&link)
+            .unwrap()
+            .file_type()
+            .is_symlink()
+    );
     assert_eq!(std::fs::read_to_string(&real).unwrap(), CLEAN);
 }
 
 #[cfg(unix)]
 #[test]
 fn preserves_file_mode() {
-    use std::os::unix::fs::PermissionsExt;
     let dir = tempfile::tempdir().unwrap();
     let f = dir.path().join("d.kash");
     std::fs::write(&f, MESSY).unwrap();
@@ -204,9 +207,11 @@ fn render_writes_through_symlink() {
         ])
         .assert()
         .code(0);
-    assert!(std::fs::symlink_metadata(&link)
-        .unwrap()
-        .file_type()
-        .is_symlink());
+    assert!(
+        std::fs::symlink_metadata(&link)
+            .unwrap()
+            .file_type()
+            .is_symlink()
+    );
     assert!(std::fs::read_to_string(&real).unwrap().starts_with("<svg"));
 }

@@ -1,4 +1,4 @@
-use kashika_diag::{did_you_mean, Diagnostic, Span};
+use kashika_diag::{Diagnostic, Span, did_you_mean};
 
 use super::{Clauses, PResult, Parser};
 use crate::ast::*;

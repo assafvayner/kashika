@@ -4,5 +4,5 @@ mod lexer;
 mod parser;
 
 pub use fmt::format;
-pub use lexer::{lex, lex_with_comments, Comment, Tok, Token};
+pub use lexer::{Comment, Tok, Token, lex, lex_with_comments};
 pub use parser::parse;

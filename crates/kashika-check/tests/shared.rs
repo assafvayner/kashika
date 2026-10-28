@@ -26,14 +26,18 @@ fn collinear_overlap_is_reported_with_the_nearest_free_lane() {
 
 #[test]
 fn parallel_or_tiny_overlaps_are_not_shared() {
-    assert!(lint(
-        "shared-segment",
-        "line a (0,100) -> h 100\nline b (0,110) -> h 100\n"
-    )
-    .is_empty());
-    assert!(lint(
-        "shared-segment",
-        "line a (0,100) -> h 100\nline b (99.5,100) -> h 100\n"
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "shared-segment",
+            "line a (0,100) -> h 100\nline b (0,110) -> h 100\n"
+        )
+        .is_empty()
+    );
+    assert!(
+        lint(
+            "shared-segment",
+            "line a (0,100) -> h 100\nline b (99.5,100) -> h 100\n"
+        )
+        .is_empty()
+    );
 }

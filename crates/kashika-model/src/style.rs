@@ -144,7 +144,7 @@ pub fn builtin(name: &str) -> Option<StyleProps> {
                 stroke_style: Some(StrokeStyle::Dashed),
                 color: Some("#475569".into()),
                 ..StyleProps::default()
-            })
+            });
         }
         _ => return None,
     };

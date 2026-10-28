@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use kashika_geom::{convex_hull, Pt};
+use kashika_geom::{Pt, convex_hull};
 
 use crate::icons;
 use crate::loader::{FileError, Found, Loader};
@@ -222,6 +222,8 @@ fn collect_points(g: &usvg::Group, out: &mut Vec<Pt>) {
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Write as _;
+
     use super::*;
     use crate::icons::BUNDLED_ICONS;
 
@@ -305,7 +307,6 @@ mod tests {
 
     #[test]
     fn oversized_images_nested_in_svg_are_refused() {
-        use std::fmt::Write as _;
         let b64 = |b: &[u8]| {
             const T: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
             let mut o = String::new();

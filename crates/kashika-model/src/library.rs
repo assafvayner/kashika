@@ -2,14 +2,14 @@ use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use kashika_diag::{Diagnostic, Span};
-use kashika_geom::{parse_unit_path, Rect};
+use kashika_geom::{Rect, parse_unit_path};
 use kashika_syntax::ast::{self, ShapeBody, Stmt};
 
 use crate::assets::Store;
 use crate::attrs::{self, Attrs};
 use crate::loader::{FileError, Found, Loader};
-use crate::shapes::{UnitShape, BUILTIN_SHAPES};
-use crate::style::{StyleProps, STYLE_KEYS};
+use crate::shapes::{BUILTIN_SHAPES, UnitShape};
+use crate::style::{STYLE_KEYS, StyleProps};
 
 /// Deepest chain of nested imports followed before giving up.
 const MAX_IMPORT_DEPTH: usize = 32;
@@ -164,7 +164,7 @@ impl Library {
                 return fail(
                     ctx,
                     FileError::new(format!("`{}` is a bundled icon, not a library", i.path)),
-                )
+                );
             }
             Err(e) => return fail(ctx, e),
         };
@@ -212,7 +212,7 @@ impl Library {
                 return fail(
                     ctx,
                     FileError::new(format!("cannot read `{}`: {e}", i.path)),
-                )
+                );
             }
         };
         let (lib_file, mut inner) = kashika_syntax::parse(&src);

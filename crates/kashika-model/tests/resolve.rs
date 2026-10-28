@@ -1,6 +1,6 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::{PathSeg, Pt, Rect};
-use kashika_model::{compile, Scene, StrokeStyle};
+use kashika_model::{EdgeKind, PlacementEdge, Scene, SegmentKind, StrokeStyle, compile};
 
 const HEAD: &str = "diagram \"t\" size (800,600)\n";
 
@@ -58,7 +58,9 @@ fn forward_references_resolve() {
 
 #[test]
 fn mixed_point_inside_a_group_frame() {
-    let s = ok("box a at (200,0) size (100,40)\ngroup g at (0,100) size (400,300) {\n  junction j at (a.left.x, 50)\n}\n");
+    let s = ok(
+        "box a at (200,0) size (100,40)\ngroup g at (0,100) size (400,300) {\n  junction j at (a.left.x, 50)\n}\n",
+    );
     assert_eq!(s.junctions[0].at, Pt::new(200.0, 150.0));
 }
 
@@ -160,9 +162,10 @@ fn version_rejects_newer_and_other_major() {
         let d = version_diags(v);
         assert_eq!(d.len(), 1, "{v}");
         assert_eq!(d[0].code, "version");
-        assert!(d[0]
-            .message
-            .contains("or newer (same major version); this is kashika 0.1.0"));
+        assert!(
+            d[0].message
+                .contains("or newer (same major version); this is kashika 0.1.0")
+        );
         assert!(!d[0].help.is_empty());
     }
 }
@@ -193,9 +196,10 @@ fn version_rejects_bare_and_malformed() {
 #[test]
 fn allow_validates_codes_and_ids() {
     let d = errors("line l1 (0,0) -> h 5 allow=crosss\nline l2 (0,0) -> v 5 allow=cross:nope\n");
-    assert!(d
-        .iter()
-        .any(|d| d.code == "attr" && d.help == vec!["did you mean `cross`?".to_string()]));
+    assert!(
+        d.iter()
+            .any(|d| d.code == "attr" && d.help == vec!["did you mean `cross`?".to_string()])
+    );
     assert!(d.iter().any(|d| d.code == "unknown-id"));
 }
 
@@ -217,8 +221,10 @@ fn rounded_shape_projects_anchors() {
 
 #[test]
 fn every_segment_kind_resolves() {
-    let s = ok("box a at (0,0) size (100,60)\nbox b at (300,200) size (100,60)\n\
-                line l a.right -> h 50 -> y b.top -> x 400 -> v 10 -> hv (500,300) -> vh (520,320)\n");
+    let s = ok(
+        "box a at (0,0) size (100,60)\nbox b at (300,200) size (100,60)\n\
+                line l a.right -> h 50 -> y b.top -> x 400 -> v 10 -> hv (500,300) -> vh (520,320)\n",
+    );
     let p = |x: f64, y: f64| Pt::new(x, y);
     assert_eq!(
         pts(&s, "l"),
@@ -485,7 +491,9 @@ fn junction(s: &Scene, id: &str) -> Pt {
 
 #[test]
 fn nested_groups_compose_frames() {
-    let s = ok("group outer at (100,100) size (400,400) {\n  group inner at (50,60) size (200,200) {\n    box a at (5,5) size (10,10)\n    line l (0,0) -> h 10\n  }\n}\n");
+    let s = ok(
+        "group outer at (100,100) size (400,400) {\n  group inner at (50,60) size (200,200) {\n    box a at (5,5) size (10,10)\n    line l (0,0) -> h 10\n  }\n}\n",
+    );
     assert_eq!(rect(&s, "inner"), Rect::new(150.0, 160.0, 200.0, 200.0));
     assert_eq!(rect(&s, "a"), Rect::new(155.0, 165.0, 10.0, 10.0));
     assert_eq!(pts(&s, "l")[0], Pt::new(150.0, 160.0));
@@ -493,7 +501,9 @@ fn nested_groups_compose_frames() {
 
 #[test]
 fn anchor_references_inside_a_group_are_absolute() {
-    let s = ok("box a at (300,300) size (100,60)\ngroup g at (100,100) size (100,100) {\n  box b at a.right+(10,0) size (20,20) pin=left\n  junction j at a.tl\n  line l (0,0) -> a.left\n}\n");
+    let s = ok(
+        "box a at (300,300) size (100,60)\ngroup g at (100,100) size (100,100) {\n  box b at a.right+(10,0) size (20,20) pin=left\n  junction j at a.tl\n  line l (0,0) -> a.left\n}\n",
+    );
     assert_eq!(rect(&s, "b"), Rect::new(410.0, 320.0, 20.0, 20.0));
     assert_eq!(junction(&s, "j"), Pt::new(300.0, 300.0));
     assert_eq!(*pts(&s, "l").last().unwrap(), Pt::new(300.0, 330.0));
@@ -501,13 +511,17 @@ fn anchor_references_inside_a_group_are_absolute() {
 
 #[test]
 fn references_into_groups_resolve_to_true_positions() {
-    let s = ok("group g at (100,100) size (300,300) {\n  box a at (10,10) size (40,20)\n}\nline l a.right -> h 50\n");
+    let s = ok(
+        "group g at (100,100) size (300,300) {\n  box a at (10,10) size (40,20)\n}\nline l a.right -> h 50\n",
+    );
     assert_eq!(pts(&s, "l")[0], Pt::new(150.0, 120.0));
 }
 
 #[test]
 fn hv_and_curve_via_points_use_the_group_frame() {
-    let s = ok("group g at (100,100) size (300,300) {\n  line l (0,0) -> hv (50,50) -> curve via (60,50) (70,60) (70,70)\n}\n");
+    let s = ok(
+        "group g at (100,100) size (300,300) {\n  line l (0,0) -> hv (50,50) -> curve via (60,50) (70,60) (70,70)\n}\n",
+    );
     assert_eq!(
         pts(&s, "l"),
         vec![
@@ -525,7 +539,9 @@ fn hv_and_curve_via_points_use_the_group_frame() {
 
 #[test]
 fn text_and_junction_literals_use_the_group_frame() {
-    let s = ok("group g at (100,50) size (300,300) {\n  junction j at (10,20)\n  text t \"hi\" at (30,40)\n}\n");
+    let s = ok(
+        "group g at (100,50) size (300,300) {\n  junction j at (10,20)\n  text t \"hi\" at (30,40)\n}\n",
+    );
     assert_eq!(junction(&s, "j"), Pt::new(110.0, 70.0));
     assert_eq!(s.texts[0].at, Pt::new(130.0, 90.0));
     assert_eq!(s.texts[0].parent.as_deref(), Some("g"));
@@ -592,14 +608,18 @@ fn every_anchor_and_alias_resolves() {
 
 #[test]
 fn anchor_t_and_offset_compose() {
-    let s = ok("box db at (0,0) size (100,40)\njunction j at db.left@0.25+(0,4)\njunction k at db.top+(-10,0)\n");
+    let s = ok(
+        "box db at (0,0) size (100,40)\njunction j at db.left@0.25+(0,4)\njunction k at db.top+(-10,0)\n",
+    );
     assert_eq!(junction(&s, "j"), Pt::new(0.0, 14.0));
     assert_eq!(junction(&s, "k"), Pt::new(40.0, 0.0));
 }
 
 #[test]
 fn group_anchors_work_like_box_anchors() {
-    let s = ok("group k8s at (100,100) size (200,100) {\n}\njunction j at k8s.top\nbox b at k8s.right+(20,0) size (10,10) pin=left\n");
+    let s = ok(
+        "group k8s at (100,100) size (200,100) {\n}\njunction j at k8s.top\nbox b at k8s.right+(20,0) size (10,10) pin=left\n",
+    );
     assert_eq!(junction(&s, "j"), Pt::new(200.0, 100.0));
     assert_eq!(rect(&s, "b"), Rect::new(320.0, 145.0, 10.0, 10.0));
 }
@@ -616,7 +636,9 @@ fn junction_references_take_offsets_and_axes() {
 
 #[test]
 fn mixed_points_take_each_axis_from_a_reference() {
-    let s = ok("box app1 at (100,0) size (60,40)\njunction lane1 at (0,200)\nline l app1.bottom -> (app1.bottom.x, lane1.y)\n");
+    let s = ok(
+        "box app1 at (100,0) size (60,40)\njunction lane1 at (0,200)\nline l app1.bottom -> (app1.bottom.x, lane1.y)\n",
+    );
     assert_eq!(
         pts(&s, "l"),
         vec![Pt::new(130.0, 40.0), Pt::new(130.0, 200.0)]
@@ -675,7 +697,9 @@ fn pin_rejects_unknown_anchors_and_positions() {
 
 #[test]
 fn pin_accepts_a_position_on_an_edge() {
-    let s = ok("box api at (40,40) size (120,60)\nbox db at api.right+(100,0) size (100,80) pin=left@0.25\n");
+    let s = ok(
+        "box api at (40,40) size (120,60)\nbox db at api.right+(100,0) size (100,80) pin=left@0.25\n",
+    );
     assert_eq!(rect(&s, "db"), Rect::new(260.0, 50.0, 100.0, 80.0));
 }
 
@@ -774,14 +798,18 @@ fn texts_and_lines_cannot_be_referenced() {
 
 #[test]
 fn inline_attributes_override_named_style() {
-    let s = ok("style svc { fill=#111111 stroke=#222222 }\nbox a at (0,0) size (1,1) style=svc fill=#333333\n");
+    let s = ok(
+        "style svc { fill=#111111 stroke=#222222 }\nbox a at (0,0) size (1,1) style=svc fill=#333333\n",
+    );
     assert_eq!(s.shapes[0].style.fill, "#333333");
     assert_eq!(s.shapes[0].style.stroke, "#222222");
 }
 
 #[test]
 fn group_style_and_inline_apply_over_boundary() {
-    let s = ok("style blue { stroke=#0000ff }\ngroup g at (0,0) size (10,10) style=blue stroke-style=solid {\n}\n");
+    let s = ok(
+        "style blue { stroke=#0000ff }\ngroup g at (0,0) size (10,10) style=blue stroke-style=solid {\n}\n",
+    );
     assert_eq!(s.shapes[0].style.stroke, "#0000ff");
     assert_eq!(s.shapes[0].style.stroke_style, StrokeStyle::Solid);
 }
@@ -794,7 +822,9 @@ fn styles_may_be_defined_after_use() {
 
 #[test]
 fn every_style_key_is_accepted() {
-    ok("style s { fill=#fff stroke=#000 stroke-width=2 stroke-style=dotted font-size=12 font-weight=bold color=#111 radius=4 padding=6 muted=#888 }\n");
+    ok(
+        "style s { fill=#fff stroke=#000 stroke-width=2 stroke-style=dotted font-size=12 font-weight=bold color=#111 radius=4 padding=6 muted=#888 }\n",
+    );
     let d = errors("style s { fil=#fff }\n");
     assert_eq!(d[0].code, "attr");
 }
@@ -815,7 +845,9 @@ fn every_builtin_style_exists() {
 
 #[test]
 fn line_style_applies_only_stroke_and_font_keys() {
-    let s = ok("style s { fill=#ff0000 stroke=#00ff00 radius=10 font-size=20 }\nline l (0,0) -> h 100 -> v 100 style=s\n");
+    let s = ok(
+        "style s { fill=#ff0000 stroke=#00ff00 radius=10 font-size=20 }\nline l (0,0) -> h 100 -> v 100 style=s\n",
+    );
     let l = &s.lines[0];
     assert_eq!(l.style.stroke, "#00ff00");
     assert_eq!(l.style.font_size, 20.0);
@@ -1067,7 +1099,9 @@ fn long_placement_chains_are_reported_not_crashed() {
 
 #[test]
 fn markup_and_escapes_are_accepted_in_texts_and_labels() {
-    let s = ok("box a \"a \\*\\* b\" at (0,0) size (60,40)\ntext \"**t** \\*\" at (0,0)\nline l (0,0) -> h 5 label=\"`q`\"\n");
+    let s = ok(
+        "box a \"a \\*\\* b\" at (0,0) size (60,40)\ntext \"**t** \\*\" at (0,0)\nline l (0,0) -> h 5 label=\"`q`\"\n",
+    );
     assert_eq!(s.shapes[0].label.as_deref(), Some("a \\*\\* b"));
     assert_eq!(s.texts[0].content, "**t** \\*");
     assert_eq!(s.lines[0].labels[0].text, "`q`");
@@ -1104,7 +1138,9 @@ fn numeric_attributes_are_range_checked() {
         let (_, d) = compile(head);
         assert_eq!(codes_of(&d), vec!["attr"], "{head}: {d:#?}");
     }
-    let (_, d) = compile("diagram \"t\" size (10,10) grid=10 clearance=0\nbox a at (0,0) size (10,10) padding=0 radius=0 stroke-width=0.5\n");
+    let (_, d) = compile(
+        "diagram \"t\" size (10,10) grid=10 clearance=0\nbox a at (0,0) size (10,10) padding=0 radius=0 stroke-width=0.5\n",
+    );
     assert!(d.is_empty(), "{d:#?}");
 }
 
@@ -1143,7 +1179,9 @@ fn text_color_cannot_be_none() {
 
 #[test]
 fn elements_keep_their_frame_origin() {
-    let s = ok("group g at (100,50) size (300,200) {\n  box a at (10,20) size (40,30)\n  junction j at (5,5)\n  text \"t\" at (1,2)\n  line l (0,0) -> h 10\n}\n");
+    let s = ok(
+        "group g at (100,50) size (300,200) {\n  box a at (10,20) size (40,30)\n  junction j at (5,5)\n  text \"t\" at (1,2)\n  line l (0,0) -> h 10\n}\n",
+    );
     let a = s.shapes.iter().find(|x| x.id == "a").unwrap();
     assert_eq!(a.origin, Pt::new(100.0, 50.0));
     assert_eq!(a.local_rect(), Rect::new(10.0, 20.0, 40.0, 30.0));
@@ -1158,8 +1196,9 @@ fn elements_keep_their_frame_origin() {
 
 #[test]
 fn placement_graph_records_at_references_and_frames() {
-    use kashika_model::{EdgeKind, PlacementEdge};
-    let s = ok("box api at (40,40) size (120,60)\ngroup g at (0,200) size (400,200) {\n  box db at (api.left.x, 20) size (100,60)\n}\njunction j at db.bottom+(0,20)\n");
+    let s = ok(
+        "box api at (40,40) size (120,60)\ngroup g at (0,200) size (400,200) {\n  box db at (api.left.x, 20) size (100,60)\n}\njunction j at db.bottom+(0,20)\n",
+    );
     let e = |f: &str, t: &str, kind: EdgeKind| PlacementEdge {
         from: f.into(),
         to: t.into(),
@@ -1185,7 +1224,6 @@ fn placement_graph_survives_cycles() {
 
 #[test]
 fn lines_keep_their_authored_segments() {
-    use kashika_model::SegmentKind;
     let s =
         ok("box a at (0,0) size (40,40)\nline l a.right -> h 20 -> hv (200,100) -> v 0 radius=5\n");
     let l = &s.lines[0];
@@ -1218,7 +1256,9 @@ fn lines_keep_their_authored_segments() {
 
 #[test]
 fn literals_are_recorded_in_their_own_frame() {
-    let s = ok("group g at (100,50) size (300,200) {\n  box a at (10,20) size (40,30)\n}\nline l a.right+(5,0) -> h 15 -> (300,95)\n");
+    let s = ok(
+        "group g at (100,50) size (300,200) {\n  box a at (10,20) size (40,30)\n}\nline l a.right+(5,0) -> h 15 -> (300,95)\n",
+    );
     let lits: Vec<(&str, &str, f64)> = s
         .literals
         .iter()
@@ -1247,7 +1287,9 @@ fn literals_are_recorded_in_their_own_frame() {
 
 #[test]
 fn line_endpoints_know_whether_they_are_literal() {
-    let s = ok("box a at (0,0) size (40,40)\nline m (100,100) -> a.left\nline n a.top -> y -20\nline o a.bottom -> x a.right\nline p a.right -> hv (80,80)\n");
+    let s = ok(
+        "box a at (0,0) size (40,40)\nline m (100,100) -> a.left\nline n a.top -> y -20\nline o a.bottom -> x a.right\nline p a.right -> hv (80,80)\n",
+    );
     let flags: Vec<(bool, bool)> = s
         .lines
         .iter()
@@ -1261,7 +1303,9 @@ fn line_endpoints_know_whether_they_are_literal() {
 
 #[test]
 fn boxes_and_groups_accept_allow_and_reason() {
-    let s = ok("box a at (0,0) size (10,10) allow=overlap reason=\"badge\"\ngroup g at (0,0) size (50,50) allow=spill:a {\n}\n");
+    let s = ok(
+        "box a at (0,0) size (10,10) allow=overlap reason=\"badge\"\ngroup g at (0,0) size (50,50) allow=spill:a {\n}\n",
+    );
     let a = s.shapes.iter().find(|x| x.id == "a").unwrap();
     assert_eq!(
         a.allow,

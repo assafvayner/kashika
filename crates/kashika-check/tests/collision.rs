@@ -34,11 +34,13 @@ fn texts_lines_and_other_labels() {
         .len(),
         1
     );
-    assert!(lint(
-        "label-collision",
-        "line a (0,100) -> h 400 label=\"x\"\ntext \"note\" at (200,50)\n"
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "label-collision",
+            "line a (0,100) -> h 400 label=\"x\"\ntext \"note\" at (200,50)\n"
+        )
+        .is_empty()
+    );
 }
 
 #[test]

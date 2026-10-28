@@ -1,6 +1,6 @@
 use std::f64::consts::{FRAC_PI_2, PI};
 
-use kashika_geom::{rect_polygon, Pt, Rect};
+use kashika_geom::{Pt, Rect, rect_polygon};
 use kashika_model::{Outline, Shape};
 
 /// The outline the checks use, as a closed polygon in canvas coordinates: the flattened

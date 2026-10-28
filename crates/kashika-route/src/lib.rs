@@ -4,15 +4,15 @@ mod score;
 mod text;
 
 use kashika_diag::{Diagnostic, Severity, Span};
-use kashika_geom::{flatten, PathSeg, Pt};
+use kashika_geom::{PathSeg, Pt, flatten};
 use kashika_model::{Line, Scene};
 use kashika_syntax::ast::{self, SegKind};
 use serde::Serialize;
 
 pub use candidates::{
-    corners, generate, generate_skipping, Ctrl, Hop, Lane, Plan, DETOUR_LANES, MAX_DETOURS,
+    Ctrl, DETOUR_LANES, Hop, Lane, MAX_DETOURS, Plan, corners, generate, generate_skipping,
 };
-pub use endpoint::{parse_ref, resolve_endpoints, resolve_endpoints_with, Endpoint, Side, PROBE};
+pub use endpoint::{Endpoint, PROBE, Side, parse_ref, resolve_endpoints, resolve_endpoints_with};
 pub use text::{num, path_text, statement};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -88,7 +88,7 @@ pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
         _ => {
             return Err(Error::Usage(
                 "give `<from> <to>`, or `--line <id>` to reroute a line".into(),
-            ))
+            ));
         }
     };
     let (scene, _) = kashika_model::compile_with(req.src, req.opts);

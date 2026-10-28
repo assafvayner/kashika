@@ -1,4 +1,4 @@
-use kashika_syntax::{lex, lex_with_comments, Tok};
+use kashika_syntax::{Tok, format, lex, lex_with_comments};
 
 #[test]
 fn comments_are_collected_with_spans() {
@@ -11,12 +11,11 @@ fn comments_are_collected_with_spans() {
     assert_eq!(comments[1].text, "/* b\n c */");
     assert_eq!((comments[1].span.line, comments[1].span.end_line), (2, 3));
     assert_eq!(toks, lex(src).0);
-    assert!(toks
-        .iter()
-        .all(|t| !matches!(&t.tok, Tok::Ident(s) if s.contains('/'))));
+    assert!(
+        toks.iter()
+            .all(|t| !matches!(&t.tok, Tok::Ident(s) if s.contains('/')))
+    );
 }
-
-use kashika_syntax::format;
 
 fn fmt(src: &str) -> String {
     let out = format(src).unwrap_or_else(|d| panic!("{d:#?}"));
@@ -102,11 +101,15 @@ fn formats_statements_the_parser_does_not_build_yet() {
 #[test]
 fn formats_future_blocks_without_knowing_their_grammar() {
     assert_eq!(
-        fmt("box api at (100,80) size (200,120) text-align=left {\ntext \"**Payments API**\"\n      text \"v2.4.1\" size=11 muted\n}\n"),
+        fmt(
+            "box api at (100,80) size (200,120) text-align=left {\ntext \"**Payments API**\"\n      text \"v2.4.1\" size=11 muted\n}\n"
+        ),
         "box api at (100,80) size (200,120) text-align=left {\n  text \"**Payments API**\"\n  text \"v2.4.1\" size=11 muted\n}\n"
     );
     assert_eq!(
-        fmt("shape lb_icon {\npath \"M 0 0.5 L 1 0.5\"\n    outline 1\ntext-area ( 0.2,0.3 ,0.6,0.4)\n}\n"),
+        fmt(
+            "shape lb_icon {\npath \"M 0 0.5 L 1 0.5\"\n    outline 1\ntext-area ( 0.2,0.3 ,0.6,0.4)\n}\n"
+        ),
         "shape lb_icon {\n  path \"M 0 0.5 L 1 0.5\"\n  outline 1\n  text-area (0.2,0.3,0.6,0.4)\n}\n"
     );
 }

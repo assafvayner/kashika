@@ -1,8 +1,8 @@
 use kashika_diag::Diagnostic;
-use kashika_geom::{polygons_overlap, TOLERANCE};
+use kashika_geom::{TOLERANCE, polygons_overlap};
 use kashika_model::ShapeKind;
 
-use crate::ctx::{bbox, contains, intersection, kind_name, shape_el, Ctx};
+use crate::ctx::{Ctx, bbox, contains, intersection, kind_name, shape_el};
 
 /// `overlap`: two shapes have intersecting interiors and neither is a group that contains the other.
 /// Shapes nested in the source (ancestor and descendant) are skipped; `spill` covers those.

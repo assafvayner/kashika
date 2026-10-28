@@ -1,6 +1,6 @@
 use kashika_diag::{Diagnostic, Span};
 
-use crate::lexer::{lex, lex_with_comments, Tok, Token};
+use crate::lexer::{Tok, Token, lex, lex_with_comments};
 
 /// Rewrites `src` in canonical layout. Only whitespace changes: indentation, the spacing
 /// between tokens, blank lines and trailing whitespace. Line breaks, comments and the

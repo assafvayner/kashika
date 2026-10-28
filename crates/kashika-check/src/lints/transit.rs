@@ -1,7 +1,7 @@
 use kashika_diag::Diagnostic;
-use kashika_geom::{boundary_nearest, inside_runs, point_in_polygon, Pt, TOLERANCE};
+use kashika_geom::{Pt, TOLERANCE, boundary_nearest, inside_runs, point_in_polygon};
 
-use crate::ctx::{arr, line_el, shape_el, Ctx};
+use crate::ctx::{Ctx, arr, line_el, shape_el};
 
 /// `group-transit`: a line passes through a group's interior while neither endpoint is inside it.
 pub fn group_transit(ctx: &Ctx) -> Vec<Diagnostic> {

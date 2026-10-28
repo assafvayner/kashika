@@ -16,14 +16,14 @@ mod version;
 
 use kashika_diag::Diagnostic;
 
-pub use assets::{probe, MAX_RASTER_PIXELS, MAX_RASTER_SIDE};
+pub use assets::{MAX_RASTER_PIXELS, MAX_RASTER_SIDE, probe};
 pub use form::Form;
 pub use icons::BUNDLED_ICONS;
 pub use kashika_text::{Font, PlacedLine, Run};
 pub use loader::Options;
 pub use resolve::{resolve, resolve_library_with, resolve_with};
 pub use scene::*;
-pub use shapes::{builtin_source, BUILTIN_SHAPES};
+pub use shapes::{BUILTIN_SHAPES, builtin_source};
 pub use style::{FontWeight, StrokeStyle, Style};
 pub use textlayout::{TextItem, TextRole};
 

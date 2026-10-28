@@ -1,6 +1,6 @@
 use kashika_geom::{
-    flatten, length, point_at, round_corners, round_corners_tagged, PathSeg, Pt, Rect,
-    FLATTEN_TOLERANCE, MAX_FLATTEN_STEPS,
+    FLATTEN_TOLERANCE, MAX_FLATTEN_STEPS, PathSeg, Pt, Rect, flatten, length, point_at,
+    round_corners, round_corners_tagged,
 };
 
 fn line(a: (f64, f64), b: (f64, f64)) -> PathSeg {

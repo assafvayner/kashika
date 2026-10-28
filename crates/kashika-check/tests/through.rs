@@ -42,9 +42,11 @@ fn own_boxes_are_exempt_only_on_the_first_and_last_segments() {
 
 #[test]
 fn groups_are_never_obstacles() {
-    assert!(lint(
-        "through",
-        "group g at (0,0) size (300,300) {\n}\nline l (10,150) -> h 200\n"
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "through",
+            "group g at (0,0) size (300,300) {\n}\nline l (10,150) -> h 200\n"
+        )
+        .is_empty()
+    );
 }

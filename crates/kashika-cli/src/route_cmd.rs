@@ -2,7 +2,7 @@ use std::io::Read;
 use std::process::ExitCode;
 
 use clap::Args;
-use kashika_route::{num, Error, Request, Style, Suggestion};
+use kashika_route::{Error, Request, Style, Suggestion, num};
 
 use crate::Format;
 
@@ -56,7 +56,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
             return crate::tool_error(
                 a.format,
                 "expected `<from> <to>` and an optional style (corner, arc, bezier)",
-            )
+            );
         }
     };
     let req = Request {

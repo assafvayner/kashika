@@ -1,6 +1,5 @@
-use resvg::{tiny_skia, usvg};
-
 use kashika_model::{MAX_RASTER_PIXELS, MAX_RASTER_SIDE};
+use resvg::{tiny_skia, usvg};
 
 fn check_raster_size(width: u32, height: u32) -> Result<(), String> {
     if width > MAX_RASTER_SIDE

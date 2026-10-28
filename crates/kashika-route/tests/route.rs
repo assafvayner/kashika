@@ -370,13 +370,16 @@ fn arc_adds_radius_and_counts_corners() {
 fn bezier_suggestions_are_curves_that_leave_and_enter_square() {
     let s = suggest(&req(DIAG, "a.right", "b.left", Style::Bezier)).unwrap();
     assert!(!s.candidates.is_empty());
-    assert!(s
-        .candidates
-        .iter()
-        .all(|c| c.statement.contains(" -> curve ")));
-    assert!(s.candidates[0]
-        .statement
-        .contains("curve via a.right+(76,0) b.left+(-76,0)"));
+    assert!(
+        s.candidates
+            .iter()
+            .all(|c| c.statement.contains(" -> curve "))
+    );
+    assert!(
+        s.candidates[0]
+            .statement
+            .contains("curve via a.right+(76,0) b.left+(-76,0)")
+    );
 }
 
 #[test]

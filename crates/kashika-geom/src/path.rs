@@ -208,11 +208,7 @@ impl PathSeg {
 }
 
 fn nonzero(a: Pt, fallback: Pt) -> Pt {
-    if a.length() > 1e-9 {
-        a
-    } else {
-        fallback
-    }
+    if a.length() > 1e-9 { a } else { fallback }
 }
 
 /// Uniform step count that keeps the chord error of a curve with the given

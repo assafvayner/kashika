@@ -1,7 +1,7 @@
 use kashika_diag::Diagnostic;
-use kashika_geom::{dist_point_seg, seg_hit, Hit, Pt, TOLERANCE};
+use kashika_geom::{Hit, Pt, TOLERANCE, dist_point_seg, seg_hit};
 
-use crate::ctx::{arr, fmt_pt, line_el, Ctx, LineGeom};
+use crate::ctx::{Ctx, LineGeom, arr, fmt_pt, line_el};
 use crate::free::with_free;
 
 /// `cross`: two lines meet at a point that is neither a shared endpoint nor a junction.
@@ -83,7 +83,9 @@ fn report(ctx: &Ctx, l: &LineGeom, li: usize, other: &LineGeom, oi: usize, p: Pt
     let allow = if other.line.named {
         format!("if intentional: allow=cross:{oid} on {id}")
     } else {
-        format!("if intentional: name {oid} and add allow=cross:<its id> on {id}, or allow=cross on {id}")
+        format!(
+            "if intentional: name {oid} and add allow=cross:<its id> on {id}, or allow=cross on {id}"
+        )
     };
     with_free(ctx, d, l, li, &[id]).with_help(allow)
 }

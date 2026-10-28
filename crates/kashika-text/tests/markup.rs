@@ -1,4 +1,4 @@
-use kashika_text::{parse_markup, Font, Run};
+use kashika_text::{Font, Run, parse_markup};
 
 fn run(text: &str, font: Font) -> Run {
     Run {

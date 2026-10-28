@@ -1,6 +1,7 @@
-use assert_cmd::Command;
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
+
+use assert_cmd::Command;
 
 fn kashika() -> Command {
     Command::cargo_bin("kashika").unwrap()

@@ -1,5 +1,5 @@
 use kashika_diag::{Diagnostic, Severity, Span};
-use kashika_geom::{point_at, PathSeg, Pt, Rect};
+use kashika_geom::{PathSeg, Pt, Rect, point_at};
 use kashika_model::{Font, Run, Scene};
 
 use crate::svg::{esc, n, path_data, render_svg};

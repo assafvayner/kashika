@@ -1,5 +1,5 @@
 use kashika_geom::Rect;
-use kashika_text::{measure, stack, stack_size, HAlign, VAlign};
+use kashika_text::{HAlign, VAlign, measure, stack, stack_size};
 
 #[test]
 fn place_at_centers_vertically() {

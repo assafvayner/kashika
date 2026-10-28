@@ -150,7 +150,7 @@ impl Case {
                     return Err(format!(
                         "{}: unknown directive `{key}` for this suite",
                         self.name
-                    ))
+                    ));
                 }
             }
         }

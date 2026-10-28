@@ -14,11 +14,13 @@ fn lines_through_a_diamond_follow_its_outline() {
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "l passes through box 'd'");
     assert_eq!(d[0].facts["entry"], serde_json::json!([100.0, 150.0]));
-    assert!(lint(
-        "through",
-        &format!("{DIAMOND}line l (90,110) -> (110,90)\n")
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "through",
+            &format!("{DIAMOND}line l (90,110) -> (110,90)\n")
+        )
+        .is_empty()
+    );
 }
 
 #[test]
@@ -32,11 +34,13 @@ fn near_measures_to_the_diamond_edge() {
 #[test]
 fn diamonds_overlap_only_when_their_outlines_do() {
     let a = "box a at (0,0) size (100,100) shape=diamond\n";
-    assert!(lint(
-        "overlap",
-        &format!("{a}box b at (80,80) size (100,100) shape=diamond\n")
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "overlap",
+            &format!("{a}box b at (80,80) size (100,100) shape=diamond\n")
+        )
+        .is_empty()
+    );
     let d = lint(
         "overlap",
         &format!("{a}box b at (40,40) size (100,100) shape=diamond\n"),
@@ -56,11 +60,13 @@ fn endpoints_snap_to_the_cylinder_cap() {
         d[0].help,
         vec!["snap it to the outline with an anchor: `db.top`"]
     );
-    assert!(lint(
-        "endpoint-off-edge",
-        &format!("{CYLINDER}line l (110,40) -> (110,108)\n")
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "endpoint-off-edge",
+            &format!("{CYLINDER}line l (110,40) -> (110,108)\n")
+        )
+        .is_empty()
+    );
 }
 
 #[test]
@@ -135,12 +141,14 @@ fn images_are_opaque_obstacles() {
 fn lines_may_attach_to_images() {
     let dir = tempfile::tempdir().unwrap();
     for code in ["through", "near", "endpoint-off-edge"] {
-        assert!(lint_in(
-            dir.path(),
-            code,
-            &format!("{LOGO}box b at (400,100) size (100,50)\nline l logo.right -> b.left\n"),
-        )
-        .is_empty());
+        assert!(
+            lint_in(
+                dir.path(),
+                code,
+                &format!("{LOGO}box b at (400,100) size (100,50)\nline l logo.right -> b.left\n"),
+            )
+            .is_empty()
+        );
     }
 }
 
@@ -169,27 +177,34 @@ fn labels_below_a_shape_are_checked_where_they_sit() {
     assert!(lint("label-collision", &body).is_empty());
     let d = lint(
         "spill",
-        &format!("{BELOW}group g at (80,80) size (120,100) {{\n  box s \"Uploads\" at (20,20) size (60,60) shape=srv\n}}\n"),
+        &format!(
+            "{BELOW}group g at (80,80) size (120,100) {{\n  box s \"Uploads\" at (20,20) size (60,60) shape=srv\n}}\n"
+        ),
     );
     assert_eq!(d.len(), 1, "{d:#?}");
-    assert!(d[0]
-        .message
-        .starts_with("the label under box 's' extends outside group 'g'"));
+    assert!(
+        d[0].message
+            .starts_with("the label under box 's' extends outside group 'g'")
+    );
 }
 
 #[test]
 fn labels_below_a_shape_sit_on_the_canvas_not_the_fill() {
     let d = lint(
         "low-contrast",
-        &format!("{BELOW}box s \"Uploads\" at (100,100) size (60,60) shape=srv fill=#000000 color=#ffffff\n"),
+        &format!(
+            "{BELOW}box s \"Uploads\" at (100,100) size (60,60) shape=srv fill=#000000 color=#ffffff\n"
+        ),
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].facts["background"], serde_json::json!("#ffffff"));
-    assert!(lint(
-        "low-contrast",
-        "box s \"Uploads\" at (100,100) size (120,60) fill=#000000 color=#ffffff\n"
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "low-contrast",
+            "box s \"Uploads\" at (100,100) size (120,60) fill=#000000 color=#ffffff\n"
+        )
+        .is_empty()
+    );
 }
 
 #[test]

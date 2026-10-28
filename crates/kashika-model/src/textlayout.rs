@@ -1,7 +1,7 @@
 use kashika_diag::{Diagnostic, Span};
 use kashika_geom::{Pt, Rect, TOLERANCE};
 use kashika_syntax::ast;
-use kashika_text::{measure, stack, stack_size, Block, HAlign, MarkupError, PlacedLine, VAlign};
+use kashika_text::{Block, HAlign, MarkupError, PlacedLine, VAlign, measure, stack, stack_size};
 use serde::Serialize;
 
 use crate::attrs::{self, Attrs, LIMIT};
@@ -190,11 +190,7 @@ pub(crate) fn text_color(x: &ast::Attr, diags: &mut Vec<Diagnostic>) -> Option<S
 /// Rounds to 2 decimals for messages, like the SVG writer does.
 fn px(v: f64) -> String {
     let r = (v * 100.0).round() / 100.0;
-    if r == 0.0 {
-        "0".into()
-    } else {
-        format!("{r}")
-    }
+    if r == 0.0 { "0".into() } else { format!("{r}") }
 }
 
 pub(crate) struct ShapeText {

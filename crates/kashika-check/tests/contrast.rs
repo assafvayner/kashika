@@ -14,16 +14,20 @@ fn light_text_on_a_light_fill() {
         "label \"API\" of 'a' has contrast 1.4:1 against its background (minimum 3:1)"
     );
     assert_eq!(d[0].facts["background"], "#ffffff");
-    assert!(lint(
-        "low-contrast",
-        "box a \"API\" at (0,0) size (100,60) style=service\n"
-    )
-    .is_empty());
-    assert!(lint(
-        "low-contrast",
-        "box a at (0,0) size (100,60) fill=#ffffff color=#ffffff\n"
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "low-contrast",
+            "box a \"API\" at (0,0) size (100,60) style=service\n"
+        )
+        .is_empty()
+    );
+    assert!(
+        lint(
+            "low-contrast",
+            "box a at (0,0) size (100,60) fill=#ffffff color=#ffffff\n"
+        )
+        .is_empty()
+    );
 }
 
 #[test]
@@ -36,11 +40,13 @@ fn text_takes_the_fill_of_the_shapes_under_it() {
         .len(),
         1
     );
-    assert!(lint(
-        "low-contrast",
-        "box a at (0,0) size (200,100) fill=#000000\ntext \"note\" at (100,50) color=#ffffff\n"
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "low-contrast",
+            "box a at (0,0) size (200,100) fill=#000000\ntext \"note\" at (100,50) color=#ffffff\n"
+        )
+        .is_empty()
+    );
 }
 
 #[test]
@@ -100,9 +106,11 @@ fn line_labels_take_the_fill_beneath_them() {
     assert!(lint("low-contrast", &src("#0f172a")).is_empty());
     assert_eq!(lint("low-contrast", &src("#ffffff")).len(), 1);
     let src = "diagram \"t\" size (400,200) background=#0f172a\nstyle pale { color=#f8fafc }\nline l (0,50) -> h 100 label=\"x\" style=pale\n";
-    assert!(kashika_check::check(&scene_src(src))
-        .iter()
-        .all(|d| d.code != "low-contrast"));
+    assert!(
+        kashika_check::check(&scene_src(src))
+            .iter()
+            .all(|d| d.code != "low-contrast")
+    );
 }
 
 #[test]

@@ -1,6 +1,6 @@
 use kashika_diag::Diagnostic;
 
-use crate::ctx::{fmt_num, Ctx};
+use crate::ctx::{Ctx, fmt_num};
 
 /// `off-grid`: an authored literal is not a multiple of `grid`. Resolved anchors are never checked.
 pub fn off_grid(ctx: &Ctx) -> Vec<Diagnostic> {

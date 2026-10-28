@@ -1,7 +1,7 @@
 use kashika_diag::Diagnostic;
-use kashika_geom::{inside_runs, Pt, TOLERANCE};
+use kashika_geom::{Pt, TOLERANCE, inside_runs};
 
-use crate::ctx::{arr, kind_name, line_el, shape_el, Ctx};
+use crate::ctx::{Ctx, arr, kind_name, line_el, shape_el};
 use crate::free::with_free;
 
 /// `through`: a line enters a box's interior. The boxes a line starts and ends at are exempt

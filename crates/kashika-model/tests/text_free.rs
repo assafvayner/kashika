@@ -1,6 +1,6 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::Pt;
-use kashika_model::{compile, Font, Scene};
+use kashika_model::{Font, Scene, compile};
 
 const HEAD: &str = "diagram \"t\" size (800,600)\n";
 

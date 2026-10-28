@@ -1,5 +1,5 @@
 use kashika_diag::Diagnostic;
-use kashika_model::{compile, Scene};
+use kashika_model::{Scene, compile};
 
 const HEAD: &str = "diagram \"t\" size (800,600)\n";
 

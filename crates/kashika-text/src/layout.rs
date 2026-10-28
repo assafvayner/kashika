@@ -1,8 +1,8 @@
 use kashika_geom::Rect;
 use serde::Serialize;
 
-use crate::font::{baseline_offset, run_width, LINE_HEIGHT};
-use crate::markup::{parse_markup, MarkupError, Run};
+use crate::font::{LINE_HEIGHT, baseline_offset, run_width};
+use crate::markup::{MarkupError, Run, parse_markup};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HAlign {

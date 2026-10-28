@@ -1,6 +1,6 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::{PathSeg, Pt, Rect};
-use kashika_model::{compile, Outline, Scene, Shape};
+use kashika_model::{Outline, Scene, Shape, compile};
 
 const HEAD: &str = "diagram \"t\" size (800,600)\n";
 
@@ -160,7 +160,9 @@ fn cylinder_top_follows_the_cap() {
 
 #[test]
 fn builtin_text_areas() {
-    let s = ok("box d at (0,0) size (120,80) shape=diamond\nbox c at (200,0) size (120,80) shape=cylinder\n");
+    let s = ok(
+        "box d at (0,0) size (120,80) shape=diamond\nbox c at (200,0) size (120,80) shape=cylinder\n",
+    );
     assert_eq!(shape(&s, "d").text_area, Rect::new(38.0, 28.0, 44.0, 24.0));
     assert_eq!(
         shape(&s, "c").text_area,
@@ -222,8 +224,10 @@ fn builtin_source_is_exposed_for_ref() {
 
 #[test]
 fn custom_shapes_stretch_to_the_box() {
-    let s = ok("shape tri {\n  path \"M 0.5 0 L 1 1 L 0 1 Z  M 0.2 0.8 L 0.8 0.8\"\n  text-area (0.25,0.5,0.5,0.5)\n}\n\
-                box t at (100,100) size (200,100) shape=tri\nline l t.left -> h -20\n");
+    let s = ok(
+        "shape tri {\n  path \"M 0.5 0 L 1 1 L 0 1 Z  M 0.2 0.8 L 0.8 0.8\"\n  text-area (0.25,0.5,0.5,0.5)\n}\n\
+                box t at (100,100) size (200,100) shape=tri\nline l t.left -> h -20\n",
+    );
     let t = shape(&s, "t");
     assert_eq!(t.shape, "tri");
     assert_eq!(t.outline, Outline::Path);
@@ -234,14 +238,18 @@ fn custom_shapes_stretch_to_the_box() {
 
 #[test]
 fn outline_picks_the_subpath() {
-    let s = ok("shape two {\n  path \"M 0 0 L 1 0 L 1 0.2 L 0 0.2 Z M 0 0.5 L 1 0.5 L 1 1 L 0 1 Z\"\n  outline 2\n}\n\
-                box b at (0,0) size (100,100) shape=two\nline l b.top -> v -10\n");
+    let s = ok(
+        "shape two {\n  path \"M 0 0 L 1 0 L 1 0.2 L 0 0.2 Z M 0 0.5 L 1 0.5 L 1 1 L 0 1 Z\"\n  outline 2\n}\n\
+                box b at (0,0) size (100,100) shape=two\nline l b.top -> v -10\n",
+    );
     assert_eq!(start(&s, "l"), Pt::new(50.0, 50.0));
 }
 
 #[test]
 fn custom_shape_without_text_area_uses_the_whole_box() {
-    let s = ok("shape tri {\n  path \"M 0.5 0 L 1 1 L 0 1 Z\"\n}\nbox t at (0,0) size (100,50) shape=tri\n");
+    let s = ok(
+        "shape tri {\n  path \"M 0.5 0 L 1 1 L 0 1 Z\"\n}\nbox t at (0,0) size (100,50) shape=tri\n",
+    );
     assert_eq!(shape(&s, "t").text_area, Rect::new(8.0, 8.0, 84.0, 34.0));
 }
 

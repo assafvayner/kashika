@@ -69,12 +69,16 @@ fn clean_render_has_no_overlay_and_debug_adds_one() {
         ])
         .assert()
         .code(0);
-    assert!(!std::fs::read_to_string(&plain)
-        .unwrap()
-        .contains("kashika-overlay"));
-    assert!(std::fs::read_to_string(&debug)
-        .unwrap()
-        .contains("kashika-overlay"));
+    assert!(
+        !std::fs::read_to_string(&plain)
+            .unwrap()
+            .contains("kashika-overlay")
+    );
+    assert!(
+        std::fs::read_to_string(&debug)
+            .unwrap()
+            .contains("kashika-overlay")
+    );
 }
 
 #[test]

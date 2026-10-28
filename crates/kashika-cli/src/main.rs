@@ -7,12 +7,13 @@ mod ref_cmd;
 mod report;
 mod route_cmd;
 
-use std::io::Read;
+use std::hash::BuildHasher;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
-use kashika_diag::{did_you_mean, Severity};
+use kashika_diag::{Severity, did_you_mean};
 use kashika_geom::Rect;
 use kashika_model::Scene;
 
@@ -237,7 +238,7 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
                         return tool_error(
                             c.format,
                             &format!("cannot render {}: {e}", r.output.display()),
-                        )
+                        );
                     }
                 };
                 if let Err(e) = write_atomic(&r.output, &bytes) {
@@ -382,8 +383,6 @@ fn resolve_link(path: &Path) -> PathBuf {
 }
 
 fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
-    use std::hash::BuildHasher;
-    use std::io::Write;
     let path = &resolve_link(path);
     let dir = path
         .parent()

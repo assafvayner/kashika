@@ -30,14 +30,16 @@ fn image_distort_flags_stretch_beyond_five_percent() {
 #[test]
 fn image_distort_is_quiet_for_kept_ratios_and_other_fits() {
     let dir = tempfile::tempdir().unwrap();
-    assert!(lint_in(
-        dir.path(),
-        "image-distort",
-        "image a \"logo.png\" at (0,0) size (80,40) fit=stretch\n\
+    assert!(
+        lint_in(
+            dir.path(),
+            "image-distort",
+            "image a \"logo.png\" at (0,0) size (80,40) fit=stretch\n\
          image b \"logo.png\" at (100,0) size (80,80) fit=cover\n\
          image c \"logo.png\" at (200,0) size (80,80) fit=contain\n",
-    )
-    .is_empty());
+        )
+        .is_empty()
+    );
 }
 
 #[test]

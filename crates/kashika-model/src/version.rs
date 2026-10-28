@@ -12,11 +12,7 @@ fn parse(s: &str) -> Option<(u64, u64, u64)> {
         let ok = !p.is_empty()
             && p.bytes().all(|b| b.is_ascii_digit())
             && (p == "0" || !p.starts_with('0'));
-        if ok {
-            p.parse::<u64>().ok()
-        } else {
-            None
-        }
+        if ok { p.parse::<u64>().ok() } else { None }
     };
     let mut it = s.split('.');
     let major = part(it.next()?)?;

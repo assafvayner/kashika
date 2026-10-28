@@ -3,7 +3,7 @@ use kashika_geom::{Pt, Rect, TOLERANCE};
 use kashika_model::Scene;
 use serde::Serialize;
 
-use crate::ctx::{fmt_num, round2, Ctx, LineGeom};
+use crate::ctx::{Ctx, LineGeom, fmt_num, round2};
 
 /// A closed range `lo..hi` on one axis.
 pub type Interval = (f64, f64);

@@ -1,4 +1,4 @@
-use kashika_diag::{did_you_mean, Diagnostic};
+use kashika_diag::{Diagnostic, did_you_mean};
 use kashika_syntax::ast::{Attr, Value};
 
 use crate::colors;

@@ -1,7 +1,7 @@
 use kashika_diag::Diagnostic;
-use kashika_geom::{seg_hit, Hit, Pt, TOLERANCE};
+use kashika_geom::{Hit, Pt, TOLERANCE, seg_hit};
 
-use crate::ctx::{arr, fmt_num, fmt_pt, line_el, round2, Ctx, LineGeom};
+use crate::ctx::{Ctx, LineGeom, arr, fmt_num, fmt_pt, line_el, round2};
 use crate::free::free_around;
 
 /// `shared-segment`: two lines overlap collinearly for more than 1px. Only straight pieces

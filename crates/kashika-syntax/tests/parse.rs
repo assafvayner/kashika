@@ -9,7 +9,9 @@ fn parse_ok(src: &str) -> File {
 
 #[test]
 fn parses_diagram_and_box() {
-    let f = parse_ok("diagram \"T\" size (400,300) grid=10\nbox api \"API\" at (10,20) size (120,60) style=service\n");
+    let f = parse_ok(
+        "diagram \"T\" size (400,300) grid=10\nbox api \"API\" at (10,20) size (120,60) style=service\n",
+    );
     assert_eq!(f.stmts.len(), 2);
     let Stmt::Box(b) = &f.stmts[1] else {
         panic!("expected box")
@@ -106,7 +108,9 @@ fn parses_mixed_coordinates_and_offsets() {
 
 #[test]
 fn continues_lines_starting_with_arrow_or_attribute() {
-    let f = parse_ok("line a.top\n  -> y 40\n  -> hv b.left\n  end=arrow label=\"SQL\"\nbox c at (0,0) size (1,1)\n");
+    let f = parse_ok(
+        "line a.top\n  -> y 40\n  -> hv b.left\n  end=arrow label=\"SQL\"\nbox c at (0,0) size (1,1)\n",
+    );
     assert_eq!(f.stmts.len(), 2);
     let Stmt::Line(l) = &f.stmts[0] else {
         panic!("expected line")
@@ -140,12 +144,16 @@ fn parses_groups_styles_comments_and_allow_lists() {
 
 #[test]
 fn recovers_and_reports_multiple_errors() {
-    let (f, diags) = parse("bx a at (0,0) size (1,1)\nbox b at (0,0) size (1,1)\nline c.top ->\nbox d at (0,0) size (1,1)\n");
+    let (f, diags) = parse(
+        "bx a at (0,0) size (1,1)\nbox b at (0,0) size (1,1)\nline c.top ->\nbox d at (0,0) size (1,1)\n",
+    );
     assert_eq!(diags.len(), 2, "{diags:#?}");
-    assert!(diags[0]
-        .help
-        .iter()
-        .any(|h| h.contains("did you mean `box`?")));
+    assert!(
+        diags[0]
+            .help
+            .iter()
+            .any(|h| h.contains("did you mean `box`?"))
+    );
     assert!(diags[1].message.contains("found end of line"));
     assert_eq!(f.stmts.len(), 2);
 }
@@ -166,7 +174,9 @@ fn block_comment_between_statements() {
 
 #[test]
 fn identifiers_allow_underscores_digits_and_hyphens() {
-    let f = parse_ok("box _a1 at (0,0) size (1,1)\nbox a--b at (0,0) size (1,1)\nbox c- at (0,0) size (1,1)\nline a--b.right->c-.left\n");
+    let f = parse_ok(
+        "box _a1 at (0,0) size (1,1)\nbox a--b at (0,0) size (1,1)\nbox c- at (0,0) size (1,1)\nline a--b.right->c-.left\n",
+    );
     let ids: Vec<_> = f
         .stmts
         .iter()
@@ -223,7 +233,9 @@ fn statements_end_at_a_newline() {
 
 #[test]
 fn arrow_continuation_skips_blank_and_comment_lines() {
-    let f = parse_ok("line a.top\n\n  // first hop\n  -> y 40\n  /* second\n     hop */\n  -> h 10 // trailing\n\n  end=arrow\nbox c at (0,0) size (1,1)\n");
+    let f = parse_ok(
+        "line a.top\n\n  // first hop\n  -> y 40\n  /* second\n     hop */\n  -> h 10 // trailing\n\n  end=arrow\nbox c at (0,0) size (1,1)\n",
+    );
     assert_eq!(f.stmts.len(), 2);
     let Stmt::Line(l) = &f.stmts[0] else {
         panic!("expected line")
@@ -253,7 +265,9 @@ fn unclosed_block_comment_is_a_parse_error() {
 
 #[test]
 fn line_attributes_parse() {
-    let f = parse_ok("line l (0,0) -> h 5 start=dot end=arrow stroke=#000 stroke-width=2 stroke-style=dashed style=s radius=4 label=\"a\" label@0.25=\"b\" ortho allow=cross reason=\"r\"\n");
+    let f = parse_ok(
+        "line l (0,0) -> h 5 start=dot end=arrow stroke=#000 stroke-width=2 stroke-style=dashed style=s radius=4 label=\"a\" label@0.25=\"b\" ortho allow=cross reason=\"r\"\n",
+    );
     let Stmt::Line(l) = &f.stmts[0] else {
         panic!("expected line")
     };
@@ -292,7 +306,9 @@ fn line_needs_a_segment() {
 
 #[test]
 fn nested_groups_parse() {
-    let f = parse_ok("group a at (0,0) size (9,9) {\n  group b at (0,0) size (5,5) {\n    junction j at (0,0)\n    text \"t\" at (0,0)\n    line (0,0) -> h 1\n  }\n}\n");
+    let f = parse_ok(
+        "group a at (0,0) size (9,9) {\n  group b at (0,0) size (5,5) {\n    junction j at (0,0)\n    text \"t\" at (0,0)\n    line (0,0) -> h 1\n  }\n}\n",
+    );
     let Stmt::Group(a) = &f.stmts[0] else {
         panic!("expected group")
     };
@@ -416,7 +432,9 @@ fn pin_with_position_parses() {
 
 #[test]
 fn flag_lines_continue_a_line() {
-    let f = parse_ok("line a.top\n  -> y 40\n  ortho\nline (0,0) -> h 5\n\n  ortho end=arrow\n  label=\"x\"\nbox c at (0,0) size (1,1)\n");
+    let f = parse_ok(
+        "line a.top\n  -> y 40\n  ortho\nline (0,0) -> h 5\n\n  ortho end=arrow\n  label=\"x\"\nbox c at (0,0) size (1,1)\n",
+    );
     assert_eq!(f.stmts.len(), 3);
     let Stmt::Line(l) = &f.stmts[0] else {
         panic!("expected line")
@@ -529,7 +547,9 @@ fn box_text_block_parses_stacked_and_absolute_items() {
 
 #[test]
 fn one_line_and_empty_text_blocks() {
-    let f = parse_ok("box a at (0,0) size (9,9) { text \"x\" }\nbox b at (0,0) size (9,9) {\n}\nbox c at (0,0) size (9,9)\n");
+    let f = parse_ok(
+        "box a at (0,0) size (9,9) { text \"x\" }\nbox b at (0,0) size (9,9) {\n}\nbox c at (0,0) size (9,9)\n",
+    );
     assert_eq!(block(&f, 0).len(), 1);
     assert!(block(&f, 1).is_empty());
     let Stmt::Box(c) = &f.stmts[2] else {
@@ -763,7 +783,9 @@ fn kashika_version_statement_is_an_error_with_help() {
     assert_eq!(d.len(), 1);
     assert_eq!(
         d[0].help,
-        ["the version is an attribute of `diagram`: write `diagram \"…\" size (w,h) kashika=\"0.1.0\"`"]
+        [
+            "the version is an attribute of `diagram`: write `diagram \"…\" size (w,h) kashika=\"0.1.0\"`"
+        ]
     );
     assert_eq!(f.first_stmt.map(|s| s.line), Some(2));
 }

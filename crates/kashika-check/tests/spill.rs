@@ -27,16 +27,20 @@ fn title_band_is_reserved() {
         d[0].message,
         "box 'a' intrudes on the title band of group 'g'"
     );
-    assert!(lint(
-        "spill",
-        "group g \"VPC\" at (0,0) size (200,100) {\n  box a at (10,30) size (40,40)\n}\n"
-    )
-    .is_empty());
-    assert!(lint(
-        "spill",
-        "group g at (0,0) size (200,100) {\n  box a at (0,0) size (200,100)\n}\n"
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "spill",
+            "group g \"VPC\" at (0,0) size (200,100) {\n  box a at (10,30) size (40,40)\n}\n"
+        )
+        .is_empty()
+    );
+    assert!(
+        lint(
+            "spill",
+            "group g at (0,0) size (200,100) {\n  box a at (0,0) size (200,100)\n}\n"
+        )
+        .is_empty()
+    );
 }
 
 #[test]

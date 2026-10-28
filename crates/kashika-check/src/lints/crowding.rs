@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use kashika_diag::Diagnostic;
 use kashika_geom::TOLERANCE;
 
-use crate::ctx::{fmt_num, fmt_pt, line_el, round2, shape_el, Ctx, LineGeom};
+use crate::ctx::{Ctx, LineGeom, fmt_num, fmt_pt, line_el, round2, shape_el};
 use crate::ports::ports;
 
 const MIN_GAP: f64 = 8.0;
@@ -67,9 +67,5 @@ pub fn port_crowding(ctx: &Ctx) -> Vec<Diagnostic> {
 }
 
 fn end_segment(l: &LineGeom, end: &str) -> usize {
-    if end == "start" {
-        0
-    } else {
-        l.last_segment()
-    }
+    if end == "start" { 0 } else { l.last_segment() }
 }

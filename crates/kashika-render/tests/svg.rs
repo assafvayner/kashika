@@ -33,7 +33,9 @@ fn renders_boxes_lines_markers_and_labels() {
 
 #[test]
 fn groups_are_dashed_and_drawn_first() {
-    let s = svg("diagram \"g\" size (200,200)\ngroup g \"VPC\" at (10,10) size (180,180) {\n  box a at (10,30) size (50,30)\n}\n");
+    let s = svg(
+        "diagram \"g\" size (200,200)\ngroup g \"VPC\" at (10,10) size (180,180) {\n  box a at (10,30) size (50,30)\n}\n",
+    );
     let group = s.find(r#"stroke-dasharray="6 4""#).expect("dashed group");
     let child = s.find(r#"<rect x="20" y="40""#).expect("child box");
     assert!(group < child);
@@ -90,7 +92,9 @@ fn path_d(s: &str) -> &str {
 
 #[test]
 fn markers_trim_a_final_curve() {
-    let s = svg("diagram \"c\" size (200,200)\nline l (0,100) -> curve left 20 (100,100) end=arrow start=diamond\n");
+    let s = svg(
+        "diagram \"c\" size (200,200)\nline l (0,100) -> curve left 20 (100,100) end=arrow start=diamond\n",
+    );
     let d = path_d(&s);
     assert!(d.starts_with("M ") && !d.starts_with("M 0 100"), "{d}");
     assert!(!d.ends_with(" 100 100"), "{d}");
@@ -104,7 +108,9 @@ fn markers_at_both_ends_of_a_short_line_share_it() {
 
 #[test]
 fn line_labels_get_a_mask_and_texts_do_not() {
-    let s = svg("diagram \"h\" size (200,100)\nline l (0,50) -> h 200 label=\"L\"\ntext \"T\" at (100,90)\n");
+    let s = svg(
+        "diagram \"h\" size (200,100)\nline l (0,50) -> h 200 label=\"L\"\ntext \"T\" at (100,90)\n",
+    );
     let rect = r##"fill="#000"/></mask>"##;
     let mask = s.find(rect).expect("label rect in the mask");
     let id = mask_ids(&s)[0].clone();
@@ -115,11 +121,12 @@ fn line_labels_get_a_mask_and_texts_do_not() {
     assert!(close < s.find(r#"aria-label="L""#).unwrap());
     assert!(!s.contains("stroke-width=\"4\""));
     let text = &s[s.find(r#"aria-label="T""#).unwrap()..];
-    assert!(text
-        .lines()
-        .next()
-        .unwrap()
-        .ends_with(r##"fill="#0f172a"/>"##));
+    assert!(
+        text.lines()
+            .next()
+            .unwrap()
+            .ends_with(r##"fill="#0f172a"/>"##)
+    );
     assert_eq!(s.matches("<mask ").count(), 1, "only the line gets a mask");
     assert_eq!(
         s.matches("<rect ").count(),
@@ -144,7 +151,9 @@ fn spaces_only_lines_draw_nothing() {
 
 #[test]
 fn nested_groups_paint_before_later_sibling_groups() {
-    let s = svg("diagram \"g\" size (400,200)\ngroup a \"A\" at (10,10) size (180,180) {\n  group a2 \"A2\" at (10,30) size (100,100) {\n  }\n}\ngroup b \"B\" at (210,10) size (180,180) {\n}\n");
+    let s = svg(
+        "diagram \"g\" size (400,200)\ngroup a \"A\" at (10,10) size (180,180) {\n  group a2 \"A2\" at (10,30) size (100,100) {\n  }\n}\ngroup b \"B\" at (210,10) size (180,180) {\n}\n",
+    );
     let pos = |label: &str| s.find(&format!("aria-label=\"{label}\"")).unwrap();
     assert!(pos("A") < pos("A2") && pos("A2") < pos("B"), "{s}");
 }
@@ -189,7 +198,9 @@ fn line_labels_mask_their_own_line_without_painting() {
 
 #[test]
 fn named_colors_render_as_hex() {
-    let s = svg("diagram \"t\" size (100,100) background=ivory\nbox a \"x\" at (10,10) size (40,40) fill=Tomato color=white\n");
+    let s = svg(
+        "diagram \"t\" size (100,100) background=ivory\nbox a \"x\" at (10,10) size (40,40) fill=Tomato color=white\n",
+    );
     for hex in ["#fffff0", "#ff6347", "#ffffff"] {
         assert!(s.contains(hex), "{hex} missing in {s}");
     }

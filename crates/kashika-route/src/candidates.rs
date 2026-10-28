@@ -1,10 +1,10 @@
 use kashika_check::ctx::Ctx;
-use kashika_check::free::{free_intervals, Axis};
-use kashika_geom::{dot, inside_runs, seg_hit, Hit, Pt, Rect, TOLERANCE};
+use kashika_check::free::{Axis, free_intervals};
+use kashika_geom::{Hit, Pt, Rect, TOLERANCE, dot, inside_runs, seg_hit};
 use kashika_model::{Scene, ShapeKind};
 
 use crate::text::num;
-use crate::{Endpoint, Style, SQUARE};
+use crate::{Endpoint, SQUARE, Style};
 
 /// Lanes per axis that detours pick from: those nearest either endpoint.
 pub const DETOUR_LANES: usize = 16;

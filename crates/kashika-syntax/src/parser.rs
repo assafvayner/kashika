@@ -1,7 +1,7 @@
-use kashika_diag::{did_you_mean, Diagnostic, Span};
+use kashika_diag::{Diagnostic, Span, did_you_mean};
 
 use crate::ast::*;
-use crate::lexer::{lex, Tok, Token};
+use crate::lexer::{Tok, Token, lex};
 
 mod defs;
 

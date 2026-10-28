@@ -57,13 +57,15 @@ fn every_topic_has_a_page() {
     for t in TOPICS {
         assert!(!page(&[*t]).trim().is_empty(), "{t}");
     }
-    assert!(page(&["examples"]).contains(
-        &std::fs::read_to_string(format!(
-            "{}/../../examples/upload/upload.kash",
-            env!("CARGO_MANIFEST_DIR")
-        ))
-        .unwrap()
-    ));
+    assert!(
+        page(&["examples"]).contains(
+            &std::fs::read_to_string(format!(
+                "{}/../../examples/upload/upload.kash",
+                env!("CARGO_MANIFEST_DIR")
+            ))
+            .unwrap()
+        )
+    );
 }
 
 #[test]
@@ -94,10 +96,12 @@ fn json_wraps_the_page() {
     assert_eq!(v["schema"], "kashika.ref/1");
     assert_eq!(v["topic"], "anchors");
     assert_eq!(v["topics"].as_array().unwrap().len(), TOPICS.len());
-    assert!(v["markdown"]
-        .as_str()
-        .unwrap()
-        .contains("## Anchors and points"));
+    assert!(
+        v["markdown"]
+            .as_str()
+            .unwrap()
+            .contains("## Anchors and points")
+    );
     let out = kashika().args(["ref", "--json"]).output().unwrap();
     let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(v["topic"], serde_json::Value::Null);

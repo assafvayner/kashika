@@ -5,7 +5,7 @@ mod dump;
 use std::path::Path;
 use std::process::Command;
 
-use case::{Case, Suite, OUTPUTS};
+use case::{Case, OUTPUTS, Suite};
 use libtest_mimic::{Arguments, Failed, Trial};
 use serde_json::Value;
 

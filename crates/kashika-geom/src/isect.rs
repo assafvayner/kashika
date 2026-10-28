@@ -1,4 +1,4 @@
-use crate::path::{flatten, PathSeg};
+use crate::path::{PathSeg, flatten};
 use crate::point::{Pt, TOLERANCE};
 use crate::rect::Rect;
 

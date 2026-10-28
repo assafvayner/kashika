@@ -1,6 +1,6 @@
 use kashika_diag::Diagnostic;
 
-use crate::ctx::{fmt_num, round2, shape_el, Ctx};
+use crate::ctx::{Ctx, fmt_num, round2, shape_el};
 
 const MAX_DISTORTION: f64 = 0.05;
 

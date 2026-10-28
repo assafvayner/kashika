@@ -1,5 +1,7 @@
+use base64::Engine;
 use kashika_model::compile;
 use kashika_render::{render_svg, svg_to_png};
+use resvg::tiny_skia::{Color, Pixmap};
 
 const BASIC: &str = "diagram \"Basic\" size (480,240)\n\
 box api \"API\" at (40,40) size (120,60) style=service\n\
@@ -35,7 +37,6 @@ fn png_is_deterministic_and_draws_glyph_paths_without_fonts() {
 
 #[test]
 fn png_rasterizes_embedded_images() {
-    use resvg::tiny_skia::{Color, Pixmap};
     let dir = tempfile::tempdir().unwrap();
     let mut red = Pixmap::new(10, 10).unwrap();
     red.fill(Color::from_rgba8(255, 0, 0, 255));
@@ -118,7 +119,6 @@ const DARK: &str =
     "diagram \"Dark\" size (100,60) background=#0f172a\nbox a at (10,10) size (30,30)\n";
 
 fn raster(src: &str, encode: fn(&str) -> Result<Vec<u8>, String>) -> resvg::tiny_skia::Pixmap {
-    use base64::Engine;
     let (scene, diags) = compile(src);
     assert!(diags.is_empty(), "{diags:#?}");
     let bytes = encode(&render_svg(&scene)).unwrap();

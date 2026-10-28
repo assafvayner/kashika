@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use kashika_model::{compile, compile_with, Options};
+use kashika_model::{Options, compile, compile_with};
 use kashika_render::{render_svg, svg_to_png};
 
 fn svg(src: &str) -> String {
@@ -45,7 +45,9 @@ fn diamond_draws_a_closed_path() {
 
 #[test]
 fn cylinder_draws_arcs_as_cubics() {
-    let s = svg("diagram \"c\" size (200,100)\nbox c \"DB\" at (0,0) size (120,80) shape=cylinder style=datastore\n");
+    let s = svg(
+        "diagram \"c\" size (200,100)\nbox c \"DB\" at (0,0) size (120,80) shape=cylinder style=datastore\n",
+    );
     assert!(s.contains(r#"<path d="M 0 20 C "#), "{s}");
     assert!(s.contains(r##"fill="#e6f4ea""##));
 }

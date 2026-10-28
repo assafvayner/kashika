@@ -1,9 +1,9 @@
 use kashika_diag::{Diagnostic, Element, Span};
-use kashika_geom::{inside_runs, point_at, polygons_overlap, rect_polygon, Pt, Rect};
+use kashika_geom::{Pt, Rect, inside_runs, point_at, polygons_overlap, rect_polygon};
 use kashika_model::Marker;
 
 use crate::ctx::{
-    bbox, fmt_num, intersection, kind_name, line_el, shape_el, text_el, text_id, Ctx,
+    Ctx, bbox, fmt_num, intersection, kind_name, line_el, shape_el, text_el, text_id,
 };
 use crate::index::Grid;
 use crate::text_box::{below_box, label_box, label_box_at, text_box, title_box};

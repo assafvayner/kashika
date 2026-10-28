@@ -2,7 +2,7 @@ use kashika_diag::Diagnostic;
 use kashika_geom::{Rect, TOLERANCE};
 use kashika_model::{Shape, ShapeKind, TextItem, TextRole};
 
-use crate::ctx::{kind_name, shape_el, Ctx};
+use crate::ctx::{Ctx, kind_name, shape_el};
 
 /// Size of a `sublabel` relative to the label.
 const SUBLABEL_SCALE: f64 = 0.8;

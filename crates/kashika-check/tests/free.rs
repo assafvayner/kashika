@@ -2,7 +2,7 @@ mod common;
 
 use common::*;
 use kashika_check::ctx::Ctx;
-use kashika_check::free::{corridors, free_around, free_intervals, with_free, Axis};
+use kashika_check::free::{Axis, corridors, free_around, free_intervals, with_free};
 use kashika_diag::{Diagnostic, Span};
 use kashika_geom::{Pt, Rect};
 

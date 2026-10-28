@@ -27,11 +27,13 @@ fn crossing_lines_are_reported_on_the_later_line() {
 
 #[test]
 fn shared_endpoints_and_junctions_are_not_crossings() {
-    assert!(lint(
-        "cross",
-        "line a (0,0) -> (100,100)\nline b (100,100) -> (200,0)\n"
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "cross",
+            "line a (0,0) -> (100,100)\nline b (100,100) -> (200,0)\n"
+        )
+        .is_empty()
+    );
     assert!(lint(
         "cross",
         "junction j at (100,100)\nline a (0,100) -> h 200\nline b (100,0) -> j\nline c j -> v 100\n"
@@ -41,11 +43,13 @@ fn shared_endpoints_and_junctions_are_not_crossings() {
 
 #[test]
 fn a_shared_segment_is_not_also_a_crossing() {
-    assert!(lint(
-        "cross",
-        "line a (100,100) -> h 200\nline b (100,100) -> h 100 -> v 100\n"
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "cross",
+            "line a (100,100) -> h 200\nline b (100,100) -> h 100 -> v 100\n"
+        )
+        .is_empty()
+    );
 }
 
 #[test]

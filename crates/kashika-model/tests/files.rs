@@ -2,7 +2,7 @@ use std::path::Path;
 
 use kashika_diag::Diagnostic;
 use kashika_geom::{Pt, Rect};
-use kashika_model::{compile_with, EdgeKind, Fit, Options, Scene, Shape, ShapeKind};
+use kashika_model::{EdgeKind, Fit, Options, Scene, Shape, ShapeKind, compile_with};
 
 const HEAD: &str = "diagram \"t\" size (800,600)\n";
 
@@ -650,10 +650,11 @@ fn image_geometry_is_recorded_like_a_box() {
         lits,
         vec![("dx", 5.0), ("dy", 0.0), ("width", 30.0), ("height", 40.0)]
     );
-    assert!(s
-        .placement
-        .iter()
-        .any(|e| e.from == "i" && e.to == "a" && e.kind == EdgeKind::At));
+    assert!(
+        s.placement
+            .iter()
+            .any(|e| e.from == "i" && e.to == "a" && e.kind == EdgeKind::At)
+    );
 }
 
 #[test]

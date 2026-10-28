@@ -2,7 +2,7 @@ use kashika_diag::Diagnostic;
 use kashika_model::TextRole;
 
 use crate::ctx::{
-    bbox, describe_overflow, fmt_num, kind_name, overflow, overflow_fact, shape_el, Ctx,
+    Ctx, bbox, describe_overflow, fmt_num, kind_name, overflow, overflow_fact, shape_el,
 };
 
 /// `text-outside-shape`: an absolute block item (`at` in the box-local frame) lies outside

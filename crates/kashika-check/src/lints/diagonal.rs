@@ -1,7 +1,7 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::PathSeg;
 
-use crate::ctx::{fmt_pt, line_el, Ctx};
+use crate::ctx::{Ctx, fmt_pt, line_el};
 
 /// `diagonal-tail`: the final segment is diagonal while every other straight segment is
 /// horizontal or vertical. A line that is a single diagonal has no tail.

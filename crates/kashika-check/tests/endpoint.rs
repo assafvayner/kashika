@@ -17,19 +17,25 @@ fn literal_endpoint_near_an_outline() {
         d[0].help,
         vec!["snap it to the outline with an anchor: `a.left@0.25`".to_string()]
     );
-    assert!(lint(
-        "endpoint-off-edge",
-        "box a at (100,100) size (100,60)\nline l (0,115) -> (100,115)\n"
-    )
-    .is_empty());
-    assert!(lint(
-        "endpoint-off-edge",
-        "box a at (100,100) size (100,60)\nline l (0,115) -> a.left@0.25+(-3,0)\n"
-    )
-    .is_empty());
-    assert!(lint(
-        "endpoint-off-edge",
-        "box a at (100,100) size (100,60)\nline l (0,115) -> (80,115)\n"
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "endpoint-off-edge",
+            "box a at (100,100) size (100,60)\nline l (0,115) -> (100,115)\n"
+        )
+        .is_empty()
+    );
+    assert!(
+        lint(
+            "endpoint-off-edge",
+            "box a at (100,100) size (100,60)\nline l (0,115) -> a.left@0.25+(-3,0)\n"
+        )
+        .is_empty()
+    );
+    assert!(
+        lint(
+            "endpoint-off-edge",
+            "box a at (100,100) size (100,60)\nline l (0,115) -> (80,115)\n"
+        )
+        .is_empty()
+    );
 }

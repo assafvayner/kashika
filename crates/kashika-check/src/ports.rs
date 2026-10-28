@@ -1,7 +1,7 @@
-use kashika_geom::{boundary_nearest, Pt, TOLERANCE};
+use kashika_geom::{Pt, TOLERANCE, boundary_nearest};
 use kashika_model::Marker;
 
-use crate::ctx::{outline_anchor, Ctx};
+use crate::ctx::{Ctx, outline_anchor};
 
 /// A line endpoint that sits on a shape's outline.
 #[derive(Debug, Clone, PartialEq)]

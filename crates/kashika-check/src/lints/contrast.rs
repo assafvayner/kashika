@@ -1,8 +1,8 @@
 use kashika_diag::{Diagnostic, Element, Span};
-use kashika_geom::{point_in_polygon, Pt, Rect};
+use kashika_geom::{Pt, Rect, point_in_polygon};
 use kashika_model::{Shape, ShapeKind, TextRole};
 
-use crate::ctx::{line_el, round2, shape_el, text_el, text_id, Ctx};
+use crate::ctx::{Ctx, line_el, round2, shape_el, text_el, text_id};
 
 const MIN_RATIO: f64 = 3.0;
 const WHITE: [f64; 3] = [1.0, 1.0, 1.0];

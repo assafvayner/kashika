@@ -1,4 +1,6 @@
-use kashika_geom::{arc_to_cubics, parse_unit_path, PathSeg, Pt, Rect};
+use kashika_geom::{
+    PathSeg, Pt, Rect, arc_to_cubics, convex_hull, horizontal_hits, parse_unit_path, vertical_hits,
+};
 
 #[test]
 fn parses_lines_and_close() {
@@ -123,8 +125,6 @@ fn unit_mapping() {
     .map(|p| r.map_unit(p));
     assert_eq!(s.to(), Pt::new(300.0, 150.0));
 }
-
-use kashika_geom::{convex_hull, horizontal_hits, vertical_hits};
 
 #[test]
 fn hull_drops_interior_and_duplicate_points() {

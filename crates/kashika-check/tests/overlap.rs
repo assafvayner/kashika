@@ -14,11 +14,13 @@ fn overlapping_boxes() {
         d[0].facts["intersection"],
         serde_json::json!([[50.0, 50.0], [100.0, 100.0]])
     );
-    assert!(lint(
-        "overlap",
-        "box a at (0,0) size (100,100)\nbox b at (100,0) size (100,100)\n"
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "overlap",
+            "box a at (0,0) size (100,100)\nbox b at (100,0) size (100,100)\n"
+        )
+        .is_empty()
+    );
 }
 
 #[test]
@@ -49,7 +51,9 @@ fn containment_is_overlap_unless_the_container_is_a_group() {
 
 #[test]
 fn shape_allow_suppresses_overlap() {
-    let s = scene("box a at (0,0) size (100,100)\nbox b at (50,50) size (100,100) allow=overlap:a reason=\"badge\"\n");
+    let s = scene(
+        "box a at (0,0) size (100,100)\nbox b at (50,50) size (100,100) allow=overlap:a reason=\"badge\"\n",
+    );
     let d: Vec<_> = kashika_check::check(&s)
         .into_iter()
         .filter(|d| d.code == "overlap")

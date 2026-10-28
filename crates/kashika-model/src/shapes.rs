@@ -1,6 +1,6 @@
 use std::f64::consts::FRAC_1_SQRT_2;
 
-use kashika_geom::{parse_unit_path, PathSeg, Rect};
+use kashika_geom::{PathSeg, Rect, parse_unit_path};
 
 /// Every built-in `shape=` name. `rect` and `rounded` use native outlines; the rest are unit paths.
 pub const BUILTIN_SHAPES: &[&str] = &[

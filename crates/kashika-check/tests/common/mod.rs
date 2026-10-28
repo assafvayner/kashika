@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use kashika_diag::Diagnostic;
-use kashika_model::{compile, Scene};
+use kashika_model::{Scene, compile};
 
 pub const HEAD: &str = "diagram \"t\" size (800,600)\n";
 

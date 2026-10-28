@@ -57,11 +57,13 @@ fn blocks_a_label_cannot_express() {
         let src = format!("box a at (20,20) size (160,90) {{\n  {block}\n}}\n");
         assert!(lint("block-reducible", &src).is_empty(), "{block}");
     }
-    assert!(lint(
-        "block-reducible",
-        "box a \"label\" at (20,20) size (160,60) sublabel=\"sub\"\n"
-    )
-    .is_empty());
+    assert!(
+        lint(
+            "block-reducible",
+            "box a \"label\" at (20,20) size (160,60) sublabel=\"sub\"\n"
+        )
+        .is_empty()
+    );
 }
 
 #[test]

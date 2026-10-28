@@ -1,6 +1,6 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::Rect;
-use kashika_model::{compile, Font, Scene, Shape, TextRole};
+use kashika_model::{Font, Scene, Shape, TextRole, compile};
 
 const HEAD: &str = "diagram \"t\" size (800,600)\n";
 
@@ -67,7 +67,9 @@ fn text_align_valign_and_gap() {
 
 #[test]
 fn bold_style_and_markup_pick_fonts() {
-    let s = ok("box a \"**A** `b` c\" at (0,0) size (200,60)\nbox z \"Z\" at (0,100) size (60,60) font-weight=bold\n");
+    let s = ok(
+        "box a \"**A** `b` c\" at (0,0) size (200,60)\nbox z \"Z\" at (0,100) size (60,60) font-weight=bold\n",
+    );
     let runs = &shape(&s, "a").text[0].lines[0].runs;
     let fonts: Vec<Font> = runs.iter().map(|r| r.font).collect();
     assert_eq!(
@@ -114,7 +116,9 @@ fn padding_changes_the_text_area() {
 
 #[test]
 fn stacked_block_items() {
-    let s = ok("box api at (100,80) size (200,120) text-align=left {\n  text \"**Payments API**\"\n  text \"v2.4.1\" size=11 muted\n  text \"• validates cards\" size=12 align=right\n}\n");
+    let s = ok(
+        "box api at (100,80) size (200,120) text-align=left {\n  text \"**Payments API**\"\n  text \"v2.4.1\" size=11 muted\n  text \"• validates cards\" size=12 align=right\n}\n",
+    );
     let b = shape(&s, "api");
     let roles: Vec<TextRole> = b.text.iter().map(|t| t.role).collect();
     assert_eq!(roles, vec![TextRole::Stacked; 3]);
@@ -129,7 +133,9 @@ fn stacked_block_items() {
 
 #[test]
 fn absolute_block_items_use_the_box_frame() {
-    let s = ok("box a at (100,50) size (200,100) {\n  text \"x\" at (20,30) align=left\n  text \"y\" at a.center\n}\n");
+    let s = ok(
+        "box a at (100,50) size (200,100) {\n  text \"x\" at (20,30) align=left\n  text \"y\" at a.center\n}\n",
+    );
     let b = shape(&s, "a");
     assert_eq!(b.text[0].role, TextRole::Absolute);
     assert_eq!(b.text[0].rect.x, 120.0);

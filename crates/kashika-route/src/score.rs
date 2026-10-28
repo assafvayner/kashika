@@ -1,9 +1,9 @@
 //! Scores probe lines with the same checks `kashika check` runs.
 
 use kashika_check::ctx::Ctx;
-use kashika_check::free::{free_intervals, Axis};
+use kashika_check::free::{Axis, free_intervals};
 use kashika_diag::Diagnostic;
-use kashika_geom::{length, Pt, TOLERANCE};
+use kashika_geom::{Pt, TOLERANCE, length};
 use kashika_model::{Line, Scene};
 
 use crate::{Corridor, Crossing};

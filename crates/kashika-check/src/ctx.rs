@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use kashika_diag::Element;
-use kashika_geom::{boundary_nearest, pieces, point_in_polygon, PathSeg, Pt, Rect, TOLERANCE};
+use kashika_geom::{PathSeg, Pt, Rect, TOLERANCE, boundary_nearest, pieces, point_in_polygon};
 use kashika_model::{Junction, Line, Scene, Shape, ShapeKind, Text};
 
 use crate::index::Grid;
@@ -216,11 +216,7 @@ impl<'a> Ctx<'a> {
 
 pub fn round2(v: f64) -> f64 {
     let r = (v * 100.0).round() / 100.0;
-    if r == 0.0 {
-        0.0
-    } else {
-        r
-    }
+    if r == 0.0 { 0.0 } else { r }
 }
 
 pub fn fmt_num(v: f64) -> String {

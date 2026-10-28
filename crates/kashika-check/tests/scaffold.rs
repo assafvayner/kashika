@@ -1,13 +1,13 @@
 mod common;
 
 use common::*;
-use kashika_check::ctx::{anchor_text, overflow, Ctx};
+use kashika_check::ctx::{Ctx, anchor_text, overflow};
 use kashika_check::outline::polygon;
 use kashika_check::ports::ports;
 use kashika_check::text_box::{label_box, label_box_at, text_box, title_band, title_box};
 use kashika_check::{check, metrics, suppress};
 use kashika_diag::{Diagnostic, Element, Span};
-use kashika_geom::{boundary_nearest, point_in_polygon, Pt, Rect};
+use kashika_geom::{Pt, Rect, boundary_nearest, point_in_polygon};
 
 fn diag(code: &'static str, ids: &[&str]) -> Diagnostic {
     ids.iter()
@@ -23,7 +23,9 @@ fn clean_scene_has_no_findings() {
 
 #[test]
 fn line_allow_suppresses_matching_findings_and_keeps_the_reason() {
-    let s = scene("line a (0,0) -> h 10 allow=cross:b reason=\"bus\"\nline b (5,-5) -> v 10\nline c (0,20) -> h 10\n");
+    let s = scene(
+        "line a (0,0) -> h 10 allow=cross:b reason=\"bus\"\nline b (5,-5) -> v 10\nline c (0,20) -> h 10\n",
+    );
     let mut ds = vec![
         diag("cross", &["b", "a"]),
         diag("cross", &["c", "a"]),
@@ -38,7 +40,9 @@ fn line_allow_suppresses_matching_findings_and_keeps_the_reason() {
 
 #[test]
 fn shape_and_diagram_allow() {
-    let s = scene_src("diagram \"t\" size (100,100) allow=near\nbox a at (0,0) size (10,10) allow=overlap\nline l (0,50) -> h 10 allow=cross\n");
+    let s = scene_src(
+        "diagram \"t\" size (100,100) allow=near\nbox a at (0,0) size (10,10) allow=overlap\nline l (0,50) -> h 10 allow=cross\n",
+    );
     let mut ds = vec![
         diag("near", &["l"]),
         diag("overlap", &["a", "z"]),
@@ -117,7 +121,9 @@ fn text_boxes_are_the_measured_rects() {
 
 #[test]
 fn group_title_band_and_box() {
-    let s = scene("group g \"VPC\" at (0,100) size (200,100) {\n}\ngroup u at (300,100) size (200,100) {\n}\nbox b \"x\" at (0,300) size (100,60)\n");
+    let s = scene(
+        "group g \"VPC\" at (0,100) size (200,100) {\n}\ngroup u at (300,100) size (200,100) {\n}\nbox b \"x\" at (0,300) size (100,60)\n",
+    );
     let g = &s.shapes[0];
     let band = title_band(g).unwrap();
     assert_eq!(band, Rect::new(0.0, 100.0, 200.0, g.title_band));
@@ -133,7 +139,9 @@ fn group_title_band_and_box() {
 
 #[test]
 fn ports_list_endpoints_on_outlines() {
-    let s = scene("box a at (100,100) size (100,60)\njunction j at (0,0)\nline l a.top -> v -50 end=arrow\nline m j -> a.left@0.25\n");
+    let s = scene(
+        "box a at (100,100) size (100,60)\njunction j at (0,0)\nline l a.top -> v -50 end=arrow\nline m j -> a.left@0.25\n",
+    );
     let p = ports(&Ctx::new(&s));
     let got: Vec<(&str, &str, f64, &str, &str, bool)> = p
         .iter()

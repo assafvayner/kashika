@@ -1,7 +1,7 @@
 use kashika_diag::Diagnostic;
-use kashika_geom::{cross, dot, edges, inside_runs, seg_seg_dist, Pt, TOLERANCE};
+use kashika_geom::{Pt, TOLERANCE, cross, dot, edges, inside_runs, seg_seg_dist};
 
-use crate::ctx::{fmt_num, kind_name, line_el, round2, shape_el, Ctx};
+use crate::ctx::{Ctx, fmt_num, kind_name, line_el, round2, shape_el};
 use crate::free::with_free;
 
 /// Pieces whose directions differ by less than ~3° count as parallel.

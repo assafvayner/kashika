@@ -1,20 +1,20 @@
 use std::collections::{HashMap, HashSet};
 
-use kashika_diag::{did_you_mean, Diagnostic, Span, LINT_CODES};
-use kashika_geom::{point_at, round_corners_tagged, PathSeg, Pt, Rect, TOLERANCE};
+use kashika_diag::{Diagnostic, LINT_CODES, Span, did_you_mean};
+use kashika_geom::{PathSeg, Pt, Rect, TOLERANCE, point_at, round_corners_tagged};
 use kashika_syntax::ast::{self, Axis, Coord, Point, SegKind, Side, Stmt, Target, Value};
 
 use crate::anchor;
 use crate::assets::Store;
-use crate::attrs::{self, Attrs, Min, LIMIT};
+use crate::attrs::{self, Attrs, LIMIT, Min};
 use crate::form::{self, Form};
 use crate::library::{self, Ctx, LibShape, Library, SvgShape};
 use crate::loader::{FileError, Loader, Options};
 use crate::markup;
 use crate::scene::*;
 use crate::shapes::{self, BUILTIN_SHAPES};
-use crate::style::{self, Style, StyleProps, STYLE_KEYS};
-use crate::textlayout::{self, ShapeInput, ShapeTextProps, SHAPE_TEXT_KEYS};
+use crate::style::{self, STYLE_KEYS, Style, StyleProps};
+use crate::textlayout::{self, SHAPE_TEXT_KEYS, ShapeInput, ShapeTextProps};
 use crate::version;
 
 mod record;
@@ -838,11 +838,7 @@ impl<'a> Resolver<'a> {
             .and_then(|x| textlayout::text_color(x, &mut self.diags))
             .unwrap_or_else(|| {
                 let d = Style::default();
-                if muted {
-                    d.muted
-                } else {
-                    d.color
-                }
+                if muted { d.muted } else { d.color }
             });
         let align = match a
             .get("align")

@@ -1,6 +1,6 @@
 use kashika_geom::{
-    boundary_nearest, dist_point_seg, inside_runs, pieces, point_in_polygon, polygons_overlap,
-    rect_polygon, seg_hit, seg_seg_dist, strictly_inside, Hit, PathSeg, Pt, Rect,
+    Hit, PathSeg, Pt, Rect, boundary_nearest, dist_point_seg, inside_runs, pieces,
+    point_in_polygon, polygons_overlap, rect_polygon, seg_hit, seg_seg_dist, strictly_inside,
 };
 
 fn p(x: f64, y: f64) -> Pt {

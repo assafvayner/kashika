@@ -1,6 +1,6 @@
 use kashika_diag::{Diagnostic, Severity, Span};
 use kashika_model::compile;
-use kashika_render::{render_svg, render_svg_with, Overlay};
+use kashika_render::{Overlay, render_svg, render_svg_with};
 
 const SRC: &str = "diagram \"o\" size (300,200)\n\
 box a \"A\" at (10,10) size (40,20) colr=#fff\n\
