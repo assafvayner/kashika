@@ -269,7 +269,7 @@ These block output unless `--force` is given:
 | `near` | A line runs within `clearance` of a box edge it doesn't attach to, or within `clearance` of a parallel line for more than 20px. **This includes a line running along its own box's edge**, and a line running parallel to a group's border within `clearance` of it, on the border included (crossing the border is fine) |
 | `overlap` | Two shapes have intersecting interiors. A group whose rectangle contains the other shape is not an overlap, and a shape nested inside a group in the source is left to `spill`. A box containing another shape is an overlap |
 | `spill` | A child extends outside its group or into the group's title band. Touching the edge is fine |
-| `diagonal-tail` | A line's final segment is diagonal when all its other straight segments are horizontal or vertical |
+| `diagonal-tail` | A line's final segment is diagonal when it has at least one other straight segment and all of those are horizontal or vertical |
 | `endpoint-off-edge` | A literal endpoint is within 8px of a shape outline but not on it. A start point is literal unless it is written `id.anchor[+offset]` or a junction (a mixed point is literal). An end is literal when the last segment is `h`, `v`, a numeric `x`/`y`, or goes to a literal point; `x`/`y` with a point target is not |
 | `port-crowding` | Two endpoints on the same shape are within 8px of each other. This includes identical endpoints where both lines draw a marker (stacked arrowheads). Junctions are exempt |
 | `group-transit` | A line passes through a group's interior while neither of its endpoints is inside that group |

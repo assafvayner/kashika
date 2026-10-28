@@ -4,3 +4,16 @@ docs/review/kashika-review-*.md
 docs/review/spec-draft.md
 .claude/
 docs/review/
+
+.DS_Store
+
+# coding-agent working directories
+.pi/
+.codex/
+.aider*
+.cursor/
+.windsurf/
+.gemini/
+.opencode/
+.continue/
+.cline/

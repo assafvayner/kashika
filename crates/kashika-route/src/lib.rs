@@ -62,6 +62,10 @@ pub struct Suggestion {
     pub to: Endpoint,
     pub style: Style,
     pub candidates: Vec<Candidate>,
+    /// Existing lines between the same two shapes, in either direction, when no `--line` was
+    /// given; they count as obstacles for the candidates.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub existing_lines: Vec<String>,
 }
 
 pub struct Request<'a> {
@@ -107,7 +111,41 @@ pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
             Frame::default(),
         ),
     };
-    Ok(rank(req, &scene, from, to, &id, &attrs, frame))
+    let existing_lines = if target.is_none() {
+        connecting_lines(req, &from, &to)
+    } else {
+        Vec::new()
+    };
+    let mut s = rank(req, &scene, from, to, &id, &attrs, frame);
+    s.existing_lines = existing_lines;
+    Ok(s)
+}
+
+fn connecting_lines(req: &Request, from: &Endpoint, to: &Endpoint) -> Vec<String> {
+    let (Some(a), Some(b)) = (&from.owner, &to.owner) else {
+        return Vec::new();
+    };
+    let (file, _) = kashika_syntax::parse(req.src);
+    let mut ids = Vec::new();
+    named_lines(&file.stmts, &mut ids);
+    ids.into_iter()
+        .filter(|id| {
+            existing(req.src, id, req.opts).is_ok_and(|t| match (&t.from.owner, &t.to.owner) {
+                (Some(x), Some(y)) => (x == a && y == b) || (x == b && y == a),
+                _ => false,
+            })
+        })
+        .collect()
+}
+
+fn named_lines(stmts: &[ast::Stmt], out: &mut Vec<String>) {
+    for s in stmts {
+        match s {
+            ast::Stmt::Line(l) => out.extend(l.id.as_ref().map(|i| i.name.clone())),
+            ast::Stmt::Group(g) => named_lines(&g.children, out),
+            _ => {}
+        }
+    }
 }
 
 /// Where a candidate is written: the origin of its frame, and the source position right
@@ -322,6 +360,7 @@ fn rank(
         to,
         style: req.style,
         candidates,
+        existing_lines: Vec::new(),
     }
 }
 

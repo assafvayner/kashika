@@ -28,7 +28,7 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `near` | warn | a line within `clearance` of a box, a parallel line or along a group border | move it `clearance` away |
 | `overlap` | warn | two shapes overlap, unless a group contains the other | move one, or use a group |
 | `spill` | warn | a child leaves its group or enters its title band | grow the group |
-| `diagonal-tail` | warn | only the last straight segment is diagonal | end with `hv`/`vh` |
+| `diagonal-tail` | warn | the last segment is diagonal and every other straight segment is horizontal or vertical (at least one) | end with `hv`/`vh` |
 | `endpoint-off-edge` | warn | a literal endpoint near but off an outline | use the anchor in the help line |
 | `port-crowding` | warn | two endpoints on a shape within 8px | spread them with `side@t` |
 | `group-transit` | warn | a line crosses a group it doesn't connect to | route around the group |

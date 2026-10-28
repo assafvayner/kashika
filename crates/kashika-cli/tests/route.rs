@@ -142,3 +142,21 @@ fn unknown_line_is_a_usage_error() {
         .code(3)
         .stderr(predicate::str::contains("no line `nope`"));
 }
+
+#[test]
+fn hints_at_line_with_same_endpoints() {
+    let ex = format!(
+        "{}/../../examples/upload/upload.kash",
+        env!("CARGO_MANIFEST_DIR")
+    );
+    kashika()
+        .args(["route", &ex, "api1.bottom", "queue.left"])
+        .assert()
+        .stdout(predicate::str::contains(
+            "hint: line `api1_queue` already connects these; pass --line api1_queue",
+        ));
+    kashika()
+        .args(["route", &ex, "--line", "api1_queue"])
+        .assert()
+        .stdout(predicate::str::contains("hint:").not());
+}

@@ -3,8 +3,9 @@ use kashika_geom::PathSeg;
 
 use crate::ctx::{Ctx, fmt_pt, line_el};
 
-/// `diagonal-tail`: the final segment is diagonal while every other straight segment is
-/// horizontal or vertical. A line that is a single diagonal has no tail.
+/// `diagonal-tail`: the final segment is diagonal while the line has at least one other
+/// straight segment and all of those are horizontal or vertical. A line whose only straight
+/// segment is the diagonal has no tail.
 pub fn diagonal_tail(ctx: &Ctx) -> Vec<Diagnostic> {
     let mut out = Vec::new();
     for l in &ctx.lines {

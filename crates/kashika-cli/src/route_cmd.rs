@@ -105,6 +105,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
                         "to": s.to,
                         "style": s.style,
                         "candidates": s.candidates,
+                        "existing_lines": s.existing_lines,
                     })
                 ),
                 Format::Text => print!("{}", text(&s)),
@@ -128,6 +129,16 @@ fn read(file: &str, stdin_name: Option<&str>) -> Result<(String, String), String
 }
 
 fn text(s: &Suggestion) -> String {
+    let mut out = candidates_text(s);
+    if let Some(id) = s.existing_lines.first() {
+        out.push_str(&format!(
+            "hint: line `{id}` already connects these; pass --line {id} to reroute it instead of avoiding it\n"
+        ));
+    }
+    out
+}
+
+fn candidates_text(s: &Suggestion) -> String {
     if s.candidates.is_empty() {
         return "no candidate path avoids every box with at most 4 elbows (or 1 curve); try other anchors, or move a box\n".into();
     }
