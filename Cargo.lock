@@ -297,6 +297,7 @@ dependencies = [
  "kashika-diag",
  "kashika-model",
  "kashika-render",
+ "kashika-syntax",
  "predicates",
  "serde_json",
  "sha2",

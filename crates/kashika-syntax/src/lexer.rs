@@ -51,7 +51,20 @@ pub struct Token {
     pub span: Span,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct Comment {
+    /// The comment's source text, including `//` or `/* */`; line comments are right-trimmed.
+    pub text: String,
+    pub span: Span,
+}
+
 pub fn lex(src: &str) -> (Vec<Token>, Vec<Diagnostic>) {
+    let (toks, _, diags) = lex_with_comments(src);
+    (toks, diags)
+}
+
+/// Like [`lex`], but also returns the comments, which the parser never sees.
+pub fn lex_with_comments(src: &str) -> (Vec<Token>, Vec<Comment>, Vec<Diagnostic>) {
     let src = src.strip_prefix('\u{feff}').unwrap_or(src);
     let mut lx = Lexer {
         chars: src.chars().collect(),
@@ -59,10 +72,11 @@ pub fn lex(src: &str) -> (Vec<Token>, Vec<Diagnostic>) {
         line: 1,
         col: 1,
         toks: Vec::new(),
+        comments: Vec::new(),
         diags: Vec::new(),
     };
     lx.run();
-    (lx.toks, lx.diags)
+    (lx.toks, lx.comments, lx.diags)
 }
 
 struct Lexer {
@@ -71,6 +85,7 @@ struct Lexer {
     line: u32,
     col: u32,
     toks: Vec<Token>,
+    comments: Vec<Comment>,
     diags: Vec<Diagnostic>,
 }
 
@@ -113,9 +128,15 @@ impl Lexer {
                     });
                 }
                 '/' if self.peek(1) == Some('/') => {
+                    let start = self.pos;
                     while self.peek(0).is_some_and(|c| c != '\n') {
                         self.bump();
                     }
+                    let text: String = self.chars[start..self.pos].iter().collect();
+                    self.comments.push(Comment {
+                        text: text.trim_end().to_string(),
+                        span: Span::new(line, col, self.line, self.col),
+                    });
                 }
                 '/' if self.peek(1) == Some('*') => self.block_comment(line, col),
                 '"' => self.string(line, col),
@@ -257,6 +278,7 @@ impl Lexer {
     }
 
     fn block_comment(&mut self, line: u32, col: u32) {
+        let start = self.pos;
         self.bump();
         self.bump();
         let mut multiline = false;
@@ -284,6 +306,10 @@ impl Lexer {
                 }
             }
         }
+        self.comments.push(Comment {
+            text: self.chars[start..self.pos].iter().collect(),
+            span: Span::new(line, col, self.line, self.col),
+        });
         if multiline {
             self.toks.push(Token {
                 tok: Tok::Newline,

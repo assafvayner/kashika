@@ -1,3 +1,4 @@
+mod fmt_cmd;
 mod report;
 
 use std::io::Read;
@@ -32,6 +33,14 @@ enum Cmd {
         /// Write output even when there are errors
         #[arg(long)]
         force: bool,
+    },
+    /// Rewrite a .kash file in canonical layout (whitespace only)
+    Fmt {
+        /// The .kash file to format
+        file: String,
+        /// Exit 1 if the file is not formatted, without rewriting it
+        #[arg(long)]
+        check: bool,
     },
 }
 
@@ -75,6 +84,7 @@ fn main() -> ExitCode {
     };
     match cli.cmd {
         Cmd::Check(common) => run(&common, None),
+        Cmd::Fmt { file, check } => fmt_cmd::run(&file, check),
         Cmd::Render {
             common,
             output,
