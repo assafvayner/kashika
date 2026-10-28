@@ -7,4 +7,4 @@ license.workspace = true
 [dependencies]
 kashika-geom.workspace = true
 serde.workspace = true
-ttf-parser.workspace = true
+skrifa.workspace = true
