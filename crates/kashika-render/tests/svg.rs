@@ -107,7 +107,8 @@ fn line_labels_get_a_mask_and_texts_do_not() {
     let s = svg("diagram \"h\" size (200,100)\nline l: (0,50) -> h 200 label=\"L\"\ntext \"T\" at (100,90)\n");
     let rect = r##"fill="#000"/></mask>"##;
     let mask = s.find(rect).expect("label rect in the mask");
-    let group = s.find(r#"<g mask="url(#kashika-label-mask-0)">"#).unwrap();
+    let id = mask_ids(&s)[0].clone();
+    let group = s.find(&format!(r#"<g mask="url(#{id})">"#)).unwrap();
     let path = s.find("<path d=\"M 0 50").unwrap();
     let close = s.find("</g>").unwrap();
     assert!(mask < group && group < path && path < close, "{s}");
@@ -193,4 +194,36 @@ fn named_colors_render_as_hex() {
     for name in ["ivory", "tomato", "Tomato", "white"] {
         assert!(!s.contains(name), "{name} leaked into {s}");
     }
+}
+
+fn mask_ids(svg: &str) -> Vec<String> {
+    svg.match_indices("<mask id=\"")
+        .map(|(i, m)| {
+            let rest = &svg[i + m.len()..];
+            rest[..rest.find('"').unwrap()].to_string()
+        })
+        .collect()
+}
+
+#[test]
+fn mask_ids_are_unique_per_diagram_and_stable() {
+    let a = "diagram \"a\" size (200,100)\nline l: (0,50) -> h 200 label=\"L\"\nline m: (0,80) -> h 200 label=\"M\"\n";
+    let b = "diagram \"b\" size (200,100)\nline l: (0,50) -> h 200 label=\"L\"\n";
+    let (ia, ib) = (mask_ids(&svg(a)), mask_ids(&svg(b)));
+    assert_eq!(ia.len(), 2);
+    for id in ia.iter().chain(&ib) {
+        let hash = id
+            .strip_prefix("kashika-")
+            .and_then(|r| r.split_once("-mask-"))
+            .map(|(h, _)| h)
+            .unwrap_or_else(|| panic!("{id}"));
+        assert!(
+            hash.len() == 8 && hash.bytes().all(|c| c.is_ascii_hexdigit()),
+            "{id}"
+        );
+    }
+    assert_ne!(ia[0], ia[1]);
+    assert!(ib.iter().all(|id| !ia.contains(id)), "{ia:?} {ib:?}");
+    assert_eq!(ia, mask_ids(&svg(a)));
+    assert!(!svg(a).contains("@ID@"));
 }

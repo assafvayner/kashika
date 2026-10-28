@@ -8,6 +8,8 @@ use crate::{shapes, text};
 const ARROW_LEN: f64 = 10.0;
 const DIAMOND_LEN: f64 = 12.0;
 const MARKER_HALF_WIDTH: f64 = 4.0;
+/// Stands in for the per-diagram id hash until the document is complete.
+const ID_HASH: &str = "@ID@";
 
 enum Overlay<'s> {
     Label(&'s Line, &'s Label),
@@ -61,7 +63,16 @@ pub fn render_svg(scene: &Scene) -> String {
         }
     }
     out.push_str("</svg>\n");
-    out
+    let hash = format!("{:08x}", fnv1a32(out.as_bytes()));
+    out.replace(ID_HASH, &hash)
+}
+
+/// FNV-1a: ids derived from the document stay deterministic, and differ between diagrams so
+/// several SVGs can be inlined in one HTML page.
+fn fnv1a32(bytes: &[u8]) -> u32 {
+    bytes.iter().fold(0x811c_9dc5, |h, &b| {
+        (h ^ u32::from(b)).wrapping_mul(0x0100_0193)
+    })
 }
 
 pub(crate) fn n(v: f64) -> String {
@@ -159,7 +170,7 @@ fn label_mask(out: &mut String, l: &Line, i: usize, (w, h): (f64, f64)) -> bool 
     if l.labels.is_empty() {
         return false;
     }
-    let id = format!("kashika-label-mask-{i}");
+    let id = format!("kashika-{ID_HASH}-mask-{i}");
     out.push_str(&format!(
         "<mask id=\"{id}\" maskUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"{0}\" height=\"{1}\"><rect width=\"{0}\" height=\"{1}\" fill=\"#fff\"/>",
         n(w),
