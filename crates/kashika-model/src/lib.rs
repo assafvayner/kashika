@@ -11,6 +11,7 @@ mod scene;
 mod shapes;
 mod style;
 mod textlayout;
+mod version;
 
 use kashika_diag::Diagnostic;
 

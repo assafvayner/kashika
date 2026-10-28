@@ -126,3 +126,9 @@ fn empty_input_stays_empty() {
     assert_eq!(fmt(""), "");
     assert_eq!(fmt("\n\n"), "");
 }
+
+#[test]
+fn version_attribute_round_trips() {
+    let src = "diagram \"t\" size (1,1) kashika=\"0.1.0\"\n";
+    assert_eq!(fmt(src), src);
+}

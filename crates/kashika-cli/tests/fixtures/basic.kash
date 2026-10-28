@@ -1,4 +1,4 @@
-diagram "Basic" size (480,240) kashika=1
+diagram "Basic" size (480,240) kashika="0.1.0"
 box api "API" at (40,40) size (120,60) style=service
 box db "Postgres" at api.right+(160,0) size (120,60) pin=left style=datastore
 line api_db: api.right -> db.left end=arrow label="SQL"

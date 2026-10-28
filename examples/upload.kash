@@ -1,4 +1,4 @@
-diagram "Upload path" size (900,520) kashika=1
+diagram "Upload path" size (900,520) kashika="0.1.0"
 
 box client "Browser" at (40,40) size (140,60) style=external
 box lb "Load balancer" at client.right+(80,0) size (160,60) pin=left style=service

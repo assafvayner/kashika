@@ -1,7 +1,7 @@
 ## Syntax
 
 ```text
-diagram "<title>" size (w,h) [kashika=1] [grid=N] [clearance=N] [allow=<code>,...]
+diagram "<title>" size (w,h) [kashika="0.1.0"] [grid=N] [clearance=N] [allow=<code>,...]
 style <name> { key=value ... }
 box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=<shape>] [style=<name>] [sublabel="..."] [text-align=left|center|right] [text-valign=top|middle|bottom] [gap=N] [style keys] [{ text block }]
 group <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [style=<name>] [sublabel="..."] [text-align=...] [gap=N] { children }

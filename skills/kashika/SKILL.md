@@ -31,7 +31,7 @@ Check snippets without a file: `kashika check - --stdin-name draft.kash < draft`
 ## Cheat sheet
 
 ```
-diagram "Title" size (900,500) kashika=1
+diagram "Title" size (900,500) kashika="0.1.0"
 import "lib/aws.kash" as aws                               // shapes and styles from a library: shape=aws.s3 style=aws.service
 shape tri { path "M 0.5 0 L 1 1 L 0 1 Z" }                 // unit coordinates 0..1, stretched to the box; M L H V C Q A Z
 shape s3 from "icons/s3.svg" text-area=below               // an SVG file as a shape; outline=bbox|hull

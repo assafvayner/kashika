@@ -1,4 +1,4 @@
-diagram "Text" size (640,320) kashika=1
+diagram "Text" size (640,320) kashika="0.1.0"
 
 group vpc "VPC" at (20,20) size (600,280) sublabel="10.0.0.0/16" {
   box api "Payments API" at (20,70) size (180,60) sublabel="v2.4.1" style=service

@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use kashika_diag::{did_you_mean, Diagnostic, Span, LINT_CODES};
 use kashika_geom::{point_at, round_corners_tagged, PathSeg, Pt, Rect, TOLERANCE};
-use kashika_syntax::ast::{self, Axis, Coord, Point, SegKind, Side, Stmt, Target};
+use kashika_syntax::ast::{self, Axis, Coord, Point, SegKind, Side, Stmt, Target, Value};
 
 use crate::anchor;
 use crate::assets::Store;
@@ -15,6 +15,7 @@ use crate::scene::*;
 use crate::shapes::{self, BUILTIN_SHAPES};
 use crate::style::{self, Style, StyleProps, STYLE_KEYS};
 use crate::textlayout::{self, ShapeInput, ShapeTextProps, SHAPE_TEXT_KEYS};
+use crate::version;
 
 mod record;
 
@@ -284,14 +285,16 @@ impl<'a> Resolver<'a> {
 
             let a = Attrs::new(&d.attrs, "diagram", DIAGRAM_KEYS, &mut self.diags);
             if let Some(x) = a.get("kashika") {
-                if let Some(v) = attrs::num(x, &mut self.diags) {
-                    if v != 1.0 {
-                        self.diags.push(Diagnostic::error(
-                            "version",
-                            x.span,
-                            format!("this file targets kashika={v}, but this binary implements kashika=1"),
-                        ));
-                    }
+                let shown = match &x.value {
+                    Value::Str(s) => version::check(s, version::TOOL_VERSION).err(),
+                    _ => Some(version::Problem {
+                        message: "`kashika=` must be a quoted version string".to_string(),
+                        help: version::form_help().to_string(),
+                    }),
+                };
+                if let Some(p) = shown {
+                    self.diags
+                        .push(Diagnostic::error("version", x.span, p.message).with_help(p.help));
                 }
             }
             if let Some(x) = a.get("grid") {

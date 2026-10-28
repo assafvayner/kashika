@@ -138,10 +138,55 @@ fn missing_diagram() {
     assert_eq!(d[0].code, "diagram");
 }
 
+fn version_diags(attr: &str) -> Vec<Diagnostic> {
+    compile(&format!("diagram \"t\" size (1,1) kashika={attr}\n")).1
+}
+
 #[test]
-fn version_mismatch() {
-    let (_, d) = compile("diagram \"t\" size (1,1) kashika=2\n");
-    assert_eq!(d[0].code, "version");
+fn version_accepts_equal_older_and_shorthand() {
+    for v in ["\"0.1.0\"", "\"0.0.5\"", "\"0.1\""] {
+        assert!(version_diags(v).is_empty(), "{v}");
+    }
+}
+
+#[test]
+fn version_is_optional() {
+    assert!(compile("diagram \"t\" size (1,1)\n").1.is_empty());
+}
+
+#[test]
+fn version_rejects_newer_and_other_major() {
+    for v in ["\"0.2.0\"", "\"0.1.1\"", "\"1.0.0\""] {
+        let d = version_diags(v);
+        assert_eq!(d.len(), 1, "{v}");
+        assert_eq!(d[0].code, "version");
+        assert!(d[0]
+            .message
+            .contains("or newer (same major version); this is kashika 0.1.0"));
+        assert!(!d[0].help.is_empty());
+    }
+}
+
+#[test]
+fn version_rejects_bare_and_malformed() {
+    for v in [
+        "1",
+        "2",
+        "\"1\"",
+        "\"abc\"",
+        "\"0.1.0-beta\"",
+        "\"0.1.0+b1\"",
+        "\"0.1.0.0\"",
+    ] {
+        let d = version_diags(v);
+        assert_eq!(d.len(), 1, "{v}");
+        assert_eq!(d[0].code, "version");
+        assert_eq!(
+            d[0].help,
+            vec!["write kashika=\"0.1.0\"".to_string()],
+            "{v}"
+        );
+    }
 }
 
 #[test]
@@ -830,7 +875,8 @@ fn unnamed_continued_line_is_named_after_its_first_line() {
 fn diagram_attributes() {
     let s = ok("");
     assert_eq!((s.clearance, s.grid), (6.0, None));
-    let (s, d) = compile("diagram \"t\" size (10,10) kashika=1 grid=10 clearance=4 allow=near\n");
+    let (s, d) =
+        compile("diagram \"t\" size (10,10) kashika=\"0.1.0\" grid=10 clearance=4 allow=near\n");
     assert!(d.is_empty(), "{d:#?}");
     assert_eq!((s.clearance, s.grid, s.allow.len()), (4.0, Some(10.0), 1));
 }

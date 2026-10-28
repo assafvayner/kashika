@@ -41,7 +41,7 @@ The CLI renders `.kash` files to SVG or PNG and runs geometric checks (crossings
 ## 3. Statements
 
 ```
-diagram "<title>" size (w,h) [kashika=1] [grid=N] [clearance=N] [icons="<dir>"] [allow=<code>,...]
+diagram "<title>" size (w,h) [kashika="0.1.0"] [grid=N] [clearance=N] [icons="<dir>"] [allow=<code>,...]
 import "<file.kash>" [as <ns>]                      // §3a
 style <name> { key=value ... }
 shape <name> { ... }  |  shape <name> from "<file.svg>" [...]   // §3a
@@ -244,7 +244,7 @@ These block output unless `--force` is given:
 | `unknown-style` | `style=` names no built-in or user style |
 | `size` | A non-positive size, or one larger than 1,000,000 |
 | `diagram` | Missing, misplaced or repeated `diagram` statement |
-| `version` | `kashika=N` doesn't match the binary |
+| `version` | `kashika=` is not a quoted semver string, or names a newer version or a different major version than the tool |
 | `file` | A referenced file (`import`, `shape ... from`, `image`, `icon=`, `icons=`) is missing, escapes the project root without `--allow-path`, is a remote URL, can't be read or decoded, or has the wrong type; an import cycle; imports nested more than 32 deep. Errors inside an imported file are reported at the `import` with an ``in `file` at L:C:`` prefix |
 | `unsupported` | A spec feature this build doesn't implement yet |
 
@@ -304,7 +304,7 @@ Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`
 - Suppressed findings are excluded from `warn` and from the exit code, and counted in `suppressed`. `crossings` in the metrics counts every crossing, suppressed or not, and is computed before `--focus` filtering.
 - `inspect` accepts the common flags, but only `--format` and `--stdin-name` change its output; it always exits 0 except on usage or I/O errors.
 
-An optional `kashika=1` on the `diagram` line declares which language version the file was written for. A mismatch with the binary is an error.
+**Versioning.** The optional `kashika="MAJOR.MINOR.PATCH"` on the `diagram` line is the minimum tool version that can process the file; `"MAJOR.MINOR"` means `MAJOR.MINOR.0`. A tool accepts a file when the file's version is at most the tool's version and the major versions are equal; anything else, including a bare number or a malformed string, is a `version` error. Releases that add language features bump the tool's minor version, so authors set `kashika=` to the release that introduced the newest feature they use.
 
 ### render
 

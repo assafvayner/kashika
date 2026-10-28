@@ -19,7 +19,7 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `unknown-style` | error | `style=` names no style | define it or use a built-in |
 | `size` | error | non-positive or oversized size | use a positive width and height |
 | `diagram` | error | missing, misplaced or repeated `diagram` | start with one `diagram "<title>" size (w,h)` |
-| `version` | error | `kashika=N` doesn't match the binary | update the file or the binary |
+| `version` | error | `kashika=` is malformed or newer than the binary | fix the file or the binary |
 | `file` | error | missing or unusable file, or an import cycle | fix the path or pass `--allow-path` |
 | `unsupported` | error | feature not built yet | remove it; see "Not supported" |
 | `cross` | warn | two lines intersect away from a shared endpoint | reroute via a free interval |

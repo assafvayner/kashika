@@ -1,4 +1,4 @@
-diagram "Order flow" size (820,300) kashika=1
+diagram "Order flow" size (820,300) kashika="0.1.0"
 
 box user "User" at (40,90) size (80,120) shape=person
 box web "Web" at user.right+(80,0) size (140,80) shape=rounded style=service pin=left

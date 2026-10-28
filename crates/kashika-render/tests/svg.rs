@@ -1,7 +1,7 @@
 use kashika_model::compile;
 use kashika_render::render_svg;
 
-const BASIC: &str = "diagram \"Basic\" size (480,240) kashika=1\n\
+const BASIC: &str = "diagram \"Basic\" size (480,240) kashika=\"0.1.0\"\n\
 box api \"API\" at (40,40) size (120,60) style=service\n\
 box db \"Postgres\" at api.right+(160,0) size (120,60) pin=left style=datastore\n\
 line api_db: api.right -> db.left end=arrow label=\"SQL\"\n";
