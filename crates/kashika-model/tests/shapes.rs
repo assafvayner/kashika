@@ -185,7 +185,7 @@ fn anchors_on_placed_shapes_use_the_outline() {
 fn unknown_shape_suggests_a_name() {
     let d = errors("box a at (0,0) size (10,10) shape=cylindr\n");
     assert_eq!(d.len(), 1, "{d:#?}");
-    assert_eq!(d[0].code, "attr");
+    assert_eq!(d[0].code, "unknown-shape");
     assert_eq!(d[0].help, vec!["did you mean `cylinder`?".to_string()]);
 }
 
@@ -311,6 +311,6 @@ fn unknown_custom_shape_suggests_a_definition() {
         "shape tri {\n  path \"M 0 0 L 1 0 L 0 1 Z\"\n}\nbox b at (0,0) size (10,10) shape=tr\n",
     );
     assert_eq!(d.len(), 1, "{d:#?}");
-    assert_eq!(d[0].code, "attr");
+    assert_eq!(d[0].code, "unknown-shape");
     assert_eq!(d[0].help, vec!["did you mean `tri`?".to_string()]);
 }

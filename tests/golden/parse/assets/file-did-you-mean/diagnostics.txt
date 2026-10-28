@@ -1,0 +1,4 @@
+error[file] 4:8-4:13: `lib` is a directory, not a file
+error[file] 5:8-5:29: file `../../../COVERAGE.m` not found
+error[file] 6:9-6:21: file `lib/pic.sv` not found
+  = help: did you mean `lib/pic.svg`?

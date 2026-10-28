@@ -21,7 +21,7 @@ pub use form::Form;
 pub use icons::BUNDLED_ICONS;
 pub use kashika_text::{Font, PlacedLine, Run};
 pub use loader::Options;
-pub use resolve::{resolve, resolve_with};
+pub use resolve::{resolve, resolve_library_with, resolve_with};
 pub use scene::*;
 pub use shapes::{builtin_source, BUILTIN_SHAPES};
 pub use style::{FontWeight, StrokeStyle, Style};
@@ -40,4 +40,13 @@ pub fn compile_with(src: &str, opts: &Options) -> (Scene, Vec<Diagnostic>) {
     diags.append(&mut more);
     kashika_diag::sort(&mut diags);
     (scene, diags)
+}
+
+/// Checks a library file (§3a: no `diagram`, only `shape`, `style` and `import`) on its own,
+/// resolving its definitions. `None` when `src` is not a library; compile it as a diagram.
+pub fn compile_library_with(src: &str, opts: &Options) -> Option<Vec<Diagnostic>> {
+    let (file, mut diags) = kashika_syntax::parse(src);
+    diags.extend(resolve_library_with(&file, opts)?);
+    kashika_diag::sort(&mut diags);
+    Some(diags)
 }

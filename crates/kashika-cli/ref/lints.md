@@ -9,7 +9,7 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `unknown-anchor` | error | bad anchor name or `@t` | use a listed anchor; `@t` only on edges, `0 <= t <= 1` |
 | `duplicate-id` | error | two statements share an id | rename one; ids are global |
 | `duplicate-style` | error | two `style` or `shape` definitions share a name | merge or rename one |
-| `placement-cycle` | error | `at` references form a cycle | give one shape literal coordinates |
+| `placement-cycle` | error | `at` references form a cycle, or a chain of more than 256 | give one shape literal coordinates |
 | `label-overflow` | error | text doesn't fit the text area | use the size in the help line or shorten the text |
 | `text-conflict` | error | `label` or `sublabel` plus stacked block items | move them into the block, or give every item an `at` |
 | `not-ortho` | error | diagonal segment on an `ortho` line | use `hv`/`vh` or `x`/`y` |
@@ -17,11 +17,11 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `zero-length` | error | every segment has zero length | fix the endpoints |
 | `attr` | error | unknown, duplicate, mistyped or out-of-range attribute | apply the did-you-mean suggestion |
 | `unknown-style` | error | `style=` names no style | define it or use a built-in |
+| `unknown-shape` | error | `shape=` names no shape | apply the did-you-mean suggestion, or define or import it |
 | `size` | error | non-positive or oversized size | use a positive width and height |
 | `diagram` | error | missing, misplaced or repeated `diagram` | start with one `diagram "<title>" size (w,h)` |
 | `version` | error | `kashika=` is malformed or newer than the binary | fix the file or the binary |
 | `file` | error | missing or unusable file, or an import cycle | fix the path or pass `--allow-path` |
-| `unsupported` | error | feature not built yet | remove it; see "Not supported" |
 | `cross` | warn | two lines intersect away from a shared endpoint | reroute via a free interval |
 | `shared-segment` | warn | two lines overlap collinearly over 1px | move one to the free lane |
 | `through` | warn | a line enters a box or image | route around it |

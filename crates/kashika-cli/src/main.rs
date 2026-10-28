@@ -191,7 +191,19 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
             );
         }
     }
-    let (scene, mut diags) = kashika_model::compile_with(&src, &options(&c.file, c.allow_path));
+    let opts = options(&c.file, c.allow_path);
+    if let Some(diags) = kashika_model::compile_library_with(&src, &opts) {
+        if render.is_some() {
+            return tool_error(
+                c.format,
+                &format!(
+                    "{name} is a library (no `diagram` statement); render a diagram that imports it"
+                ),
+            );
+        }
+        return report_library(c, &name, &src, &diags);
+    }
+    let (scene, mut diags) = kashika_model::compile_with(&src, &opts);
     diags.extend(kashika_check::check(&scene));
     kashika_diag::sort(&mut diags);
     let metrics = kashika_check::metrics(&scene, &diags);
@@ -251,6 +263,26 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
         Format::Json => report::json(&name, &src, &diags, &opts, output.as_ref()),
     };
     print!("{report}");
+    ExitCode::from(exit_code(c.fail_on, errors, warns))
+}
+
+fn report_library(
+    c: &Common,
+    name: &str,
+    src: &str,
+    diags: &[kashika_diag::Diagnostic],
+) -> ExitCode {
+    let opts = report::Opts {
+        max: c.max,
+        show_suppressed: c.show_suppressed,
+        metrics: None,
+    };
+    let report = match c.format {
+        Format::Text => report::text(name, src, diags, &opts, None),
+        Format::Json => report::json(name, src, diags, &opts, None),
+    };
+    print!("{report}");
+    let report::Counts { errors, warns, .. } = report::counts(diags);
     ExitCode::from(exit_code(c.fail_on, errors, warns))
 }
 

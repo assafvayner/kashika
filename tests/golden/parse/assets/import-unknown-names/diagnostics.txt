@@ -1,5 +1,5 @@
-error[attr] 5:31-5:45: unknown shape `aws.nope`
+error[unknown-shape] 5:31-5:45: unknown shape `aws.nope`
   = help: did you mean `aws.bucket`?
 error[unknown-style] 5:46-5:63: unknown style `aws.nostyle`
-error[attr] 6:32-6:44: unknown shape `bucket`
+error[unknown-shape] 6:32-6:44: unknown shape `bucket`
   = help: did you mean `aws.bucket`?

@@ -15,11 +15,11 @@ pub const ERROR_CODES: &[&str] = &[
     "zero-length",
     "attr",
     "unknown-style",
+    "unknown-shape",
     "size",
     "diagram",
     "version",
     "file",
-    "unsupported",
 ];
 
 pub const LINT_CODES: &[&str] = &[

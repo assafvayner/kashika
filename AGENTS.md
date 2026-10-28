@@ -66,7 +66,6 @@ Review the new files (open `out.svg` in a browser) and commit them with `tests/g
 - SVG output is deterministic: the same input always yields the same bytes.
 - Every diagnostic carries a code listed in section 7 of the spec (`ERROR_CODES`/`LINT_CODES` in `kashika-diag`) and a source span, and every code has a golden case.
 - The parser and resolver recover and report diagnostics; they never panic on bad input.
-- Spec features not yet implemented report the `unsupported` diagnostic.
 - Every lint has a positive and a negative test in `crates/kashika-check/tests/`.
 - A language or CLI change updates the spec, the tests (including golden cases under `tests/golden/`), the `ref` pages and `skills/kashika/SKILL.md` together. Every ```` ```kash ```` block in `ref` is a fixture that must check clean and be in `fmt` form.
 - `fmt` changes only whitespace; it never changes tokens.

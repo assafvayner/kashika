@@ -1,0 +1,9 @@
+// spec: 3, 3a, 7
+// `shape=` naming no built-in or custom shape is `unknown-shape`, with did-you-mean.
+diagram "unknown shape" size (300,200)
+shape tri {
+  path "M 0 1 L 0.5 0 L 1 1 Z"
+}
+box a at (20,20) size (60,40) shape=cylindr
+box b at (120,20) size (60,40) shape=trii
+box c at (20,100) size (60,40) shape=nothing

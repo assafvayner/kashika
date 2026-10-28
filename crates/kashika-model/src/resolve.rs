@@ -53,8 +53,10 @@ const DIAGRAM_KEYS: &[&str] = &[
     "allow",
 ];
 const MARKERS: &[&str] = &["none", "arrow", "open", "diamond", "dot"];
-/// Deepest chain of placement references followed before giving up.
+/// Longest chain of placement references, counting group frames.
 const MAX_PLACEMENT_DEPTH: usize = 256;
+/// Cycles longer than this print only their first few members.
+const CYCLE_SHOWN: usize = 6;
 
 #[derive(Clone, Copy)]
 enum Item<'a> {
@@ -175,9 +177,7 @@ pub fn resolve_with(file: &ast::File, opts: &Options) -> (Scene, Vec<Diagnostic>
         texts: HashMap::new(),
         dots: HashMap::new(),
         placed: HashMap::new(),
-        stack: Vec::new(),
-        on_stack: HashMap::new(),
-        depth_reported: false,
+        on_stack: HashSet::new(),
         skipped: HashSet::new(),
         skipped_ids: HashSet::new(),
         edges: Vec::new(),
@@ -189,6 +189,7 @@ pub fn resolve_with(file: &ast::File, opts: &Options) -> (Scene, Vec<Diagnostic>
         loader: &r.loader,
         store: &mut r.store,
         diags: Vec::new(),
+        nested: Vec::new(),
     };
     r.lib = Library::load(file, &mut ctx);
     r.diags.append(&mut ctx.diags);
@@ -196,9 +197,28 @@ pub fn resolve_with(file: &ast::File, opts: &Options) -> (Scene, Vec<Diagnostic>
     r.collect(&file.stmts, None, 0);
     let mut scene = r.diagram(file);
     r.validate();
+    r.placement_graph();
     r.build(&mut scene);
     scene.assets = std::mem::take(&mut r.store).into_vec();
     (scene, r.diags)
+}
+
+/// Resolves a library file checked on its own: its imports, shape files and style keys.
+/// `None` when `file` is not a library (§3a), so it should be resolved as a diagram.
+pub fn resolve_library_with(file: &ast::File, opts: &Options) -> Option<Vec<Diagnostic>> {
+    if !library::is_library(file) {
+        return None;
+    }
+    let loader = Loader::new(opts);
+    let mut store = Store::default();
+    let mut ctx = Ctx {
+        loader: &loader,
+        store: &mut store,
+        diags: Vec::new(),
+        nested: Vec::new(),
+    };
+    Library::load_standalone(file, &mut ctx);
+    Some(ctx.diags)
 }
 
 struct Resolver<'a> {
@@ -214,10 +234,8 @@ struct Resolver<'a> {
     dots: HashMap<usize, bool>,
     /// Canvas rect per placed entry (junctions use a zero-size rect); `None` = failed.
     placed: HashMap<usize, Option<Rect>>,
-    stack: Vec<usize>,
-    /// Position of each entry in `stack`.
-    on_stack: HashMap<usize, usize>,
-    depth_reported: bool,
+    /// Entries being placed; `placement_graph` keeps this chain within the depth limit.
+    on_stack: HashSet<usize>,
     skipped: HashSet<usize>,
     /// Ids declared inside a skipped duplicate group; references to them stay silent.
     skipped_ids: HashSet<String>,
@@ -753,7 +771,7 @@ impl<'a> Resolver<'a> {
             .iter()
             .copied()
             .chain(self.lib.shapes.keys().map(String::as_str));
-        let mut d = Diagnostic::error("attr", a.span, format!("unknown shape `{w}`"));
+        let mut d = Diagnostic::error("unknown-shape", a.span, format!("unknown shape `{w}`"));
         if let Some(s) = did_you_mean(w, names) {
             d = d.with_help(format!("did you mean `{s}`?"));
         }
@@ -1142,63 +1160,150 @@ impl<'a> Resolver<'a> {
         self.literal(&i.id.name, "height", i.size.1, i.span);
     }
 
+    fn name(&self, idx: usize) -> &str {
+        self.entries[idx]
+            .item
+            .id()
+            .map_or("?", |id| id.name.as_str())
+    }
+
+    /// The placeable entries `idx`'s position depends on: its group, then each id in its `at`.
+    fn placement_deps(&self, idx: usize) -> Vec<usize> {
+        let at = match self.entries[idx].item {
+            Item::Box(n) => &n.at,
+            Item::Group(g) => &g.node.at,
+            Item::Image(i) => &i.at,
+            Item::Junction(j) => &j.at,
+            Item::Text(_) | Item::Line(_) => return Vec::new(),
+        };
+        let refs: Vec<&ast::Ref> = match at {
+            Point::Ref { r, .. } => vec![r],
+            Point::Lit { x, y, .. } => [x, y]
+                .into_iter()
+                .filter_map(|c| match c {
+                    Coord::Axis { r, .. } => Some(r),
+                    Coord::Num(_) => None,
+                })
+                .collect(),
+        };
+        let placeable = |i: &usize| !matches!(self.entries[*i].item, Item::Text(_) | Item::Line(_));
+        self.entries[idx]
+            .parent
+            .into_iter()
+            .chain(
+                refs.into_iter()
+                    .filter_map(|r| self.ids.get(&r.id.name).copied()),
+            )
+            .filter(placeable)
+            .collect()
+    }
+
+    /// Reports placement cycles and over-long reference chains before anything is placed,
+    /// whatever the statement order, and marks the entries involved as unplaceable.
+    fn placement_graph(&mut self) {
+        let n = self.entries.len();
+        let deps: Vec<Vec<usize>> = (0..n)
+            .map(|i| {
+                if self.skipped.contains(&i) {
+                    Vec::new()
+                } else {
+                    self.placement_deps(i)
+                }
+            })
+            .collect();
+        let sccs = tarjan(&deps);
+        let mut cyclic = vec![false; n];
+        for scc in &sccs {
+            let looped = scc.len() > 1 || deps[scc[0]].contains(&scc[0]);
+            if !looped {
+                continue;
+            }
+            for &i in scc {
+                cyclic[i] = true;
+                self.placed.insert(i, None);
+            }
+            let start = *scc.iter().min().expect("non-empty");
+            let cycle = shortest_cycle(start, &deps, scc);
+            self.report_cycle(&cycle);
+        }
+
+        // `depth[i]`: references in the longest chain from `i`; `next[i]`: its next link.
+        let mut depth = vec![0usize; n];
+        let mut next: Vec<Option<usize>> = vec![None; n];
+        for scc in &sccs {
+            let i = scc[0];
+            if cyclic[i] {
+                continue;
+            }
+            for &d in &deps[i] {
+                if !cyclic[d] && depth[d] + 1 > depth[i] {
+                    depth[i] = depth[d] + 1;
+                    next[i] = Some(d);
+                }
+            }
+        }
+        let Some(head) = (0..n)
+            .filter(|&i| depth[i] > MAX_PLACEMENT_DEPTH)
+            .max_by(|&a, &b| depth[a].cmp(&depth[b]).then(b.cmp(&a)))
+        else {
+            return;
+        };
+        let mut tail = head;
+        while let Some(t) = next[tail] {
+            tail = t;
+        }
+        self.diags.push(
+            Diagnostic::error(
+                "placement-cycle",
+                self.entries[head].item.at_span(),
+                format!(
+                    "placement chain from `{}` to `{}` is {} references deep; the limit is {MAX_PLACEMENT_DEPTH}",
+                    self.name(head),
+                    self.name(tail),
+                    depth[head]
+                ),
+            )
+            .with_help("place some shapes in this chain with literal coordinates"),
+        );
+        for (i, &d) in depth.iter().enumerate() {
+            if d > MAX_PLACEMENT_DEPTH {
+                self.placed.insert(i, None);
+            }
+        }
+    }
+
+    fn report_cycle(&mut self, cycle: &[usize]) {
+        let names: Vec<&str> = cycle.iter().map(|&i| self.name(i)).collect();
+        let first = names[0];
+        let message = if names.len() <= CYCLE_SHOWN {
+            format!("placement cycle: {} -> {first}", names.join(" -> "))
+        } else {
+            format!(
+                "placement cycle of {} shapes: {} -> … -> {} -> {first}",
+                names.len(),
+                names[..4].join(" -> "),
+                names[names.len() - 1]
+            )
+        };
+        self.diags.push(
+            Diagnostic::error(
+                "placement-cycle",
+                self.entries[cycle[0]].item.at_span(),
+                message,
+            )
+            .with_help("place one of these with literal coordinates"),
+        );
+    }
+
     /// Places an entry (box, group or junction), resolving dependencies depth-first.
     fn place(&mut self, idx: usize) -> Option<Rect> {
         if let Some(r) = self.placed.get(&idx) {
             return *r;
         }
-        if let Some(&pos) = self.on_stack.get(&idx) {
-            let names: Vec<String> = self.stack[pos..]
-                .iter()
-                .chain(std::iter::once(&idx))
-                .map(|&i| {
-                    self.entries[i]
-                        .item
-                        .id()
-                        .map_or("?".to_string(), |id| id.name.clone())
-                })
-                .collect();
-            let span = self.entries[idx].item.at_span();
-            self.diags.push(
-                Diagnostic::error(
-                    "placement-cycle",
-                    span,
-                    format!("placement cycle: {}", names.join(" -> ")),
-                )
-                .with_help("place one of these with literal coordinates"),
-            );
-            for &i in &self.stack[pos..] {
-                self.placed.insert(i, None);
-            }
+        if self.on_stack.len() > MAX_PLACEMENT_DEPTH || !self.on_stack.insert(idx) {
             return None;
         }
-        if self.stack.len() >= MAX_PLACEMENT_DEPTH {
-            if !self.depth_reported {
-                self.depth_reported = true;
-                let name = |i: usize| {
-                    self.entries[i]
-                        .item
-                        .id()
-                        .map_or("?".to_string(), |id| id.name.clone())
-                };
-                let d = Diagnostic::error(
-                    "placement-cycle",
-                    self.entries[idx].item.span(),
-                    format!(
-                        "placement chain from `{}` to `{}` is deeper than {MAX_PLACEMENT_DEPTH} references",
-                        name(self.stack[0]),
-                        name(idx)
-                    ),
-                )
-                .with_help("place some shapes in this chain with literal coordinates");
-                self.diags.push(d);
-            }
-            return None;
-        }
-        self.on_stack.insert(idx, self.stack.len());
-        self.stack.push(idx);
         let computed = self.compute_place(idx);
-        self.stack.pop();
         self.on_stack.remove(&idx);
         let result = if self.placed.get(&idx) == Some(&None) {
             None
@@ -1593,4 +1698,81 @@ fn shape_name(p: &NodeProps) -> String {
             "rect".into()
         }
     })
+}
+
+/// Strongly connected components of `deps`, each listed after every component it depends on.
+fn tarjan(deps: &[Vec<usize>]) -> Vec<Vec<usize>> {
+    let n = deps.len();
+    let mut index = vec![usize::MAX; n];
+    let mut low = vec![0; n];
+    let mut on = vec![false; n];
+    let mut stack = Vec::new();
+    let mut sccs = Vec::new();
+    let mut counter = 0;
+    for root in 0..n {
+        if index[root] != usize::MAX {
+            continue;
+        }
+        let mut work = vec![(root, 0usize)];
+        while let Some(&mut (v, ref mut k)) = work.last_mut() {
+            if *k == 0 && index[v] == usize::MAX {
+                index[v] = counter;
+                low[v] = counter;
+                counter += 1;
+                stack.push(v);
+                on[v] = true;
+            }
+            if let Some(&w) = deps[v].get(*k) {
+                *k += 1;
+                if index[w] == usize::MAX {
+                    work.push((w, 0));
+                } else if on[w] {
+                    low[v] = low[v].min(index[w]);
+                }
+                continue;
+            }
+            work.pop();
+            if let Some(&(u, _)) = work.last() {
+                low[u] = low[u].min(low[v]);
+            }
+            if low[v] == index[v] {
+                let mut scc = Vec::new();
+                while let Some(w) = stack.pop() {
+                    on[w] = false;
+                    scc.push(w);
+                    if w == v {
+                        break;
+                    }
+                }
+                scc.sort_unstable();
+                sccs.push(scc);
+            }
+        }
+    }
+    sccs
+}
+
+/// The shortest cycle through `start` inside its component `scc`, starting at `start`.
+fn shortest_cycle(start: usize, deps: &[Vec<usize>], scc: &[usize]) -> Vec<usize> {
+    let mut prev: HashMap<usize, usize> = HashMap::new();
+    let mut queue = std::collections::VecDeque::from([start]);
+    while let Some(v) = queue.pop_front() {
+        for &w in &deps[v] {
+            if w == start {
+                let mut cycle = vec![v];
+                let mut cur = v;
+                while cur != start {
+                    cur = prev[&cur];
+                    cycle.push(cur);
+                }
+                cycle.reverse();
+                return cycle;
+            }
+            if scc.binary_search(&w).is_ok() && !prev.contains_key(&w) {
+                prev.insert(w, v);
+                queue.push_back(w);
+            }
+        }
+    }
+    vec![start]
 }

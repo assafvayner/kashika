@@ -945,7 +945,7 @@ fn box_shapes() {
     let s = ok("box a at (0,0) size (10,10) shape=rounded\n");
     assert_eq!(s.shapes[0].outline, kashika_model::Outline::Rounded);
     let d = errors("box a at (0,0) size (10,10) shape=rectt\n");
-    assert_eq!(d[0].code, "attr");
+    assert_eq!(d[0].code, "unknown-shape");
 }
 
 #[test]
@@ -1048,7 +1048,10 @@ fn long_placement_chains_are_reported_not_crashed() {
         "{:#?}",
         &d[..d.len().min(3)]
     );
-    assert!(d[0].message.contains("deeper than 256"), "{}", d[0].message);
+    assert_eq!(
+        d[0].message,
+        "placement chain from `b0` to `b5000` is 5000 references deep; the limit is 256"
+    );
 
     let mut body = String::new();
     for i in 0..200 {
@@ -1275,4 +1278,52 @@ fn boxes_and_groups_accept_allow_and_reason() {
         errors("box a at (0,0) size (10,10) allow=overlpa\n")[0].code,
         "attr"
     );
+}
+
+#[test]
+fn backward_placement_chains_obey_the_depth_limit() {
+    let chain = |n: usize| {
+        let mut body = String::from("box b0 at (0,0) size (1,1)\n");
+        for i in 1..=n {
+            body.push_str(&format!(
+                "box b{i} at b{}.right size (1,1) pin=left\n",
+                i - 1
+            ));
+        }
+        body
+    };
+    let s = ok(&chain(256));
+    assert_eq!(rect(&s, "b256").x, 256.0);
+    let d = errors(&chain(600));
+    assert_eq!(codes_of(&d), vec!["placement-cycle"], "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "placement chain from `b600` to `b0` is 600 references deep; the limit is 256"
+    );
+    assert_eq!(d[0].span.line, 602);
+}
+
+#[test]
+fn long_placement_cycles_name_the_cycle() {
+    let n = 300;
+    let mut body = String::new();
+    for i in 0..n {
+        body.push_str(&format!("box b{i} at b{}.right size (1,1)\n", (i + 1) % n));
+    }
+    let d = errors(&body);
+    assert_eq!(codes_of(&d), vec!["placement-cycle"], "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "placement cycle of 300 shapes: b0 -> b1 -> b2 -> b3 -> … -> b299 -> b0"
+    );
+    assert_eq!((d[0].span.line, d[0].span.col), (2, 11));
+}
+
+#[test]
+fn shapes_leading_into_a_cycle_are_not_part_of_it() {
+    let d = errors(
+        "box p at a.right size (10,10)\nbox a at b.right size (10,10)\nbox b at a.left size (10,10)\n",
+    );
+    assert_eq!(codes_of(&d), vec!["placement-cycle"], "{d:#?}");
+    assert_eq!(d[0].message, "placement cycle: a -> b -> a");
 }

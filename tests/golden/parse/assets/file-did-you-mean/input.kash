@@ -1,0 +1,6 @@
+// spec: 3a, 7
+// Directories are named as such, and suggestions never name the missing file or anything outside the root.
+diagram "did you mean" size (300,200)
+import "lib"
+import "../../../COVERAGE.m"
+image i "lib/pic.sv" at (20,20) size (40,40)

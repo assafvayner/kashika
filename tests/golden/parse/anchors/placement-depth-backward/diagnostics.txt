@@ -1,0 +1,2 @@
+error[placement-cycle] 303:13-303:20: placement chain from `b299` to `b0` is 299 references deep; the limit is 256
+  = help: place some shapes in this chain with literal coordinates

@@ -2,4 +2,4 @@ warn[out-of-canvas] 4:1-4:45: box 'a' extends beyond the 300x200 canvas (right b
   = help: move it inside (0,0)-(300,200) or enlarge `size` on the `diagram` line
   elements: [{"bbox":[[250,20],[350,60]],"id":"a","kind":"box","span":{"col":1,"end_col":45,"end_line":4,"line":4}}]
   facts: {"overflow":{"right":50}}
-error[attr] 4:33-4:45: unknown shape `nosuch`
+error[unknown-shape] 4:33-4:45: unknown shape `nosuch`

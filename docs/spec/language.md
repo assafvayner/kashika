@@ -65,9 +65,9 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
   - `radius`, `padding`, `muted` (the color for sublabels and `muted` text)
 
   Built-in styles: `service`, `datastore`, `external`, `queue`, `boundary`, `note`. A user style with a built-in's name overrides it **key by key**. Precedence: inline attribute > `style=` > built-in default.
-- `box` shapes: built-in `rect` (default), `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`, or any `shape` that is defined or imported (§3a).
+- `box` shapes: built-in `rect` (default), `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`, or any `shape` that is defined or imported (§3a). Any other `shape=` name is an `unknown-shape` error.
 - `pin=<anchor>` picks which anchor of the new shape lands on `at` (default `tl`). Any anchor works, including `side@t`: `pin=left@0.25`. For example, `box cache at db.right+(60,0) size (120,60) pin=left` vertically centers `cache` beside `db`.
-- `at` may reference other shapes, so boxes can be placed relative to each other. Placement references form a DAG; a cycle is an error that prints the cycle. A chain of placement references deeper than 256 is also a `placement-cycle` error.
+- `at` may reference other shapes, so boxes can be placed relative to each other. Placement references form a DAG; a cycle is an error that prints the cycle (the first few shapes and its length when it is long). A chain of more than 256 placement references is also a `placement-cycle` error, whatever the statement order; a shape inside a group counts a reference to the group, whose frame it uses.
 - `group`: children are `box`, `group`, `junction`, `text`, `line`. `image` is top-level only; inside a group it is a `parse` error. Groups nest at most 64 deep; a deeper `group` is a `parse` error. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. The label sits inside the top-left corner, and its title band (`font line-height + padding`) is reserved space. Children that intrude on the title band trigger `spill`.
 - `junction`: a zero-size named point that lines can start or end at. Lines meeting at a junction are connected, not crossing. `dot` draws a 6px dot there. Junctions model buses and fan-in/fan-out.
 - `text`: `at` is the anchor point for the alignment. `color=none` is an `attr` error. Vertically, `at` is the **center** of the text block, not the baseline.
@@ -119,8 +119,9 @@ image logo "assets/hf.png" at (20,20) size (80,80) [fit=contain|cover|stretch]
 import "lib/aws.kash"          // brings in shape and style definitions
 import "lib/aws.kash" as aws   // namespaced: shape=aws.s3 style=aws.service
 ```
-Library files may contain only `shape`, `style` and `import`. An import cycle is an error.
-- Errors inside an imported file are reported at the `import` statement of the file being checked, and the message starts with ``in `lib/aws.kash` at 3:5: `` (the line and column inside the library). Nested imports chain the prefix.
+Library files may contain only `shape`, `style` and `import`; any other statement is a `parse` error naming it. An import cycle is an error.
+- Errors inside an imported file are reported at the path string of the `import` in the file being checked, and the message starts with ``in `lib/aws.kash` at 3:5: `` (the line and column inside the library). Nested imports chain the prefix, one hop per file, each at the path string of the next `import`. A chain of more than 4 hops shows the first two, ``… N more imports …`` and the last.
+- `kashika check` accepts a library on its own: a file with no `diagram` that holds only `shape`, `style` and `import`. It resolves the definitions (imports, shape files, style keys) and reports their errors, with no lints. `render` on a library is a tool error. A file with no `diagram` and any other statement is a `diagram` error.
 
 ### Rules for files
 - **Local files only.** No URLs.
@@ -128,7 +129,7 @@ Library files may contain only `shape`, `style` and `import`. An import cycle is
 - **Search path:** besides the importing file's directory, Kashika searches `icons=` on the `diagram` line and `KASHIKA_ICON_PATH`.
 - **SVG sanitizing:** scripts, external references and `foreignObject` are stripped.
 - **Self-contained output:** images are embedded in SVG output and rasterized into PNG output.
-- **Missing files:** a missing file is an error, with did-you-mean suggestions.
+- **Missing files:** a missing file is an error, with did-you-mean suggestions drawn only from files the sandbox allows. Naming a directory is an error that says so.
 - **Licensing:** no third-party icon sets are bundled. Kashika ships a small neutral set (`server`, `browser`, `queue`, `lock`, `cloud`, `person`). Users point the search path at icon sets they download themselves.
 
 ## 4. Points and anchors
@@ -236,7 +237,7 @@ These block output unless `--force` is given:
 | `unknown-id` / `unknown-anchor` | Includes did-you-mean. `unknown-anchor` also covers a bad `@t`: out of 0..1, or on a corner or `center` |
 | `duplicate-id` | Two statements use the same id |
 | `duplicate-style` | Two `style` statements, or two `shape` definitions, define the same name, or a `shape` reuses a built-in shape name. Style and shape names are separate from element ids |
-| `placement-cycle` | Relative placements form a cycle, or a chain of them is deeper than 256 |
+| `placement-cycle` | Relative placements form a cycle, or a chain of more than 256 of them |
 | `label-overflow` | Reports the required size |
 | `text-conflict` | `label`/`sublabel` combined with stacked (no `at`) block items (§6) |
 | `not-ortho` | A segment is diagonal on a line marked `ortho` |
@@ -244,11 +245,11 @@ These block output unless `--force` is given:
 | `zero-length` | A line whose segments all have zero length |
 | `attr` | Unknown, duplicate, mistyped (including an unknown color name) or out-of-range attribute (§3), or a duplicate label position |
 | `unknown-style` | `style=` names no built-in or user style |
+| `unknown-shape` | `shape=` names no built-in, defined or imported shape. Includes did-you-mean |
 | `size` | A non-positive size, or one larger than 1,000,000 |
 | `diagram` | Missing, misplaced or repeated `diagram` statement |
 | `version` | `kashika=` is not a quoted semver string, or names a newer version or a different major version than the tool |
-| `file` | A referenced file (`import`, `shape ... from`, `image`, `icon=`, `icons=`) is missing, escapes the project root without `--allow-path`, is a remote URL, can't be read or decoded, or has the wrong type; an import cycle; imports nested more than 32 deep. Errors inside an imported file are reported at the `import` with an ``in `file` at L:C:`` prefix |
-| `unsupported` | A spec feature this build doesn't implement yet |
+| `file` | A referenced file (`import`, `shape ... from`, `image`, `icon=`, `icons=`) is missing, is a directory, escapes the project root without `--allow-path`, is a remote URL, can't be read or decoded, or has the wrong type; an import cycle; imports nested more than 32 deep. Errors inside an imported file are reported at the `import` with an ``in `file` at L:C:`` prefix |
 
 ### Warnings
 
@@ -304,6 +305,7 @@ Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`
 
 - `--focus` filters warnings only; errors are always reported. An unknown id is a usage error.
 - Suppressed findings are excluded from `warn` and from the exit code, and counted in `suppressed`. `crossings` in the metrics counts every crossing, suppressed or not, and is computed before `--focus` filtering.
+- `check` on a library file (§3a) reports only the errors in its definitions and prints no metrics; `render` on one is a usage error (exit 3).
 - `inspect` accepts the common flags, but only `--format` and `--stdin-name` change its output; it always exits 0 except on usage or I/O errors.
 
 **Versioning.** The optional `kashika="MAJOR.MINOR.PATCH"` on the `diagram` line is the minimum tool version that can process the file, always written with all three parts. A tool accepts a file when the file's version is at most the tool's version and the major versions are equal; anything else, including a bare number or a malformed string, is a `version` error. Releases that add language features bump the tool's minor version, so authors set `kashika=` to the release that introduced the newest feature they use.

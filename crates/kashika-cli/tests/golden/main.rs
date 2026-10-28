@@ -66,9 +66,15 @@ fn run_parse(case: &Case) -> Result<Vec<Output>, String> {
         allow_path: case.allow_path,
         icon_path: case.icon_path.iter().map(|p| case.dir.join(p)).collect(),
     };
-    let (scene, mut diags) = kashika_model::compile_with(&case.src, &opts);
-    diags.extend(kashika_check::check(&scene));
-    kashika_diag::sort(&mut diags);
+    let (scene, diags) = match kashika_model::compile_library_with(&case.src, &opts) {
+        Some(diags) => (None, diags),
+        None => {
+            let (scene, mut diags) = kashika_model::compile_with(&case.src, &opts);
+            diags.extend(kashika_check::check(&scene));
+            kashika_diag::sort(&mut diags);
+            (Some(scene), diags)
+        }
+    };
     let diags: Vec<Value> = diags
         .iter()
         .map(|d| serde_json::to_value(d).expect("diagnostics serialize"))
@@ -90,6 +96,7 @@ fn run_parse(case: &Case) -> Result<Vec<Output>, String> {
         out.push(Output::text("ast.txt", dump::ast(&file)));
     }
     if case.dump_scene {
+        let scene = scene.ok_or_else(|| format!("{}: a library has no scene", case.name))?;
         out.push(Output::text("scene.json", dump::scene(&scene)));
     }
     Ok(out)

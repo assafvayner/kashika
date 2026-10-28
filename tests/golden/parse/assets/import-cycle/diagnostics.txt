@@ -1,1 +1,1 @@
-error[file] 4:1-4:20: in `lib/a.kash` at 1:1: in `b.kash` at 1:8: import cycle: a.kash -> b.kash -> a.kash
+error[file] 4:8-4:20: in `lib/a.kash` at 1:8: in `b.kash` at 1:8: import cycle: a.kash -> b.kash -> a.kash

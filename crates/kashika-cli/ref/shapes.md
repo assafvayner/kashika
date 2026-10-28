@@ -46,6 +46,6 @@ image logo "browser" at (20,120) size (60,60)
 ## Imports and files
 
 - `import "<file.kash>" [as <ns>]` comes right after `diagram`. A library holds only `shape`, `style` and `import`. With `as aws`, use `shape=aws.s3` and `style=aws.service`.
-- Errors inside a library are reported at the `import` line, as ``in `lib/aws.kash` at 3:5: ...``.
+- Errors inside a library are reported at the `import` path, as ``in `lib/aws.kash` at 3:5: ...``. `kashika check lib/aws.kash` checks a library on its own.
 - Files are local. They resolve from the `.kash` file's directory, then `icons="<dir>"` on the `diagram` line, then `KASHIKA_ICON_PATH`, then the bundled icons. Paths outside the file's directory need `--allow-path`. Problems are `file` errors, with did-you-mean.
 - `kashika icons [dir...] [--search <term>]` lists what's available, with natural sizes.

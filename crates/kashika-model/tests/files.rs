@@ -242,7 +242,7 @@ fn library_errors_point_at_the_import() {
     assert!(
         got[1]
             .2
-            .starts_with("in `lib/bad.kash` at 1:1: library files may contain only"),
+            .starts_with("in `lib/bad.kash` at 1:1: `box` is not allowed in a library; library files may contain only"),
         "{}",
         got[1].2
     );
@@ -258,10 +258,10 @@ fn import_cycles_are_errors() {
     let (_, d) = run(dir.path(), &format!("{HEAD}import \"a.kash\"\n"));
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].code, "file");
-    assert_eq!(d[0].span.line, 2);
+    assert_eq!((d[0].span.line, d[0].span.col), (2, 8));
     assert_eq!(
         d[0].message,
-        "in `a.kash` at 1:1: in `b.kash` at 1:8: import cycle: a.kash -> b.kash -> a.kash"
+        "in `a.kash` at 1:8: in `b.kash` at 1:8: import cycle: a.kash -> b.kash -> a.kash"
     );
 }
 
@@ -387,11 +387,54 @@ fn deep_import_chains_stop() {
     let (_, d) = run(dir.path(), &format!("{HEAD}import \"l0.kash\"\n"));
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].code, "file");
-    assert!(
-        d[0].message.contains("nested more than 32"),
-        "{}",
-        d[0].message
+    assert_eq!(
+        d[0].message,
+        "in `l0.kash` at 1:8: in `l1.kash` at 1:8: … 29 more imports …: in `l31.kash` at 1:8: imports are nested more than 32 deep"
     );
+}
+
+#[test]
+fn library_files_check_on_their_own() {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "x.svg", SVG.as_bytes());
+    write(dir.path(), "inner.kash", b"style s { fil=#fff }\n");
+    let src = "import \"inner.kash\"\nimport \"gone.kash\"\nshape t from \"y.svg\"\nshape u from \"x.svg\"\nstyle a { fill=#fff stroke=nope }\nstyle a { fill=#000 }\n";
+    write(dir.path(), "main.kash", src.as_bytes());
+    let d = kashika_model::compile_library_with(src, &opts(dir.path())).expect("a library");
+    let got: Vec<_> = d
+        .iter()
+        .map(|x| (x.code, x.span.line, x.message.as_str()))
+        .collect();
+    assert_eq!(
+        got,
+        vec![
+            (
+                "attr",
+                1,
+                "in `inner.kash` at 1:11: unknown attribute `fil` on style"
+            ),
+            ("file", 2, "file `gone.kash` not found"),
+            ("file", 3, "file `y.svg` not found"),
+            (
+                "attr",
+                5,
+                "`stroke` expects a color like `#1a73e8`, a CSS color name or `none`"
+            ),
+            ("duplicate-style", 6, "style `a` is defined twice"),
+        ],
+        "{d:#?}"
+    );
+    for src in [
+        "",
+        "box a at (0,0) size (1,1)\n",
+        "style a { fill=#fff }\nbox a at (0,0) size (1,1)\n",
+        "diagram \"t\" size (10,10)\nstyle a { fill=#fff }\n",
+    ] {
+        assert!(
+            kashika_model::compile_library_with(src, &opts(dir.path())).is_none(),
+            "{src:?}"
+        );
+    }
 }
 
 #[test]

@@ -1,0 +1,9 @@
+error[attr] 3:8-3:24: in `lib/inner.kash` at 2:11: unknown attribute `fil` on style
+  = help: did you mean `fill`?
+error[parse] 3:8-3:24: in `lib/inner.kash` at 1:1: `diagram` is not allowed in a library; library files may contain only `shape`, `style` and `import`
+error[file] 4:8-4:23: file `lib/gone.kash` not found
+  = help: did you mean `lib/inner.kash`?
+error[file] 5:14-5:20: file `t.sv` not found
+  = help: did you mean `t.svg`?
+error[attr] 9:21-9:32: `stroke` expects a color like `#1a73e8`, a CSS color name or `none`
+error[duplicate-style] 10:1-10:22: style `a` is defined twice

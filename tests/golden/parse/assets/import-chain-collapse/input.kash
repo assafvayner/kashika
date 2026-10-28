@@ -1,0 +1,4 @@
+// spec: 3a, 7
+// An error five imports deep shows the first two hops, a count and the last hop.
+diagram "collapse" size (300,120)
+import "lib/c1.kash"

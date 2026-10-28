@@ -1,0 +1,10 @@
+// spec: 3a, 7, 8
+// A file with no `diagram` holding only `shape`, `style` and `import` is checked as a library.
+import "lib/inner.kash"
+import "lib/gone.kash"
+shape t from "t.sv"
+shape u {
+  path "M 0 0 L 1 0 L 1 1 Z"
+}
+style a { fill=#fff stroke=nope }
+style a { fill=#000 }

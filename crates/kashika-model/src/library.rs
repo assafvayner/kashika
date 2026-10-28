@@ -13,6 +13,8 @@ use crate::style::{StyleProps, STYLE_KEYS};
 
 /// Deepest chain of nested imports followed before giving up.
 const MAX_IMPORT_DEPTH: usize = 32;
+/// Import chains longer than this print only their first two and last hops.
+const HOPS_SHOWN: usize = 4;
 
 #[derive(Debug, Clone)]
 pub(crate) enum LibShape {
@@ -57,6 +59,41 @@ pub(crate) struct Ctx<'l> {
     pub loader: &'l Loader,
     pub store: &'l mut Store,
     pub diags: Vec<Diagnostic>,
+    /// Diagnostics from imported files, not yet prefixed.
+    pub nested: Vec<Nested>,
+}
+
+/// A diagnostic from inside an import, with the chain of imports that leads to it.
+pub(crate) struct Nested {
+    /// The import's path string in the file being processed.
+    at: Span,
+    /// (import path, line, column) per file along the chain; the last is where `diag` is.
+    hops: Vec<(String, u32, u32)>,
+    diag: Diagnostic,
+}
+
+impl Nested {
+    fn finish(self) -> Diagnostic {
+        let hop = |(path, line, col): &(String, u32, u32)| format!("in `{path}` at {line}:{col}");
+        let n = self.hops.len();
+        let prefix: Vec<String> = if n > HOPS_SHOWN {
+            vec![
+                hop(&self.hops[0]),
+                hop(&self.hops[1]),
+                format!("… {} more imports …", n - 3),
+                hop(&self.hops[n - 1]),
+            ]
+        } else {
+            self.hops.iter().map(hop).collect()
+        };
+        Diagnostic {
+            span: self.at,
+            message: format!("{}: {}", prefix.join(": "), self.diag.message),
+            elements: Vec::new(),
+            suggestions: Vec::new(),
+            ..self.diag
+        }
+    }
 }
 
 impl Library {
@@ -71,6 +108,27 @@ impl Library {
             .into_iter()
             .collect();
         lib.defs(&file.stmts, &root, "", &mut stack, ctx);
+        finish(ctx);
+        lib
+    }
+
+    /// Loads a library file checked on its own, as if it were imported without `as`.
+    pub fn load_standalone(file: &ast::File, ctx: &mut Ctx) -> Library {
+        let mut lib = Library::default();
+        let root = ctx.loader.root().to_path_buf();
+        let mut stack: Vec<PathBuf> = ctx
+            .loader
+            .main()
+            .map(Path::to_path_buf)
+            .into_iter()
+            .collect();
+        for stmt in &file.stmts {
+            if let Stmt::Style(s) = stmt {
+                lib.style(s, "", ctx);
+            }
+        }
+        lib.defs(&file.stmts, &root, "", &mut stack, ctx);
+        finish(ctx);
         lib
     }
 
@@ -159,6 +217,7 @@ impl Library {
         };
         let (lib_file, mut inner) = kashika_syntax::parse(&src);
         let outer = std::mem::take(&mut ctx.diags);
+        let outer_nested = std::mem::take(&mut ctx.nested);
         for stmt in &lib_file.stmts {
             match stmt {
                 Stmt::Shape(_) | Stmt::Import(_) => {}
@@ -166,7 +225,10 @@ impl Library {
                 other => ctx.diags.push(Diagnostic::error(
                     "parse",
                     other.span(),
-                    "library files may contain only `shape`, `style` and `import`",
+                    format!(
+                        "`{}` is not allowed in a library; library files may contain only `shape`, `style` and `import`",
+                        keyword(other)
+                    ),
                 )),
             }
         }
@@ -177,19 +239,22 @@ impl Library {
         self.defs(&lib_file.stmts, &lib_dir, &ns, stack, ctx);
         stack.pop();
         inner.append(&mut ctx.diags);
-        kashika_diag::sort(&mut inner);
+        let mut found: Vec<Nested> = inner
+            .into_iter()
+            .map(|d| Nested {
+                at: d.span,
+                hops: Vec::new(),
+                diag: d,
+            })
+            .chain(std::mem::take(&mut ctx.nested))
+            .collect();
+        found.sort_by_key(|n| (n.at.line, n.at.col, n.diag.severity, n.diag.code));
         ctx.diags = outer;
-        for d in inner {
-            ctx.diags.push(Diagnostic {
-                span: i.span,
-                message: format!(
-                    "in `{}` at {}:{}: {}",
-                    i.path, d.span.line, d.span.col, d.message
-                ),
-                elements: Vec::new(),
-                suggestions: Vec::new(),
-                ..d
-            });
+        ctx.nested = outer_nested;
+        for mut n in found {
+            n.hops.insert(0, (i.path.clone(), n.at.line, n.at.col));
+            n.at = i.path_span;
+            ctx.nested.push(n);
         }
     }
 
@@ -245,6 +310,36 @@ impl Library {
             self.shapes.insert(name, d);
         }
     }
+}
+
+fn finish(ctx: &mut Ctx) {
+    for n in std::mem::take(&mut ctx.nested) {
+        ctx.diags.push(n.finish());
+    }
+}
+
+fn keyword(stmt: &Stmt) -> &'static str {
+    match stmt {
+        Stmt::Diagram(_) => "diagram",
+        Stmt::Style(_) => "style",
+        Stmt::Box(_) => "box",
+        Stmt::Group(_) => "group",
+        Stmt::Junction(_) => "junction",
+        Stmt::Text(_) => "text",
+        Stmt::Line(_) => "line",
+        Stmt::Import(_) => "import",
+        Stmt::Shape(_) => "shape",
+        Stmt::Image(_) => "image",
+    }
+}
+
+/// Whether `file` is a library: no `diagram`, and only `shape`, `style` and `import`.
+pub(crate) fn is_library(file: &ast::File) -> bool {
+    !file.stmts.is_empty()
+        && file
+            .stmts
+            .iter()
+            .all(|s| matches!(s, Stmt::Shape(_) | Stmt::Style(_) | Stmt::Import(_)))
 }
 
 /// Reports imports that follow any statement other than `diagram` or another `import`.

@@ -521,3 +521,38 @@ fn seeded_mistakes_trigger_their_lints() {
         assert!(codes.contains(code), "{code} missing from {codes:?}");
     }
 }
+
+#[test]
+fn library_files_check_on_their_own() {
+    let dir = tempfile::tempdir().unwrap();
+    let lib = dir.path().join("lib.kash");
+    std::fs::write(&lib, "style s { fill=#fff }\nshape t from \"t.svg\"\n").unwrap();
+    let lib = lib.to_str().unwrap();
+    kashika().args(["check", lib]).assert().code(2).stdout(
+        predicate::str::contains("lib.kash:2:14: error[file]: file `t.svg` not found")
+            .and(predicate::str::contains("missing `diagram`").not())
+            .and(predicate::str::contains("1 error, 0 warnings\n")),
+    );
+    std::fs::write(dir.path().join("lib.kash"), "style s { fill=#fff }\n").unwrap();
+    kashika().args(["check", lib]).assert().code(0);
+    kashika()
+        .args(["render", lib, "-o"])
+        .arg(dir.path().join("out.svg"))
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains(
+            "is a library (no `diagram` statement); render a diagram that imports it",
+        ));
+    assert!(!dir.path().join("out.svg").exists());
+
+    std::fs::write(
+        dir.path().join("lib.kash"),
+        "style s { fill=#fff }\nbox a at (0,0) size (1,1)\n",
+    )
+    .unwrap();
+    kashika()
+        .args(["check", lib])
+        .assert()
+        .code(2)
+        .stdout(predicate::str::contains("missing `diagram` statement"));
+}

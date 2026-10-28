@@ -1,0 +1,2 @@
+error[placement-cycle] 4:11-4:16: placement cycle of 300 shapes: b0 -> b1 -> b2 -> b3 -> … -> b299 -> b0
+  = help: place one of these with literal coordinates

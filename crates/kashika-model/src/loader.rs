@@ -110,7 +110,7 @@ impl Loader {
     /// search path. A hit that escapes the sandbox is an error.
     pub fn find(&self, from: &Path, name: &str) -> Result<Found, FileError> {
         url_check(name)?;
-        for dir in std::iter::once(from).chain(self.search.iter().map(PathBuf::as_path)) {
+        for dir in self.dirs(from) {
             let p = dir.join(name);
             if p.is_file() {
                 let c = p
@@ -125,21 +125,43 @@ impl Loader {
                 return Ok(Found::Bundled(n));
             }
         }
+        if self.dirs(from).any(|dir| {
+            let p = dir.join(name);
+            p.is_dir() && self.allowed(&p)
+        }) {
+            return Err(FileError::new(format!(
+                "`{name}` is a directory, not a file"
+            )));
+        }
         Err(FileError {
             message: format!("file `{name}` not found"),
             help: self.suggest(from, name),
         })
     }
 
+    fn dirs<'p>(&'p self, from: &'p Path) -> impl Iterator<Item = &'p Path> {
+        std::iter::once(from).chain(self.search.iter().map(PathBuf::as_path))
+    }
+
+    /// Whether `p` exists inside the sandbox.
+    fn allowed(&self, p: &Path) -> bool {
+        p.canonicalize()
+            .is_ok_and(|c| self.check_inside(&c, "").is_ok())
+    }
+
+    /// Near names for a missing file: files `find` would accept, never `name` itself.
     fn suggest(&self, from: &Path, name: &str) -> Option<String> {
         let sub = Path::new(name).parent().unwrap_or(Path::new(""));
         let mut cands: Vec<String> = Vec::new();
-        for dir in std::iter::once(from).chain(self.search.iter().map(PathBuf::as_path)) {
+        for dir in self.dirs(from) {
             let Ok(rd) = std::fs::read_dir(dir.join(sub)) else {
                 continue;
             };
             for e in rd.flatten() {
-                cands.push(sub.join(e.file_name()).to_string_lossy().into_owned());
+                let p = e.path();
+                if p.is_file() && self.allowed(&p) {
+                    cands.push(sub.join(e.file_name()).to_string_lossy().into_owned());
+                }
             }
         }
         if !name.contains('/') {
@@ -149,6 +171,7 @@ impl Loader {
                     .map(|(n, _)| n.to_string()),
             );
         }
+        cands.retain(|c| c != name);
         cands.sort();
         cands.dedup();
         did_you_mean(name, cands.iter().map(String::as_str)).map(|s| format!("did you mean `{s}`?"))
@@ -207,6 +230,27 @@ mod tests {
         let e = l.find(l.root(), "icons/s4.svg").unwrap_err();
         assert_eq!(e.message, "file `icons/s4.svg` not found");
         assert_eq!(e.help.as_deref(), Some("did you mean `icons/s3.svg`?"));
+    }
+
+    #[test]
+    fn suggestions_stay_inside_the_sandbox() {
+        let (_t, l) = setup(false);
+        let e = l.find(l.root(), "../secrt.svg").unwrap_err();
+        assert_eq!(e.message, "file `../secrt.svg` not found");
+        assert_eq!(e.help, None);
+        let (_t, l) = setup(true);
+        let e = l.find(l.root(), "../secrt.svg").unwrap_err();
+        assert_eq!(e.help.as_deref(), Some("did you mean `../secret.svg`?"));
+    }
+
+    #[test]
+    fn directories_are_named_as_such() {
+        let (_t, l) = setup(false);
+        let e = l.find(l.root(), "icons").unwrap_err();
+        assert_eq!(e.message, "`icons` is a directory, not a file");
+        let e = l.find(l.root(), "icon").unwrap_err();
+        assert_eq!(e.message, "file `icon` not found");
+        assert_eq!(e.help, None);
     }
 
     #[test]

@@ -8,10 +8,6 @@ use crate::case::{self, Case, Suite};
 
 /// Codes no build reports yet, with what a case can show instead.
 const NOT_REPORTED: &[(&str, &str)] = &[
-    (
-        "unsupported",
-        "never reported: every spec feature is implemented",
-    ),
     ("block-reducible", "not reported yet; accepted by `allow=`"),
     (
         "text-outside-shape",
@@ -143,7 +139,7 @@ fn every_code_has_a_case() -> Result<(), Failed> {
             Some(_) if reported => problems.push(format!(
                 "`{code}` is reported now: remove it from NOT_REPORTED in coverage.rs"
             )),
-            Some(_) if code != "unsupported" && allow_cases(&corpus, code).is_empty() => {
+            Some(_) if allow_cases(&corpus, code).is_empty() => {
                 problems.push(format!("no case accepts `allow={code}`"))
             }
             Some(_) => {}
