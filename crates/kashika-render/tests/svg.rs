@@ -103,18 +103,23 @@ fn markers_at_both_ends_of_a_short_line_share_it() {
 }
 
 #[test]
-fn line_labels_get_a_halo_and_texts_do_not() {
+fn line_labels_get_a_mask_and_texts_do_not() {
     let s = svg("diagram \"h\" size (200,100)\nline l: (0,50) -> h 200 label=\"L\"\ntext \"T\" at (100,90)\n");
-    let label = &s[s.find(r#"aria-label="L""#).unwrap()..];
-    assert!(label.lines().next().unwrap().ends_with(
-        r##"fill="#0f172a" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" paint-order="stroke"/>"##
-    ));
+    let label_at = s.find(r#"aria-label="L""#).unwrap();
+    let before = s[..label_at].lines().rev().nth(1).unwrap();
+    assert!(before.starts_with("<rect ") && before.ends_with(r##"fill="#ffffff"/>"##));
+    assert!(!s.contains("stroke-width=\"4\""));
     let text = &s[s.find(r#"aria-label="T""#).unwrap()..];
     assert!(text
         .lines()
         .next()
         .unwrap()
         .ends_with(r##"fill="#0f172a"/>"##));
+    assert_eq!(
+        s.matches("<rect ").count(),
+        2,
+        "only background and one mask"
+    );
 }
 
 #[test]

@@ -54,3 +54,37 @@ fn png_rasterizes_embedded_images() {
     let q = pix.pixel(80, 80).unwrap();
     assert!(q.green() > 200, "background is not red: {q:?}");
 }
+
+const LABELED: &str = "diagram \"Label\" size (300,100)\n\
+line l: (20,50) -> (280,50) label=\"passive open\" stroke=#dc2626 stroke-width=3\n";
+
+#[test]
+fn line_label_masks_the_line_between_words() {
+    let (scene, diags) = compile(LABELED);
+    assert!(diags.is_empty(), "{diags:#?}");
+    let rect = scene.lines[0].labels[0].rect;
+    let svg = render_svg(&scene);
+    let r = |v: f64| (v * 100.0).round() / 100.0;
+    let mask = format!(
+        "<rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"#ffffff\"/>",
+        r(rect.x),
+        r(rect.y),
+        r(rect.w),
+        r(rect.h)
+    );
+    assert!(svg.contains(&mask), "no label mask in:\n{svg}");
+
+    let pix = resvg::tiny_skia::Pixmap::decode_png(&svg_to_png(&svg).unwrap()).unwrap();
+    let is_line = |x: u32, y: u32| {
+        let p = pix.pixel(x, y).unwrap();
+        p.red() > 150 && p.green() < 100
+    };
+    assert!(is_line(25, 50), "line itself is not drawn");
+    let (x0, x1) = (
+        rect.x.ceil() as u32 + 1,
+        (rect.x + rect.w).floor() as u32 - 1,
+    );
+    for x in x0..=x1 {
+        assert!(!is_line(x, 50), "line shows through the label at x={x}");
+    }
+}

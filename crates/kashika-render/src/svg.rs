@@ -50,14 +50,17 @@ pub fn render_svg(scene: &Scene) -> String {
     overlays.sort_by_key(|(k, _)| *k);
     for (_, o) in overlays {
         match o {
-            Overlay::Label(l, lab) => text::lines(
-                &mut out,
-                &lab.lines,
-                l.style.font_size,
-                &l.style.color,
-                true,
-            ),
-            Overlay::Text(t) => text::lines(&mut out, &t.lines, t.size, &t.color, false),
+            Overlay::Label(l, lab) => {
+                out.push_str(&format!(
+                    "<rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"#ffffff\"/>\n",
+                    n(lab.rect.x),
+                    n(lab.rect.y),
+                    n(lab.rect.w),
+                    n(lab.rect.h)
+                ));
+                text::lines(&mut out, &lab.lines, l.style.font_size, &l.style.color);
+            }
+            Overlay::Text(t) => text::lines(&mut out, &t.lines, t.size, &t.color),
         }
     }
     out.push_str("</svg>\n");
@@ -98,7 +101,7 @@ pub(crate) fn stroke_attrs(style: &Style) -> String {
 fn shape(out: &mut String, s: &Shape, assets: &[Asset]) {
     shapes::body(out, s, assets);
     for item in &s.text {
-        text::lines(out, &item.lines, item.size, &item.color, false);
+        text::lines(out, &item.lines, item.size, &item.color);
     }
 }
 
