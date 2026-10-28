@@ -370,7 +370,7 @@ fn negative_curve_amount() {
     assert_eq!(d[0].code, "degenerate-curve");
     assert_eq!(
         d[0].message,
-        "curve amount must be positive; use `left`/`right` to choose the side"
+        "curve amount must not be negative; use `left`/`right` to choose the side"
     );
 }
 
@@ -392,4 +392,47 @@ fn unsupported_features_fail_clearly() {
     assert_eq!(d[0].code, "unsupported");
     let d = errors("box a at (0,0) size (10,10) fil=#fff\n");
     assert_eq!(d[0].code, "attr");
+}
+
+#[test]
+fn duplicate_label_attribute_reports_once() {
+    let d = errors("line l: (0,0) -> h 5 label@0.3=\"a\" label@0.3=\"b\"\n");
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "attr");
+}
+
+#[test]
+fn duplicate_unsupported_attribute_reports_once() {
+    let d = errors("box a at (0,0) size (1,1) sublabel=\"x\" sublabel=\"y\"\n");
+    let codes: Vec<_> = d.iter().map(|x| x.code).collect();
+    assert_eq!(codes.iter().filter(|c| **c == "attr").count(), 1, "{d:#?}");
+    assert_eq!(
+        codes.iter().filter(|c| **c == "unsupported").count(),
+        1,
+        "{d:#?}"
+    );
+    assert_eq!(d.len(), 2, "{d:#?}");
+}
+
+#[test]
+fn zero_curve_amount_is_allowed() {
+    ok("line l: (0,0) -> curve left:0 (10,0)\n");
+}
+
+#[test]
+fn negative_curve_message() {
+    let d = errors("line l: (0,0) -> curve left:-1 (10,0)\n");
+    assert!(
+        d.iter().any(|x| x.message.contains("must not be negative")),
+        "{d:#?}"
+    );
+}
+
+#[test]
+fn children_of_duplicate_group_are_not_reference_targets() {
+    let d = errors(
+        "group g at (0,0) size (100,100) {\n}\ngroup g at (200,0) size (100,100) {\n  box b at (0,0) size (10,10)\n}\nline l: (0,0) -> b.left\n",
+    );
+    assert!(d.iter().any(|x| x.code == "duplicate-id"), "{d:#?}");
+    assert!(d.iter().any(|x| x.code == "unknown-id"), "{d:#?}");
 }

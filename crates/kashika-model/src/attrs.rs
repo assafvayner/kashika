@@ -6,7 +6,7 @@ use crate::style::{FontWeight, StrokeStyle, StyleProps};
 /// Validated view over a statement's attributes: reports unknown keys (with suggestions),
 /// duplicates, and `@t` on keys other than `label`.
 pub struct Attrs<'a> {
-    list: &'a [Attr],
+    list: Vec<&'a Attr>,
 }
 
 impl<'a> Attrs<'a> {
@@ -17,6 +17,7 @@ impl<'a> Attrs<'a> {
         diags: &mut Vec<Diagnostic>,
     ) -> Self {
         let mut seen: Vec<(&str, Option<u64>)> = Vec::new();
+        let mut kept: Vec<&'a Attr> = Vec::new();
         for a in list {
             let key = a.key.name.as_str();
             if !allowed.contains(&key) {
@@ -46,21 +47,27 @@ impl<'a> Attrs<'a> {
                     a.key.span,
                     format!("duplicate attribute `{key}`"),
                 ));
-            } else {
-                seen.push(k);
+                continue;
             }
+            seen.push(k);
+            kept.push(a);
         }
-        Self { list }
+        Self { list: kept }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &'a Attr> + '_ {
+        self.list.iter().copied()
     }
 
     pub fn get(&self, key: &str) -> Option<&'a Attr> {
         self.list
             .iter()
+            .copied()
             .find(|a| a.key.name == key && a.at_t.is_none())
     }
 
-    pub fn all(&self, key: &'static str) -> impl Iterator<Item = &'a Attr> {
-        self.list.iter().filter(move |a| a.key.name == key)
+    pub fn all(&self, key: &'static str) -> impl Iterator<Item = &'a Attr> + '_ {
+        self.list.iter().copied().filter(move |a| a.key.name == key)
     }
 }
 

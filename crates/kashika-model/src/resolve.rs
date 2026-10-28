@@ -256,7 +256,8 @@ impl<'a> Resolver<'a> {
                 parent,
                 depth,
             });
-            if let Some(id) = item.id() {
+            let parent_skipped = parent.is_some_and(|p| self.skipped.contains(&p));
+            if let Some(id) = item.id().filter(|_| !parent_skipped) {
                 self.register(id, idx);
             }
             if let Stmt::Group(g) = stmt {
@@ -389,7 +390,7 @@ impl<'a> Resolver<'a> {
             .copied()
             .collect();
         let a = Attrs::new(&n.attrs, what, &keys, &mut self.diags);
-        for x in &n.attrs {
+        for x in a.iter() {
             if UNSUPPORTED_KEYS.contains(&x.key.name.as_str()) {
                 self.unsupported(&x.key.name, x.key.span);
             }
@@ -948,7 +949,7 @@ impl<'a> Resolver<'a> {
                     self.diags.push(Diagnostic::error(
                         "degenerate-curve",
                         seg.span,
-                        "curve amount must be positive; use `left`/`right` to choose the side",
+                        "curve amount must not be negative; use `left`/`right` to choose the side",
                     ));
                     return None;
                 }
