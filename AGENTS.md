@@ -32,15 +32,6 @@ cargo run -p kashika-cli -- route examples/upload/upload.kash --line api1_queue 
 cargo run -p kashika-cli -- ref
 ```
 
-## Adding an example
-
-Create `examples/<name>/<name>.kash` (it must check with 0 errors and 0 warnings), then generate both renders from the repo root and add an entry to `examples/README.md`:
-
-```sh
-for ext in svg png; do cargo run -p kashika-cli -- render examples/<name>/<name>.kash -o examples/<name>/<name>.$ext; done
-```
-
-Commit the `.svg` and `.png` with the source. `crates/kashika-cli/tests/examples.rs` fails if a render is missing or stale; rerun the loop after any renderer or language change.
 
 ## Invariants
 
