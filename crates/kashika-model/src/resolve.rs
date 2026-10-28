@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use kashika_diag::{did_you_mean, Diagnostic, Span, LINT_CODES};
 use kashika_geom::{round_corners, PathSeg, Pt, Rect, TOLERANCE};
@@ -27,6 +27,18 @@ const TEXT_KEYS: &[&str] = &["size", "color", "align"];
 const DIAGRAM_KEYS: &[&str] = &["kashika", "grid", "clearance", "icons", "allow"];
 const MARKERS: &[&str] = &["none", "arrow", "open", "diamond", "dot"];
 const SHAPES: &[&str] = &["rect", "rounded"];
+const UNSUPPORTED_KEYS: &[&str] = &[
+    "sublabel",
+    "text-align",
+    "text-valign",
+    "gap",
+    "icon",
+    "icon-pos",
+    "icon-size",
+];
+const UNSUPPORTED_SHAPES: &[&str] = &[
+    "cylinder", "diamond", "ellipse", "hexagon", "doc", "cloud", "person",
+];
 
 #[derive(Clone, Copy)]
 enum Item<'a> {
@@ -99,6 +111,7 @@ pub fn resolve(file: &ast::File) -> (Scene, Vec<Diagnostic>) {
         dots: HashMap::new(),
         placed: HashMap::new(),
         stack: Vec::new(),
+        skipped: HashSet::new(),
         diags: Vec::new(),
     };
     r.styles(file);
@@ -120,6 +133,7 @@ struct Resolver<'a> {
     /// Canvas rect per placed entry (junctions use a zero-size rect); `None` = failed.
     placed: HashMap<usize, Option<Rect>>,
     stack: Vec<usize>,
+    skipped: HashSet<usize>,
     diags: Vec<Diagnostic>,
 }
 
@@ -157,6 +171,14 @@ impl<'a> Resolver<'a> {
             }
             scene.title = d.title.clone();
             scene.size = d.size;
+            if self.finite(&[d.size.0, d.size.1], d.span) && (d.size.0 <= 0.0 || d.size.1 <= 0.0) {
+                self.diags.push(Diagnostic::error(
+                    "size",
+                    d.span,
+                    "diagram size must be positive",
+                ));
+            }
+
             let a = Attrs::new(&d.attrs, "diagram", DIAGRAM_KEYS, &mut self.diags);
             if let Some(x) = a.get("kashika") {
                 if let Some(v) = attrs::num(x, &mut self.diags) {
@@ -245,6 +267,8 @@ impl<'a> Resolver<'a> {
 
     fn register(&mut self, id: &ast::Ident, idx: usize) {
         if let Some(&prev) = self.ids.get(&id.name) {
+            self.skipped.insert(idx);
+
             let line = self.entries[prev].item.span().line;
             self.diags.push(
                 Diagnostic::error(
@@ -304,6 +328,19 @@ impl<'a> Resolver<'a> {
         out
     }
 
+    fn finite(&mut self, vals: &[f64], span: Span) -> bool {
+        if vals.iter().all(|v| v.is_finite()) {
+            true
+        } else {
+            self.diags.push(Diagnostic::error(
+                "degenerate-curve",
+                span,
+                "value is not a finite number",
+            ));
+            false
+        }
+    }
+
     fn unknown_id(&self, name: &str, span: Span) -> Diagnostic {
         let mut d = Diagnostic::error("unknown-id", span, format!("unknown id `{name}`"));
         if let Some(s) = did_you_mean(name, self.ids.keys().map(String::as_str)) {
@@ -348,9 +385,16 @@ impl<'a> Resolver<'a> {
             .iter()
             .filter(|k| !group || **k != "shape")
             .chain(STYLE_KEYS)
+            .chain(UNSUPPORTED_KEYS)
             .copied()
             .collect();
         let a = Attrs::new(&n.attrs, what, &keys, &mut self.diags);
+        for x in &n.attrs {
+            if UNSUPPORTED_KEYS.contains(&x.key.name.as_str()) {
+                self.unsupported(&x.key.name, x.key.span);
+            }
+        }
+
         if n.size.0 <= 0.0 || n.size.1 <= 0.0 {
             self.diags.push(Diagnostic::error(
                 "size",
@@ -358,16 +402,25 @@ impl<'a> Resolver<'a> {
                 format!("`{}` must have a positive size", n.id.name),
             ));
         }
-        let outline = match a
-            .get("shape")
-            .and_then(|x| attrs::word(x, SHAPES, &mut self.diags))
-        {
-            Some("rounded") => Outline::Rounded,
-            _ => Outline::Rect,
-        };
+        let mut shape = None;
+        if let Some(x) = a.get("shape") {
+            match &x.value {
+                ast::Value::Word(w) if UNSUPPORTED_SHAPES.contains(&w.as_str()) => {
+                    self.unsupported(w, x.span)
+                }
+                _ => shape = attrs::word(x, SHAPES, &mut self.diags),
+            }
+        }
         let mut props = StyleProps::default();
         if group {
-            props = props.overlay(&style::builtin("boundary").unwrap_or_default());
+            let user = self
+                .user_styles
+                .get("boundary")
+                .cloned()
+                .unwrap_or_default();
+            props = props
+                .overlay(&style::builtin("boundary").unwrap_or_default())
+                .overlay(&user);
         }
         if let Some(x) = a.get("style") {
             if let Some(named) = self.named_style(x) {
@@ -375,9 +428,14 @@ impl<'a> Resolver<'a> {
             }
         }
         props = props.overlay(&attrs::style_props(&a, &mut self.diags));
-        if outline == Outline::Rounded && props.radius.is_none() {
+        if shape == Some("rounded") && props.radius.is_none() {
             props.radius = Some(8.0);
         }
+        let outline = if shape == Some("rounded") || props.radius.unwrap_or(0.0) > 0.0 {
+            Outline::Rounded
+        } else {
+            Outline::Rect
+        };
         let pin = a
             .get("pin")
             .and_then(|x| attrs::word(x, anchor::ANCHORS, &mut self.diags))
@@ -387,6 +445,14 @@ impl<'a> Resolver<'a> {
             style: props.resolve(),
             pin,
         }
+    }
+
+    fn unsupported(&mut self, name: &str, span: Span) {
+        self.diags.push(Diagnostic::error(
+            "unsupported",
+            span,
+            format!("`{name}` is not supported in this version yet"),
+        ));
     }
 
     fn named_style(&mut self, a: &ast::Attr) -> Option<StyleProps> {
@@ -465,7 +531,7 @@ impl<'a> Resolver<'a> {
             }
         }
         props = props.overlay(&attrs::style_props(&a, &mut self.diags));
-        let mut labels = Vec::new();
+        let mut labels: Vec<Label> = Vec::new();
         for x in a.all("label") {
             let t = x.at_t.unwrap_or(0.5);
             if !(0.0..=1.0).contains(&t) {
@@ -473,6 +539,14 @@ impl<'a> Resolver<'a> {
                     "attr",
                     x.span,
                     format!("label position {t} is outside 0..1"),
+                ));
+                continue;
+            }
+            if labels.iter().any(|l| l.t == t) {
+                self.diags.push(Diagnostic::error(
+                    "attr",
+                    x.span,
+                    format!("duplicate label at t={t}"),
                 ));
                 continue;
             }
@@ -506,6 +580,13 @@ impl<'a> Resolver<'a> {
     fn build(&mut self, scene: &mut Scene) {
         for idx in 0..self.entries.len() {
             let entry = &self.entries[idx];
+            if self.skipped.contains(&idx)
+                || entry.parent.is_some_and(|p| self.skipped.contains(&p))
+            {
+                self.skipped.insert(idx);
+                continue;
+            }
+
             let (item, depth) = (entry.item, entry.depth);
             let parent = entry
                 .parent
@@ -637,6 +718,10 @@ impl<'a> Resolver<'a> {
     fn place_node(&mut self, idx: usize, n: &'a ast::Node, origin: Pt) -> Option<Rect> {
         let at = self.eval_point(&n.at, origin)?;
         let (w, h) = n.size;
+        if !self.finite(&[at.x, at.y, w, h], n.span) {
+            return None;
+        }
+
         let off = anchor::pin_offset(self.nodes[&idx].pin, w, h);
         Some(Rect::new(at.x - off.x, at.y - off.y, w, h))
     }
@@ -651,15 +736,16 @@ impl<'a> Resolver<'a> {
 
     fn eval_point(&mut self, p: &'a Point, origin: Pt) -> Option<Pt> {
         match p {
-            Point::Lit { x, y, .. } => {
+            Point::Lit { x, y, span } => {
                 let x = self.eval_coord(x, origin.x)?;
                 let y = self.eval_coord(y, origin.y)?;
-                Some(Pt::new(x, y))
+                self.finite(&[x, y], *span).then(|| Pt::new(x, y))
             }
-            Point::Ref { r, offset, .. } => {
+            Point::Ref { r, offset, span } => {
                 let base = self.eval_ref(r)?;
                 let (dx, dy) = offset.unwrap_or((0.0, 0.0));
-                Some(base + Pt::new(dx, dy))
+                let p = base + Pt::new(dx, dy);
+                self.finite(&[p.x, p.y], *span).then_some(p)
             }
         }
     }
@@ -759,7 +845,7 @@ impl<'a> Resolver<'a> {
         for seg in &l.segs {
             let Some(segs) = self.expand(seg, cur, origin) else {
                 failed = true;
-                continue;
+                break;
             };
             for s in segs {
                 cur = s.to();
@@ -825,16 +911,26 @@ impl<'a> Resolver<'a> {
         let line = |a: Pt, b: Pt| PathSeg::Line { from: a, to: b };
         Some(match &seg.kind {
             SegKind::To(p) => vec![line(cur, self.eval_point(p, origin)?)],
-            SegKind::H(dx) => vec![line(cur, Pt::new(cur.x + dx, cur.y))],
-            SegKind::V(dy) => vec![line(cur, Pt::new(cur.x, cur.y + dy))],
-            SegKind::X(t) => vec![line(
-                cur,
-                Pt::new(self.eval_target(t, origin, Axis::X)?, cur.y),
-            )],
-            SegKind::Y(t) => vec![line(
-                cur,
-                Pt::new(cur.x, self.eval_target(t, origin, Axis::Y)?),
-            )],
+            SegKind::H(dx) => {
+                let x = cur.x + dx;
+                self.finite(&[*dx, x], seg.span).then_some(())?;
+                vec![line(cur, Pt::new(x, cur.y))]
+            }
+            SegKind::V(dy) => {
+                let y = cur.y + dy;
+                self.finite(&[*dy, y], seg.span).then_some(())?;
+                vec![line(cur, Pt::new(cur.x, y))]
+            }
+            SegKind::X(t) => {
+                let x = self.eval_target(t, origin, Axis::X)?;
+                self.finite(&[x], seg.span).then_some(())?;
+                vec![line(cur, Pt::new(x, cur.y))]
+            }
+            SegKind::Y(t) => {
+                let y = self.eval_target(t, origin, Axis::Y)?;
+                self.finite(&[y], seg.span).then_some(())?;
+                vec![line(cur, Pt::new(cur.x, y))]
+            }
             SegKind::Hv(p) => {
                 let p = self.eval_point(p, origin)?;
                 let corner = Pt::new(p.x, cur.y);
@@ -847,6 +943,15 @@ impl<'a> Resolver<'a> {
             }
             SegKind::Curve { side, amount, to } => {
                 let to = self.eval_point(to, origin)?;
+                self.finite(&[*amount], seg.span).then_some(())?;
+                if *amount < 0.0 {
+                    self.diags.push(Diagnostic::error(
+                        "degenerate-curve",
+                        seg.span,
+                        "curve amount must be positive; use `left`/`right` to choose the side",
+                    ));
+                    return None;
+                }
                 if cur.dist(to) <= TOLERANCE {
                     self.diags.push(
                         Diagnostic::error(

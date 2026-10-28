@@ -274,3 +274,122 @@ fn zero_length_line() {
     let d = errors("line l: (0,0) -> h 0\n");
     assert_eq!(d[0].code, "zero-length");
 }
+
+fn codes(body: &str) -> Vec<String> {
+    errors(body)
+        .into_iter()
+        .map(|d| d.code.to_string())
+        .collect()
+}
+
+#[test]
+fn failed_segment_stops_the_line() {
+    assert_eq!(
+        codes("line l: (0,0) -> nope.left -> curve left:10 (0,0)\n"),
+        vec!["unknown-id"]
+    );
+}
+
+#[test]
+fn non_finite_values_are_rejected() {
+    let big = "9".repeat(400);
+    for body in [
+        format!("box a at ({big},0) size (1,1)\n"),
+        format!("box a at (0,0) size ({big},1)\n"),
+        format!("line l: (0,0) -> h {big}\n"),
+        format!("line l: (0,0) -> v {big}\n"),
+        format!("line l: (0,0) -> curve left:{big} (10,0)\n"),
+        format!("line l: (0,0) -> curve via ({big},0) (1,1) (2,2)\n"),
+    ] {
+        let d = errors(&body);
+        assert!(
+            d.iter().any(
+                |d| d.code == "degenerate-curve" && d.message == "value is not a finite number"
+            ),
+            "{body}: {d:#?}"
+        );
+    }
+    let (_, d) = compile(&format!("diagram \"t\" size ({big},1)\n"));
+    assert!(
+        d.iter()
+            .any(|d| d.message == "value is not a finite number"),
+        "{d:#?}"
+    );
+}
+
+#[test]
+fn diagram_size_must_be_positive() {
+    let (_, d) = compile("diagram \"t\" size (0,10)\n");
+    assert!(d.iter().any(|d| d.code == "size"), "{d:#?}");
+}
+
+#[test]
+fn group_honors_user_boundary_style() {
+    let s = ok("style boundary { stroke=#ff0000 }\ngroup g at (0,0) size (10,10) {\n}\n");
+    assert_eq!(s.shapes[0].style.stroke, "#ff0000");
+    assert_eq!(s.shapes[0].style.stroke_style, StrokeStyle::Dashed);
+}
+
+#[test]
+fn duplicate_ids_are_not_emitted_twice() {
+    let (s, d) = compile(&format!(
+        "{HEAD}box a at (0,0) size (1,1)\ngroup a at (5,5) size (10,10) {{\n  box c at (0,0) size (1,1)\n}}\n"
+    ));
+    assert_eq!(d.iter().filter(|d| d.code == "duplicate-id").count(), 1);
+    assert_eq!(s.shapes.iter().filter(|x| x.id == "a").count(), 1);
+    assert!(s.shapes.iter().all(|x| x.id != "c"));
+}
+
+#[test]
+fn duplicate_label_positions() {
+    let d = errors("line l: (0,0) -> h 10 label=\"a\" label@0.5=\"b\"\n");
+    assert_eq!(
+        d.iter()
+            .filter(|d| d.code == "attr" && d.message.starts_with("duplicate label at t="))
+            .count(),
+        1
+    );
+    let (s, _) = compile(&format!(
+        "{HEAD}line l: (0,0) -> h 10 label@0.3=\"a\" label@0.3=\"b\"\n"
+    ));
+    assert_eq!(s.lines[0].labels.len(), 1);
+    assert_eq!(s.lines[0].labels[0].text, "a");
+}
+
+#[test]
+fn radius_makes_rect_outline_rounded() {
+    let s = ok("box a at (0,0) size (100,60) radius=8\n");
+    assert_eq!(s.shapes[0].outline, kashika_model::Outline::Rounded);
+    let s = ok("box a at (0,0) size (100,60)\n");
+    assert_eq!(s.shapes[0].outline, kashika_model::Outline::Rect);
+}
+
+#[test]
+fn negative_curve_amount() {
+    let d = errors("line l: (0,0) -> curve left:-10 (10,0)\n");
+    assert_eq!(d[0].code, "degenerate-curve");
+    assert_eq!(
+        d[0].message,
+        "curve amount must be positive; use `left`/`right` to choose the side"
+    );
+}
+
+#[test]
+fn unsupported_features_fail_clearly() {
+    let d = errors("box a at (0,0) size (10,10) sublabel=\"x\"\n");
+    assert_eq!(d[0].code, "unsupported");
+    assert_eq!(
+        d[0].message,
+        "`sublabel` is not supported in this version yet"
+    );
+    let d = errors("box a at (0,0) size (10,10) shape=cylinder\n");
+    assert_eq!(d[0].code, "unsupported");
+    assert_eq!(
+        d[0].message,
+        "`cylinder` is not supported in this version yet"
+    );
+    let d = errors("group g at (0,0) size (10,10) icon=\"x\" {\n}\n");
+    assert_eq!(d[0].code, "unsupported");
+    let d = errors("box a at (0,0) size (10,10) fil=#fff\n");
+    assert_eq!(d[0].code, "attr");
+}
