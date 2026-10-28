@@ -200,7 +200,7 @@ impl<'a> Resolver<'a> {
                 }
             }
             if let Some(x) = a.get("icons") {
-                attrs::text(x, &mut self.diags);
+                self.unsupported(&x.key.name, x.key.span);
             }
             if let Some(x) = a.get("allow") {
                 scene.allow = self.allow_list(x, false);
@@ -833,14 +833,10 @@ impl<'a> Resolver<'a> {
                 };
                 let rect = self.place(idx)?;
                 let radius = corner_radius(self.nodes[&idx].style.radius, rect);
-                match anchor::resolve(rect, radius, &a.name.name, a.t) {
+                match anchor::resolve(rect, radius, name, &a.name.name, a.t) {
                     Ok(p) => Some(p),
                     Err((msg, help)) => {
-                        let mut d = Diagnostic::error(
-                            "unknown-anchor",
-                            a.name.span,
-                            format!("{msg} on `{name}`"),
-                        );
+                        let mut d = Diagnostic::error("unknown-anchor", a.name.span, msg);
                         if let Some(h) = help {
                             d = d.with_help(h);
                         }

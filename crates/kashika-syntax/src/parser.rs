@@ -4,8 +4,10 @@ use crate::ast::*;
 use crate::lexer::{lex, Tok, Token};
 
 const STATEMENTS: &[&str] = &[
-    "diagram", "style", "box", "group", "junction", "text", "line",
+    "diagram", "style", "box", "group", "junction", "text", "line", "import", "shape", "image",
 ];
+const UNBUILT_STATEMENTS: &[&str] = &["import", "shape", "image"];
+const LINE_FLAGS: &[&str] = &["ortho"];
 
 pub fn parse(src: &str) -> (File, Vec<Diagnostic>) {
     let (toks, mut diags) = lex(src);
@@ -93,7 +95,8 @@ impl Parser {
                 _ => {}
             }
             match self.stmt() {
-                Ok(s) => out.push(s),
+                Ok(Some(s)) => out.push(s),
+                Ok(None) => {}
                 Err(()) => self.recover(),
             }
         }
@@ -120,11 +123,24 @@ impl Parser {
         }
     }
 
-    fn stmt(&mut self) -> PResult<Stmt> {
+    fn stmt(&mut self) -> PResult<Option<Stmt>> {
         let start = self.span();
         let Tok::Ident(kw) = self.tok().clone() else {
             return self.error("a statement");
         };
+        if UNBUILT_STATEMENTS.contains(&kw.as_str()) {
+            let closed = self.skip_unbuilt();
+            self.unsupported(
+                start.to(self.prev_span()),
+                format!("`{kw}` is not supported in this version yet"),
+                format!("`{kw}` arrives in a later version of Kashika; remove it for now"),
+            );
+            if !closed {
+                return self.error("`}`");
+            }
+            self.end_of_stmt()?;
+            return Ok(None);
+        }
         let stmt = match kw.as_str() {
             "diagram" => {
                 self.bump();
@@ -136,7 +152,20 @@ impl Parser {
             }
             "box" => {
                 self.bump();
-                Stmt::Box(self.node(start)?)
+                let node = self.node(start)?;
+                if *self.tok() == Tok::LBrace {
+                    let open = self.span();
+                    let closed = self.skip_unbuilt();
+                    self.unsupported(
+                        open.to(self.prev_span()),
+                        "text blocks are not supported in this version yet",
+                        "text blocks arrive in a later version of Kashika; put extra lines in the label with `\\n`",
+                    );
+                    if !closed {
+                        return self.error("`}`");
+                    }
+                }
+                Stmt::Box(node)
             }
             "group" => {
                 self.bump();
@@ -173,7 +202,29 @@ impl Parser {
             }
         };
         self.end_of_stmt()?;
-        Ok(stmt)
+        Ok(Some(stmt))
+    }
+
+    fn unsupported(&mut self, span: Span, message: impl Into<String>, help: impl Into<String>) {
+        self.diags
+            .push(Diagnostic::error("unsupported", span, message).with_help(help));
+    }
+
+    /// Skips a statement the parser recognizes but doesn't build yet: up to the end of
+    /// the line, or past the `}` that matches any `{` it opens, across lines.
+    /// Returns `false` if the input ends inside an open `{`.
+    fn skip_unbuilt(&mut self) -> bool {
+        let mut depth = 0usize;
+        loop {
+            match self.tok() {
+                Tok::Eof => return depth == 0,
+                Tok::Newline | Tok::RBrace if depth == 0 => return true,
+                Tok::LBrace => depth += 1,
+                Tok::RBrace => depth -= 1,
+                _ => {}
+            }
+            self.bump();
+        }
     }
 
     fn end_of_stmt(&mut self) -> PResult<()> {
@@ -259,7 +310,7 @@ impl Parser {
         let title = self.string()?;
         self.keyword("size")?;
         let size = self.pair()?;
-        let attrs = self.attrs()?;
+        let attrs = self.attrs(&[])?;
         Ok(Diagram {
             title,
             size,
@@ -299,7 +350,7 @@ impl Parser {
         let at = self.point()?;
         self.keyword("size")?;
         let size = self.pair()?;
-        let attrs = self.attrs()?;
+        let attrs = self.attrs(&[])?;
         Ok(Node {
             id,
             label,
@@ -314,7 +365,7 @@ impl Parser {
         let id = self.ident("an id")?;
         self.keyword("at")?;
         let at = self.point()?;
-        let attrs = self.attrs()?;
+        let attrs = self.attrs(&[])?;
         Ok(Junction {
             id,
             at,
@@ -332,7 +383,7 @@ impl Parser {
         let content = self.string()?;
         self.keyword("at")?;
         let at = self.point()?;
-        let attrs = self.attrs()?;
+        let attrs = self.attrs(&[])?;
         Ok(Text {
             id,
             content,
@@ -353,7 +404,7 @@ impl Parser {
         let start_pt = self.point()?;
         let mut segs = Vec::new();
         loop {
-            self.continuation(true);
+            self.continuation(true, LINE_FLAGS);
             if *self.tok() != Tok::Arrow {
                 break;
             }
@@ -363,7 +414,7 @@ impl Parser {
         if segs.is_empty() {
             return self.error("`->` followed by a segment");
         }
-        let attrs = self.attrs()?;
+        let attrs = self.attrs(LINE_FLAGS)?;
         Ok(Line {
             id,
             start: start_pt,
@@ -374,8 +425,8 @@ impl Parser {
     }
 
     /// Joins the next physical line onto this statement when it starts with `->`
-    /// (if `allow_arrow`) or with an attribute (`key=` or `key@`).
-    fn continuation(&mut self, allow_arrow: bool) {
+    /// (if `allow_arrow`), with an attribute (`key=` or `key@`), or with one of `flags`.
+    fn continuation(&mut self, allow_arrow: bool, flags: &[&str]) {
         if *self.tok() != Tok::Newline {
             return;
         }
@@ -385,7 +436,8 @@ impl Parser {
         }
         let continues = (allow_arrow && *self.tok_at(n) == Tok::Arrow)
             || (matches!(self.tok_at(n), Tok::Ident(_))
-                && matches!(self.tok_at(n + 1), Tok::Eq | Tok::At));
+                && matches!(self.tok_at(n + 1), Tok::Eq | Tok::At))
+            || matches!(self.tok_at(n), Tok::Ident(s) if flags.contains(&s.as_str()));
         if continues {
             for _ in 0..n {
                 self.bump();
@@ -393,10 +445,10 @@ impl Parser {
         }
     }
 
-    fn attrs(&mut self) -> PResult<Vec<Attr>> {
+    fn attrs(&mut self, flags: &[&str]) -> PResult<Vec<Attr>> {
         let mut out = Vec::new();
         loop {
-            self.continuation(false);
+            self.continuation(false, flags);
             if !matches!(self.tok(), Tok::Ident(_)) {
                 return Ok(out);
             }
@@ -414,7 +466,21 @@ impl Parser {
         };
         let value = if *self.tok() == Tok::Eq {
             self.bump();
-            self.value()?
+            let value = self.value()?;
+            if key.name == "pin" && *self.tok() == Tok::At {
+                let at = self.bump().span;
+                self.number()?;
+                let help = match &value {
+                    Value::Word(w) => format!("write `pin={w}`"),
+                    _ => "e.g. `pin=left`".into(),
+                };
+                self.unsupported(
+                    at.to(self.prev_span()),
+                    "`pin` with `@t` is not supported yet; use a plain anchor name",
+                    help,
+                );
+            }
+            value
         } else if at_t.is_some() {
             return self.error("`=`");
         } else {

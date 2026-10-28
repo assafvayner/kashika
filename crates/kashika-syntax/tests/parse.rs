@@ -294,3 +294,84 @@ fn nested_groups_parse() {
     };
     assert_eq!(b.children.len(), 3);
 }
+
+#[test]
+fn unbuilt_statements_report_unsupported_and_recover() {
+    let (f, diags) = parse(
+        "import \"lib/aws.kash\" as aws\n\
+         shape lb_icon {\n  path \"M 0 0 L 1 1\"\n  nested { a=1 { b=2 } }\n  text-area (0.2,0.3,0.6,0.4)\n}\n\
+         shape s3 from \"icons/s3.svg\" outline=hull\n\
+         image logo \"hf.png\" at (20,20) size (80,80) fit=contain\n\
+         box api at (100,80) size (200,120) {\n  text \"**API**\"\n  text \"{ braces }\" size=11\n  inner { x=1 }\n}\n\
+         box b at (0,0) size (1,1)\n",
+    );
+    let codes: Vec<_> = diags.iter().map(|d| d.code).collect();
+    assert_eq!(codes, vec!["unsupported"; 5], "{diags:#?}");
+    for d in &diags {
+        assert!(d.help.iter().any(|h| h.contains("later version")), "{d:#?}");
+    }
+    assert_eq!(f.stmts.len(), 2, "{:#?}", f.stmts);
+    assert!(matches!(&f.stmts[0], Stmt::Box(n) if n.id.name == "api"));
+    assert!(matches!(&f.stmts[1], Stmt::Box(n) if n.id.name == "b"));
+}
+
+#[test]
+fn unbuilt_statements_inside_groups_recover() {
+    let (f, diags) = parse(
+        "group g at (0,0) size (9,9) {\n  image i \"x.png\" at (0,0) size (1,1)\n  box a at (0,0) size (1,1) { text \"x\" }\n  box b at (0,0) size (1,1)\n}\nbox c at (0,0) size (1,1)\n",
+    );
+    let codes: Vec<_> = diags.iter().map(|d| d.code).collect();
+    assert_eq!(codes, vec!["unsupported"; 2], "{diags:#?}");
+    let Stmt::Group(g) = &f.stmts[0] else {
+        panic!("expected group")
+    };
+    assert_eq!(g.children.len(), 2);
+    assert_eq!(f.stmts.len(), 2);
+}
+
+#[test]
+fn unclosed_unbuilt_block_is_reported() {
+    let (_, diags) = parse("shape s {\n  path \"M 0 0\"\n");
+    assert_eq!(diags[0].code, "unsupported");
+    assert!(diags.iter().any(|d| d.message.contains("expected `}`")));
+}
+
+#[test]
+fn pin_with_position_reports_unsupported() {
+    let (f, diags) =
+        parse("box a at (0,0) size (1,1) pin=left@0.5 style=service\nbox b at (0,0) size (1,1)\n");
+    assert_eq!(diags.len(), 1, "{diags:#?}");
+    assert_eq!(diags[0].code, "unsupported");
+    assert_eq!(
+        diags[0].message,
+        "`pin` with `@t` is not supported yet; use a plain anchor name"
+    );
+    assert_eq!(f.stmts.len(), 2);
+    let Stmt::Box(n) = &f.stmts[0] else {
+        panic!("expected box")
+    };
+    assert_eq!(n.attrs[0].value, Value::Word("left".into()));
+    assert_eq!(n.attrs.len(), 2);
+}
+
+#[test]
+fn flag_lines_continue_a_line() {
+    let f = parse_ok("line a.top\n  -> y 40\n  ortho\nline (0,0) -> h 5\n\n  ortho end=arrow\n  label=\"x\"\nbox c at (0,0) size (1,1)\n");
+    assert_eq!(f.stmts.len(), 3);
+    let Stmt::Line(l) = &f.stmts[0] else {
+        panic!("expected line")
+    };
+    assert_eq!(l.attrs[0].key.name, "ortho");
+    let Stmt::Line(l) = &f.stmts[1] else {
+        panic!("expected line")
+    };
+    let keys: Vec<_> = l.attrs.iter().map(|a| a.key.name.as_str()).collect();
+    assert_eq!(keys, ["ortho", "end", "label"]);
+}
+
+#[test]
+fn flag_lines_do_not_continue_other_statements() {
+    let (_, diags) = parse("box a at (0,0) size (1,1)\n  ortho\n");
+    assert_eq!(diags.len(), 1, "{diags:#?}");
+    assert_eq!(diags[0].code, "parse");
+}

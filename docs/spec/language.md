@@ -24,7 +24,7 @@ How v0 became v1 is recorded in `docs/review/review-synthesis.md`.
 - Strings: `"..."` with escapes `\"`, `\\`, `\n`.
 - Identifiers: `[a-zA-Z_][a-zA-Z0-9_-]*`. **Ids are unique across the whole file** (shapes, groups, junctions, lines, texts) and are always referenced by bare id. There are no dotted paths.
 - Numbers: integers or decimals, optionally negative. Colors: `#rgb`, `#rrggbb` or `#rrggbbaa`.
-- **Statements** end at a newline, except in two cases:
+- **Statements** end at a newline, except in three cases:
   - inside `{ }` blocks;
   - when the next non-blank line starts with `->`. A long path can then be written one segment per line:
     ```
@@ -32,8 +32,9 @@ How v0 became v1 is recorded in `docs/review/review-synthesis.md`.
       -> y 40
       -> hv pg.left
       end=arrow label="SQL"
+      ortho
     ```
-    The attribute line after the last segment also continues the statement, because a line that starts with `key=` cannot begin a new statement.
+  - when the next non-blank line starts with an attribute (`key=` or `key@t=`) or, on a `line`, with a line flag (`ortho`). Neither can begin a new statement, because no statement keyword is followed by `=` or `@` and no statement keyword is also a flag.
 - Attributes are `key=value` pairs in any order. Unknown or duplicate attributes are errors.
 
 ## 3. Statements
@@ -144,6 +145,7 @@ anchor := top | bottom | left | right | center
 
   A vertical line into `db.top` therefore stays vertical. Outlines are defined in `ref shapes`. For example, the top of a cylinder is the upper arc of its cap ellipse, whose height is `min(20, h/4)`.
 - Offsets use `+` only, with signed components: `db.top+(-10,0)`.
+- `@t` errors are reported as `unknown-anchor`: a `t` outside 0..1 ("`t` must be between 0 and 1"), and `@t` on a corner or `center` ("`@t` only applies to `top`/`bottom`/`left`/`right`").
 
 ## 5. Line paths
 
@@ -219,7 +221,7 @@ These block output unless `--force` is given:
 | code | trigger |
 |---|---|
 | `parse` | Includes expected tokens and a suggestion |
-| `unknown-id` / `unknown-anchor` | Includes did-you-mean |
+| `unknown-id` / `unknown-anchor` | Includes did-you-mean. `unknown-anchor` also covers a bad `@t`: out of 0..1, or on a corner or `center` |
 | `duplicate-id` | Two statements use the same id |
 | `placement-cycle` | Relative placements form a cycle |
 | `label-overflow` | Reports the required size |

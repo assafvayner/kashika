@@ -29,24 +29,32 @@ fn canonical(name: &str) -> &str {
 
 /// Resolves an anchor on a (possibly rounded) rectangle. Edge anchors are axis-projected
 /// onto the rounded outline; corner anchors stay on the bounding box.
-/// Errors carry a message and an optional help line.
+/// Errors carry a message and an optional help line; `owner` is the id the anchor is on.
 pub fn resolve(
     rect: Rect,
     radius: f64,
+    owner: &str,
     name: &str,
     t: Option<f64>,
 ) -> Result<Pt, (String, Option<String>)> {
     let name_c = canonical(name);
     let is_side = matches!(name_c, "top" | "bottom" | "left" | "right");
-    if t.is_some() && !is_side {
+    if t.is_some() && !is_side && ANCHORS.contains(&name) {
         return Err((
-            format!("`@t` only applies to edge anchors, not `{name}`"),
-            Some("use `top@t`, `bottom@t`, `left@t` or `right@t`".into()),
+            "`@t` only applies to `top`/`bottom`/`left`/`right`".into(),
+            Some(format!(
+                "use `{owner}.{name}` without `@t`, or an edge such as `{owner}.top@0.25`"
+            )),
         ));
     }
     let t = t.unwrap_or(0.5);
-    if !(0.0..=1.0).contains(&t) {
-        return Err((format!("anchor position `@{t}` is outside 0..1"), None));
+    if is_side && !(0.0..=1.0).contains(&t) {
+        return Err((
+            "`t` must be between 0 and 1".into(),
+            Some(format!(
+                "`{owner}.{name}@0` is the start of the edge and `{owner}.{name}@1` the end"
+            )),
+        ));
     }
     let Rect { x, y, w, h } = rect;
     let p = match name_c {
@@ -62,7 +70,7 @@ pub fn resolve(
         _ => {
             let help =
                 did_you_mean(name, ANCHORS.iter().copied()).map(|s| format!("did you mean `{s}`?"));
-            return Err((format!("unknown anchor `{name}`"), help));
+            return Err((format!("unknown anchor `{name}` on `{owner}`"), help));
         }
     };
     Ok(p)
@@ -103,32 +111,38 @@ mod tests {
 
     #[test]
     fn rect_anchors() {
-        assert_eq!(resolve(R, 0.0, "top", None), Ok(Pt::new(50.0, 0.0)));
+        assert_eq!(resolve(R, 0.0, "r", "top", None), Ok(Pt::new(50.0, 0.0)));
         assert_eq!(
-            resolve(R, 0.0, "right", Some(0.25)),
+            resolve(R, 0.0, "r", "right", Some(0.25)),
             Ok(Pt::new(100.0, 15.0))
         );
         assert_eq!(
-            resolve(R, 0.0, "bottom-right", None),
+            resolve(R, 0.0, "r", "bottom-right", None),
             Ok(Pt::new(100.0, 60.0))
         );
     }
 
     #[test]
     fn rounded_anchors_are_axis_projected() {
-        assert_eq!(resolve(R, 8.0, "top", Some(0.0)), Ok(Pt::new(0.0, 8.0)));
-        assert_eq!(resolve(R, 8.0, "top", None), Ok(Pt::new(50.0, 0.0)));
-        assert_eq!(resolve(R, 8.0, "tl", None), Ok(Pt::new(0.0, 0.0)));
+        assert_eq!(
+            resolve(R, 8.0, "r", "top", Some(0.0)),
+            Ok(Pt::new(0.0, 8.0))
+        );
+        assert_eq!(resolve(R, 8.0, "r", "top", None), Ok(Pt::new(50.0, 0.0)));
+        assert_eq!(resolve(R, 8.0, "r", "tl", None), Ok(Pt::new(0.0, 0.0)));
     }
 
     #[test]
     fn anchor_errors() {
         assert_eq!(
-            resolve(R, 0.0, "rigth", None).unwrap_err().1.as_deref(),
+            resolve(R, 0.0, "r", "rigth", None)
+                .unwrap_err()
+                .1
+                .as_deref(),
             Some("did you mean `right`?")
         );
-        assert!(resolve(R, 0.0, "center", Some(0.5)).is_err());
-        assert!(resolve(R, 0.0, "top", Some(1.5)).is_err());
+        assert!(resolve(R, 0.0, "r", "center", Some(0.5)).is_err());
+        assert!(resolve(R, 0.0, "r", "top", Some(1.5)).is_err());
     }
 
     #[test]

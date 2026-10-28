@@ -56,7 +56,7 @@ Line attributes: `start=`/`end=` (`arrow open diamond dot none`), `stroke-style=
 
 Comments: `// to end of line` and `/* block */` (no nesting; an unclosed `/*` is a `parse` error). `#` is not a comment.
 
-Long lines can continue on the next line by starting it with `->`; attributes may follow on their own line.
+Long lines can continue on the next line by starting it with `->`; attributes and `ortho` may follow on their own line.
 
 ## Common errors
 
@@ -67,11 +67,11 @@ Long lines can continue on the next line by starting it with `->`; attributes ma
 | `not-ortho` | replace the diagonal hop with `hv`/`vh` or `x`/`y` |
 | `degenerate-curve` / `zero-length` | the endpoints coincide; check your coordinates |
 | `diagram` | the file must start with `diagram "<title>" size (w,h)` |
-| `unsupported` | feature is in the spec but not built yet (`sublabel`, `icon`, `text-align`, shapes other than `rect`/`rounded`). Remove it; put the info in the `label` (use `\n` for extra lines) |
+| `unsupported` | feature is in the spec but not built yet (`sublabel`, `icon`, `text-align`, shapes other than `rect`/`rounded`, `{ }` text blocks, `import`/`shape`/`image`, `icons=`, `pin=side@t`). Remove it; put the info in the `label` (use `\n` for extra lines) |
 | `duplicate-id` / `unknown-style` / `size` / `parse` | fix as the message says; ids are unique across boxes, groups, junctions, lines and texts |
 
 Exit codes: `0` clean, `1` warnings, `2` errors, `3` tool/usage failure. `render` writes nothing on errors unless `--force` is given.
 
 ## Not supported yet
 
-Text measurement and overflow checks, all warnings (crossing, overlap, through-box, ...), `inspect`, `route`, `fmt`, shapes other than `rect`/`rounded`, `sublabel`/`icon`/text blocks, images, imports, and PNG output (`render` accepts `.svg` only). These arrive in later versions. Until then, leave about 20% spare room around labels and check crossings yourself by tracing each line's coordinates.
+Text measurement and overflow checks, all warnings (crossing, overlap, through-box, ...), `inspect`, `route`, `fmt`, shapes other than `rect`/`rounded`, `sublabel`/`icon`/text blocks, custom `shape`s, images, imports, `icons=`, and PNG output (`render` accepts `.svg` only). These arrive in later versions. Until then, leave about 20% spare room around labels and check crossings yourself by tracing each line's coordinates.

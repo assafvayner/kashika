@@ -597,8 +597,19 @@ fn mixed_points_take_each_axis_from_a_reference() {
 fn anchor_position_out_of_range() {
     let d = errors("box a at (0,0) size (10,10)\njunction j at a.top@1.5\n");
     assert_eq!(d[0].code, "unknown-anchor");
-    let d = errors("box a at (0,0) size (10,10)\njunction j at a.tl@0.5\n");
-    assert_eq!(d[0].code, "unknown-anchor");
+    assert_eq!(d[0].message, "`t` must be between 0 and 1");
+    assert_eq!(d[0].help.len(), 1, "{d:#?}");
+    for corner in ["tl", "center", "bottom-right"] {
+        let d = errors(&format!(
+            "box a at (0,0) size (10,10)\njunction j at a.{corner}@0.5\n"
+        ));
+        assert_eq!(d[0].code, "unknown-anchor");
+        assert_eq!(
+            d[0].message,
+            "`@t` only applies to `top`/`bottom`/`left`/`right`"
+        );
+        assert_eq!(d[0].help.len(), 1, "{d:#?}");
+    }
 }
 
 #[test]
@@ -630,7 +641,35 @@ fn pin_rejects_unknown_anchors_and_positions() {
     let d = errors("box a at (0,0) size (10,10) pin=lft\n");
     assert_eq!(d[0].code, "attr");
     assert_eq!(d[0].help, vec!["did you mean `left`?".to_string()]);
-    assert!(!errors("box a at (0,0) size (10,10) pin=left@0.5\n").is_empty());
+}
+
+#[test]
+fn pin_with_position_is_unsupported_and_uses_the_plain_anchor() {
+    let (s, d) = kashika_model::compile(&format!(
+        "{HEAD}box a at (100,100) size (40,20) pin=left@0.25\n"
+    ));
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "unsupported");
+    assert_eq!(rect(&s, "a"), Rect::new(100.0, 90.0, 40.0, 20.0));
+}
+
+#[test]
+fn diagram_icons_is_unsupported() {
+    let (_, d) = kashika_model::compile("diagram \"t\" size (800,600) icons=\"icons\"\n");
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "unsupported");
+}
+
+#[test]
+fn statements_after_unbuilt_ones_still_resolve() {
+    let (s, d) = kashika_model::compile(&format!(
+        "{HEAD}import \"lib.kash\"\nshape s {{\n  path \"M 0 0\"\n}}\nimage i \"x.png\" at (0,0) size (1,1)\n\
+         box a at (10,10) size (20,20) {{\n  text \"x\"\n}}\nbox b at a.right+(10,0) size (20,20) pin=left\nline l: a.right -> b.left\n"
+    ));
+    let codes: Vec<_> = d.iter().map(|x| x.code).collect();
+    assert_eq!(codes, vec!["unsupported"; 4], "{d:#?}");
+    assert_eq!(rect(&s, "b"), Rect::new(40.0, 10.0, 20.0, 20.0));
+    assert_eq!(pts(&s, "l"), vec![Pt::new(30.0, 20.0), Pt::new(40.0, 20.0)]);
 }
 
 #[test]
@@ -786,9 +825,7 @@ fn unnamed_continued_line_is_named_after_its_first_line() {
 fn diagram_attributes() {
     let s = ok("");
     assert_eq!((s.clearance, s.grid), (6.0, None));
-    let (s, d) = compile(
-        "diagram \"t\" size (10,10) kashika=1 grid=10 clearance=4 icons=\"i\" allow=near\n",
-    );
+    let (s, d) = compile("diagram \"t\" size (10,10) kashika=1 grid=10 clearance=4 allow=near\n");
     assert!(d.is_empty(), "{d:#?}");
     assert_eq!((s.clearance, s.grid, s.allow.len()), (4.0, Some(10.0), 1));
 }
