@@ -1,0 +1,2 @@
+import "n1.kash" as p
+import "n1.kash" as q

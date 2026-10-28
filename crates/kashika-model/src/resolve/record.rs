@@ -104,7 +104,8 @@ impl Resolver<'_> {
     }
 }
 
-fn point_refs(p: &Point) -> Vec<&ast::Ref> {
+/// The ids a point references: its base, or the refs in its `x`/`y` coordinates.
+pub(super) fn point_refs(p: &Point) -> Vec<&ast::Ref> {
     match p {
         Point::Ref { r, .. } => vec![r],
         Point::Lit { x, y, .. } => [x, y]

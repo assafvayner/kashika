@@ -1,6 +1,6 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::{PathSeg, Pt, TOLERANCE, point_at, round_corners_tagged};
-use kashika_syntax::ast::{self, Axis, SegKind, Side};
+use kashika_syntax::ast::{self, Axis, SegKind, Side, Target};
 
 use crate::scene::*;
 use crate::textlayout;
@@ -16,15 +16,20 @@ impl<'a> Resolver<'a> {
         parent: Option<String>,
     ) -> Option<Line> {
         let origin = self.frame_origin(idx)?;
-        let mut cur = self.eval_point(&l.start, origin)?;
+        let start = self.eval_point(&l.start, origin);
+        let mut failed = start.is_none();
+        let mut cur = start.unwrap_or(origin);
         let mut raw: Vec<(PathSeg, usize)> = Vec::new();
         let mut segments: Vec<Segment> = Vec::new();
-        let mut failed = false;
         for seg in &l.segs {
+            if failed {
+                self.eval_seg_points(seg, origin);
+                continue;
+            }
             let from = cur;
             let Some(segs) = self.expand(seg, cur, origin) else {
                 failed = true;
-                break;
+                continue;
             };
             let mut pieces = Vec::new();
             for s in segs {
@@ -118,6 +123,30 @@ impl<'a> Resolver<'a> {
         })
     }
 
+    /// Evaluates a segment's points only for their diagnostics, once an earlier part of
+    /// the line has failed and the current point is unknown.
+    fn eval_seg_points(&mut self, seg: &'a ast::Seg, origin: Pt) {
+        match &seg.kind {
+            SegKind::To(p)
+            | SegKind::Hv(p)
+            | SegKind::Vh(p)
+            | SegKind::Curve { to: p, .. }
+            | SegKind::X(Target::Point(p))
+            | SegKind::Y(Target::Point(p)) => {
+                self.eval_point(p, origin);
+            }
+            SegKind::CurveVia { c1, c2, to } => {
+                for p in [c1, c2, to] {
+                    self.eval_point(p, origin);
+                }
+            }
+            SegKind::H(_)
+            | SegKind::V(_)
+            | SegKind::X(Target::Num(_))
+            | SegKind::Y(Target::Num(_)) => {}
+        }
+    }
+
     pub(super) fn expand(
         &mut self,
         seg: &'a ast::Seg,
@@ -193,9 +222,12 @@ impl<'a> Resolver<'a> {
                 }]
             }
             SegKind::CurveVia { c1, c2, to } => {
-                let c1 = self.eval_point(c1, origin)?;
-                let c2 = self.eval_point(c2, origin)?;
-                let to = self.eval_point(to, origin)?;
+                let (c1, c2, to) = (
+                    self.eval_point(c1, origin),
+                    self.eval_point(c2, origin),
+                    self.eval_point(to, origin),
+                );
+                let (c1, c2, to) = (c1?, c2?, to?);
                 if [c1, c2, to].iter().all(|p| p.dist(cur) <= TOLERANCE) {
                     self.diags.push(Diagnostic::error(
                         "degenerate-curve",

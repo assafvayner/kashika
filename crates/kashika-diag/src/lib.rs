@@ -17,6 +17,7 @@ pub const ERROR_CODES: &[&str] = &[
     "unknown-style",
     "unknown-shape",
     "size",
+    "range",
     "diagram",
     "version",
     "file",

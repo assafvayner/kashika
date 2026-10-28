@@ -5,7 +5,6 @@ use crate::library::LibShape;
 use crate::scene::*;
 use crate::textlayout::{self, ShapeInput};
 
-use super::props::shape_name;
 use super::{IconPos, Item, Resolver};
 
 impl<'a> Resolver<'a> {
@@ -118,7 +117,7 @@ impl<'a> Resolver<'a> {
             })
             .collect();
         let p = &self.nodes[&idx];
-        let shape = shape_name(p);
+        let shape = p.drawn_shape();
         let form = self.form(&shape, rect);
         let svg = self.svg_shape(&shape);
         let icon = p.icon;

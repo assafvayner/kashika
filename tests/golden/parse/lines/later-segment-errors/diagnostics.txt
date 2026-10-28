@@ -1,0 +1,5 @@
+error[unknown-id] 5:9-5:13: unknown id `nope`
+error[unknown-id] 5:38-5:45: unknown id `missing`
+error[unknown-id] 6:22-6:26: unknown id `gone`
+error[unknown-id] 6:53-6:58: unknown id `ghost`
+error[unknown-id] 6:63-6:68: unknown id `other`

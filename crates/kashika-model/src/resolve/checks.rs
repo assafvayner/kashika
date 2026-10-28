@@ -1,10 +1,10 @@
 use kashika_diag::{Diagnostic, LINT_CODES, Span, did_you_mean};
 use kashika_syntax::ast::{self};
 
-use crate::attrs::{self, Attrs, LIMIT};
+use crate::attrs::{self, LIMIT};
 use crate::scene::*;
 
-use super::{Item, Resolver};
+use super::Resolver;
 
 impl<'a> Resolver<'a> {
     pub(super) fn allow_list(&mut self, a: &ast::Attr, check_ids: bool) -> Vec<Allow> {
@@ -59,7 +59,7 @@ impl<'a> Resolver<'a> {
     pub(super) fn finite(&mut self, vals: &[f64], span: Span) -> bool {
         if vals.iter().any(|v| !v.is_finite()) {
             self.diags.push(Diagnostic::error(
-                "degenerate-curve",
+                "range",
                 span,
                 "value is not a finite number",
             ));
@@ -67,7 +67,7 @@ impl<'a> Resolver<'a> {
         } else if vals.iter().any(|v| v.abs() > LIMIT) {
             self.diags.push(
                 Diagnostic::error(
-                    "degenerate-curve",
+                    "range",
                     span,
                     format!("value is out of range (more than {LIMIT} from the origin)"),
                 )
@@ -94,11 +94,9 @@ impl<'a> Resolver<'a> {
         false
     }
 
+    /// Like `finite`, but only rejects non-finite values.
     pub(super) fn finite_only(&mut self, vals: &[f64], span: Span) -> bool {
-        if vals.iter().all(|v| v.is_finite()) {
-            return true;
-        }
-        self.finite(vals, span)
+        vals.iter().all(|v| v.is_finite()) || self.finite(vals, span)
     }
 
     pub(super) fn unknown_id(&self, name: &str, span: Span) -> Diagnostic {
@@ -107,39 +105,5 @@ impl<'a> Resolver<'a> {
             d = d.with_help(format!("did you mean `{s}`?"));
         }
         d
-    }
-
-    pub(super) fn validate(&mut self) {
-        for idx in 0..self.entries.len() {
-            match self.entries[idx].item {
-                Item::Box(n) => {
-                    let p = self.node_props(n, false);
-                    self.nodes.insert(idx, p);
-                }
-                Item::Group(g) => {
-                    let p = self.node_props(&g.node, true);
-                    self.nodes.insert(idx, p);
-                }
-                Item::Image(i) => {
-                    let p = self.image_props(i);
-                    self.nodes.insert(idx, p);
-                }
-                Item::Junction(j) => {
-                    let a = Attrs::new(&j.attrs, "junction", &["dot"], &mut self.diags);
-                    let dot = a
-                        .get("dot")
-                        .is_some_and(|x| attrs::flag(x, &mut self.diags));
-                    self.dots.insert(idx, dot);
-                }
-                Item::Text(t) => {
-                    let p = self.text_props(t);
-                    self.texts.insert(idx, p);
-                }
-                Item::Line(l) => {
-                    let p = self.line_props(l);
-                    self.lines.insert(idx, p);
-                }
-            }
-        }
     }
 }

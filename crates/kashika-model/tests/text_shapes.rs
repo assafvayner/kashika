@@ -207,6 +207,12 @@ fn text_attribute_values_are_checked() {
         "attr"
     );
     assert_eq!(errors("box a at (0,0) size (9,9) gap=-1\n")[0].code, "attr");
+    let d = errors(&format!(
+        "box a at (0,0) size (9,9) gap={}\n",
+        "9".repeat(300)
+    ));
+    assert_eq!(d[0].code, "attr");
+    assert_eq!(d[0].message, "`gap` must be at most 1000000");
     assert_eq!(
         errors("box a at (0,0) size (9,9) sublabel=3\n")[0].code,
         "attr"

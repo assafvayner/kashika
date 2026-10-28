@@ -4,7 +4,7 @@ use kashika_syntax::ast;
 use kashika_text::{Block, HAlign, MarkupError, PlacedLine, VAlign, measure, stack, stack_size};
 use serde::Serialize;
 
-use crate::attrs::{self, Attrs, LIMIT};
+use crate::attrs::{self, Attrs, LIMIT, Min};
 use crate::scene::{Align, ShapeKind};
 use crate::shapes;
 use crate::style::{FontWeight, Style};
@@ -45,6 +45,17 @@ pub(crate) struct ShapeTextProps {
     gap: f64,
 }
 
+impl Default for ShapeTextProps {
+    fn default() -> Self {
+        ShapeTextProps {
+            sublabel: None,
+            align: Align::Center,
+            valign: VAlign::Middle,
+            gap: DEFAULT_GAP,
+        }
+    }
+}
+
 pub(crate) fn shape_text_props(
     a: &Attrs,
     group: bool,
@@ -82,20 +93,10 @@ pub(crate) fn shape_text_props(
             };
         }
     }
-    let mut gap = DEFAULT_GAP;
-    if let Some(x) = a.get("gap") {
-        if let Some(v) = attrs::num(x, diags) {
-            if v < 0.0 {
-                diags.push(Diagnostic::error(
-                    "attr",
-                    x.span,
-                    "`gap` must not be negative",
-                ));
-            } else {
-                gap = v;
-            }
-        }
-    }
+    let gap = a
+        .get("gap")
+        .and_then(|x| attrs::num_in(x, Min::NonNegative, diags))
+        .unwrap_or(DEFAULT_GAP);
     ShapeTextProps {
         sublabel,
         align,

@@ -1,3 +1,4 @@
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use kashika_diag::did_you_mean;
@@ -139,6 +140,34 @@ impl Loader {
         })
     }
 
+    /// Reads a found file, refusing one larger than `max` bytes. The file is opened once
+    /// and read through a `max + 1` byte window, so a file that grows after the check
+    /// still can't exceed the limit.
+    pub fn read(&self, found: &Found, written: &str, max: u64) -> Result<Vec<u8>, FileError> {
+        let p = match found {
+            Found::File(p) => p,
+            Found::Bundled(n) => {
+                let (_, src) =
+                    crate::icons::bundled(n).expect("the loader only returns bundled names");
+                return Ok(src.as_bytes().to_vec());
+            }
+        };
+        let cannot = |e: std::io::Error| FileError::new(format!("cannot read `{written}`: {e}"));
+        let mut bytes = Vec::new();
+        std::fs::File::open(p)
+            .map_err(cannot)?
+            .take(max + 1)
+            .read_to_end(&mut bytes)
+            .map_err(cannot)?;
+        if bytes.len() as u64 > max {
+            return Err(FileError::new(format!(
+                "`{written}` is larger than {}",
+                show_bytes(max)
+            )));
+        }
+        Ok(bytes)
+    }
+
     fn dirs<'p>(&'p self, from: &'p Path) -> impl Iterator<Item = &'p Path> {
         std::iter::once(from).chain(self.search.iter().map(PathBuf::as_path))
     }
@@ -175,6 +204,15 @@ impl Loader {
         cands.sort();
         cands.dedup();
         did_you_mean(name, cands.iter().map(String::as_str)).map(|s| format!("did you mean `{s}`?"))
+    }
+}
+
+fn show_bytes(n: u64) -> String {
+    const MIB: u64 = 1024 * 1024;
+    if n.is_multiple_of(MIB) {
+        format!("{} MiB", n / MIB)
+    } else {
+        format!("{n} bytes")
     }
 }
 
@@ -264,6 +302,37 @@ mod tests {
         );
         let (_t, l) = setup(true);
         assert!(l.find(l.root(), "../secret.svg").is_ok());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn symlinks_out_of_the_root_are_rejected() {
+        let (t, _) = setup(false);
+        let proj = t.path().join("proj");
+        std::os::unix::fs::symlink(t.path().join("secret.svg"), proj.join("link.svg")).unwrap();
+        let l = Loader::new(&Options {
+            path: Some(proj.join("main.kash")),
+            ..Options::default()
+        });
+        let e = l.find(l.root(), "link.svg").unwrap_err();
+        assert!(
+            e.message.contains("outside the project root"),
+            "{}",
+            e.message
+        );
+        let e = l.find(l.root(), "lnk.svg").unwrap_err();
+        assert!(!e.help.unwrap_or_default().contains("link"));
+    }
+
+    #[test]
+    fn reads_are_capped() {
+        let (_t, l) = setup(false);
+        let found = l.find(l.root(), "icons/s3.svg").unwrap();
+        assert_eq!(l.read(&found, "icons/s3.svg", 6).unwrap(), b"<svg/>");
+        let e = l.read(&found, "icons/s3.svg", 5).unwrap_err();
+        assert_eq!(e.message, "`icons/s3.svg` is larger than 5 bytes");
+        let server = l.find(l.root(), "server").unwrap();
+        assert!(l.read(&server, "server", 0).is_ok());
     }
 
     #[test]

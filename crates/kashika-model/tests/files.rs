@@ -394,6 +394,117 @@ fn deep_import_chains_stop() {
 }
 
 #[test]
+fn skipped_entries_load_no_assets() {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "a.svg", SVG.as_bytes());
+    write(dir.path(), "b.svg", SVG.as_bytes());
+    let (s, d) = run(
+        dir.path(),
+        &format!(
+            "{HEAD}image i \"a.svg\" at (0,0) size (40,20)\nimage i \"b.svg\" at (0,40) size (40,20)\n\
+             group g at (100,0) size (100,100) {{\n}}\ngroup g at (300,0) size (100,100) {{\n  box c at (10,10) size (40,40) icon=\"server\"\n}}\n"
+        ),
+    );
+    assert_eq!(
+        d.iter().map(|x| x.code).collect::<Vec<_>>(),
+        vec!["duplicate-id", "duplicate-id"],
+        "{d:#?}"
+    );
+    assert_eq!(s.assets.len(), 1, "{:?}", s.assets);
+    assert!(s.assets[0].path.ends_with("a.svg"));
+}
+
+#[test]
+fn import_depth_is_the_same_from_stdin() {
+    let dir = tempfile::tempdir().unwrap();
+    for i in 0..40 {
+        write(
+            dir.path(),
+            &format!("l{i}.kash"),
+            format!("import \"l{}.kash\"\n", i + 1).as_bytes(),
+        );
+    }
+    let stdin = Options {
+        icon_path: vec![dir.path().to_path_buf()],
+        ..Options::default()
+    };
+    let (_, d) = run_with(&format!("{HEAD}import \"l0.kash\"\n"), &stdin);
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert!(
+        d[0].message
+            .ends_with("in `l31.kash` at 1:8: imports are nested more than 32 deep"),
+        "{}",
+        d[0].message
+    );
+}
+
+/// `n0.kash` .. `n{depth-1}.kash` each import the next twice, `as p` and `as q`; the last
+/// defines `s`.
+fn fan_out(dir: &Path, depth: usize) {
+    for i in 0..depth {
+        let next = i + 1;
+        write(
+            dir,
+            &format!("n{i}.kash"),
+            format!("import \"n{next}.kash\" as p\nimport \"n{next}.kash\" as q\n").as_bytes(),
+        );
+    }
+    write(
+        dir,
+        &format!("n{depth}.kash"),
+        TRI.replace("lb", "s").as_bytes(),
+    );
+}
+
+#[test]
+fn fan_out_imports_register_every_namespace() {
+    let dir = tempfile::tempdir().unwrap();
+    fan_out(dir.path(), 4);
+    let (s, d) = run(
+        dir.path(),
+        &format!(
+            "{HEAD}import \"n0.kash\" as a\nbox b at (0,0) size (9,9) shape=a.q.p.q.p.s\nbox c at (20,0) size (9,9) shape=a.p.p.p.p.s\n"
+        ),
+    );
+    assert!(d.is_empty(), "{d:#?}");
+    assert_eq!(s.shapes.len(), 2);
+}
+
+#[test]
+fn fan_out_imports_are_capped() {
+    let dir = tempfile::tempdir().unwrap();
+    fan_out(dir.path(), 24);
+    let started = std::time::Instant::now();
+    let (_, d) = run(dir.path(), &format!("{HEAD}import \"n0.kash\" as a\n"));
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(10),
+        "{:?}",
+        started.elapsed()
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "file");
+    assert!(
+        d[0].message
+            .ends_with("more than 1000 library imports in total, counting each namespace a library is imported under"),
+        "{}",
+        d[0].message
+    );
+}
+
+#[test]
+fn oversized_imports_are_refused() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "big.kash",
+        "// padding\n".repeat(100_000).as_bytes(),
+    );
+    let (_, d) = run(dir.path(), &format!("{HEAD}import \"big.kash\"\n"));
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].message, "`big.kash` is larger than 1 MiB");
+}
+
+#[test]
 fn library_files_check_on_their_own() {
     let dir = tempfile::tempdir().unwrap();
     write(dir.path(), "x.svg", SVG.as_bytes());
@@ -579,7 +690,7 @@ fn icon_attribute_errors() {
         ("box a at (0,0) size (9,9) icon-pos=top\n", "attr"),
         (
             "box a at (0,0) size (9,9) icon=\"server\" icon-size=0\n",
-            "size",
+            "attr",
         ),
         (
             "box a at (0,0) size (9,9) icon=\"server\" icon-pos=right\n",
@@ -590,6 +701,13 @@ fn icon_attribute_errors() {
             "attr",
         ),
         ("box a at (0,0) size (9,9) icon=\"servr\"\n", "file"),
+        (
+            &format!(
+                "box a at (0,0) size (9,9) icon=\"server\" icon-size={}\n",
+                "9".repeat(300)
+            ),
+            "attr",
+        ),
     ] {
         let (_, d) = run(dir.path(), &format!("{HEAD}{body}"));
         assert_eq!(

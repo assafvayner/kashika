@@ -355,9 +355,8 @@ fn non_finite_values_are_rejected() {
     ] {
         let d = errors(&body);
         assert!(
-            d.iter().any(
-                |d| d.code == "degenerate-curve" && d.message == "value is not a finite number"
-            ),
+            d.iter()
+                .any(|d| d.code == "range" && d.message == "value is not a finite number"),
             "{body}: {d:#?}"
         );
     }
@@ -1044,7 +1043,7 @@ fn out_of_range_values_are_rejected() {
         let body = body.replace("1e7", "10000000");
         let d = errors(&body);
         assert!(
-            d.iter().any(|d| d.code == "degenerate-curve"
+            d.iter().any(|d| d.code == "range"
                 && d.message == "value is out of range (more than 1000000 from the origin)"),
             "{body}: {d:#?}"
         );

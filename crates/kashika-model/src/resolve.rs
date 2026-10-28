@@ -178,7 +178,7 @@ pub fn resolve_with(file: &ast::File, opts: &Options) -> (Scene, Vec<Diagnostic>
         lines: HashMap::new(),
         texts: HashMap::new(),
         dots: HashMap::new(),
-        placed: HashMap::new(),
+        placed: Vec::new(),
         on_stack: HashSet::new(),
         skipped: HashSet::new(),
         skipped_ids: HashSet::new(),
@@ -197,6 +197,7 @@ pub fn resolve_with(file: &ast::File, opts: &Options) -> (Scene, Vec<Diagnostic>
     r.diags.append(&mut ctx.diags);
     r.styles(file);
     r.collect(&file.stmts, None, 0);
+    r.placed = vec![None; r.entries.len()];
     let mut scene = r.diagram(file);
     r.validate();
     r.placement_graph();
@@ -234,8 +235,9 @@ struct Resolver<'a> {
     lines: HashMap<usize, LineProps>,
     texts: HashMap<usize, TextProps>,
     dots: HashMap<usize, bool>,
-    /// Canvas rect per placed entry (junctions use a zero-size rect); `None` = failed.
-    placed: HashMap<usize, Option<Rect>>,
+    /// Per entry: `None` until placed, then its canvas rect (junctions use a zero-size
+    /// rect), or `Some(None)` when it can't be placed.
+    placed: Vec<Option<Option<Rect>>>,
     /// Entries being placed; `placement_graph` keeps this chain within the depth limit.
     on_stack: HashSet<usize>,
     skipped: HashSet<usize>,

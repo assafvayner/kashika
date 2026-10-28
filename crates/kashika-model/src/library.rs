@@ -1,5 +1,6 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
 use kashika_diag::{Diagnostic, Span};
 use kashika_geom::{Rect, parse_unit_path};
@@ -13,6 +14,10 @@ use crate::style::{STYLE_KEYS, StyleProps};
 
 /// Deepest chain of nested imports followed before giving up.
 const MAX_IMPORT_DEPTH: usize = 32;
+/// Most library instances (a file under one namespace) registered for one diagram.
+const MAX_INSTANCES: usize = 1000;
+/// Largest library file read.
+const MAX_IMPORT_BYTES: u64 = 1024 * 1024;
 /// Import chains longer than this print only their first two and last hops.
 const HOPS_SHOWN: usize = 4;
 
@@ -51,8 +56,26 @@ pub(crate) struct Library {
     /// Imported styles in load order, with qualified names. The main file's own styles
     /// are read by the resolver.
     pub styles: Vec<(String, StyleProps)>,
-    /// (canonical path, namespace prefix) of every library loaded so far.
+    /// (canonical path, namespace prefix) of every library instance registered so far.
     loaded: HashSet<(PathBuf, String)>,
+    /// Every library file read so far, parsed once whatever its namespaces.
+    modules: HashMap<PathBuf, Result<Rc<Module>, FileError>>,
+    /// Shape bodies of library files by (path, statement index), resolved on first use.
+    bodies: HashMap<(PathBuf, usize), (Option<LibShape>, Vec<Diagnostic>)>,
+    /// Library instances registered so far, against `MAX_INSTANCES`.
+    instances: usize,
+}
+
+/// A library file, read, parsed and partly resolved once.
+struct Module {
+    path: PathBuf,
+    dir: PathBuf,
+    file: ast::File,
+    parse_diags: Vec<Diagnostic>,
+    /// Per `style` statement index: its properties and the diagnostics they raised.
+    styles: HashMap<usize, (StyleProps, Vec<Diagnostic>)>,
+    /// Per `import` statement index: the file it names.
+    imports: HashMap<usize, Result<PathBuf, FileError>>,
 }
 
 pub(crate) struct Ctx<'l> {
@@ -96,89 +119,79 @@ impl Nested {
     }
 }
 
+/// Where an import is in the walk: the files above it and how many of them are libraries.
+struct Chain {
+    stack: Vec<PathBuf>,
+    depth: usize,
+}
+
 impl Library {
     pub fn load(file: &ast::File, ctx: &mut Ctx) -> Library {
         let mut lib = Library::default();
-        let root = ctx.loader.root().to_path_buf();
         check_import_order(file, &mut ctx.diags);
-        let mut stack: Vec<PathBuf> = ctx
-            .loader
-            .main()
-            .map(Path::to_path_buf)
-            .into_iter()
-            .collect();
-        lib.defs(&file.stmts, &root, "", &mut stack, ctx);
-        finish(ctx);
+        lib.main_defs(file, ctx);
         lib
     }
 
     /// Loads a library file checked on its own, as if it were imported without `as`.
     pub fn load_standalone(file: &ast::File, ctx: &mut Ctx) -> Library {
         let mut lib = Library::default();
-        let root = ctx.loader.root().to_path_buf();
-        let mut stack: Vec<PathBuf> = ctx
-            .loader
-            .main()
-            .map(Path::to_path_buf)
-            .into_iter()
-            .collect();
         for stmt in &file.stmts {
             if let Stmt::Style(s) = stmt {
-                lib.style(s, "", ctx);
+                let props = style_props(s, &mut ctx.diags);
+                lib.add_style(s, "", props, ctx);
             }
         }
-        lib.defs(&file.stmts, &root, "", &mut stack, ctx);
-        finish(ctx);
+        lib.main_defs(file, ctx);
         lib
     }
 
-    fn defs(
-        &mut self,
-        stmts: &[Stmt],
-        dir: &Path,
-        prefix: &str,
-        stack: &mut Vec<PathBuf>,
-        ctx: &mut Ctx,
-    ) {
-        for stmt in stmts {
+    /// The main file's shapes and imports.
+    fn main_defs(&mut self, file: &ast::File, ctx: &mut Ctx) {
+        let root = ctx.loader.root().to_path_buf();
+        let mut chain = Chain {
+            stack: ctx
+                .loader
+                .main()
+                .map(Path::to_path_buf)
+                .into_iter()
+                .collect(),
+            depth: 0,
+        };
+        for stmt in &file.stmts {
             match stmt {
-                Stmt::Shape(s) => self.shape(s, dir, prefix, ctx),
-                Stmt::Import(i) => self.import(i, dir, prefix, stack, ctx),
+                Stmt::Shape(s) => {
+                    if self.name_free(s, "", ctx) {
+                        if let Some(d) = shape_body(s, &root, ctx) {
+                            self.shapes.insert(s.name.name.clone(), d);
+                        }
+                    }
+                }
+                Stmt::Import(i) => {
+                    let path = find_import(ctx.loader, &root, i);
+                    self.import(i, path, "", &mut chain, ctx);
+                }
                 _ => {}
             }
         }
+        finish(ctx);
     }
 
     fn import(
         &mut self,
         i: &ast::Import,
-        dir: &Path,
+        path: Result<PathBuf, FileError>,
         prefix: &str,
-        stack: &mut Vec<PathBuf>,
+        chain: &mut Chain,
         ctx: &mut Ctx,
     ) {
         let fail = |ctx: &mut Ctx, e: FileError| push_file_error(&mut ctx.diags, i.path_span, e);
-        let path = match ctx.loader.find(dir, &i.path) {
-            Ok(Found::File(p)) => p,
-            Ok(Found::Bundled(_)) => {
-                return fail(
-                    ctx,
-                    FileError::new(format!("`{}` is a bundled icon, not a library", i.path)),
-                );
-            }
+        let path = match path {
+            Ok(p) => p,
             Err(e) => return fail(ctx, e),
         };
-        if path.extension().and_then(|e| e.to_str()) != Some("kash") {
-            return fail(
-                ctx,
-                FileError::new(format!(
-                    "imports must be `.kash` files; `{}` is not",
-                    i.path
-                )),
-            );
-        }
-        if let Some(pos) = stack.iter().position(|p| *p == path) {
-            let names: Vec<String> = stack[pos..]
+        if let Some(pos) = chain.stack.iter().position(|p| *p == path) {
+            let names: Vec<String> = chain.stack[pos..]
                 .iter()
                 .chain(std::iter::once(&path))
                 .map(|p| {
@@ -191,7 +204,7 @@ impl Library {
                 FileError::new(format!("import cycle: {}", names.join(" -> "))),
             );
         }
-        if stack.len() > MAX_IMPORT_DEPTH {
+        if chain.depth >= MAX_IMPORT_DEPTH {
             return fail(
                 ctx,
                 FileError::new(format!(
@@ -203,25 +216,44 @@ impl Library {
             Some(n) => format!("{prefix}{}.", n.name),
             None => prefix.to_string(),
         };
-        if !self.loaded.insert((path.clone(), ns.clone())) {
+        if self.loaded.contains(&(path.clone(), ns.clone())) {
             return;
         }
-        let src = match std::fs::read_to_string(&path) {
-            Ok(s) => s,
-            Err(e) => {
-                return fail(
+        if self.instances >= MAX_INSTANCES {
+            if self.instances == MAX_INSTANCES {
+                self.instances += 1;
+                fail(
                     ctx,
-                    FileError::new(format!("cannot read `{}`: {e}", i.path)),
+                    FileError {
+                        message: format!(
+                            "more than {MAX_INSTANCES} library imports in total, counting each namespace a library is imported under"
+                        ),
+                        help: Some(
+                            "import shared libraries once, instead of under several namespaces at each level"
+                                .into(),
+                        ),
+                    },
                 );
             }
+            return;
+        }
+        self.instances += 1;
+        self.loaded.insert((path.clone(), ns.clone()));
+        let m = match self.module(&path, &i.path, ctx.loader) {
+            Ok(m) => m,
+            Err(e) => return fail(ctx, e),
         };
-        let (lib_file, mut inner) = kashika_syntax::parse(&src);
+        let mut inner = m.parse_diags.clone();
         let outer = std::mem::take(&mut ctx.diags);
         let outer_nested = std::mem::take(&mut ctx.nested);
-        for stmt in &lib_file.stmts {
+        for (k, stmt) in m.file.stmts.iter().enumerate() {
             match stmt {
                 Stmt::Shape(_) | Stmt::Import(_) => {}
-                Stmt::Style(s) => self.style(s, &ns, ctx),
+                Stmt::Style(s) => {
+                    let (props, diags) = &m.styles[&k];
+                    ctx.diags.extend(diags.iter().cloned());
+                    self.add_style(s, &ns, props.clone(), ctx);
+                }
                 other => ctx.diags.push(Diagnostic::error(
                     "parse",
                     other.span(),
@@ -232,12 +264,11 @@ impl Library {
                 )),
             }
         }
-        let lib_dir = path
-            .parent()
-            .map_or_else(|| dir.to_path_buf(), Path::to_path_buf);
-        stack.push(path);
-        self.defs(&lib_file.stmts, &lib_dir, &ns, stack, ctx);
-        stack.pop();
+        chain.stack.push(path);
+        chain.depth += 1;
+        self.module_defs(&m, &ns, chain, ctx);
+        chain.depth -= 1;
+        chain.stack.pop();
         inner.append(&mut ctx.diags);
         let mut found: Vec<Nested> = inner
             .into_iter()
@@ -258,9 +289,52 @@ impl Library {
         }
     }
 
-    fn style(&mut self, s: &ast::StyleDef, ns: &str, ctx: &mut Ctx) {
-        let a = Attrs::new(&s.attrs, "style", STYLE_KEYS, &mut ctx.diags);
-        let props = attrs::style_props(&a, &mut ctx.diags);
+    /// The parsed library at `path`, read on first use.
+    fn module(
+        &mut self,
+        path: &Path,
+        written: &str,
+        loader: &Loader,
+    ) -> Result<Rc<Module>, FileError> {
+        if let Some(m) = self.modules.get(path) {
+            return m.clone();
+        }
+        let m = read_module(path, written, loader).map(Rc::new);
+        self.modules.insert(path.to_path_buf(), m.clone());
+        m
+    }
+
+    /// A library's shapes and imports, registered under `ns`.
+    fn module_defs(&mut self, m: &Module, ns: &str, chain: &mut Chain, ctx: &mut Ctx) {
+        for (k, stmt) in m.file.stmts.iter().enumerate() {
+            match stmt {
+                Stmt::Shape(s) => {
+                    if !self.name_free(s, ns, ctx) {
+                        continue;
+                    }
+                    let key = (m.path.clone(), k);
+                    if !self.bodies.contains_key(&key) {
+                        let outer = std::mem::take(&mut ctx.diags);
+                        let def = shape_body(s, &m.dir, ctx);
+                        let diags = std::mem::replace(&mut ctx.diags, outer);
+                        self.bodies.insert(key.clone(), (def, diags));
+                    }
+                    let (def, diags) = &self.bodies[&key];
+                    ctx.diags.extend(diags.iter().cloned());
+                    if let Some(d) = def.clone() {
+                        self.shapes.insert(format!("{ns}{}", s.name.name), d);
+                    }
+                }
+                Stmt::Import(i) => {
+                    let path = m.imports[&k].clone();
+                    self.import(i, path, ns, chain, ctx);
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn add_style(&mut self, s: &ast::StyleDef, ns: &str, props: StyleProps, ctx: &mut Ctx) {
         let name = format!("{ns}{}", s.name);
         if self.styles.iter().any(|(n, _)| *n == name) {
             ctx.diags.push(Diagnostic::error(
@@ -273,7 +347,8 @@ impl Library {
         self.styles.push((name, props));
     }
 
-    fn shape(&mut self, s: &ast::ShapeDef, dir: &Path, prefix: &str, ctx: &mut Ctx) {
+    /// Whether `s` may be defined under `prefix`: not a built-in name, not defined yet.
+    fn name_free(&self, s: &ast::ShapeDef, prefix: &str, ctx: &mut Ctx) -> bool {
         if BUILTIN_SHAPES.contains(&s.name.name.as_str()) {
             ctx.diags.push(
                 Diagnostic::error(
@@ -283,7 +358,7 @@ impl Library {
                 )
                 .with_help("pick another name"),
             );
-            return;
+            return false;
         }
         let name = format!("{prefix}{}", s.name.name);
         if self.shapes.contains_key(&name) {
@@ -292,23 +367,83 @@ impl Library {
                 s.name.span,
                 format!("shape `{name}` is defined twice"),
             ));
-            return;
+            return false;
         }
-        let def = match &s.body {
-            ShapeBody::Paths {
-                path,
-                outline,
-                text_area,
-            } => unit_shape(path, *outline, *text_area, &mut ctx.diags).map(LibShape::Unit),
-            ShapeBody::From {
-                file,
-                file_span,
-                attrs: list,
-            } => svg_shape(file, *file_span, list, dir, ctx).map(LibShape::Svg),
-        };
-        if let Some(d) = def {
-            self.shapes.insert(name, d);
+        true
+    }
+}
+
+fn read_module(path: &Path, written: &str, loader: &Loader) -> Result<Module, FileError> {
+    let bytes = loader.read(&Found::File(path.to_path_buf()), written, MAX_IMPORT_BYTES)?;
+    let src = String::from_utf8(bytes).map_err(|_| {
+        FileError::new(format!(
+            "cannot read `{written}`: stream did not contain valid UTF-8"
+        ))
+    })?;
+    let (file, parse_diags) = kashika_syntax::parse(&src);
+    let dir = path.parent().unwrap_or(path).to_path_buf();
+    let mut styles = HashMap::new();
+    let mut imports = HashMap::new();
+    for (k, stmt) in file.stmts.iter().enumerate() {
+        match stmt {
+            Stmt::Style(s) => {
+                let mut diags = Vec::new();
+                let props = style_props(s, &mut diags);
+                styles.insert(k, (props, diags));
+            }
+            Stmt::Import(i) => {
+                imports.insert(k, find_import(loader, &dir, i));
+            }
+            _ => {}
         }
+    }
+    Ok(Module {
+        path: path.to_path_buf(),
+        dir,
+        file,
+        parse_diags,
+        styles,
+        imports,
+    })
+}
+
+/// The `.kash` file an import names, found from `dir`.
+fn find_import(loader: &Loader, dir: &Path, i: &ast::Import) -> Result<PathBuf, FileError> {
+    let path = match loader.find(dir, &i.path)? {
+        Found::File(p) => p,
+        Found::Bundled(_) => {
+            return Err(FileError::new(format!(
+                "`{}` is a bundled icon, not a library",
+                i.path
+            )));
+        }
+    };
+    if path.extension().and_then(|e| e.to_str()) != Some("kash") {
+        return Err(FileError::new(format!(
+            "imports must be `.kash` files; `{}` is not",
+            i.path
+        )));
+    }
+    Ok(path)
+}
+
+fn style_props(s: &ast::StyleDef, diags: &mut Vec<Diagnostic>) -> StyleProps {
+    let a = Attrs::new(&s.attrs, "style", STYLE_KEYS, diags);
+    attrs::style_props(&a, diags)
+}
+
+fn shape_body(s: &ast::ShapeDef, dir: &Path, ctx: &mut Ctx) -> Option<LibShape> {
+    match &s.body {
+        ShapeBody::Paths {
+            path,
+            outline,
+            text_area,
+        } => unit_shape(path, *outline, *text_area, &mut ctx.diags).map(LibShape::Unit),
+        ShapeBody::From {
+            file,
+            file_span,
+            attrs: list,
+        } => svg_shape(file, *file_span, list, dir, ctx).map(LibShape::Svg),
     }
 }
 

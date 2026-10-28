@@ -1,12 +1,15 @@
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use kashika_geom::{Pt, convex_hull};
 
-use crate::icons;
 use crate::loader::{FileError, Found, Loader};
 use crate::scene::Asset;
 
+/// Largest image or SVG file read.
 const MAX_BYTES: u64 = 16 * 1024 * 1024;
+/// Deepest element nesting accepted in an SVG, judged from the source before parsing.
+const MAX_SVG_DEPTH: usize = 256;
 
 /// Raster output (PNG, JPEG, WebP) is 1 px per diagram unit; a canvas beyond either limit is refused.
 pub const MAX_RASTER_SIDE: u32 = 16_384;
@@ -35,7 +38,8 @@ pub(crate) struct Store {
 impl Store {
     /// Finds `name` from the directory `from`, loads it once and returns its index.
     pub fn load(&mut self, loader: &Loader, from: &Path, name: &str) -> Result<usize, FileError> {
-        self.load_found(loader.find(from, name)?, name)
+        let found = loader.find(from, name)?;
+        self.load_found(loader, found, name)
     }
 
     /// Like `load`, but only accepts SVG files; anything else is refused before it is read.
@@ -54,10 +58,15 @@ impl Store {
                 )));
             }
         }
-        self.load_found(found, name)
+        self.load_found(loader, found, name)
     }
 
-    fn load_found(&mut self, found: Found, name: &str) -> Result<usize, FileError> {
+    fn load_found(
+        &mut self,
+        loader: &Loader,
+        found: Found,
+        name: &str,
+    ) -> Result<usize, FileError> {
         let key = match &found {
             Found::File(p) => p.to_string_lossy().into_owned(),
             Found::Bundled(n) => format!("builtin:{n}"),
@@ -65,22 +74,10 @@ impl Store {
         if let Some(i) = self.keys.iter().position(|k| *k == key) {
             return Ok(i);
         }
-        let (bytes, is_svg, shown) = match found {
-            Found::File(p) => {
-                let len = std::fs::metadata(&p)
-                    .map_err(|e| FileError::new(format!("cannot read `{name}`: {e}")))?
-                    .len();
-                if len > MAX_BYTES {
-                    return Err(FileError::new(format!("`{name}` is larger than 16 MiB")));
-                }
-                let bytes = std::fs::read(&p)
-                    .map_err(|e| FileError::new(format!("cannot read `{name}`: {e}")))?;
-                (bytes, is_svg_path(&p), name.to_string())
-            }
-            Found::Bundled(n) => {
-                let (_, src) = icons::bundled(n).expect("the loader only returns bundled names");
-                (src.as_bytes().to_vec(), true, key.clone())
-            }
+        let bytes = loader.read(&found, name, MAX_BYTES)?;
+        let (is_svg, shown) = match &found {
+            Found::File(p) => (is_svg_path(p), name.to_string()),
+            Found::Bundled(_) => (true, key.clone()),
         };
         let asset = decode(shown, &bytes, is_svg)
             .map_err(|m| FileError::new(format!("cannot use `{name}`: {m}")))?;
@@ -146,14 +143,30 @@ fn raster(path: String, bytes: &[u8]) -> Result<Asset, String> {
 /// handlers, `foreignObject` and external references don't survive it, and the href
 /// resolver refuses everything but `data:` URIs.
 fn svg(path: String, bytes: &[u8]) -> Result<Asset, String> {
+    check_depth(bytes)?;
+    let too_deep = AtomicBool::new(false);
+    let data = usvg::ImageHrefResolver::default_data_resolver();
     let opt = usvg::Options {
         image_href_resolver: usvg::ImageHrefResolver {
-            resolve_data: usvg::ImageHrefResolver::default_data_resolver(),
+            resolve_data: Box::new(|mime, bytes, opts| {
+                let svg = mime == "image/svg+xml"
+                    || (mime == "text/plain" && imagesize::image_type(&bytes).is_err());
+                if svg && check_depth(&bytes).is_err() {
+                    too_deep.store(true, Ordering::Relaxed);
+                    return None;
+                }
+                data(mime, bytes, opts)
+            }),
             resolve_string: Box::new(|_, _| None),
         },
         ..usvg::Options::default()
     };
     let tree = usvg::Tree::from_data(bytes, &opt).map_err(|e| format!("not a valid SVG: {e}"))?;
+    if too_deep.load(Ordering::Relaxed) {
+        return Err(format!(
+            "an embedded SVG nests elements more than {MAX_SVG_DEPTH} deep"
+        ));
+    }
     check_nested_images(tree.root())?;
     let size = tree.size();
     let (w, h) = (f64::from(size.width()), f64::from(size.height()));
@@ -168,6 +181,61 @@ fn svg(path: String, bytes: &[u8]) -> Result<Asset, String> {
         bytes: tree.to_string(&usvg::WriteOptions::default()).into_bytes(),
         unit_hull: if hull.len() >= 3 { hull } else { unit_square() },
     })
+}
+
+/// Refuses markup nested more than `MAX_SVG_DEPTH` deep before the recursive parsers see
+/// it. Comments, CDATA and processing instructions are skipped; declarations (`<!...>`)
+/// are scanned through, so element markup in entity values counts too.
+fn check_depth(bytes: &[u8]) -> Result<(), String> {
+    let after = |from: usize, pat: &[u8]| {
+        bytes
+            .get(from..)
+            .and_then(|rest| rest.windows(pat.len()).position(|w| w == pat))
+            .map_or(bytes.len(), |i| from + i + pat.len())
+    };
+    let mut depth = 0usize;
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] != b'<' {
+            i += 1;
+            continue;
+        }
+        let rest = &bytes[i..];
+        if rest.starts_with(b"<!--") {
+            i = after(i + 4, b"-->");
+        } else if rest.starts_with(b"<![CDATA[") {
+            i = after(i + 9, b"]]>");
+        } else if rest.starts_with(b"<?") {
+            i = after(i + 2, b"?>");
+        } else if rest.starts_with(b"<!") {
+            i += 2;
+        } else if rest.starts_with(b"</") {
+            depth = depth.saturating_sub(1);
+            i = after(i + 2, b">");
+        } else {
+            let mut j = i + 1;
+            let mut quote = None;
+            while j < bytes.len() {
+                match (quote, bytes[j]) {
+                    (None, b'"' | b'\'') => quote = Some(bytes[j]),
+                    (Some(q), c) if c == q => quote = None,
+                    (None, b'>') => break,
+                    _ => {}
+                }
+                j += 1;
+            }
+            if bytes[j - 1] != b'/' {
+                depth += 1;
+                if depth > MAX_SVG_DEPTH {
+                    return Err(format!(
+                        "elements are nested more than {MAX_SVG_DEPTH} deep"
+                    ));
+                }
+            }
+            i = j + 1;
+        }
+    }
+    Ok(())
 }
 
 /// Raster images embedded in an SVG are held to the same limit as attached ones, wherever
@@ -305,25 +373,61 @@ mod tests {
         assert!(decode("x.png".into(), &png(8_192, 3_906), false).is_ok());
     }
 
-    #[test]
-    fn oversized_images_nested_in_svg_are_refused() {
-        let b64 = |b: &[u8]| {
-            const T: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-            let mut o = String::new();
-            for c in b.chunks(3) {
-                let n = (u32::from(c[0]) << 16)
-                    | (u32::from(*c.get(1).unwrap_or(&0)) << 8)
-                    | u32::from(*c.get(2).unwrap_or(&0));
-                for i in 0..4 {
-                    if i <= c.len() {
-                        o.push(T[(n >> (18 - 6 * i) & 63) as usize] as char);
-                    } else {
-                        o.push('=');
-                    }
+    fn b64(b: &[u8]) -> String {
+        const T: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        let mut o = String::new();
+        for c in b.chunks(3) {
+            let n = (u32::from(c[0]) << 16)
+                | (u32::from(*c.get(1).unwrap_or(&0)) << 8)
+                | u32::from(*c.get(2).unwrap_or(&0));
+            for i in 0..4 {
+                if i <= c.len() {
+                    o.push(T[(n >> (18 - 6 * i) & 63) as usize] as char);
+                } else {
+                    o.push('=');
                 }
             }
-            o
-        };
+        }
+        o
+    }
+
+    fn nested(depth: usize) -> String {
+        format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">{}<rect width="10" height="10"/>{}</svg>"#,
+            "<g>".repeat(depth - 1),
+            "</g>".repeat(depth - 1)
+        )
+    }
+
+    #[test]
+    fn deep_nesting_is_refused_before_parsing() {
+        let e = decode("d.svg".into(), nested(20_000).as_bytes(), true).unwrap_err();
+        assert!(e.contains("nested more than 256 deep"), "{e}");
+        assert!(decode("d.svg".into(), nested(256).as_bytes(), true).is_ok());
+        let e = decode("d.svg".into(), nested(257).as_bytes(), true).unwrap_err();
+        assert!(e.contains("nested more than 256 deep"), "{e}");
+        let flat = format!(
+            r#"<?xml version="1.0"?><!-- <g><g> --><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">{}<![CDATA[<g>]]></svg>"#,
+            "<g a='>'><rect width=\"1\" height=\"1\"/></g>".repeat(300)
+        );
+        assert!(check_depth(flat.as_bytes()).is_ok());
+    }
+
+    #[test]
+    fn deep_nesting_in_an_embedded_svg_is_refused() {
+        let src = format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><image width="10" height="10" href="data:image/svg+xml;base64,{}"/></svg>"#,
+            b64(nested(20_000).as_bytes())
+        );
+        let e = decode("n.svg".into(), src.as_bytes(), true).unwrap_err();
+        assert!(
+            e.contains("embedded SVG nests elements more than 256 deep"),
+            "{e}"
+        );
+    }
+
+    #[test]
+    fn oversized_images_nested_in_svg_are_refused() {
         let mut src = String::new();
         write!(
             src,

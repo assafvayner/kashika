@@ -1,0 +1,2 @@
+error[file] 4:8-4:21: in `lib/n0.kash` at 1:8: in `n1.kash` at 1:8: … 9 more imports …: in `n11.kash` at 2:8: more than 1000 library imports in total, counting each namespace a library is imported under
+  = help: import shared libraries once, instead of under several namespaces at each level

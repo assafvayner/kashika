@@ -1,0 +1,6 @@
+// spec: 5, 7
+// A failed segment does not hide unknown ids in the segments after it.
+diagram "later segments" size (300,200)
+box a at (20,20) size (60,40)
+line l1 nope.right -> (100,40) -> hv missing.left
+line l2 a.right -> x gone.left -> curve via (10,10) ghost.top other.left -> v 20

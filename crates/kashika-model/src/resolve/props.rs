@@ -2,21 +2,86 @@ use kashika_diag::{Diagnostic, Span, did_you_mean};
 use kashika_geom::{Pt, Rect};
 use kashika_syntax::ast::{self};
 
-use crate::attrs::{self, Attrs};
+use crate::attrs::{self, Attrs, Min};
 use crate::form::Form;
 use crate::library::{LibShape, SvgShape};
 use crate::markup;
 use crate::scene::*;
 use crate::shapes::{self, BUILTIN_SHAPES};
 use crate::style::{self, STYLE_KEYS, Style, StyleProps};
-use crate::textlayout::{self, SHAPE_TEXT_KEYS};
+use crate::textlayout::{self, SHAPE_TEXT_KEYS, ShapeTextProps};
 
 use super::{
-    IMAGE_KEYS, IconPos, IconProps, ImageProps, LINE_KEYS, LineProps, MARKERS, NODE_KEYS,
+    IMAGE_KEYS, IconPos, IconProps, ImageProps, Item, LINE_KEYS, LineProps, MARKERS, NODE_KEYS,
     NodeProps, Resolver, TEXT_KEYS, TextProps,
 };
 
+impl NodeProps {
+    /// The shape drawn: the `shape=` name, else `rounded` or `rect` from the outline.
+    pub(super) fn drawn_shape(&self) -> String {
+        self.shape.clone().unwrap_or_else(|| {
+            if self.outline == Outline::Rounded {
+                "rounded".into()
+            } else {
+                "rect".into()
+            }
+        })
+    }
+}
+
 impl<'a> Resolver<'a> {
+    /// Reads every entry's attributes into its props, loading the files they name.
+    /// Skipped entries (duplicate ids and their children) get none.
+    pub(super) fn validate(&mut self) {
+        for idx in 0..self.entries.len() {
+            if self.skipped.contains(&idx) {
+                continue;
+            }
+            match self.entries[idx].item {
+                Item::Box(n) => {
+                    let p = self.node_props(n, false);
+                    self.nodes.insert(idx, p);
+                }
+                Item::Group(g) => {
+                    let p = self.node_props(&g.node, true);
+                    self.nodes.insert(idx, p);
+                }
+                Item::Image(i) => {
+                    let p = self.image_props(i);
+                    self.nodes.insert(idx, p);
+                }
+                Item::Junction(j) => {
+                    let a = Attrs::new(&j.attrs, "junction", &["dot"], &mut self.diags);
+                    let dot = a
+                        .get("dot")
+                        .is_some_and(|x| attrs::flag(x, &mut self.diags));
+                    self.dots.insert(idx, dot);
+                }
+                Item::Text(t) => {
+                    let p = self.text_props(t);
+                    self.texts.insert(idx, p);
+                }
+                Item::Line(l) => {
+                    let p = self.line_props(l);
+                    self.lines.insert(idx, p);
+                }
+            }
+        }
+    }
+
+    /// `allow=` and `reason=`, shared by boxes, groups, images and lines.
+    fn allow_reason(&mut self, a: &Attrs<'_>) -> (Vec<Allow>, Option<String>) {
+        let allow = a
+            .get("allow")
+            .map(|x| self.allow_list(x, true))
+            .unwrap_or_default();
+        let reason = a
+            .get("reason")
+            .and_then(|x| attrs::text(x, &mut self.diags))
+            .map(|r| markup::unescape(&r));
+        (allow, reason)
+    }
+
     pub(super) fn node_props(&mut self, n: &ast::Node, group: bool) -> NodeProps {
         let what = if group { "group" } else { "box" };
         let keys: Vec<&str> = NODE_KEYS
@@ -29,7 +94,7 @@ impl<'a> Resolver<'a> {
         let a = Attrs::new(&n.attrs, what, &keys, &mut self.diags);
 
         let size_ok = self.size_ok(n.size, n.span, &format!("`{}`", n.id.name));
-        let shape = a.get("shape").and_then(|x| self.shape_name(x));
+        let shape = a.get("shape").and_then(|x| self.shape_attr(x));
         let mut props = StyleProps::default();
         if group {
             let user = self
@@ -61,14 +126,7 @@ impl<'a> Resolver<'a> {
             .and_then(|x| self.pin(x))
             .unwrap_or(("tl", None));
         let text = textlayout::shape_text_props(&a, group, &mut self.diags);
-        let allow = a
-            .get("allow")
-            .map(|x| self.allow_list(x, true))
-            .unwrap_or_default();
-        let reason = a
-            .get("reason")
-            .and_then(|x| attrs::text(x, &mut self.diags))
-            .map(|r| markup::unescape(&r));
+        let (allow, reason) = self.allow_reason(&a);
         let style = props.resolve();
         let icon = self.icon_props(&a, group, style.font_size);
         NodeProps {
@@ -106,19 +164,10 @@ impl<'a> Resolver<'a> {
             },
             None => IconPos::Left,
         };
-        let size = a.get("icon-size").and_then(|x| {
-            let v = attrs::num(x, &mut self.diags)?;
-            if v <= 0.0 {
-                self.diags.push(Diagnostic::error(
-                    "size",
-                    x.span,
-                    "`icon-size` must be positive",
-                ));
-                return None;
-            }
-            Some(v)
-        });
-        let size = size.unwrap_or(if group { font_size * 1.25 } else { 24.0 });
+        let size = a
+            .get("icon-size")
+            .and_then(|x| attrs::num_in(x, Min::Positive, &mut self.diags))
+            .unwrap_or(if group { font_size * 1.25 } else { 24.0 });
         let Some(x) = a.get("icon") else {
             for k in ["icon-pos", "icon-size"] {
                 if let Some(x) = a.get(k) {
@@ -151,14 +200,7 @@ impl<'a> Resolver<'a> {
             Some("stretch") => Fit::Stretch,
             _ => Fit::Contain,
         };
-        let allow = a
-            .get("allow")
-            .map(|x| self.allow_list(x, true))
-            .unwrap_or_default();
-        let reason = a
-            .get("reason")
-            .and_then(|x| attrs::text(x, &mut self.diags))
-            .map(|r| markup::unescape(&r));
+        let (allow, reason) = self.allow_reason(&a);
         let asset = self.load_asset(&i.file, i.file_span);
         NodeProps {
             outline: Outline::Rect,
@@ -166,11 +208,7 @@ impl<'a> Resolver<'a> {
             style: Style::default(),
             pin,
             size_ok,
-            text: textlayout::shape_text_props(
-                &Attrs::new(&[], "image", &[], &mut Vec::new()),
-                false,
-                &mut Vec::new(),
-            ),
+            text: ShapeTextProps::default(),
             allow,
             reason,
             icon: None,
@@ -189,7 +227,8 @@ impl<'a> Resolver<'a> {
         }
     }
 
-    pub(super) fn shape_name(&mut self, a: &ast::Attr) -> Option<String> {
+    /// The shape a `shape=` attribute names, if it exists.
+    pub(super) fn shape_attr(&mut self, a: &ast::Attr) -> Option<String> {
         let ast::Value::Word(w) = &a.value else {
             self.diags.push(attrs::type_err(a, "a shape name"));
             return None;
@@ -347,14 +386,7 @@ impl<'a> Resolver<'a> {
         let ortho = a
             .get("ortho")
             .is_some_and(|x| attrs::flag(x, &mut self.diags));
-        let allow = a
-            .get("allow")
-            .map(|x| self.allow_list(x, true))
-            .unwrap_or_default();
-        let reason = a
-            .get("reason")
-            .and_then(|x| attrs::text(x, &mut self.diags))
-            .map(|r| markup::unescape(&r));
+        let (allow, reason) = self.allow_reason(&a);
         let radius = props.radius.unwrap_or(0.0);
         LineProps {
             start,
@@ -367,14 +399,4 @@ impl<'a> Resolver<'a> {
             radius,
         }
     }
-}
-
-pub(super) fn shape_name(p: &NodeProps) -> String {
-    p.shape.clone().unwrap_or_else(|| {
-        if p.outline == Outline::Rounded {
-            "rounded".into()
-        } else {
-            "rect".into()
-        }
-    })
 }

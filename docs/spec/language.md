@@ -13,7 +13,7 @@ The CLI renders `.kash` files to SVG, PNG, JPEG or WebP and runs geometric check
 - **Rule: every literal coordinate is in the frame of the group where the statement is written.** This covers `at`, literal points in lines, `curve via` control points and numeric `x`/`y` targets. Top-level statements use the canvas frame.
 - Anchor references (`db.left`) always resolve to the referenced shape's true position, whatever frame you write them in.
 - Relative moves (`h`, `v`) and offsets (`+(dx,dy)`) are deltas, so they are the same in every frame.
-- Every resolved coordinate (positions, line points, curve control points, and curve amounts) must lie within ±1,000,000 of the canvas origin; anything further is a `degenerate-curve` error ("value is out of range"). Every size must be at most 1,000,000 (`size` error).
+- Every resolved coordinate (positions, line points, curve control points, and curve amounts) must lie within ±1,000,000 of the canvas origin; anything further, or a value too large to be a finite number, is a `range` error ("value is out of range"). Every size must be at most 1,000,000 (`size` error).
 
 `kashika inspect` prints both canvas and local coordinates for everything.
 
@@ -59,7 +59,7 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
 
 - `grid=N` makes `off-grid` check authored literals only, never resolved anchors. `clearance=N` (default `6`) is the minimum gap used by the `near` lint.
 - `background=C` paints the whole canvas in color `C` (the same color values as styles) under everything else. Without it, or with `background=none`, the canvas is transparent in SVG, PNG and WebP output; JPEG has no alpha, so it composites onto white (§8). Any other value is an `attr` error.
-- Numeric attributes must be in range, or they are `attr` errors: `font-size`, `stroke-width` and `grid` must be greater than 0; `radius`, `padding` and `clearance` must be at least 0. All of them must be at most 1,000,000. A `text` `size=` outside that range is a `size` error.
+- Numeric attributes must be in range, or they are `attr` errors: `font-size`, `stroke-width`, `icon-size` and `grid` must be greater than 0; `radius`, `padding`, `gap` and `clearance` must be at least 0. All of them must be at most 1,000,000. A `text` `size=` outside that range is a `size` error.
 - `style` keys:
   - `fill`, `stroke`, `stroke-width`, `stroke-style=solid|dashed|dotted`
   - `font-size`, `font-weight=normal|bold`, `color`
@@ -131,6 +131,9 @@ Library files may contain only `shape`, `style` and `import`; any other statemen
 - **Search path:** besides the importing file's directory, Kashika searches `icons=` on the `diagram` line and `KASHIKA_ICON_PATH`, then falls back to the bundled icons for a bare name such as `icon="queue"`.
 - **SVG sanitizing:** scripts, external references and `foreignObject` are stripped.
 - **Image size limits:** a PNG or JPEG, attached or embedded in an SVG, is judged by its header before any pixel is decoded and is a `file` error beyond 8,192 px per side or 32,000,000 px in total. Raster output has its own, larger canvas cap (§8).
+- **File size limits:** an image or SVG file (`image`, `icon=`, `shape ... from`) may be at most 16 MiB, and an imported library at most 1 MiB; a larger file is a `file` error, refused before it is read in full.
+- **SVG nesting:** an SVG, or an SVG embedded in one as a `data:` image, whose elements nest more than 256 deep is a `file` error, refused before it is parsed.
+- **Import fan-out:** each library file is read and parsed once, however often it is imported. Each (file, namespace) pair registers its definitions once; more than 1,000 such library instances in one diagram is a `file` error, reported once. A chain where every library imports the next under two namespaces doubles at each level and reaches the limit after about ten levels.
 - **Self-contained output:** images are embedded in SVG output and rasterized into PNG output.
 - **Missing files:** a missing file is an error, with did-you-mean suggestions drawn only from files the sandbox allows. Naming a directory is an error that says so.
 - **Licensing:** no third-party icon sets are bundled. Kashika ships a small neutral set (`server`, `browser`, `queue`, `lock`, `cloud`, `person`). Users point the search path at icon sets they download themselves.
@@ -251,15 +254,16 @@ These block output unless `--force` is given:
 | `label-overflow` | Reports the required size |
 | `text-conflict` | `label`/`sublabel` combined with stacked (no `at`) block items (§6) |
 | `not-ortho` | A segment is diagonal on a line marked `ortho` |
-| `degenerate-curve` | A zero-length curve, a negative curve amount, or a non-finite or out-of-range value (a coordinate more than 1,000,000 from the origin, §1) |
+| `degenerate-curve` | A zero-length curve or a negative curve amount |
 | `zero-length` | A line whose segments all have zero length |
 | `attr` | Unknown, duplicate, mistyped (including an unknown color name) or out-of-range attribute (§3), or a duplicate label position |
 | `unknown-style` | `style=` names no built-in or user style |
 | `unknown-shape` | `shape=` names no built-in, defined or imported shape. Includes did-you-mean |
 | `size` | A non-positive size, or one larger than 1,000,000 |
+| `range` | A resolved coordinate or curve amount more than 1,000,000 from the origin, or not a finite number (§1) |
 | `diagram` | Missing, misplaced or repeated `diagram` statement |
 | `version` | `kashika=` is not a quoted semver string, or names a newer version or a different major version than the tool |
-| `file` | A referenced file (`import`, `shape ... from`, `image`, `icon=`, `icons=`) is missing, is a directory, escapes the project root without `--allow-path`, is a remote URL, can't be read or decoded, has the wrong type, or is an image over the size limits (§3a); an import cycle; imports nested more than 32 deep. Errors inside an imported file are reported at the `import` with an ``in `file` at L:C:`` prefix |
+| `file` | A referenced file (`import`, `shape ... from`, `image`, `icon=`, `icons=`) is missing, is a directory, escapes the project root without `--allow-path`, is a remote URL, can't be read or decoded, has the wrong type, is over the file size limits, is an image over the size limits or an SVG nested too deep (§3a); an import cycle; imports nested more than 32 deep; more than 1,000 library instances. Errors inside an imported file are reported at the `import` with an ``in `file` at L:C:`` prefix |
 
 ### Warnings
 

@@ -8,8 +8,7 @@ use crate::anchor;
 use crate::attrs;
 use crate::form;
 
-use super::props::shape_name;
-use super::{CYCLE_SHOWN, Item, MAX_PLACEMENT_DEPTH, Resolver};
+use super::{CYCLE_SHOWN, Item, MAX_PLACEMENT_DEPTH, Resolver, record};
 
 impl<'a> Resolver<'a> {
     /// The placeable entries `idx`'s position depends on: its group, then each id in its `at`.
@@ -21,16 +20,7 @@ impl<'a> Resolver<'a> {
             Item::Junction(j) => &j.at,
             Item::Text(_) | Item::Line(_) => return Vec::new(),
         };
-        let refs: Vec<&ast::Ref> = match at {
-            Point::Ref { r, .. } => vec![r],
-            Point::Lit { x, y, .. } => [x, y]
-                .into_iter()
-                .filter_map(|c| match c {
-                    Coord::Axis { r, .. } => Some(r),
-                    Coord::Num(_) => None,
-                })
-                .collect(),
-        };
+        let refs = record::point_refs(at);
         let placeable = |i: &usize| !matches!(self.entries[*i].item, Item::Text(_) | Item::Line(_));
         self.entries[idx]
             .parent
@@ -65,7 +55,7 @@ impl<'a> Resolver<'a> {
             }
             for &i in scc {
                 cyclic[i] = true;
-                self.placed.insert(i, None);
+                self.placed[i] = Some(None);
             }
             let start = *scc.iter().min().expect("non-empty");
             let cycle = shortest_cycle(start, &deps, scc);
@@ -112,7 +102,7 @@ impl<'a> Resolver<'a> {
         );
         for (i, &d) in depth.iter().enumerate() {
             if d > MAX_PLACEMENT_DEPTH {
-                self.placed.insert(i, None);
+                self.placed[i] = Some(None);
             }
         }
     }
@@ -142,21 +132,16 @@ impl<'a> Resolver<'a> {
 
     /// Places an entry (box, group or junction), resolving dependencies depth-first.
     pub(super) fn place(&mut self, idx: usize) -> Option<Rect> {
-        if let Some(r) = self.placed.get(&idx) {
-            return *r;
+        if let Some(r) = self.placed[idx] {
+            return r;
         }
         if self.on_stack.len() > MAX_PLACEMENT_DEPTH || !self.on_stack.insert(idx) {
             return None;
         }
-        let computed = self.compute_place(idx);
+        let r = self.compute_place(idx);
         self.on_stack.remove(&idx);
-        let result = if self.placed.get(&idx) == Some(&None) {
-            None
-        } else {
-            computed
-        };
-        self.placed.insert(idx, result);
-        result
+        self.placed[idx] = Some(r);
+        r
     }
 
     pub(super) fn pin(&mut self, a: &ast::Attr) -> Option<(&'static str, Option<f64>)> {
@@ -214,7 +199,7 @@ impl<'a> Resolver<'a> {
         let local = Rect::new(0.0, 0.0, w, h);
         let (name, t) = p.pin;
         let radius = p.style.radius;
-        let shape = shape_name(p);
+        let shape = p.drawn_shape();
         let form = self.form(&shape, local);
         let off =
             form::resolve_anchor(form.as_ref(), local, radius, "pin", name, t).unwrap_or_default();
