@@ -146,3 +146,67 @@ fn color_names_round_trip() {
         .code(0);
     assert_eq!(std::fs::read_to_string(&f).unwrap(), src);
 }
+
+#[cfg(unix)]
+#[test]
+fn writes_through_symlink() {
+    let dir = tempfile::tempdir().unwrap();
+    let real = dir.path().join("real.kash");
+    let link = dir.path().join("link.kash");
+    std::fs::write(&real, MESSY).unwrap();
+    std::os::unix::fs::symlink(&real, &link).unwrap();
+    kashika()
+        .args(["fmt", link.to_str().unwrap()])
+        .assert()
+        .code(0);
+    assert!(std::fs::symlink_metadata(&link)
+        .unwrap()
+        .file_type()
+        .is_symlink());
+    assert_eq!(std::fs::read_to_string(&real).unwrap(), CLEAN);
+}
+
+#[cfg(unix)]
+#[test]
+fn preserves_file_mode() {
+    use std::os::unix::fs::PermissionsExt;
+    let dir = tempfile::tempdir().unwrap();
+    let f = dir.path().join("d.kash");
+    std::fs::write(&f, MESSY).unwrap();
+    std::fs::set_permissions(&f, std::fs::Permissions::from_mode(0o640)).unwrap();
+    kashika()
+        .args(["fmt", f.to_str().unwrap()])
+        .assert()
+        .code(0);
+    assert_eq!(std::fs::read_to_string(&f).unwrap(), CLEAN);
+    assert_eq!(
+        std::fs::metadata(&f).unwrap().permissions().mode() & 0o777,
+        0o640
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn render_writes_through_symlink() {
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("d.kash");
+    let real = dir.path().join("real.svg");
+    let link = dir.path().join("link.svg");
+    std::fs::write(&src, CLEAN).unwrap();
+    std::fs::write(&real, "old").unwrap();
+    std::os::unix::fs::symlink(&real, &link).unwrap();
+    kashika()
+        .args([
+            "render",
+            src.to_str().unwrap(),
+            "-o",
+            link.to_str().unwrap(),
+        ])
+        .assert()
+        .code(0);
+    assert!(std::fs::symlink_metadata(&link)
+        .unwrap()
+        .file_type()
+        .is_symlink());
+    assert!(std::fs::read_to_string(&real).unwrap().starts_with("<svg"));
+}

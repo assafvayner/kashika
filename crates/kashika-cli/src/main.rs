@@ -371,7 +371,19 @@ fn read_input(c: &Common) -> Result<(String, String), String> {
     }
 }
 
+fn resolve_link(path: &Path) -> PathBuf {
+    if let Ok(p) = std::fs::canonicalize(path) {
+        return p;
+    }
+    match std::fs::read_link(path) {
+        Ok(t) => path.parent().unwrap_or(Path::new("")).join(t),
+        Err(_) => path.to_path_buf(),
+    }
+}
+
 fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    use std::io::Write;
+    let path = &resolve_link(path);
     let dir = path
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
@@ -381,9 +393,23 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default();
     let tmp = dir.join(format!(".{name}.{}.tmp", std::process::id()));
-    let result = std::fs::write(&tmp, bytes).and_then(|()| std::fs::rename(&tmp, path));
+    let result = (|| {
+        let mut f = std::fs::File::create(&tmp)?;
+        f.write_all(bytes)?;
+        if let Ok(meta) = std::fs::metadata(path) {
+            f.set_permissions(meta.permissions())?;
+        }
+        f.sync_all()?;
+        drop(f);
+        std::fs::rename(&tmp, path)
+    })();
     if result.is_err() {
         let _ = std::fs::remove_file(&tmp);
+    } else {
+        #[cfg(unix)]
+        if let Ok(d) = std::fs::File::open(dir) {
+            let _ = d.sync_all();
+        }
     }
     result
 }

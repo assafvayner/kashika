@@ -314,7 +314,7 @@ Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`
 
 - Runs every check.
 - Writes output when there are no errors. With `--force` it writes even with errors, drawing red markers at each error.
-- Writes are **atomic**. The result always states whether output was written for this run.
+- Writes are **atomic**; a symlinked output is written through and an existing file keeps its permissions. The result always states whether output was written for this run.
 - `--debug` overlays rulers, element ids, anchor dots and diagnostic markers.
 - The format follows the extension: `.svg`, `.png`, `.jpg`/`.jpeg` (quality 90, composited onto white, or onto the `background=` color when set) or `.webp` (lossless, keeps alpha). SVG, PNG and WebP keep the canvas transparent unless `background=` sets a color. Any other extension exits 3. Raster output (PNG, JPEG, WebP) is 1 px per diagram unit and is capped at 16,384 px per side and 100,000,000 px in total; a larger canvas exits 3 with a message naming the limits (SVG has no such cap).
 
