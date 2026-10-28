@@ -17,6 +17,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "kashika-syntax"
+version = "0.1.0"
+dependencies = [
+ "kashika-diag",
+]
+
+[[package]]
 name = "proc-macro2"
 version = "1.0.107"
 source = "registry+https://github.com/rust-lang/crates.io-index"
