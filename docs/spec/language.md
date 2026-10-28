@@ -41,7 +41,7 @@ The CLI renders `.kash` files to SVG, PNG, JPEG or WebP and runs geometric check
 ## 3. Statements
 
 ```
-diagram "<title>" size (w,h) [kashika="0.1.0"] [grid=N] [clearance=N] [icons="<dir>"] [allow=<code>,...]
+diagram "<title>" size (w,h) [kashika="0.1.0"] [grid=N] [clearance=N] [background=C] [icons="<dir>"] [allow=<code>,...]
 import "<file.kash>" [as <ns>]                      // §3a
 style <name> { key=value ... }
 shape <name> { ... }  |  shape <name> from "<file.svg>" [...]   // §3a
@@ -56,6 +56,7 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
 `diagram` comes first, then any `import` statements, then everything else. "First" means first in the source: a statement before `diagram` makes it misplaced even when that statement failed to parse. Boxes accept `sublabel=`, `text-align=`, `text-valign=`, `gap=`, `icon=` and a `{ }` text block (§6). Groups accept `sublabel=`, `text-align=`, `gap=` and `icon=`; a group's `{ }` holds its children, and `text-valign` on a group is an `attr` error because the title always sits at the top.
 
 - `grid=N` makes `off-grid` check authored literals only, never resolved anchors. `clearance=N` (default `6`) is the minimum gap used by the `near` lint.
+- `background=C` paints the whole canvas in color `C` (the same `#rgb`, `#rrggbb` or `#rrggbbaa` syntax as styles) under everything else. Without it, or with `background=none`, the canvas is transparent in SVG, PNG and WebP output; JPEG has no alpha, so it composites onto white (§8). Any other value is an `attr` error.
 - Numeric attributes must be in range, or they are `attr` errors: `font-size`, `stroke-width` and `grid` must be greater than 0; `radius`, `padding` and `clearance` must be at least 0. All of them must be at most 1,000,000. A `text` `size=` outside that range is a `size` error.
 - `style` keys:
   - `fill`, `stroke`, `stroke-width`, `stroke-style=solid|dashed|dotted`
@@ -174,7 +175,7 @@ Line attributes:
 - `start=` / `end=`: `arrow`, `open`, `diamond`, `dot`, `none` (both default to `none`). The stroke is trimmed so the marker's tip sits on the endpoint. The trim follows the end segment, whether straight or curved. When both markers sit on the same segment and their lengths add up to more than the segment, each end is trimmed in proportion to its marker's length.
 - `stroke-style=solid|dashed|dotted`, `stroke`, `stroke-width`, `style=`. On lines, a style applies only its `stroke*` and font keys.
 - `radius=N` rounds every polyline corner. The radius is clamped to half the shorter adjacent segment.
-- `label="..."` is the same as `label@0.5="..."`. `label@t="..."` is repeatable. `t` is the fraction of the final rendered path's **arc length**. Labels are horizontal, centered on the point, and drawn over a background halo.
+- `label="..."` is the same as `label@0.5="..."`. `label@t="..."` is repeatable. `t` is the fraction of the final rendered path's **arc length**. Labels are horizontal, centered on the point, and cut their own line (stroke and markers) out of the label's rect, so whatever is beneath (the canvas, a group or box fill) shows between and around the words. Other lines are not cut; a line crossing another line's label is `label-collision`.
 - `ortho`: asserts that every segment is horizontal or vertical. Any other segment is an error.
 - `allow=<code>[:<other-id>],...` and optional `reason="..."` (see §7).
 
@@ -262,7 +263,7 @@ These block output unless `--force` is given:
 | `endpoint-off-edge` | A literal endpoint is within 8px of a shape outline but not on it. A start point is literal unless it is written `id.anchor[+offset]` or a junction (a mixed point is literal). An end is literal when the last segment is `h`, `v`, a numeric `x`/`y`, or goes to a literal point; `x`/`y` with a point target is not |
 | `port-crowding` | Two endpoints on the same shape are within 8px of each other. This includes identical endpoints where both lines draw a marker (stacked arrowheads). Junctions are exempt |
 | `group-transit` | A line passes through a group's interior while neither of its endpoints is inside that group |
-| `low-contrast` | The contrast ratio between text color and its background fill is below 3:1 |
+| `low-contrast` | The contrast ratio between text color and its background is below 3:1. The background is the `background=` color with every group and box fill under the text painted on top in paint order; a transparent canvas counts as white. Line labels use the fills under their center, since they hide only their own line |
 | `block-reducible` | A text block holds 1–2 stacked items in a uniform style. The help line shows the `label`/`sublabel` rewrite |
 | `text-outside-shape` | An absolute block item lies outside the shape's text area |
 | `image-distort` | `fit=stretch` changes an image's aspect ratio by more than 5% |
@@ -312,7 +313,7 @@ Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`
 - Writes output when there are no errors. With `--force` it writes even with errors, drawing red markers at each error.
 - Writes are **atomic**. The result always states whether output was written for this run.
 - `--debug` overlays rulers, element ids, anchor dots and diagnostic markers.
-- The format follows the extension: `.svg`, `.png`, `.jpg`/`.jpeg` (quality 90, composited onto white) or `.webp` (lossless, keeps alpha). Any other extension exits 3.
+- The format follows the extension: `.svg`, `.png`, `.jpg`/`.jpeg` (quality 90, composited onto white, or onto the `background=` color when set) or `.webp` (lossless, keeps alpha). SVG, PNG and WebP keep the canvas transparent unless `background=` sets a color. Any other extension exits 3.
 
 ### Exit codes
 

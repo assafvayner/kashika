@@ -55,6 +55,7 @@ Commit the `.svg` and `.png` with the source. `crates/kashika-cli/tests/examples
 - All file access in the model goes through `loader.rs`, which enforces local-only paths, the project root and the search path. The model never reads the environment; the CLI passes `KASHIKA_ICON_PATH` in `Options`.
 - Embedded SVG is always the usvg re-serialization, never the input bytes.
 - Text is measured and drawn only with the fonts in `crates/kashika-text/fonts/`. SVG text is glyph outlines (`<path aria-label=…>`), never `<text>`, so checks and every viewer agree.
+- Nothing paints the canvas unless `background=` is set. Line labels hide their own line with a per-line SVG `<mask>` of their rects, never with a painted rect, so the fill beneath shows through.
 
 ## Conventions
 

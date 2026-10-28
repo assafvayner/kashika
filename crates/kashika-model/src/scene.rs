@@ -13,6 +13,8 @@ pub struct Scene {
     pub size: (f64, f64),
     pub grid: Option<f64>,
     pub clearance: f64,
+    /// The canvas color; `None` leaves the canvas transparent.
+    pub background: Option<String>,
     pub allow: Vec<Allow>,
     pub shapes: Vec<Shape>,
     pub junctions: Vec<Junction>,

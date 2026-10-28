@@ -13,7 +13,7 @@ kashika --version
 ```
 
 - `check` and `render` take `--format text|json`, `--fail-on error|warn|never` (default `warn`), `--max N` (diagnostics shown), `--stdin-name <name>`, `--focus <id,...>` (only warnings naming these ids; errors always show) and `--show-suppressed` (list suppressed findings with their `reason`).
-- `render` writes only when there are no errors, atomically. `--force` writes anyway, with red markers at each error. `--debug` adds rulers, ids, anchor dots and markers for every diagnostic.
+- `render` writes only when there are no errors, atomically. `--force` writes anyway, with red markers at each error. `--debug` adds rulers, ids, anchor dots and markers for every diagnostic. PNG and WebP keep the canvas transparent unless `background=` is set; JPEG composites onto white or the `background=` color.
 - `inspect` prints resolved geometry (never fails on errors): boxes, groups and images with bbox and anchors (plus the file's natural size, aspect ratio and `fit` for images and `shape from` SVGs), junctions, texts, lines with vertices, authored segments (`line:col`), length and label positions, and the placement graph. Ids limit the output (unknown id: exit 3). Elements inside a group also show local coordinates. `--ports` lists each line endpoint on a shape side. `--corridors` lists the free `y` and `x` intervals in the rectangle. `--format json` writes `kashika.inspect/1`.
 - `fmt` changes only whitespace: indentation, spacing and blank lines. Comments and the spelling of numbers and strings are kept. `--check` exits 1 when the file isn't formatted.
 - `measure` prints the exact width and height of a label, with markup applied.

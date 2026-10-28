@@ -1,7 +1,7 @@
 ## Syntax
 
 ```text
-diagram "<title>" size (w,h) [kashika="0.1.0"] [grid=N] [clearance=N] [allow=<code>,...]
+diagram "<title>" size (w,h) [kashika="0.1.0"] [grid=N] [clearance=N] [background=C] [allow=<code>,...]
 style <name> { key=value ... }
 box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=<shape>] [style=<name>] [sublabel="..."] [text-align=left|center|right] [text-valign=top|middle|bottom] [gap=N] [style keys] [{ text block }]
 group <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [style=<name>] [sublabel="..."] [text-align=...] [gap=N] { children }
@@ -10,7 +10,7 @@ text  [<id>] "<content>" at <point> [size=N] [color=C] [align=left|center|right]
 line  [<id>:] <point> -> <segment> [-> <segment> ...] [line attributes] [ortho]
 ```
 
-- `diagram` comes first. Units are pixels. One statement per line; a line that starts with `->`, `key=` or `ortho` continues the statement above.
+- `diagram` comes first. Units are pixels. The canvas is transparent unless `background=C` (`kashika ref styles`). One statement per line; a line that starts with `->`, `key=` or `ortho` continues the statement above.
 - Comments are `//` and `/* */`. `#` starts a color (`#rgb`, `#rrggbb`, `#rrggbbaa`), never a comment. Strings use `\"`, `\\` and `\n`.
 - Style keys: `fill`, `stroke`, `stroke-width`, `stroke-style=solid|dashed|dotted`, `font-size`, `font-weight=normal|bold`, `color`, `radius`, `padding`, `muted`. Precedence: inline > `style=` > built-in. Built-in styles: `service`, `datastore`, `external`, `queue`, `boundary`, `note`.
 - `pin=<anchor>` puts that anchor of the new shape on `at` (default `tl`): `at api.right+(80,0) pin=left`. `side@t` works too: `pin=left@0.25`.

@@ -31,9 +31,10 @@ pub fn render_svg_with(scene: &Scene, diags: &[Diagnostic], o: Overlay) -> Strin
         .expect("render_svg closes the root element");
     svg.truncate(end);
     svg.push_str("<g id=\"kashika-overlay\">\n");
+    let halo = scene.background.as_deref().unwrap_or("#ffffff");
     if o.debug {
-        rulers(&mut svg, scene.size);
-        guides(&mut svg, scene);
+        rulers(&mut svg, scene.size, halo);
+        guides(&mut svg, scene, halo);
     }
     let mut unplaced = 0;
     for d in diags
@@ -41,7 +42,7 @@ pub fn render_svg_with(scene: &Scene, diags: &[Diagnostic], o: Overlay) -> Strin
         .filter(|d| o.debug || d.severity == Severity::Error)
     {
         match locate(scene, d) {
-            Some(m) => mark(&mut svg, d, &m),
+            Some(m) => mark(&mut svg, d, &m, halo),
             None => {
                 unplaced += 1;
                 let text = format!("{}:{} {}", d.span.line, d.span.col, tag(d));
@@ -50,6 +51,7 @@ pub fn render_svg_with(scene: &Scene, diags: &[Diagnostic], o: Overlay) -> Strin
                     &text,
                     Pt::new(4.0, 12.0 * f64::from(unplaced)),
                     color(d),
+                    halo,
                 );
             }
         }
@@ -143,7 +145,7 @@ fn from_span(scene: &Scene, span: Span) -> Option<Mark> {
     best.map(|(_, m)| m)
 }
 
-fn mark(out: &mut String, d: &Diagnostic, m: &Mark) {
+fn mark(out: &mut String, d: &Diagnostic, m: &Mark, halo: &str) {
     let c = color(d);
     let at = match m {
         Mark::Point(p) => {
@@ -175,11 +177,12 @@ fn mark(out: &mut String, d: &Diagnostic, m: &Mark) {
             point_at(p, 0.5) + Pt { x: 6.0, y: -6.0 }
         }
     };
-    label(out, &tag(d), at, c);
+    label(out, &tag(d), at, c, halo);
 }
 
-/// Draws `text` as glyph outlines, so the overlay needs no fonts either.
-fn label(out: &mut String, text: &str, at: Pt, color: &str) {
+/// Draws `text` as glyph outlines, so the overlay needs no fonts either, with a halo in the
+/// canvas color.
+fn label(out: &mut String, text: &str, at: Pt, color: &str, halo: &str) {
     let runs = [Run {
         text: text.to_string(),
         font: Font::Mono,
@@ -189,7 +192,7 @@ fn label(out: &mut String, text: &str, at: Pt, color: &str) {
         return;
     }
     out.push_str(&format!(
-        "<path aria-label=\"{}\" d=\"{d}\" fill=\"{color}\" stroke=\"#ffffff\" stroke-width=\"3\" stroke-linejoin=\"round\" paint-order=\"stroke\"/>\n",
+        "<path aria-label=\"{}\" d=\"{d}\" fill=\"{color}\" stroke=\"{halo}\" stroke-width=\"3\" stroke-linejoin=\"round\" paint-order=\"stroke\"/>\n",
         esc(text)
     ));
 }
@@ -204,7 +207,7 @@ fn tick(v: f64) -> f64 {
     }
 }
 
-fn rulers(out: &mut String, (w, h): (f64, f64)) {
+fn rulers(out: &mut String, (w, h): (f64, f64), halo: &str) {
     let mut d = Vec::new();
     for i in 0..=(w / 10.0) as i64 {
         let x = i as f64 * 10.0;
@@ -228,6 +231,7 @@ fn rulers(out: &mut String, (w, h): (f64, f64)) {
                 y: 20.0,
             },
             RULER,
+            halo,
         );
     }
     for i in 1..=(h / 100.0) as i64 {
@@ -240,6 +244,7 @@ fn rulers(out: &mut String, (w, h): (f64, f64)) {
                 y: y - 2.0,
             },
             RULER,
+            halo,
         );
     }
 }
@@ -252,7 +257,7 @@ fn dot(out: &mut String, p: Pt) {
     ));
 }
 
-fn guides(out: &mut String, scene: &Scene) {
+fn guides(out: &mut String, scene: &Scene, halo: &str) {
     for s in &scene.shapes {
         label(
             out,
@@ -262,6 +267,7 @@ fn guides(out: &mut String, scene: &Scene) {
                 y: s.rect.y - 3.0,
             },
             GUIDE,
+            halo,
         );
         for a in ANCHORS {
             if let Some(p) = s.anchor(a, None) {
@@ -276,11 +282,12 @@ fn guides(out: &mut String, scene: &Scene) {
                 &l.id,
                 point_at(&l.path, 0.5) + Pt { x: 4.0, y: 12.0 },
                 GUIDE,
+                halo,
             );
         }
     }
     for j in &scene.junctions {
         dot(out, j.at);
-        label(out, &j.id, j.at + Pt { x: 4.0, y: -4.0 }, GUIDE);
+        label(out, &j.id, j.at + Pt { x: 4.0, y: -4.0 }, GUIDE, halo);
     }
 }

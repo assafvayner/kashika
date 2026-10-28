@@ -134,6 +134,5 @@ fn png_output_draws_embedded_images() {
     let pm = resvg::tiny_skia::Pixmap::decode_png(&png).unwrap();
     let px = |x, y| pm.pixel(x, y).unwrap();
     assert_eq!((px(30, 30).red(), px(30, 30).green()), (255, 0));
-    assert_eq!(px(80, 80).red(), 255);
-    assert_eq!(px(80, 80).green(), 255, "outside the image stays white");
+    assert_eq!(px(80, 80).alpha(), 0, "outside the image stays transparent");
 }

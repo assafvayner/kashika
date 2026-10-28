@@ -18,6 +18,8 @@ box api "API" at (40,40) size (140,60) style=service fill=#ffffff
 | `padding` | `8` | inset of the text area |
 | `muted` | `#64748b` | color of sublabels and muted text |
 
+The canvas is transparent by default (JPEG: white). `background=C` on the `diagram` line paints it, and `background=none` keeps it transparent. `low-contrast` checks canvas text against `background=`, or white. Line labels cut only their own line, so the fill beneath shows between the words.
+
 | built-in | fill | stroke |
 |---|---|---|
 | `service` | `#e8f0fe` | `#1a73e8` |

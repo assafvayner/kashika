@@ -105,9 +105,13 @@ fn markers_at_both_ends_of_a_short_line_share_it() {
 #[test]
 fn line_labels_get_a_mask_and_texts_do_not() {
     let s = svg("diagram \"h\" size (200,100)\nline l: (0,50) -> h 200 label=\"L\"\ntext \"T\" at (100,90)\n");
-    let label_at = s.find(r#"aria-label="L""#).unwrap();
-    let before = s[..label_at].lines().rev().nth(1).unwrap();
-    assert!(before.starts_with("<rect ") && before.ends_with(r##"fill="#ffffff"/>"##));
+    let rect = r##"fill="#000"/></mask>"##;
+    let mask = s.find(rect).expect("label rect in the mask");
+    let group = s.find(r#"<g mask="url(#kashika-label-mask-0)">"#).unwrap();
+    let path = s.find("<path d=\"M 0 50").unwrap();
+    let close = s.find("</g>").unwrap();
+    assert!(mask < group && group < path && path < close, "{s}");
+    assert!(close < s.find(r#"aria-label="L""#).unwrap());
     assert!(!s.contains("stroke-width=\"4\""));
     let text = &s[s.find(r#"aria-label="T""#).unwrap()..];
     assert!(text
@@ -115,10 +119,11 @@ fn line_labels_get_a_mask_and_texts_do_not() {
         .next()
         .unwrap()
         .ends_with(r##"fill="#0f172a"/>"##));
+    assert_eq!(s.matches("<mask ").count(), 1, "only the line gets a mask");
     assert_eq!(
         s.matches("<rect ").count(),
         2,
-        "only background and one mask"
+        "the mask's base and one label"
     );
 }
 
@@ -149,5 +154,32 @@ fn line_labels_and_texts_paint_in_file_order() {
     assert!(
         s.find("aria-label=\"T\"").unwrap() < s.find("aria-label=\"L\"").unwrap(),
         "{s}"
+    );
+}
+
+#[test]
+fn canvas_is_transparent_unless_background_is_set() {
+    let canvas = r#"<rect width="100%" height="100%""#;
+    let s = svg("diagram \"t\" size (100,100)\nbox a at (0,0) size (50,50)\n");
+    assert!(!s.contains(canvas), "{s}");
+    let s = svg("diagram \"t\" size (100,100) background=none\nbox a at (0,0) size (50,50)\n");
+    assert!(!s.contains(canvas), "{s}");
+    let s = svg("diagram \"t\" size (100,100) background=#0f172a\nbox a at (0,0) size (50,50)\n");
+    let bg = s
+        .find(r##"<rect width="100%" height="100%" fill="#0f172a"/>"##)
+        .expect("canvas rect");
+    let first_box = s.find(r#"<rect x="0" y="0""#).expect("box");
+    assert!(bg < first_box);
+}
+
+#[test]
+fn line_labels_mask_their_own_line_without_painting() {
+    let s = svg("diagram \"t\" size (300,100)\nline l: (20,50) -> (280,50) label=\"open\"\n");
+    assert!(!s.contains("#ffffff"), "{s}");
+    assert!(s.contains("<mask "), "{s}");
+    assert!(s.contains(r#"mask="url(#"#), "{s}");
+    assert_eq!(
+        s,
+        svg("diagram \"t\" size (300,100)\nline l: (20,50) -> (280,50) label=\"open\"\n")
     );
 }

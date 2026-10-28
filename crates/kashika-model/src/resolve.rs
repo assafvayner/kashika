@@ -44,7 +44,14 @@ const LINE_KEYS: &[&str] = &[
     "reason",
 ];
 const TEXT_KEYS: &[&str] = &["size", "color", "align", "muted"];
-const DIAGRAM_KEYS: &[&str] = &["kashika", "grid", "clearance", "icons", "allow"];
+const DIAGRAM_KEYS: &[&str] = &[
+    "kashika",
+    "grid",
+    "clearance",
+    "background",
+    "icons",
+    "allow",
+];
 const MARKERS: &[&str] = &["none", "arrow", "open", "diamond", "dot"];
 /// Deepest chain of placement references followed before giving up.
 const MAX_PLACEMENT_DEPTH: usize = 256;
@@ -249,6 +256,7 @@ impl<'a> Resolver<'a> {
             size: (0.0, 0.0),
             grid: None,
             clearance: 6.0,
+            background: None,
             allow: Vec::new(),
             shapes: Vec::new(),
             junctions: Vec::new(),
@@ -304,6 +312,9 @@ impl<'a> Resolver<'a> {
                 if let Some(v) = attrs::num_in(x, Min::NonNegative, &mut self.diags) {
                     scene.clearance = v;
                 }
+            }
+            if let Some(x) = a.get("background") {
+                scene.background = attrs::color(x, &mut self.diags).filter(|c| c != "none");
             }
             if let Some(x) = a.get("allow") {
                 scene.allow = self.allow_list(x, false);

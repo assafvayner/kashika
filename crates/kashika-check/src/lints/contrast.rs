@@ -43,10 +43,11 @@ pub fn low_contrast(ctx: &Ctx) -> Vec<Diagnostic> {
     for l in &ctx.lines {
         for lab in &l.line.labels {
             let what = format!("label \"{}\" of {}", lab.text, l.line.id);
+            let bg = backdrop(ctx, lab.rect.center(), None);
             check(
                 &mut out,
                 &l.line.style.color,
-                WHITE,
+                bg,
                 line_el(l.line, None),
                 lab.span,
                 what,
@@ -83,11 +84,13 @@ fn check(
     );
 }
 
-/// The white canvas with every fill containing `p` painted on top in paint order
-/// (groups, then boxes), including the shape `last` when given and none after it. Images
-/// and SVG-file shapes draw their file instead of a fill, so they add nothing.
+/// The canvas with every fill containing `p` painted on top in paint order (groups, then
+/// boxes), including the shape `last` when given and none after it. A transparent canvas
+/// counts as white. Images and SVG-file shapes draw their file instead of a fill, so they
+/// add nothing.
 fn backdrop(ctx: &Ctx, p: Pt, last: Option<&str>) -> [f64; 3] {
-    let mut c = WHITE;
+    let canvas = ctx.scene.background.as_deref().and_then(rgba);
+    let mut c = canvas.map_or(WHITE, |bg| over(bg, WHITE));
     for s in ctx.groups().chain(ctx.boxes()) {
         if paints_fill(s.shape) && point_in_polygon(p, &s.poly) {
             if let Some(fill) = rgba(&s.shape.style.fill) {

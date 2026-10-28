@@ -21,7 +21,11 @@ pub fn render_svg(scene: &Scene) -> String {
         n(w),
         n(h)
     );
-    out.push_str("<rect width=\"100%\" height=\"100%\" fill=\"#ffffff\"/>\n");
+    if let Some(bg) = &scene.background {
+        out.push_str(&format!(
+            "<rect width=\"100%\" height=\"100%\" fill=\"{bg}\"/>\n"
+        ));
+    }
     for g in scene.shapes.iter().filter(|s| s.kind == ShapeKind::Group) {
         shape(&mut out, g, &scene.assets);
     }
@@ -35,8 +39,8 @@ pub fn render_svg(scene: &Scene) -> String {
             n(j.at.y)
         ));
     }
-    for l in &scene.lines {
-        line(&mut out, l);
+    for (i, l) in scene.lines.iter().enumerate() {
+        line(&mut out, l, i, scene.size);
     }
     let mut overlays: Vec<((u32, u32), Overlay)> = Vec::new();
     for l in &scene.lines {
@@ -51,13 +55,6 @@ pub fn render_svg(scene: &Scene) -> String {
     for (_, o) in overlays {
         match o {
             Overlay::Label(l, lab) => {
-                out.push_str(&format!(
-                    "<rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"#ffffff\"/>\n",
-                    n(lab.rect.x),
-                    n(lab.rect.y),
-                    n(lab.rect.w),
-                    n(lab.rect.h)
-                ));
                 text::lines(&mut out, &lab.lines, l.style.font_size, &l.style.color);
             }
             Overlay::Text(t) => text::lines(&mut out, &t.lines, t.size, &t.color),
@@ -156,7 +153,33 @@ pub(crate) fn path_data(path: &[PathSeg]) -> String {
     d
 }
 
-fn line(out: &mut String, l: &Line) {
+/// Opens a group masked so the line and its markers are cut out under its own labels,
+/// leaving whatever is beneath visible. Returns whether a group was opened.
+fn label_mask(out: &mut String, l: &Line, i: usize, (w, h): (f64, f64)) -> bool {
+    if l.labels.is_empty() {
+        return false;
+    }
+    let id = format!("kashika-label-mask-{i}");
+    out.push_str(&format!(
+        "<mask id=\"{id}\" maskUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"{0}\" height=\"{1}\"><rect width=\"{0}\" height=\"{1}\" fill=\"#fff\"/>",
+        n(w),
+        n(h)
+    ));
+    for lab in &l.labels {
+        out.push_str(&format!(
+            "<rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"#000\"/>",
+            n(lab.rect.x),
+            n(lab.rect.y),
+            n(lab.rect.w),
+            n(lab.rect.h)
+        ));
+    }
+    out.push_str(&format!("</mask>\n<g mask=\"url(#{id})\">\n"));
+    true
+}
+
+fn line(out: &mut String, l: &Line, i: usize, size: (f64, f64)) {
+    let masked = label_mask(out, l, i, size);
     let mut path = l.path.clone();
     trim(&mut path, l.start, l.end);
     out.push_str(&format!(
@@ -173,6 +196,9 @@ fn line(out: &mut String, l: &Line) {
             first.start_dir() * -1.0,
             &l.style,
         );
+    }
+    if masked {
+        out.push_str("</g>\n");
     }
 }
 

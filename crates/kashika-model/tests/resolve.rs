@@ -883,6 +883,23 @@ fn diagram_attributes() {
 }
 
 #[test]
+fn diagram_background() {
+    assert_eq!(ok("").background, None);
+    let bg = |v: &str| compile(&format!("diagram \"t\" size (10,10) background={v}\n"));
+    let (s, d) = bg("#0f172a");
+    assert!(d.is_empty(), "{d:#?}");
+    assert_eq!(s.background.as_deref(), Some("#0f172a"));
+    let (s, d) = bg("none");
+    assert!(d.is_empty(), "{d:#?}");
+    assert_eq!(s.background, None);
+    for v in ["red", "\"#ffffff\"", "3"] {
+        let (s, d) = bg(v);
+        assert_eq!(codes_of(&d), vec!["attr"], "{v}: {d:#?}");
+        assert_eq!(s.background, None);
+    }
+}
+
+#[test]
 fn diagram_must_be_first_and_unique() {
     let (_, d) = compile("box a at (0,0) size (1,1)\ndiagram \"t\" size (10,10)\n");
     assert_eq!(d[0].code, "diagram");

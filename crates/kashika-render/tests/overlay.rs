@@ -106,3 +106,21 @@ line ab: a.right -> b.left\n";
         "{s}"
     );
 }
+
+#[test]
+fn debug_text_halo_uses_the_background() {
+    let halo = |head: &str, color: &str| {
+        let (scene, diags) = compile(&format!("{head}\nbox a \"A\" at (10,10) size (80,40)\n"));
+        assert!(diags.is_empty(), "{diags:#?}");
+        let s = render_svg_with(&scene, &diags, DEBUG);
+        let overlay = &s[s.find("kashika-overlay").unwrap()..];
+        let want = format!("stroke=\"{color}\" stroke-width=\"3\"");
+        overlay.contains(&want)
+            && overlay.matches("stroke-width=\"3\"").count() == overlay.matches(&want).count()
+    };
+    assert!(halo("diagram \"o\" size (300,200)", "#ffffff"));
+    assert!(halo(
+        "diagram \"o\" size (300,200) background=#0f172a",
+        "#0f172a"
+    ));
+}
