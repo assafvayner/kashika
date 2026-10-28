@@ -90,8 +90,8 @@ Long lines can continue on the next line by starting it with `->`; attributes an
 | `unsupported` | feature is in the spec but not built yet (`icon`, shapes other than `rect`/`rounded`, `import`/`shape`/`image`, `icons=`, `pin=side@t`). Remove it; put the info in the label or a text block |
 | `duplicate-id` / `unknown-style` / `size` / `parse` | fix as the message says; ids are unique across boxes, groups, junctions, lines and texts. Coordinates stay within ±1,000,000, sizes at most 1,000,000 |
 
-Exit codes: `0` clean, `1` warnings, `2` errors, `3` tool/usage failure. `render` writes nothing on errors unless `--force` is given.
+Exit codes: `0` clean, `1` warnings, `2` errors, `3` tool/usage failure. `render` writes nothing on errors unless `--force` is given (it then marks each error in red). `render -o file.png` writes PNG; `--debug` overlays rulers, ids and anchor dots to help you locate problems.
 
 ## Not supported yet
 
-All warnings (crossing, overlap, through-box, ...), `inspect`, `route`, shapes other than `rect`/`rounded`, `icon=`, custom `shape`s, images, imports, `icons=`, and PNG output (`render` accepts `.svg` only). These arrive in later versions. Until then, check crossings and label collisions yourself by tracing each line's coordinates against the label rectangles.
+All warnings (crossing, overlap, through-box, ...), `inspect`, shapes other than `rect`/`rounded`, `icon=`, custom `shape`s, images, imports, `icons=`. These arrive in later versions. Until then, check crossings and label collisions yourself by tracing each line's coordinates against the label rectangles.

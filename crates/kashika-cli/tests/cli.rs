@@ -118,11 +118,12 @@ fn fail_on_controls_exit_codes() {
 }
 
 #[test]
-fn non_svg_output_is_a_tool_error() {
+fn unknown_output_extension_is_a_tool_error() {
     kashika()
-        .args(["render", &fixture("basic.kash"), "-o", "x.png"])
+        .args(["render", &fixture("basic.kash"), "-o", "x.pdf"])
         .assert()
-        .code(3);
+        .code(3)
+        .stderr(predicate::str::contains("output must end in .svg or .png"));
 }
 
 #[test]

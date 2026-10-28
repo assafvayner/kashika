@@ -137,3 +137,11 @@ pub struct Line {
     pub parent: Option<String>,
     pub span: Span,
 }
+
+impl Shape {
+    /// The canvas position of a plain anchor (`top`, `tl`, ...) on this shape, resolved the
+    /// same way as anchors written in a file.
+    pub fn anchor(&self, name: &str) -> Option<Pt> {
+        crate::anchor::resolve(self.rect, self.corner_radius(), &self.id, name, None).ok()
+    }
+}

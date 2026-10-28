@@ -1,5 +1,6 @@
 mod fmt_cmd;
 mod measure;
+mod output;
 mod ref_cmd;
 mod report;
 mod route_cmd;
@@ -26,16 +27,19 @@ struct Cli {
 enum Cmd {
     /// Check a .kash file and report diagnostics
     Check(Common),
-    /// Check a .kash file and render it to SVG
+    /// Check a .kash file and render it to SVG or PNG
     Render {
         #[command(flatten)]
         common: Common,
-        /// Output file (.svg)
+        /// Output file (.svg or .png)
         #[arg(short, long)]
         output: PathBuf,
         /// Write output even when there are errors
         #[arg(long)]
         force: bool,
+        /// Overlay rulers, element ids, anchor dots and diagnostic markers
+        #[arg(long)]
+        debug: bool,
     },
     /// Suggest ready-to-paste paths between two points; never edits the file
     Route(route_cmd::RouteArgs),
@@ -57,6 +61,12 @@ enum Cmd {
         #[arg(long)]
         check: bool,
     },
+}
+
+struct RenderOpts {
+    output: PathBuf,
+    force: bool,
+    debug: bool,
 }
 
 #[derive(Args)]
@@ -104,21 +114,29 @@ fn main() -> ExitCode {
             common,
             output,
             force,
-        } => run(&common, Some((output, force))),
+            debug,
+        } => run(
+            &common,
+            Some(RenderOpts {
+                output,
+                force,
+                debug,
+            }),
+        ),
         Cmd::Route(args) => route_cmd::run(&args),
         Cmd::Measure(args) => measure::run(&args),
         Cmd::Ref { topic, json } => ref_cmd::run(topic.as_deref(), json),
     }
 }
 
-fn run(c: &Common, render: Option<(PathBuf, bool)>) -> ExitCode {
+fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
     let (name, src) = match read_input(c) {
         Ok(v) => v,
         Err(msg) => return tool_error(c.format, &msg),
     };
-    if let Some((out, _)) = &render {
-        if out.extension().and_then(|e| e.to_str()) != Some("svg") {
-            return tool_error(c.format, "only .svg output is supported in this version");
+    if let Some(r) = &render {
+        if output::kind(&r.output).is_none() {
+            return tool_error(c.format, "output must end in .svg or .png");
         }
     }
     let (scene, diags) = kashika_model::compile(&src);
@@ -129,16 +147,33 @@ fn run(c: &Common, render: Option<(PathBuf, bool)>) -> ExitCode {
     let warns = diags.len() - errors;
     let output = match &render {
         None => None,
-        Some((path, force)) => {
-            let written = errors == 0 || *force;
+        Some(r) => {
+            let written = errors == 0 || r.force;
             if written {
-                let svg = kashika_render::render_svg(&scene);
-                if let Err(e) = write_atomic(path, svg.as_bytes()) {
-                    return tool_error(c.format, &format!("cannot write {}: {e}", path.display()));
+                let overlay = kashika_render::Overlay {
+                    error_markers: errors > 0,
+                    debug: r.debug,
+                };
+                let svg = kashika_render::render_svg_with(&scene, &diags, overlay);
+                let kind = output::kind(&r.output).expect("checked above");
+                let bytes = match output::encode(kind, svg) {
+                    Ok(b) => b,
+                    Err(e) => {
+                        return tool_error(
+                            c.format,
+                            &format!("cannot render {}: {e}", r.output.display()),
+                        )
+                    }
+                };
+                if let Err(e) = write_atomic(&r.output, &bytes) {
+                    return tool_error(
+                        c.format,
+                        &format!("cannot write {}: {e}", r.output.display()),
+                    );
                 }
             }
             Some(report::Output {
-                path: path.display().to_string(),
+                path: r.output.display().to_string(),
                 written,
             })
         }

@@ -5,9 +5,12 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+kashika-diag.workspace = true
 kashika-geom.workspace = true
 kashika-model.workspace = true
 kashika-text.workspace = true
+resvg.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
 insta.workspace = true

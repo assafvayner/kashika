@@ -55,7 +55,7 @@ pub fn render_svg(scene: &Scene) -> String {
     out
 }
 
-fn n(v: f64) -> String {
+pub(crate) fn n(v: f64) -> String {
     let r = (v * 100.0).round() / 100.0;
     let r = if r.is_finite() { r } else { v };
     if r == 0.0 {
@@ -125,7 +125,7 @@ fn trim(path: &mut [PathSeg], start: Marker, end: Marker) {
     }
 }
 
-fn path_data(path: &[PathSeg]) -> String {
+pub(crate) fn path_data(path: &[PathSeg]) -> String {
     let mut d = String::new();
     if let Some(first) = path.first() {
         let p = first.from();
