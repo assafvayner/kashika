@@ -18,6 +18,7 @@ pub fn run(file: &str, check: bool) -> ExitCode {
                 summary: false,
                 metrics: None,
                 scene: None,
+                omitted: &[],
             };
             print!(
                 "{}",

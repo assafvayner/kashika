@@ -3,6 +3,7 @@ use kashika_geom::{Rect, TOLERANCE};
 use kashika_model::{Shape, ShapeKind, TextItem, TextRole};
 
 use crate::ctx::{Ctx, kind_name, shape_el};
+use crate::sink::Sink;
 
 /// Size of a `sublabel` relative to the label.
 const SUBLABEL_SCALE: f64 = 0.8;
@@ -16,8 +17,7 @@ enum Align {
 
 /// `block-reducible`: a text block of 1–2 stacked items that a `label`, optionally with a
 /// `sublabel` or a second line, would draw the same way.
-pub fn block_reducible(ctx: &Ctx) -> Vec<Diagnostic> {
-    let mut out = Vec::new();
+pub fn block_reducible(ctx: &Ctx, out: &mut Sink) {
     for s in &ctx.scene.shapes {
         let Some(rewrite) = rewrite(s) else { continue };
         let kind = kind_name(s);
@@ -39,7 +39,6 @@ pub fn block_reducible(ctx: &Ctx) -> Vec<Diagnostic> {
             )),
         );
     }
-    out
 }
 
 /// The `"label" [sublabel="..."] [text-align=...]` text that replaces `s`'s text block.

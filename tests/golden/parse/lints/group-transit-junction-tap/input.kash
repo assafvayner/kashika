@@ -1,0 +1,13 @@
+// spec: 7
+// A trunk that taps a child of r2 through a junction connects into r2; it still transits r3, which it never taps.
+diagram "tap" size (560,200)
+box src "Src" at (20,80) size (60,40)
+group r2 "R2" at (140,40) size (120,120) {
+  box b "B" at (30,70) size (60,36)
+}
+group r3 "R3" at (300,40) size (100,120) {
+}
+box far "Far" at (460,80) size (60,40)
+junction mid at (110,100) dot
+line trunk src.right -> far.left end=arrow
+line tap mid -> vh b.left end=arrow

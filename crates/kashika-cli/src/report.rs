@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use kashika_check::Metrics;
+use kashika_check::{Metrics, Omitted};
 use kashika_diag::{Diagnostic, Severity};
 use kashika_model::Scene;
 use sha2::{Digest, Sha256};
@@ -21,7 +21,13 @@ pub struct Opts<'a> {
     pub metrics: Option<Metrics>,
     /// The scene the diagnostics' deferred help is resolved against.
     pub scene: Option<&'a Scene>,
+    /// Warnings counted but not kept, past `KEEP` (or `max`) per code.
+    pub omitted: &'a [Omitted],
 }
+
+/// How many warnings per code `check` keeps at least, so that memory stays bounded; the
+/// rest are only counted.
+pub const KEEP: usize = 1000;
 
 pub struct Counts {
     pub errors: usize,
@@ -29,21 +35,40 @@ pub struct Counts {
     pub suppressed: usize,
 }
 
-pub fn counts(diags: &[Diagnostic]) -> Counts {
+pub fn counts(diags: &[Diagnostic], omitted: &[Omitted]) -> Counts {
     let errors = diags
         .iter()
         .filter(|d| d.severity == Severity::Error)
         .count();
     let suppressed = diags.iter().filter(|d| d.suppressed).count();
+    let more = |s: bool| -> usize {
+        omitted
+            .iter()
+            .filter(|o| o.suppressed == s)
+            .map(|o| o.count)
+            .sum()
+    };
     Counts {
         errors,
-        warns: diags.len() - errors - suppressed,
-        suppressed,
+        warns: diags.len() - errors - suppressed + more(false),
+        suppressed: suppressed + more(true),
     }
 }
 
+/// Omitted warnings that would be visible.
+fn omitted_visible(opts: &Opts) -> usize {
+    opts.omitted
+        .iter()
+        .filter(|o| opts.show_suppressed || !o.suppressed)
+        .map(|o| o.count)
+        .sum()
+}
+
 /// Per code: how many findings are active and how many are suppressed.
-pub fn by_code(diags: &[Diagnostic]) -> BTreeMap<&'static str, (usize, usize)> {
+pub fn by_code(
+    diags: &[Diagnostic],
+    omitted: &[Omitted],
+) -> BTreeMap<&'static str, (usize, usize)> {
     let mut m: BTreeMap<&'static str, (usize, usize)> = BTreeMap::new();
     for d in diags {
         let e = m.entry(d.code).or_default();
@@ -51,6 +76,14 @@ pub fn by_code(diags: &[Diagnostic]) -> BTreeMap<&'static str, (usize, usize)> {
             e.1 += 1;
         } else {
             e.0 += 1;
+        }
+    }
+    for o in omitted {
+        let e = m.entry(o.code).or_default();
+        if o.suppressed {
+            e.1 += o.count;
+        } else {
+            e.0 += o.count;
         }
     }
     m
@@ -206,7 +239,7 @@ pub fn text(
         *totals.entry(k).or_default() += 1;
     }
     let mut seen: BTreeMap<&Key, usize> = BTreeMap::new();
-    let mut overflow = 0;
+    let mut overflow = omitted_visible(opts);
     let mut out = String::new();
     for ((&i, k), show) in sel.idx.iter().zip(&sel.keys).zip(&sel.plan) {
         match show {
@@ -258,7 +291,7 @@ pub fn text(
     }
     if opts.summary {
         out.push_str("by code:\n");
-        for (code, (active, suppressed)) in by_code(diags) {
+        for (code, (active, suppressed)) in by_code(diags, opts.omitted) {
             out.push_str(&format!("  {code}: {active}"));
             if suppressed > 0 {
                 out.push_str(&format!(" ({suppressed} suppressed)"));
@@ -266,7 +299,7 @@ pub fn text(
             out.push('\n');
         }
     }
-    let c = counts(diags);
+    let c = counts(diags, opts.omitted);
     out.push_str(&format!(
         "{}, {}",
         plural(c.errors, "error"),
@@ -307,18 +340,18 @@ pub fn json(
         .filter(|(_, s)| **s == Show::Print)
         .map(|(&i, _)| &diags[i])
         .collect();
-    let c = counts(diags);
+    let c = counts(diags, opts.omitted);
     let v = serde_json::json!({
         "schema": SCHEMA,
         "tool": env!("CARGO_PKG_VERSION"),
         "input": { "name": name, "sha256": format!("{:x}", Sha256::digest(src.as_bytes())) },
         "output": output.map(|o| serde_json::json!({ "path": o.path, "written": o.written })),
         "counts": { "error": c.errors, "warn": c.warns, "suppressed": c.suppressed },
-        "by_code": by_code(diags)
+        "by_code": by_code(diags, opts.omitted)
             .into_iter()
             .map(|(k, (active, suppressed))| (k, serde_json::json!({ "active": active, "suppressed": suppressed })))
             .collect::<BTreeMap<_, _>>(),
-        "truncated": listed.len() < sel.idx.len(),
+        "truncated": listed.len() < sel.idx.len() || omitted_visible(opts) > 0,
         "metrics": opts.metrics,
         "diagnostics": listed,
     });

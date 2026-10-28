@@ -5,6 +5,7 @@ use crate::ctx::{
     Ctx, bbox, describe_overflow, fmt_num, intersection, junction_el, kind_name, line_bbox,
     line_el, overflow, overflow_fact, shape_el, text_el, text_id,
 };
+use crate::sink::Sink;
 use crate::text_box::{below_box, text_box, title_band};
 
 struct Child {
@@ -19,8 +20,7 @@ struct Child {
 }
 
 /// `spill`: a child extends outside its group or into the group's title band. Touching is fine.
-pub fn spill(ctx: &Ctx) -> Vec<Diagnostic> {
-    let mut out = Vec::new();
+pub fn spill(ctx: &Ctx, out: &mut Sink) {
     for g in ctx.groups() {
         let gid = g.shape.id.as_str();
         let band = title_band(g.shape);
@@ -69,7 +69,6 @@ pub fn spill(ctx: &Ctx) -> Vec<Diagnostic> {
             }
         }
     }
-    out
 }
 
 fn children(ctx: &Ctx, gid: &str) -> Vec<Child> {

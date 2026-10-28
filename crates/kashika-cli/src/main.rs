@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
-use kashika_diag::{Severity, did_you_mean};
+use kashika_diag::did_you_mean;
 use kashika_geom::Rect;
 use kashika_model::Scene;
 
@@ -140,6 +140,7 @@ impl Common {
         &self,
         metrics: Option<kashika_check::Metrics>,
         scene: Option<&'a Scene>,
+        omitted: &'a [kashika_check::Omitted],
     ) -> report::Opts<'a> {
         report::Opts {
             max: self.max,
@@ -147,6 +148,7 @@ impl Common {
             summary: self.summary,
             metrics,
             scene,
+            omitted,
         }
     }
 }
@@ -232,16 +234,21 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
         return report_library(c, &name, &src, diags);
     }
     let (scene, mut diags) = kashika_model::compile_with(&src, &opts);
-    diags.extend(kashika_check::check_deferred(&scene));
-    kashika_diag::sort(&mut diags);
-    let metrics = kashika_check::metrics(&scene, &diags);
     if !c.focus.is_empty() {
         if let Err(msg) = known_ids(&scene_ids(&scene), &c.focus, "--focus") {
             return fail(&msg);
         }
         retain_focus(&mut diags, &c.focus);
     }
-    let report::Counts { errors, warns, .. } = report::counts(&diags);
+    let focus = |d: &kashika_diag::Diagnostic| {
+        c.focus.is_empty() || d.elements.iter().any(|e| c.focus.contains(&e.id))
+    };
+    let found = kashika_check::check_bounded(&scene, c.max.max(report::KEEP), &focus);
+    let metrics = found.metrics(&scene);
+    diags.extend(found.diags);
+    kashika_diag::sort(&mut diags);
+    let omitted = found.omitted;
+    let report::Counts { errors, warns, .. } = report::counts(&diags, &omitted);
     let output = match &render {
         None => None,
         Some(r) => {
@@ -273,7 +280,7 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
             })
         }
     };
-    let opts = c.report_opts(Some(metrics), Some(&scene));
+    let opts = c.report_opts(Some(metrics), Some(&scene), &omitted);
     let report = match c.format {
         Format::Text => report::text(&name, &src, &mut diags, &opts, output.as_ref()),
         Format::Json => report::json(&name, &src, &mut diags, &opts, output.as_ref()),
@@ -284,7 +291,8 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
 
 fn retain_focus(diags: &mut Vec<kashika_diag::Diagnostic>, focus: &[String]) {
     diags.retain(|d| {
-        d.severity == Severity::Error || d.elements.iter().any(|e| focus.contains(&e.id))
+        d.severity == kashika_diag::Severity::Error
+            || d.elements.iter().any(|e| focus.contains(&e.id))
     });
 }
 
@@ -309,13 +317,13 @@ fn report_library(
         }
         retain_focus(&mut diags, &c.focus);
     }
-    let opts = c.report_opts(None, None);
+    let opts = c.report_opts(None, None, &[]);
     let report = match c.format {
         Format::Text => report::text(name, src, &mut diags, &opts, None),
         Format::Json => report::json(name, src, &mut diags, &opts, None),
     };
     print!("{report}");
-    let report::Counts { errors, warns, .. } = report::counts(&diags);
+    let report::Counts { errors, warns, .. } = report::counts(&diags, &[]);
     ExitCode::from(exit_code(c.fail_on, errors, warns))
 }
 
@@ -326,8 +334,12 @@ fn run_inspect(a: &InspectArgs) -> ExitCode {
         Err(msg) => return fail(&msg),
     };
     let (scene, mut diags) = kashika_model::compile_with(&src, &options(&a.file, a.allow_path));
-    diags.extend(kashika_check::check_deferred(&scene));
     diags.retain(|d| !d.suppressed);
+    let lints: usize = kashika_check::check_bounded(&scene, 0, &|d| !d.suppressed)
+        .omitted
+        .iter()
+        .map(|o| o.count)
+        .sum();
     if let Err(msg) = known_ids(&scene_ids(&scene), &a.ids, "inspect") {
         return fail(&msg);
     }
@@ -336,7 +348,7 @@ fn run_inspect(a: &InspectArgs) -> ExitCode {
         ports: a.ports,
         corridors: a.corridors,
     };
-    let data = inspect::build(&name, &src, &scene, &diags, &req);
+    let data = inspect::build(&name, &src, &scene, &diags, lints, &req);
     match a.format {
         Format::Text => print!("{}", term::text(&inspect::text(&data))),
         Format::Json => match serde_json::to_string(&data) {

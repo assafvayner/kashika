@@ -1,4 +1,4 @@
-use kashika_diag::{DeferredKind, Diagnostic};
+use kashika_diag::{Diagnostic, Pending};
 use kashika_geom::{Pt, Rect, TOLERANCE};
 use kashika_model::Scene;
 use serde::Serialize;
@@ -26,8 +26,9 @@ impl Axis {
 }
 
 /// Values on `axis`, within `within`, where a straight run spanning `band` on the other axis
-/// keeps `clearance` from every box, every line piece and every group border it runs along.
-/// Ids in `skip` are ignored.
+/// keeps `clearance` from every box, image, line piece, junction, text, line label and label
+/// under a `text-area=below` shape, and from every group border it runs along. Ids in `skip`
+/// are ignored, along with the labels of skipped lines and shapes.
 pub fn free_intervals(
     ctx: &Ctx,
     axis: Axis,
@@ -37,8 +38,13 @@ pub fn free_intervals(
 ) -> Vec<Interval> {
     let c = ctx.scene.clearance;
     let (b0, b1) = (band.0.min(band.1), band.0.max(band.1));
+    let big = f64::MAX / 4.0;
+    let strip = match axis {
+        Axis::Y => Rect::new(b0, -big, b1 - b0, 2.0 * big),
+        Axis::X => Rect::new(-big, b0, 2.0 * big, b1 - b0),
+    };
     let mut blocked: Vec<Interval> = Vec::new();
-    for g in ctx.groups() {
+    for g in ctx.groups_near(strip, 0.0) {
         if skip.contains(&g.shape.id.as_str()) {
             continue;
         }
@@ -60,11 +66,6 @@ pub fn free_intervals(
             blocked.push((along.0 - c, along.1 + c));
         }
     };
-    let big = f64::MAX / 4.0;
-    let strip = match axis {
-        Axis::Y => Rect::new(b0, -big, b1 - b0, 2.0 * big),
-        Axis::X => Rect::new(-big, b0, 2.0 * big, b1 - b0),
-    };
     for s in ctx.boxes_near(strip, c) {
         if !skip.contains(&s.shape.id.as_str()) {
             block(s.shape.rect);
@@ -83,10 +84,15 @@ pub fn free_intervals(
             ));
         }
     }
+    for m in ctx.marks_near(strip, c) {
+        if !skip.contains(&m.owner) {
+            block(m.rect);
+        }
+    }
     subtract(within, blocked)
 }
 
-fn subtract(within: Interval, mut blocked: Vec<Interval>) -> Vec<Interval> {
+pub(crate) fn subtract(within: Interval, mut blocked: Vec<Interval>) -> Vec<Interval> {
     blocked.sort_by(|a, b| a.0.total_cmp(&b.0));
     let mut out = Vec::new();
     let mut cur = within.0;
@@ -103,8 +109,8 @@ fn subtract(within: Interval, mut blocked: Vec<Interval>) -> Vec<Interval> {
         out.push((cur, within.1));
     }
     out.into_iter()
-        .filter(|(lo, hi)| hi > lo)
         .map(|(lo, hi)| (round2(lo), round2(hi)))
+        .filter(|(lo, hi)| hi > lo)
         .collect()
 }
 
@@ -177,22 +183,67 @@ impl Free {
     }
 }
 
+/// Help that is costly to work out, so it is filled in only for diagnostics that are shown.
+/// A diagnostic carries its entries in `Diagnostic::pending`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Deferred {
+    /// Where in `help` its lines go.
+    pub help_at: usize,
+    pub kind: DeferredKind,
+    /// The straight run the free lanes are around.
+    pub from: [f64; 2],
+    pub to: [f64; 2],
+    /// Ids ignored when looking for free lanes.
+    pub skip: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DeferredKind {
+    /// "segment N runs at ..." help and the `free` fact, for 0-based authored segment N.
+    Segment(usize),
+    /// "nearest free lane" and free-interval help, with the `lane` and `free` facts.
+    Lane,
+}
+
+/// The help and facts still to be worked out for `d`, in the order they were deferred.
+pub fn deferred(d: &Diagnostic) -> &[Deferred] {
+    d.pending.get::<Vec<Deferred>>().map_or(&[], Vec::as_slice)
+}
+
+/// Defers help of `kind` around the straight run `from`..`to` to `resolve`; its lines go after
+/// the help `d` has so far.
+pub fn with_deferred(
+    mut d: Diagnostic,
+    kind: DeferredKind,
+    from: Pt,
+    to: Pt,
+    skip: &[&str],
+) -> Diagnostic {
+    let mut all: Vec<Deferred> = d.pending.take().unwrap_or_default();
+    all.push(Deferred {
+        help_at: d.help.len(),
+        kind,
+        from: [from.x, from.y],
+        to: [to.x, to.y],
+        skip: skip.iter().map(|s| s.to_string()).collect(),
+    });
+    d.pending = Pending::new(all);
+    d
+}
+
 /// Defers the `free` fact and a "segment N runs at ..." help line for `path[k]` of `l`, when it
 /// is straight, to `resolve`.
 pub fn with_free(d: Diagnostic, l: &LineGeom, k: usize, skip: &[&str]) -> Diagnostic {
     match l.straight_ends(k) {
-        Some((p, q)) => d.with_deferred(DeferredKind::Segment(l.segment(k)), raw(p), raw(q), skip),
+        Some((p, q)) => with_deferred(d, DeferredKind::Segment(l.segment(k)), p, q, skip),
         None => d,
     }
 }
 
-pub(crate) fn raw(p: Pt) -> [f64; 2] {
-    [p.x, p.y]
-}
-
 /// Works out the help and facts `d` deferred.
 pub fn resolve(ctx: &Ctx, d: &mut Diagnostic) {
-    for x in std::mem::take(&mut d.deferred).into_iter().rev() {
+    let all: Vec<Deferred> = d.pending.take().unwrap_or_default();
+    for x in all.into_iter().rev() {
         let skip: Vec<&str> = x.skip.iter().map(String::as_str).collect();
         let pt = |a: [f64; 2]| Pt::new(a[0], a[1]);
         let Some(f) = free_around(ctx, pt(x.from), pt(x.to), &skip) else {

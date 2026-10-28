@@ -1,3 +1,8 @@
+use std::any::Any;
+use std::cmp::Ordering;
+use std::fmt;
+use std::sync::Arc;
+
 use serde::Serialize;
 
 /// Every error code, in the order of the spec's §7 Errors table.
@@ -143,30 +148,52 @@ pub struct Diagnostic {
     pub suppressed: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
-    /// Help and facts still to be worked out by `kashika_check::resolve`.
+    /// Work a later pass still has to do, such as the costly help `kashika_check::resolve`
+    /// fills in only for the diagnostics that are shown.
     #[serde(skip)]
-    pub deferred: Vec<Deferred>,
+    pub pending: Pending,
 }
 
-/// Help that is costly to work out, so it is filled in only for diagnostics that are shown.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Deferred {
-    /// Where in `help` its lines go.
-    pub help_at: usize,
-    pub kind: DeferredKind,
-    /// The straight run the free lanes are around.
-    pub from: [f64; 2],
-    pub to: [f64; 2],
-    /// Ids ignored when looking for free lanes.
-    pub skip: Vec<String>,
+/// Opaque work attached to a diagnostic by the pass that made it and taken back by a later
+/// one. It takes no part in equality or serialization.
+#[derive(Clone, Default)]
+pub struct Pending(Option<Arc<dyn Any + Send + Sync>>);
+
+impl Pending {
+    pub fn new<T: Any + Send + Sync>(value: T) -> Self {
+        Self(Some(Arc::new(value)))
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_none()
+    }
+
+    pub fn get<T: Any>(&self) -> Option<&T> {
+        self.0.as_deref()?.downcast_ref()
+    }
+
+    /// Takes the value out when it is a `T`, leaving the slot empty; otherwise changes nothing.
+    pub fn take<T: Any + Send + Sync + Clone>(&mut self) -> Option<T> {
+        self.get::<T>()?;
+        let v = self.0.take()?.downcast::<T>().ok()?;
+        Some(Arc::unwrap_or_clone(v))
+    }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DeferredKind {
-    /// "segment N runs at ..." help and the `free` fact, for 0-based authored segment N.
-    Segment(usize),
-    /// "nearest free lane" and free-interval help, with the `lane` and `free` facts.
-    Lane,
+impl PartialEq for Pending {
+    fn eq(&self, _: &Self) -> bool {
+        true
+    }
+}
+
+impl fmt::Debug for Pending {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(if self.is_empty() {
+            "Pending"
+        } else {
+            "Pending(..)"
+        })
+    }
 }
 
 impl Diagnostic {
@@ -182,15 +209,19 @@ impl Diagnostic {
             suggestions: Vec::new(),
             suppressed: false,
             reason: None,
-            deferred: Vec::new(),
+            pending: Pending::default(),
         }
     }
 
+    /// An error; `code` must be in `ERROR_CODES`.
     pub fn error(code: &'static str, span: Span, message: impl Into<String>) -> Self {
+        debug_assert!(ERROR_CODES.contains(&code), "`{code}` is not an error code");
         Self::new(Severity::Error, code, span, message.into())
     }
 
+    /// A warning; `code` must be in `LINT_CODES`.
     pub fn warn(code: &'static str, span: Span, message: impl Into<String>) -> Self {
+        debug_assert!(LINT_CODES.contains(&code), "`{code}` is not a lint code");
         Self::new(Severity::Warn, code, span, message.into())
     }
 
@@ -204,30 +235,16 @@ impl Diagnostic {
         self
     }
 
-    pub fn with_deferred(
-        mut self,
-        kind: DeferredKind,
-        from: [f64; 2],
-        to: [f64; 2],
-        skip: &[&str],
-    ) -> Self {
-        self.deferred.push(Deferred {
-            help_at: self.help.len(),
-            kind,
-            from,
-            to,
-            skip: skip.iter().map(|s| s.to_string()).collect(),
-        });
-        self
-    }
-
     pub fn with_fact(mut self, key: &str, value: impl Serialize) -> Self {
-        let v = serde_json::to_value(value).unwrap_or(serde_json::Value::Null);
+        let v = serde_json::to_value(value).expect("a fact serializes to JSON");
         self.facts.insert(key.to_string(), v);
         self
     }
 }
 
+/// The candidate closest to `name` that differs from it in at least one character, in at
+/// most half the characters of the longer of the two, and in fewer characters than the
+/// candidate has, so a one-letter candidate is never suggested.
 pub fn did_you_mean<'a>(
     name: &str,
     candidates: impl IntoIterator<Item = &'a str>,
@@ -235,7 +252,10 @@ pub fn did_you_mean<'a>(
     candidates
         .into_iter()
         .map(|c| (edit_distance(name, c), c))
-        .filter(|(d, c)| *d <= (c.chars().count().max(name.chars().count()) / 2).max(1))
+        .filter(|&(d, c)| {
+            let len = c.chars().count();
+            d > 0 && d < len && d <= len.max(name.chars().count()) / 2
+        })
         .min_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(b.1)))
         .map(|(_, c)| c)
 }
@@ -255,15 +275,24 @@ fn edit_distance(a: &str, b: &str) -> usize {
     prev[b.len()]
 }
 
+/// Sorts into `order`. The sort is stable, so diagnostics that `order` ties keep their order.
 pub fn sort(diags: &mut [Diagnostic]) {
-    diags.sort_by(|a, b| {
-        (a.span.line, a.span.col, a.severity, a.code).cmp(&(
-            b.span.line,
-            b.span.col,
-            b.severity,
-            b.code,
-        ))
-    });
+    diags.sort_by(order);
+}
+
+/// Source order: by start, then severity, code, end and message.
+pub fn order(a: &Diagnostic, b: &Diagnostic) -> Ordering {
+    let key = |d: &Diagnostic| {
+        (
+            d.span.line,
+            d.span.col,
+            d.severity,
+            d.code,
+            d.span.end_line,
+            d.span.end_col,
+        )
+    };
+    key(a).cmp(&key(b)).then_with(|| a.message.cmp(&b.message))
 }
 
 #[cfg(test)]
@@ -282,13 +311,94 @@ mod tests {
     }
 
     #[test]
+    fn never_suggests_the_name_itself() {
+        assert_eq!(did_you_mean("right", ["right"]), None);
+        assert_eq!(did_you_mean("right", ["right", "rigt"]), Some("rigt"));
+    }
+
+    #[test]
+    fn never_suggests_one_letter_names() {
+        assert_eq!(did_you_mean("c", ["a", "b"]), None);
+        assert_eq!(did_you_mean("ab", ["a"]), None);
+        assert_eq!(did_you_mean("x", ["xy"]), Some("xy"));
+    }
+
+    #[test]
+    fn suggests_nothing_without_candidates() {
+        assert_eq!(did_you_mean("box", []), None);
+        assert_eq!(did_you_mean("", ["a", "ab"]), None);
+    }
+
+    #[test]
+    fn ties_go_to_the_alphabetically_first_candidate() {
+        assert_eq!(did_you_mean("cat", ["cot", "bat"]), Some("bat"));
+    }
+
+    #[test]
+    fn span_to_joins_start_and_end() {
+        let a = Span::new(2, 3, 2, 9);
+        let b = Span::new(4, 1, 5, 7);
+        assert_eq!(a.to(b), Span::new(2, 3, 5, 7));
+        assert_eq!(a.to(a), a);
+    }
+
+    #[test]
     fn sorts_by_position_then_severity() {
         let mut d = vec![
-            Diagnostic::error("b", Span::new(3, 1, 3, 2), "x"),
-            Diagnostic::error("a", Span::new(1, 5, 1, 6), "y"),
+            Diagnostic::error("size", Span::new(3, 1, 3, 2), "x"),
+            Diagnostic::error("attr", Span::new(1, 5, 1, 6), "y"),
         ];
         sort(&mut d);
-        assert_eq!(d[0].code, "a");
+        assert_eq!(d[0].code, "attr");
+    }
+
+    #[test]
+    fn sorts_errors_before_warnings_then_by_code_end_and_message() {
+        let at = Span::new(1, 1, 1, 5);
+        let mut d = vec![
+            Diagnostic::warn("near", at, "b"),
+            Diagnostic::warn("near", at, "a"),
+            Diagnostic::warn("near", Span::new(1, 1, 1, 3), "c"),
+            Diagnostic::warn("cross", at, "z"),
+            Diagnostic::error("parse", at, "e"),
+        ];
+        sort(&mut d);
+        let got: Vec<(&str, &str)> = d.iter().map(|d| (d.code, d.message.as_str())).collect();
+        assert_eq!(
+            got,
+            [
+                ("parse", "e"),
+                ("cross", "z"),
+                ("near", "c"),
+                ("near", "a"),
+                ("near", "b")
+            ]
+        );
+    }
+
+    #[test]
+    fn pending_work_is_ignored_by_equality() {
+        let mut a = Diagnostic::warn("near", Span::default(), "x");
+        let b = a.clone();
+        a.pending = Pending::new(vec![1u8]);
+        assert_eq!(a, b);
+        assert_eq!(a.pending.take::<String>(), None);
+        assert_eq!(a.pending.take::<Vec<u8>>(), Some(vec![1]));
+        assert!(a.pending.is_empty());
+    }
+
+    #[test]
+    #[cfg(debug_assertions)]
+    #[should_panic(expected = "not a lint code")]
+    fn warnings_need_a_lint_code() {
+        let _ = Diagnostic::warn("parse", Span::default(), "x");
+    }
+
+    #[test]
+    #[cfg(debug_assertions)]
+    #[should_panic(expected = "not an error code")]
+    fn errors_need_an_error_code() {
+        let _ = Diagnostic::error("cross", Span::default(), "x");
     }
 
     #[test]

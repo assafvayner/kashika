@@ -1,11 +1,12 @@
 use kashika_diag::Diagnostic;
 
 use crate::ctx::{Ctx, fmt_num};
+use crate::sink::Sink;
 
 /// `off-grid`: an authored literal is not a multiple of `grid`. Resolved anchors are never checked.
-pub fn off_grid(ctx: &Ctx) -> Vec<Diagnostic> {
+pub fn off_grid(ctx: &Ctx, out: &mut Sink) {
     let Some(g) = ctx.scene.grid.filter(|g| *g > 0.0) else {
-        return Vec::new();
+        return;
     };
     ctx.scene
         .literals
@@ -35,5 +36,5 @@ pub fn off_grid(ctx: &Ctx) -> Vec<Diagnostic> {
             }
             d
         })
-        .collect()
+        .for_each(|d| out.push(d));
 }

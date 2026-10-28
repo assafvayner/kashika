@@ -4,6 +4,7 @@ pub mod index;
 mod lints;
 pub mod outline;
 pub mod ports;
+mod sink;
 mod suppress;
 pub mod text_box;
 
@@ -11,6 +12,8 @@ use kashika_diag::Diagnostic;
 use kashika_model::Scene;
 use serde::Serialize;
 
+pub use free::{Deferred, DeferredKind, deferred};
+pub use sink::{Bounded, Omitted};
 pub use suppress::suppress;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -22,24 +25,39 @@ pub struct Metrics {
 /// Runs every warning lint on the scene and marks the suppressed findings.
 pub fn check(scene: &Scene) -> Vec<Diagnostic> {
     let ctx = ctx::Ctx::new(scene);
-    let mut out = lint(&ctx);
+    let mut out = lint(&ctx, sink::Sink::new(scene, usize::MAX, None)).diags;
     for d in &mut out {
         free::resolve(&ctx, d);
     }
     out
 }
 
-/// Like `check`, but leaves costly help in `Diagnostic::deferred`; `resolve` fills it in for
+/// Like `check`, but leaves costly help pending (see `deferred`); `resolve` fills it in for
 /// the diagnostics that are shown.
 pub fn check_deferred(scene: &Scene) -> Vec<Diagnostic> {
-    lint(&ctx::Ctx::new(scene))
+    lint(
+        &ctx::Ctx::new(scene),
+        sink::Sink::new(scene, usize::MAX, None),
+    )
+    .diags
 }
 
-/// Fills in the help and facts `check_deferred` left out of `diags`.
+/// Like `check_deferred`, with memory bounded for scenes with huge numbers of findings. Only
+/// findings that pass `filter` are reported. Of those with the same code and suppression, the
+/// first `keep` in `kashika_diag::sort` order are kept and the rest only counted in `omitted`.
+/// Kept findings come in the order `check_deferred` reports them.
+pub fn check_bounded(scene: &Scene, keep: usize, filter: &dyn Fn(&Diagnostic) -> bool) -> Bounded {
+    lint(
+        &ctx::Ctx::new(scene),
+        sink::Sink::new(scene, keep, Some(filter)),
+    )
+}
+
+/// Fills in the help and facts `check_deferred` left pending in `diags`.
 pub fn resolve<'a>(scene: &Scene, diags: impl IntoIterator<Item = &'a mut Diagnostic>) {
     let mut diags = diags
         .into_iter()
-        .filter(|d| !d.deferred.is_empty())
+        .filter(|d| !d.pending.is_empty())
         .peekable();
     if diags.peek().is_none() {
         return;
@@ -50,21 +68,34 @@ pub fn resolve<'a>(scene: &Scene, diags: impl IntoIterator<Item = &'a mut Diagno
     }
 }
 
-fn lint(ctx: &ctx::Ctx) -> Vec<Diagnostic> {
-    let mut out: Vec<Diagnostic> = lints::ALL.iter().flat_map(|lint| lint(ctx)).collect();
-    suppress(ctx.scene, &mut out);
-    out
+fn lint(ctx: &ctx::Ctx, mut sink: sink::Sink) -> Bounded {
+    for lint in lints::ALL {
+        lint(ctx, &mut sink);
+    }
+    sink.finish()
 }
 
 /// Summary numbers for the report: crossings (suppressed ones included) and total line length.
 pub fn metrics(scene: &Scene, diags: &[Diagnostic]) -> Metrics {
+    let crossings = diags.iter().filter(|d| d.code == "cross").count();
+    metrics_with(scene, crossings)
+}
+
+fn metrics_with(scene: &Scene, crossings: usize) -> Metrics {
     let wire: f64 = scene
         .lines
         .iter()
         .map(|l| kashika_geom::length(&l.path))
         .sum();
     Metrics {
-        crossings: diags.iter().filter(|d| d.code == "cross").count(),
+        crossings,
         wire_px: wire.round() as u64,
+    }
+}
+
+impl Bounded {
+    /// Like `metrics`, counting every crossing found, also those filtered out or omitted.
+    pub fn metrics(&self, scene: &Scene) -> Metrics {
+        metrics_with(scene, self.found("cross"))
     }
 }

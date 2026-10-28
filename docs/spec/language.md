@@ -278,8 +278,8 @@ These block output unless `--force` is given:
 | `diagonal-tail` | A line's final segment is diagonal when it has at least one other straight segment and all of those are horizontal or vertical |
 | `endpoint-off-edge` | A literal endpoint is within 8px of a shape outline but not on it. A start point is literal unless it is written `id.anchor[+offset]` or a junction (a mixed point is literal). An end is literal when the last segment is `h`, `v`, a numeric `x`/`y`, or goes to a literal point; `x`/`y` with a point target is not |
 | `port-crowding` | Two endpoints on the same shape are within 8px of each other. This includes identical endpoints where both lines draw a marker (stacked arrowheads). Junctions are exempt |
-| `group-transit` | A line passes through a group's interior while neither of its endpoints is inside that group |
-| `low-contrast` | The contrast ratio between text color and its background is below 3:1. The background is the `background=` color with every group and box fill under the text painted on top in paint order; a transparent canvas counts as white. Line labels use the fills under their center, since they hide only their own line |
+| `group-transit` | A line passes through a group's interior while neither of its endpoints is inside that group. A line also connects into the group when a junction lies on it (an endpoint or a point along it) and another line with an endpoint at that junction has an endpoint inside the group: a trunk that taps a child through a junction does not transit the child's group |
+| `low-contrast` | The contrast ratio between text color and its background is below 3:1. The background is the `background=` color with every group and box fill under the text painted on top in paint order; a transparent canvas counts as white. Texts and line labels use the fills under the center of their box (not the `at` anchor of a left- or right-aligned text); line labels hide only their own line |
 | `block-reducible` | A text block holds only 1–2 stacked items, in one alignment, that a `label` would draw the same: the first in the box's font size and color, the second either in that style too (a second label line, `\n`) or in the `sublabel` style (`0.8 × font-size`, `muted`, not bold). The help line shows the `label`/`sublabel` rewrite |
 | `text-outside-shape` | An absolute block item lies outside the shape's text area (§6), or outside the band under a `text-area=below` shape. The help line gives the text area in the box-local frame |
 | `image-distort` | `fit=stretch` changes an image's aspect ratio by more than 5% |
@@ -292,7 +292,7 @@ These block output unless `--force` is given:
 - `allow=cross` on a line silences all crossings for that line.
 - `allow=cross:other_line` silences only crossings with that one line. This is preferred, so a later edit doesn't introduce hidden crossings.
 - `allow=` and `reason=` work the same on `box` and `group`, e.g. `box badge ... allow=overlap:card`. A diagnostic is suppressed when any element it names allows its code (and, for `code:id`, also names that id). `allow=` on `diagram` silences a code everywhere.
-- `reason="..."` is optional and kept in the JSON output.
+- `reason="..."` is optional and kept in the JSON output. A suppressed finding carries the reason of the first line, then shape, in file order, among those it names that allow its code and give a reason. `diagram` takes no `reason=`, so a finding only the diagram silences has none.
 - **Suppressed findings are counted in every summary**, and `--show-suppressed` lists them.
 
 ### What a clean check does not prove
@@ -349,7 +349,7 @@ arch.kash:11:1: warn[cross]: l_d2 crosses l_lb3 at (690,95)
 0 errors, 1 warning · crossings=1 wire=1346px
 ```
 
-Diagnostics that share a severity, code and message template (the message with backticked text and standalone numbers blanked out, so `unknown id `a`` and `unknown id `b`` match) are collapsed: the first 3 are printed in full, followed by one `... and N more like this` line. Collapsed diagnostics don't count toward `--max`. Errors are listed before warnings, each in source order. `--max` never hides an error: every error is reported (repeats of the same error are collapsed after three, with a count), and warnings fill what is left of `--max` in source order. When warnings are cut, the output ends with `... and N more`. The summary counts every diagnostic. JSON output never collapses: `diagnostics` lists every error and, up to `--max` entries in all, the first warnings, and `truncated` says whether `--max` cut any warning.
+Diagnostics that share a severity, code and message template (the message with backticked text and standalone numbers blanked out, so `unknown id `a`` and `unknown id `b`` match) are collapsed: the first 3 are printed in full, followed by one `... and N more like this` line. Collapsed diagnostics don't count toward `--max`. Errors are listed before warnings, each in source order. `--max` never hides an error: every error is reported (repeats of the same error are collapsed after three, with a count), and warnings fill what is left of `--max` in source order. When warnings are cut, the output ends with `... and N more`. The summary counts every diagnostic. To keep memory bounded, `check` and `render` keep at most 1,000 warnings (or `--max`, if larger) per code and suppression state, the first in source order, and only count the rest: they count toward the summary, `counts`, `by_code`, `crossings` and `... and N more` (and set `truncated`), even where they would have collapsed into a `... and N more like this` line. JSON output never collapses: `diagnostics` lists every error and, up to `--max` entries in all, the first warnings, and `truncated` says whether `--max` cut any warning.
 
 Control characters (C0, DEL and C1) and bidirectional overrides that come from the input, in source lines, messages, help and file names, are printed as `\u{1b}`-style escapes, so a file can't send escape sequences to the terminal. Tabs are kept. JSON output carries the original text.
 
@@ -376,7 +376,7 @@ A single versioned envelope is written to stdout. Progress goes to stderr.
 ```
 
 The fields:
-- `free` lists intervals that are clear of **every** box and line, with clearance applied, across the offending segment's span. It is not just the extent of the obstacle.
+- `free` lists intervals that are clear of **every** box, image, line, junction, text, line label and label under a `text-area=below` shape, and of every group border, with clearance applied, across the offending segment's span. The offending line and its labels are ignored. It is not just the extent of the obstacle.
 - `cross` and `shared-segment` give each line's segment index and the overlapping span. `shared-segment` names the nearest free parallel lane. `label-collision` suggests `t` values that are clear.
 - `suggestions` contain `{span, replacement, ripple: [ids whose geometry would change]}`. They are never applied automatically.
 - Spans are 1-based, columns count Unicode scalar values, and positions refer to the input as given.
@@ -386,7 +386,7 @@ The fields:
 Prints the resolved geometry: every shape's bounding box and anchors in both canvas and local frames, every line's vertices, segment kinds and arc length, every label's bounding box, and the placement dependency graph.
 
 - `--ports` lists, for each shape side, which anchors are already used and by which lines.
-- `--corridors` lists the free horizontal and vertical intervals within a rectangle.
+- `--corridors` lists the free horizontal and vertical intervals within a rectangle, clear of the same things as the `free` fact.
 - `--format json` writes one object with schema `kashika.inspect/1`: `shapes` (with `bbox`, `local_bbox`, `anchors`, `local_anchors`, and `image` with `path`, `natural`, `aspect` and `fit` for images and SVG-file shapes), `junctions`, `texts`, `lines` (with `vertices`, `segments`, `length`, `labels`), `placement`, and `ports`/`corridors` when requested. Positional ids limit the output to those elements. An unknown id is a usage error.
 - Errors don't stop it, so a file with errors can still be inspected.
 

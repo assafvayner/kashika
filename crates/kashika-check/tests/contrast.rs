@@ -50,6 +50,31 @@ fn text_takes_the_fill_of_the_shapes_under_it() {
 }
 
 #[test]
+fn aligned_text_takes_the_fill_under_its_center_not_its_anchor() {
+    let dark = "box a at (104,0) size (200,100) fill=#000000\n";
+    assert!(
+        lint(
+            "low-contrast",
+            &format!("{dark}text \"a long note\" at (100,50) align=left color=#ffffff\n")
+        )
+        .is_empty()
+    );
+    let d = lint(
+        "low-contrast",
+        &format!("{dark}text \"a long note\" at (100,50) align=left color=#111111\n"),
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].facts["background"], "#000000");
+    assert!(
+        lint(
+            "low-contrast",
+            &format!("{dark}text \"a long note\" at (308,50) align=right color=#ffffff\n")
+        )
+        .is_empty()
+    );
+}
+
+#[test]
 fn line_labels_on_a_bare_canvas_count_as_white() {
     assert_eq!(
         lint(

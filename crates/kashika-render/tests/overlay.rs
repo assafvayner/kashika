@@ -1,4 +1,4 @@
-use kashika_diag::{Diagnostic, Severity, Span};
+use kashika_diag::{Diagnostic, Span};
 use kashika_model::compile;
 use kashika_render::{Overlay, render_svg, render_svg_with};
 
@@ -9,9 +9,7 @@ line ab a.right -> hv b.top\n\
 line bad a.rigth -> b.left\n";
 
 fn warn_on_line_4() -> Diagnostic {
-    let mut d = Diagnostic::error("near", Span::new(4, 1, 4, 5), "test warning");
-    d.severity = Severity::Warn;
-    d
+    Diagnostic::warn("near", Span::new(4, 1, 4, 5), "test warning")
 }
 
 const MARKERS: Overlay = Overlay {

@@ -86,7 +86,7 @@ Line attributes: `start=`/`end=` (`arrow open diamond dot none`), `stroke-style=
 
 ## Line recipes
 
-- **Fan-out without `shared-segment`:** one line into a junction, then one line per child into its `top` (`hv` when it's off to the side). When two branches leave the junction the same way, run the trunk to the farthest child and put a second junction on it for the nearer one (`mid` below).
+- **Fan-out without `shared-segment`:** one line into a junction, then one line per child into its `top` (`hv` when it's off to the side). When two branches leave the junction the same way, run the trunk to the farthest child and put a second junction on it for the nearer one (`mid` below). A trunk that taps a child through a junction counts as connecting into that child's group, so it is no `group-transit`.
 - **Two lines on one side** of a box: spread them with `side@t` (`core.right@0.3`, `core.right@0.7`) to avoid `port-crowding`/`shared-segment`.
 - **Self-loop:** `curve via` from `top@0.8` back to `top@0.2`, with control points above the box. `out-of-canvas` measures a curve's true extent, labels included, so leave room.
 - **Sequence diagram:** lifelines are tall narrow boxes under each participant; messages are horizontal lines between `side@t` anchors at the same `t` (see below). Space lifelines by label width + ~30px.

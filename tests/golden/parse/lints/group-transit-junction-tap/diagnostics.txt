@@ -1,0 +1,4 @@
+warn[group-transit] 12:1-12:43: trunk passes through group 'r3' without connecting to anything inside it
+  = help: route around the group, for example along its outside margin
+  elements: [{"from":[80,100],"id":"trunk","kind":"line","segment":1,"span":{"col":1,"end_col":43,"end_line":12,"line":12},"to":[460,100]},{"bbox":[[300,40],[400,160]],"id":"r3","kind":"group","span":{"col":1,"end_col":41,"end_line":8,"line":8}}]
+  facts: {"entry":[300,100]}

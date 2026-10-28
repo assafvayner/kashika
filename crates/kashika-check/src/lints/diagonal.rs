@@ -2,12 +2,12 @@ use kashika_diag::Diagnostic;
 use kashika_geom::PathSeg;
 
 use crate::ctx::{Ctx, fmt_pt, line_el};
+use crate::sink::Sink;
 
 /// `diagonal-tail`: the final segment is diagonal while the line has at least one other
 /// straight segment and all of those are horizontal or vertical. A line whose only straight
 /// segment is the diagonal has no tail.
-pub fn diagonal_tail(ctx: &Ctx) -> Vec<Diagnostic> {
-    let mut out = Vec::new();
+pub fn diagonal_tail(ctx: &Ctx, out: &mut Sink) {
     for l in &ctx.lines {
         let path = &l.line.path;
         let straight: Vec<usize> = (0..path.len())
@@ -42,5 +42,4 @@ pub fn diagonal_tail(ctx: &Ctx) -> Vec<Diagnostic> {
             .with_help("finish with `hv`/`vh` or an `x`/`y` target so the last hop is horizontal or vertical"),
         );
     }
-    out
 }

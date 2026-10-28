@@ -730,6 +730,47 @@ fn tool_errors_escape_control_characters() {
         .stderr(predicate::str::contains("missing\\u{1b}]0;x\\u{7}.kash"));
 }
 
+/// `n` horizontal lines crossing `n` vertical ones.
+fn crossing_grid(n: usize) -> String {
+    let mut src = String::from("diagram \"grid\" size (1000,1000)\n");
+    for i in 0..n {
+        let at = 50 + 20 * i;
+        src.push_str(&format!("line h{i} (20,{at}) -> h 900\n"));
+        src.push_str(&format!("line v{i} ({at},20) -> v 900\n"));
+    }
+    src
+}
+
+#[test]
+fn counts_stay_exact_past_the_findings_kept_per_code() {
+    let out = kashika()
+        .args(["check", "-", "--format", "json", "--max", "5"])
+        .write_stdin(crossing_grid(40))
+        .output()
+        .unwrap();
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(
+        v["counts"],
+        serde_json::json!({"error": 0, "warn": 1600, "suppressed": 0})
+    );
+    assert_eq!(v["metrics"]["crossings"], 1600);
+    assert_eq!(
+        v["by_code"]["cross"],
+        serde_json::json!({"active": 1600, "suppressed": 0})
+    );
+    assert_eq!(v["truncated"], true);
+    assert_eq!(v["diagnostics"].as_array().unwrap().len(), 5);
+    kashika()
+        .args(["check", "-", "--max", "5"])
+        .write_stdin(crossing_grid(40))
+        .assert()
+        .code(1)
+        .stdout(
+            predicate::str::contains("... and 1595 more\n")
+                .and(predicate::str::contains("0 errors, 1600 warnings")),
+        );
+}
+
 fn run_ok(args: &[&str], stdin: &str) -> (i32, String, String) {
     let out = kashika().args(args).write_stdin(stdin).output().unwrap();
     (

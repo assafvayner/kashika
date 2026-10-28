@@ -2,17 +2,12 @@ mod block;
 mod canvas;
 mod collision;
 mod contrast;
-mod crowding;
-mod grid;
-mod image;
-
-use kashika_diag::Diagnostic;
-
-use crate::ctx::Ctx;
-
 mod cross;
+mod crowding;
 mod diagonal;
 mod endpoint;
+mod grid;
+mod image;
 mod near;
 mod overlap;
 mod shared;
@@ -21,9 +16,12 @@ mod textarea;
 mod through;
 mod transit;
 
-pub type Lint = fn(&Ctx) -> Vec<Diagnostic>;
+use crate::ctx::Ctx;
+use crate::sink::Sink;
 
-/// Every warning lint. Each lint task adds its `mod` line above and an entry here.
+pub type Lint = fn(&Ctx, &mut Sink);
+
+/// Every warning lint.
 pub const ALL: &[Lint] = &[
     block::block_reducible,
     canvas::out_of_canvas,

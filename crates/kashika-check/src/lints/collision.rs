@@ -6,6 +6,7 @@ use crate::ctx::{
     Ctx, bbox, fmt_num, intersection, kind_name, line_el, shape_el, text_el, text_id,
 };
 use crate::index::Grid;
+use crate::sink::Sink;
 use crate::text_box::{below_box, label_box, label_box_at, text_box, title_box};
 
 const ARROW_LEN: f64 = 10.0;
@@ -27,10 +28,9 @@ struct Subject<'c> {
 /// `label-collision`: a line label, text or the label under a `text-area=below` shape
 /// intersects a box, an image, a group title, another label or text, a line other than
 /// its own, or (for a line label) its own line's markers.
-pub fn label_collision(ctx: &Ctx) -> Vec<Diagnostic> {
+pub fn label_collision(ctx: &Ctx, out: &mut Sink) {
     let subjects = subjects(ctx);
     let grid = Grid::new(&subjects.iter().map(|s| s.rect).collect::<Vec<_>>());
-    let mut out = Vec::new();
     for (i, s) in subjects.iter().enumerate() {
         let mut hits = obstacles(ctx, s.rect, s.label.map(|(li, _)| li), s.shape);
         for o in grid
@@ -43,6 +43,14 @@ pub fn label_collision(ctx: &Ctx) -> Vec<Diagnostic> {
                 hits.push((o.what.clone(), o.el.clone()));
             }
         }
+        if hits.is_empty() {
+            continue;
+        }
+        let clear = s.label.map(|(li, label)| {
+            let ts = clear_positions(ctx, &subjects, &grid, i, li, label);
+            let help = describe_clear(&ctx.lines[li].line.id, &ts);
+            (ts, help)
+        });
         for (other, el) in hits {
             let mut d = Diagnostic::warn(
                 "label-collision",
@@ -52,16 +60,12 @@ pub fn label_collision(ctx: &Ctx) -> Vec<Diagnostic> {
             .with_element(s.el.clone())
             .with_element(el)
             .with_fact("bbox", bbox(s.rect));
-            if let Some((li, label)) = s.label {
-                let clear = clear_positions(ctx, &subjects, &grid, i, li, label);
-                d = d
-                    .with_fact("clear_t", &clear)
-                    .with_help(describe_clear(&ctx.lines[li].line.id, &clear));
+            if let Some((ts, help)) = &clear {
+                d = d.with_fact("clear_t", ts).with_help(help);
             }
             out.push(d);
         }
     }
-    out
 }
 
 fn subjects<'c>(ctx: &'c Ctx) -> Vec<Subject<'c>> {
@@ -127,7 +131,7 @@ fn obstacles(
             ));
         }
     }
-    for g in ctx.groups() {
+    for g in ctx.groups_near(rect, 0.0) {
         if title_box(g.shape).is_some_and(|t| intersection(rect, t).is_some()) {
             out.push((
                 format!("the title of group '{}'", g.shape.id),

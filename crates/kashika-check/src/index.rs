@@ -120,4 +120,90 @@ mod tests {
             100
         );
     }
+
+    /// A small deterministic generator, so the property test needs no dependency.
+    struct Lcg(u64);
+
+    impl Lcg {
+        fn next(&mut self, lo: f64, hi: f64) -> f64 {
+            self.0 = self
+                .0
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            lo + (hi - lo) * ((self.0 >> 11) as f64 / (1u64 << 53) as f64)
+        }
+    }
+
+    fn near_brute(rects: &[Rect], q: Rect, margin: f64) -> Vec<usize> {
+        let finite = |r: &Rect| [r.x, r.y, r.w, r.h].iter().all(|v| v.is_finite());
+        let (qx0, qx1) = (q.x.min(q.right()), q.x.max(q.right()));
+        let (qy0, qy1) = (q.y.min(q.bottom()), q.y.max(q.bottom()));
+        (0..rects.len())
+            .filter(|&i| {
+                let r = rects[i];
+                !finite(&r)
+                    || (r.x.min(r.right()) - margin <= qx1
+                        && r.x.max(r.right()) + margin >= qx0
+                        && r.y.min(r.bottom()) - margin <= qy1
+                        && r.y.max(r.bottom()) + margin >= qy0)
+            })
+            .collect()
+    }
+
+    #[test]
+    fn grid_finds_everything_brute_force_finds() {
+        let mut rng = Lcg(7);
+        for round in 0..50 {
+            let n = round * 7 % 120;
+            let mut rects: Vec<Rect> = (0..n)
+                .map(|_| {
+                    Rect::new(
+                        rng.next(-500.0, 1500.0),
+                        rng.next(-500.0, 1500.0),
+                        rng.next(-50.0, 300.0),
+                        rng.next(-50.0, 300.0),
+                    )
+                })
+                .collect();
+            if round % 5 == 0 && n > 0 {
+                rects[n / 2] = Rect::new(f64::NAN, 0.0, 10.0, 10.0);
+            }
+            let grid = Grid::new(&rects);
+            for _ in 0..40 {
+                let q = Rect::new(
+                    rng.next(-700.0, 1700.0),
+                    rng.next(-700.0, 1700.0),
+                    rng.next(-100.0, 400.0),
+                    rng.next(-100.0, 400.0),
+                );
+                let margin = rng.next(0.0, 30.0);
+                let got = grid.near(q, margin);
+                assert!(got.windows(2).all(|w| w[0] < w[1]), "{got:?}");
+                assert!(got.iter().all(|&i| i < rects.len()));
+                for i in near_brute(&rects, q, margin) {
+                    assert!(got.contains(&i), "round {round}: missed {i} for {q:?}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn an_empty_grid_finds_nothing() {
+        let grid = Grid::new(&[]);
+        assert!(grid.near(Rect::new(0.0, 0.0, 10.0, 10.0), 5.0).is_empty());
+        assert!(
+            grid.near(Rect::new(f64::NAN, 0.0, 0.0, 0.0), 0.0)
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn non_finite_rects_are_found_by_every_query() {
+        let rects = [
+            Rect::new(f64::NAN, f64::NAN, 0.0, 0.0),
+            Rect::new(0.0, 0.0, f64::INFINITY, 1.0),
+        ];
+        let grid = Grid::new(&rects);
+        assert_eq!(grid.near(Rect::new(5.0, 5.0, 1.0, 1.0), 0.0), vec![0, 1]);
+    }
 }

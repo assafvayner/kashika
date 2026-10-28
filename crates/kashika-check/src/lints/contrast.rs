@@ -3,13 +3,14 @@ use kashika_geom::{Pt, Rect, point_in_polygon};
 use kashika_model::{Shape, ShapeKind, TextRole};
 
 use crate::ctx::{Ctx, line_el, round2, shape_el, text_el, text_id};
+use crate::sink::Sink;
+use crate::text_box::text_box;
 
 const MIN_RATIO: f64 = 3.0;
 const WHITE: [f64; 3] = [1.0, 1.0, 1.0];
 
 /// `low-contrast`: the WCAG contrast ratio between text and the fill behind it is below 3:1.
-pub fn low_contrast(ctx: &Ctx) -> Vec<Diagnostic> {
-    let mut out = Vec::new();
+pub fn low_contrast(ctx: &Ctx, out: &mut Sink) {
     for s in &ctx.shapes {
         let sh = s.shape;
         for item in &sh.text {
@@ -20,7 +21,7 @@ pub fn low_contrast(ctx: &Ctx) -> Vec<Diagnostic> {
             };
             let bg = backdrop(ctx, item.rect.center(), Some(&sh.id));
             check(
-                &mut out,
+                out,
                 &item.color,
                 bg,
                 shape_el(sh),
@@ -30,9 +31,9 @@ pub fn low_contrast(ctx: &Ctx) -> Vec<Diagnostic> {
         }
     }
     for t in &ctx.scene.texts {
-        let bg = backdrop(ctx, t.at, None);
+        let bg = backdrop(ctx, text_box(t).center(), None);
         check(
-            &mut out,
+            out,
             &t.color,
             bg,
             text_el(t),
@@ -45,7 +46,7 @@ pub fn low_contrast(ctx: &Ctx) -> Vec<Diagnostic> {
             let what = format!("label \"{}\" of {}", lab.text, l.line.id);
             let bg = backdrop(ctx, lab.rect.center(), None);
             check(
-                &mut out,
+                out,
                 &l.line.style.color,
                 bg,
                 line_el(l.line, None),
@@ -54,17 +55,9 @@ pub fn low_contrast(ctx: &Ctx) -> Vec<Diagnostic> {
             );
         }
     }
-    out
 }
 
-fn check(
-    out: &mut Vec<Diagnostic>,
-    color: &str,
-    bg: [f64; 3],
-    el: Element,
-    span: Span,
-    what: String,
-) {
+fn check(out: &mut Sink, color: &str, bg: [f64; 3], el: Element, span: Span, what: String) {
     let Some(fg) = rgba(color) else { return };
     let r = ratio(over(fg, bg), bg);
     if r >= MIN_RATIO {

@@ -6,7 +6,7 @@ use kashika_model::{Junction, Line, Scene, Shape, ShapeKind, Text};
 
 use crate::index::Grid;
 use crate::outline::polygon;
-use crate::text_box::text_box;
+use crate::text_box::{below_box, label_box, text_box};
 
 pub struct ShapeGeom<'a> {
     pub shape: &'a Shape,
@@ -57,6 +57,21 @@ pub struct Ctx<'a> {
     shape_ids: HashMap<&'a str, usize>,
     /// Index into `lines` of the first line with each id.
     line_ids: HashMap<&'a str, usize>,
+    /// Index into `scene.lines`, `scene.junctions` and `scene.texts` of the first of each id.
+    scene_line_ids: HashMap<&'a str, usize>,
+    junction_ids: HashMap<&'a str, usize>,
+    text_ids: HashMap<String, usize>,
+    junction_grid: Grid,
+    marks: Vec<Mark<'a>>,
+    mark_grid: Grid,
+}
+
+/// Something drawn on top that a free lane must keep clear of besides boxes and lines: a
+/// junction, a text, a line label or the label under a `text-area=below` shape.
+pub struct Mark<'a> {
+    pub rect: Rect,
+    /// The id of the junction, text, line or shape it belongs to.
+    pub owner: &'a str,
 }
 
 impl<'a> Ctx<'a> {
@@ -103,10 +118,35 @@ impl<'a> Ctx<'a> {
         for (i, l) in lines.iter().enumerate() {
             line_ids.entry(l.line.id.as_str()).or_insert(i);
         }
+        let mut scene_line_ids = HashMap::new();
+        for (i, l) in scene.lines.iter().enumerate() {
+            scene_line_ids.entry(l.id.as_str()).or_insert(i);
+        }
+        let mut junction_ids = HashMap::new();
+        for (i, j) in scene.junctions.iter().enumerate() {
+            junction_ids.entry(j.id.as_str()).or_insert(i);
+        }
+        let mut text_ids = HashMap::new();
+        for (i, t) in scene.texts.iter().enumerate() {
+            text_ids.entry(text_id(t)).or_insert(i);
+        }
+        let junction_boxes: Vec<Rect> = scene
+            .junctions
+            .iter()
+            .map(|j| Rect::new(j.at.x, j.at.y, 0.0, 0.0))
+            .collect();
+        let marks = marks(scene);
+        let mark_boxes: Vec<Rect> = marks.iter().map(|m| m.rect).collect();
         Ctx {
             scene,
             shape_grid: Grid::new(&shape_boxes),
             line_grid: Grid::new(&line_boxes),
+            scene_line_ids,
+            junction_ids,
+            text_ids,
+            junction_grid: Grid::new(&junction_boxes),
+            mark_grid: Grid::new(&mark_boxes),
+            marks,
             shapes,
             lines,
             shape_boxes,
@@ -163,11 +203,30 @@ impl<'a> Ctx<'a> {
             .collect()
     }
 
+    /// Junctions within TOLERANCE of `p`, in file order.
+    pub fn junctions_at(&self, p: Pt) -> impl Iterator<Item = &'a Junction> + '_ {
+        self.junctions_near(Rect::new(p.x, p.y, 0.0, 0.0), TOLERANCE)
+            .filter(move |j| j.at.dist(p) <= TOLERANCE)
+    }
+
+    /// Junctions that may lie within `margin` of `r`, in file order.
+    pub fn junctions_near(&self, r: Rect, margin: f64) -> impl Iterator<Item = &'a Junction> + '_ {
+        self.junction_grid
+            .near(r, margin + 1.0)
+            .into_iter()
+            .map(|i| &self.scene.junctions[i])
+    }
+
     pub fn is_junction(&self, p: Pt) -> bool {
-        self.scene
-            .junctions
-            .iter()
-            .any(|j| j.at.dist(p) <= TOLERANCE)
+        self.junctions_at(p).next().is_some()
+    }
+
+    /// Junctions, texts and labels whose box may lie within `margin` of `r`, in `marks()` order.
+    pub fn marks_near(&self, r: Rect, margin: f64) -> impl Iterator<Item = &Mark<'a>> + '_ {
+        self.mark_grid
+            .near(r, margin + 1.0)
+            .into_iter()
+            .map(|i| &self.marks[i])
     }
 
     pub fn shape(&self, id: &str) -> Option<&'a Shape> {
@@ -200,18 +259,41 @@ impl<'a> Ctx<'a> {
         if let Some(s) = self.shape(id) {
             return Some(shape_el(s));
         }
-        if let Some(l) = self.scene.lines.iter().find(|l| l.id == id) {
-            return Some(line_el(l, None));
+        if let Some(&i) = self.scene_line_ids.get(id) {
+            return Some(line_el(&self.scene.lines[i], None));
         }
-        if let Some(j) = self.scene.junctions.iter().find(|j| j.id == id) {
-            return Some(junction_el(j));
+        if let Some(&i) = self.junction_ids.get(id) {
+            return Some(junction_el(&self.scene.junctions[i]));
         }
-        self.scene
-            .texts
-            .iter()
-            .find(|t| text_id(t) == id)
-            .map(text_el)
+        self.text_ids
+            .get(id)
+            .map(|&i| text_el(&self.scene.texts[i]))
     }
+}
+
+/// Junctions, then texts, line labels and the labels under `text-area=below` shapes.
+fn marks(scene: &Scene) -> Vec<Mark<'_>> {
+    let junctions = scene.junctions.iter().map(|j| Mark {
+        rect: Rect::new(j.at.x, j.at.y, 0.0, 0.0),
+        owner: j.id.as_str(),
+    });
+    let texts = scene.texts.iter().map(|t| Mark {
+        rect: text_box(t),
+        owner: t.id.as_deref().unwrap_or(""),
+    });
+    let labels = scene.lines.iter().flat_map(|l| {
+        l.labels.iter().map(|lab| Mark {
+            rect: label_box(lab),
+            owner: l.id.as_str(),
+        })
+    });
+    let below = scene.shapes.iter().filter_map(|s| {
+        below_box(s).map(|rect| Mark {
+            rect,
+            owner: s.id.as_str(),
+        })
+    });
+    junctions.chain(texts).chain(labels).chain(below).collect()
 }
 
 pub fn round2(v: f64) -> f64 {

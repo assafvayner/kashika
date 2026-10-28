@@ -3,11 +3,11 @@ use kashika_geom::{TOLERANCE, polygons_overlap};
 use kashika_model::ShapeKind;
 
 use crate::ctx::{Ctx, bbox, contains, intersection, kind_name, shape_el};
+use crate::sink::Sink;
 
 /// `overlap`: two shapes have intersecting interiors and neither is a group that contains the other.
 /// Shapes nested in the source (ancestor and descendant) are skipped; `spill` covers those.
-pub fn overlap(ctx: &Ctx) -> Vec<Diagnostic> {
-    let mut out = Vec::new();
+pub fn overlap(ctx: &Ctx, out: &mut Sink) {
     for (i, a) in ctx.shapes.iter().enumerate() {
         for j in ctx.shapes_near(ctx.shape_boxes[i], TOLERANCE) {
             if j <= i {
@@ -46,5 +46,4 @@ pub fn overlap(ctx: &Ctx) -> Vec<Diagnostic> {
             out.push(d);
         }
     }
-    out
 }

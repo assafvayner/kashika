@@ -155,7 +155,15 @@ struct Corridors {
     vertical: Vec<P>,
 }
 
-pub fn build(name: &str, src: &str, scene: &Scene, diags: &[Diagnostic], req: &Request) -> Inspect {
+/// `lints` counts the unsuppressed warnings `check` found besides those in `diags`.
+pub fn build(
+    name: &str,
+    src: &str,
+    scene: &Scene,
+    diags: &[Diagnostic],
+    lints: usize,
+    req: &Request,
+) -> Inspect {
     let corridors_only = req.ids.is_empty() && req.corridors.is_some();
     let keep = |id: &str| {
         if req.ids.is_empty() {
@@ -308,7 +316,7 @@ pub fn build(name: &str, src: &str, scene: &Scene, diags: &[Diagnostic], req: &R
         },
         counts: Counts {
             error: errors,
-            warn: diags.len() - errors,
+            warn: diags.len() - errors + lints,
         },
         shapes,
         junctions,

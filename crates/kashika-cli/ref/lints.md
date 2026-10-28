@@ -32,7 +32,7 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `diagonal-tail` | warn | the last segment is diagonal and every other straight segment is horizontal or vertical (at least one) | end with `hv`/`vh` |
 | `endpoint-off-edge` | warn | a literal endpoint near but off an outline | use the anchor in the help line |
 | `port-crowding` | warn | two endpoints on a shape within 8px | spread them with `side@t` |
-| `group-transit` | warn | a line crosses a group it doesn't connect to | route around the group |
+| `group-transit` | warn | a line crosses a group it doesn't connect to (a junction on it that taps into the group counts as connecting) | route around the group |
 | `low-contrast` | warn | text contrast below 3:1 | change the color or fill |
 | `label-collision` | warn | a label or text overlaps another element, or a label its own line's marker | move it; the help lists clear `t` |
 | `out-of-canvas` | warn | an element extends past `size` (children of a group that itself extends past it aren't reported again) | move it or grow `size` |

@@ -3,10 +3,10 @@ use kashika_geom::{Hit, Pt, TOLERANCE, dist_point_seg, seg_hit};
 
 use crate::ctx::{Ctx, LineGeom, arr, fmt_pt, line_el};
 use crate::free::with_free;
+use crate::sink::Sink;
 
 /// `cross`: two lines meet at a point that is neither a shared endpoint nor a junction.
-pub fn cross(ctx: &Ctx) -> Vec<Diagnostic> {
-    let mut out = Vec::new();
+pub fn cross(ctx: &Ctx, out: &mut Sink) {
     for (i, a) in ctx.lines.iter().enumerate() {
         for j in ctx.lines_near(ctx.line_boxes[i], TOLERANCE) {
             if j <= i {
@@ -18,7 +18,6 @@ pub fn cross(ctx: &Ctx) -> Vec<Diagnostic> {
             }
         }
     }
-    out
 }
 
 /// One point per crossing, with the indices (into `pieces`) of the pieces that meet there.

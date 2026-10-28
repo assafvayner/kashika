@@ -3,11 +3,11 @@ use kashika_geom::{Pt, TOLERANCE, inside_runs};
 
 use crate::ctx::{Ctx, arr, kind_name, line_el, shape_el};
 use crate::free::with_free;
+use crate::sink::Sink;
 
 /// `through`: a line enters a box's interior. The boxes a line starts and ends at are exempt
 /// only on its first and last segments, so leaving and re-entering is flagged.
-pub fn through(ctx: &Ctx) -> Vec<Diagnostic> {
-    let mut out = Vec::new();
+pub fn through(ctx: &Ctx, out: &mut Sink) {
     for (i, l) in ctx.lines.iter().enumerate() {
         let (starts, ends) = (ctx.attached(l.start), ctx.attached(l.end));
         let last = l.last_segment();
@@ -42,5 +42,4 @@ pub fn through(ctx: &Ctx) -> Vec<Diagnostic> {
             out.push(with_free(d, l, k, &skip));
         }
     }
-    out
 }

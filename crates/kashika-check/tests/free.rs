@@ -2,7 +2,9 @@ mod common;
 
 use common::*;
 use kashika_check::ctx::Ctx;
-use kashika_check::free::{Axis, corridors, free_around, free_intervals, resolve, with_free};
+use kashika_check::free::{
+    Axis, DeferredKind, corridors, free_around, free_intervals, resolve, with_deferred, with_free,
+};
 use kashika_diag::{Diagnostic, Span};
 use kashika_geom::{Pt, Rect};
 
@@ -36,6 +38,55 @@ fn free_intervals_avoid_group_borders_but_not_their_interior() {
         free_intervals(&ctx, Axis::X, (400.0, 600.0), (0.0, 800.0), &[]),
         vec![(0.0, 800.0)]
     );
+}
+
+#[test]
+fn free_intervals_drop_gaps_that_round_to_nothing() {
+    let s = scene("box a at (0,0) size (100,100)\nbox b at (0,112.004) size (100,50)\n");
+    let ctx = Ctx::new(&s);
+    assert_eq!(
+        free_intervals(&ctx, Axis::Y, (10.0, 90.0), (0.0, 600.0), &[]),
+        vec![(168.0, 600.0)]
+    );
+}
+
+#[test]
+fn free_intervals_avoid_texts_labels_and_junctions() {
+    let free_in = |body: &str, band: (f64, f64), skip: &[&str]| {
+        let s = scene(body);
+        free_intervals(&Ctx::new(&s), Axis::Y, band, (0.0, 600.0), skip)
+    };
+    let free = |body: &str, skip: &[&str]| free_in(body, (0.0, 800.0), skip);
+    let text = free("text \"note\" at (400,300)\n", &[]);
+    assert_eq!(text.len(), 2, "{text:?}");
+    assert!(text[0].1 < 294.0 && text[1].0 > 306.0, "{text:?}");
+    let junction = free("junction j at (400,300)\n", &[]);
+    assert_eq!(junction, vec![(0.0, 294.0), (306.0, 600.0)]);
+    let labeled = "line l (400,250) -> v 100 label=\"a wide label\"\n";
+    let label = free_in(labeled, (410.0, 800.0), &[]);
+    assert_eq!(label.len(), 2, "{label:?}");
+    assert!(label[0].1 < 294.0 && label[1].0 > 306.0, "{label:?}");
+    assert_eq!(free_in(labeled, (410.0, 800.0), &["l"]), vec![(0.0, 600.0)]);
+    assert_eq!(
+        free_in("line l (400,250) -> v 100\n", (410.0, 800.0), &[]),
+        vec![(0.0, 600.0)]
+    );
+}
+
+#[test]
+fn free_intervals_avoid_the_label_under_a_below_shape() {
+    let mut s = scene("box b \"Below\" at (380,200) size (80,40)\n");
+    s.shapes[0].text_below = true;
+    let label = s.shapes[0].text[0].rect;
+    for item in &mut s.shapes[0].text {
+        item.rect.y += 60.0;
+    }
+    let ctx = Ctx::new(&s);
+    let free = free_intervals(&ctx, Axis::Y, (0.0, 800.0), (0.0, 600.0), &[]);
+    assert_eq!(free.len(), 3, "{free:?}");
+    assert!(free[2].0 >= label.bottom() + 60.0, "{free:?}");
+    let skipped = free_intervals(&ctx, Axis::Y, (0.0, 800.0), (0.0, 600.0), &["b"]);
+    assert_eq!(skipped, vec![(0.0, 600.0)]);
 }
 
 #[test]
@@ -77,9 +128,9 @@ fn with_free_adds_a_fact_and_help_for_straight_pieces() {
         0,
         &["l"],
     );
-    assert!(d.help.is_empty() && d.deferred.len() == 1);
+    assert!(d.help.is_empty() && kashika_check::deferred(&d).len() == 1);
     resolve(&ctx, &mut d);
-    assert!(d.deferred.is_empty());
+    assert!(d.pending.is_empty());
     assert_eq!(
         d.help,
         ["segment 1 runs at y=150; free y-intervals across x 50..300: 0..104, 176..600"]
@@ -99,22 +150,77 @@ fn corridors_cover_both_axes() {
 fn deferred_help_resolves_to_what_check_reports() {
     let s = scene(
         "box a at (100,100) size (80,60)\nbox b at (400,100) size (80,60)\n\
-         line lx (0,130) -> h 600\nline ly (300,0) -> v 400\n\
+         line lx (0,130) -> h 600 allow=cross reason=\"bus\"\nline ly (300,0) -> v 400\n\
          line p (0,300) -> h 400\nline q (100,300) -> h 400\n\
-         line n (0,163) -> h 90\n",
+         line n (0,163) -> h 150\n",
     );
     let eager = kashika_check::check(&s);
     let mut lazy = kashika_check::check_deferred(&s);
     let codes: Vec<&str> = lazy
         .iter()
-        .filter(|d| !d.deferred.is_empty())
+        .filter(|d| !d.pending.is_empty())
         .map(|d| d.code)
         .collect();
-    for code in ["cross", "through", "shared-segment"] {
+    for code in ["cross", "through", "shared-segment", "near"] {
         assert!(codes.contains(&code), "{code} not deferred: {codes:?}");
     }
+    assert!(
+        lazy.iter().any(|d| d.suppressed && !d.pending.is_empty()),
+        "no suppressed finding with pending help"
+    );
     assert_ne!(lazy, eager);
     kashika_check::resolve(&s, &mut lazy);
     assert_eq!(lazy, eager);
-    assert!(eager.iter().all(|d| d.deferred.is_empty()));
+    assert!(eager.iter().all(|d| d.pending.is_empty()));
+}
+
+#[test]
+fn a_lane_with_nowhere_free_lists_no_lane() {
+    let s = scene("box wall at (0,0) size (800,600)\n");
+    let ctx = Ctx::new(&s);
+    let mut d = with_deferred(
+        Diagnostic::warn("shared-segment", Span::default(), "x"),
+        DeferredKind::Lane,
+        Pt::new(100.0, 300.0),
+        Pt::new(200.0, 300.0),
+        &[],
+    );
+    resolve(&ctx, &mut d);
+    assert_eq!(d.help, ["free y-intervals across x 100..200: none"]);
+    assert!(!d.facts.contains_key("lane"));
+    assert_eq!(d.facts["free"]["intervals"], serde_json::json!([]));
+}
+
+#[test]
+fn two_deferred_entries_keep_their_place_in_the_help() {
+    let s = scene("box a at (100,110) size (80,60)\nline l (50,150) -> h 250 -> v 100\n");
+    let ctx = Ctx::new(&s);
+    let l = ctx.line("l").unwrap();
+    let d = Diagnostic::warn("through", Span::default(), "x").with_help("first");
+    let d = with_free(d, l, 0, &["l"]).with_help("second");
+    let mut d = with_deferred(
+        d,
+        DeferredKind::Lane,
+        Pt::new(50.0, 150.0),
+        Pt::new(300.0, 150.0),
+        &["l"],
+    )
+    .with_help("third");
+    assert_eq!(kashika_check::deferred(&d).len(), 2);
+    resolve(&ctx, &mut d);
+    assert_eq!(
+        d.help,
+        [
+            "first",
+            "segment 1 runs at y=150; free y-intervals across x 50..300: 0..104, 176..600",
+            "second",
+            "nearest free lane: y=176",
+            "free y-intervals across x 50..300: 0..104, 176..600",
+            "third",
+        ]
+    );
+    assert_eq!(
+        d.facts["lane"],
+        serde_json::json!({"axis": "y", "at": 176.0})
+    );
 }

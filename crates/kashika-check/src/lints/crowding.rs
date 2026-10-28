@@ -5,18 +5,18 @@ use kashika_geom::TOLERANCE;
 
 use crate::ctx::{Ctx, LineGeom, fmt_num, fmt_pt, line_el, round2, shape_el};
 use crate::ports::ports;
+use crate::sink::Sink;
 
 const MIN_GAP: f64 = 8.0;
 
 /// `port-crowding`: two endpoints on one shape are within 8px, or are identical and both
 /// draw a marker (stacked arrowheads). Junction endpoints are exempt.
-pub fn port_crowding(ctx: &Ctx) -> Vec<Diagnostic> {
+pub fn port_crowding(ctx: &Ctx, out: &mut Sink) {
     let all = ports(ctx);
     let mut by_shape: HashMap<&str, Vec<usize>> = HashMap::new();
     for (i, p) in all.iter().enumerate() {
         by_shape.entry(p.shape.as_str()).or_default().push(i);
     }
-    let mut out = Vec::new();
     for (i, a) in all.iter().enumerate() {
         for b in by_shape[a.shape.as_str()]
             .iter()
@@ -63,7 +63,6 @@ pub fn port_crowding(ctx: &Ctx) -> Vec<Diagnostic> {
             );
         }
     }
-    out
 }
 
 fn end_segment(l: &LineGeom, end: &str) -> usize {

@@ -2,13 +2,13 @@ use kashika_diag::Diagnostic;
 use kashika_geom::{Rect, TOLERANCE, boundary_nearest};
 
 use crate::ctx::{Ctx, anchor_text, arr, fmt_num, fmt_pt, line_el, shape_el};
+use crate::sink::Sink;
 
 /// How close a literal endpoint must be to an outline to look like a missed anchor.
 const SNAP: f64 = 8.0;
 
 /// `endpoint-off-edge`: a literal endpoint is within 8px of a shape outline but not on it.
-pub fn endpoint_off_edge(ctx: &Ctx) -> Vec<Diagnostic> {
-    let mut out = Vec::new();
+pub fn endpoint_off_edge(ctx: &Ctx, out: &mut Sink) {
     for l in &ctx.lines {
         let ends = [
             (l.start, l.line.start_literal, "starts", 0),
@@ -56,5 +56,4 @@ pub fn endpoint_off_edge(ctx: &Ctx) -> Vec<Diagnostic> {
             );
         }
     }
-    out
 }

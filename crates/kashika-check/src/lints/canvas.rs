@@ -6,16 +6,16 @@ use crate::ctx::{
     Ctx, describe_overflow, fmt_num, junction_el, kind_name, line_bbox, line_el, overflow,
     overflow_fact, shape_el, text_el, text_id,
 };
+use crate::sink::Sink;
 use crate::text_box::{below_box, label_box, text_box};
 
 /// `out-of-canvas`: an element extends beyond the diagram size. Strokes and markers are ignored.
-pub fn out_of_canvas(ctx: &Ctx) -> Vec<Diagnostic> {
+pub fn out_of_canvas(ctx: &Ctx, out: &mut Sink) {
     let (w, h) = ctx.scene.size;
     if w <= 0.0 || h <= 0.0 {
-        return Vec::new();
+        return;
     }
     let canvas = Rect::new(0.0, 0.0, w, h);
-    let mut out = Vec::new();
     let mut check = |what: String, el: Element, span: Span, extent: Rect| {
         let over = overflow(canvas, extent);
         if over.is_empty() {
@@ -106,5 +106,4 @@ pub fn out_of_canvas(ctx: &Ctx) -> Vec<Diagnostic> {
             );
         }
     }
-    out
 }

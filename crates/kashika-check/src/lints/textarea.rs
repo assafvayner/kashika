@@ -4,11 +4,11 @@ use kashika_model::TextRole;
 use crate::ctx::{
     Ctx, bbox, describe_overflow, fmt_num, kind_name, overflow, overflow_fact, shape_el,
 };
+use crate::sink::Sink;
 
 /// `text-outside-shape`: an absolute block item (`at` in the box-local frame) lies outside
 /// its shape's text area, or the band under a `text-area=below` shape.
-pub fn text_outside_shape(ctx: &Ctx) -> Vec<Diagnostic> {
-    let mut out = Vec::new();
+pub fn text_outside_shape(ctx: &Ctx, out: &mut Sink) {
     for s in &ctx.scene.shapes {
         let area = s.text_area;
         for item in s.text.iter().filter(|t| t.role == TextRole::Absolute) {
@@ -42,5 +42,4 @@ pub fn text_outside_shape(ctx: &Ctx) -> Vec<Diagnostic> {
             );
         }
     }
-    out
 }
