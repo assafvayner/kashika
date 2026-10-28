@@ -1,5 +1,6 @@
 use kashika_diag::{Diagnostic, Element, Span};
 use kashika_geom::Rect;
+use kashika_model::Shape;
 
 use crate::ctx::{
     Ctx, describe_overflow, fmt_num, junction_el, kind_name, line_bbox, line_el, overflow,
@@ -40,7 +41,24 @@ pub fn out_of_canvas(ctx: &Ctx) -> Vec<Diagnostic> {
             )),
         );
     };
+    let escapes = |s: &Shape| !overflow(canvas, s.rect).is_empty();
+    let inside_escaping_group = |s: &Shape| {
+        let mut parent = s.parent.as_deref();
+        while let Some(id) = parent {
+            let Some(p) = ctx.scene.shapes.iter().find(|x| x.id == id) else {
+                return false;
+            };
+            if escapes(p) {
+                return true;
+            }
+            parent = p.parent.as_deref();
+        }
+        false
+    };
     for s in &ctx.scene.shapes {
+        if inside_escaping_group(s) {
+            continue;
+        }
         check(
             format!("{} '{}'", kind_name(s), s.id),
             shape_el(s),

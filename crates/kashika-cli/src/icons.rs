@@ -6,11 +6,13 @@ use serde::Serialize;
 
 use crate::Format;
 
+pub const SCHEMA: &str = "kashika.icons/1";
+
 #[derive(Args)]
 pub struct IconsArgs {
     /// Directories to scan (default: the KASHIKA_ICON_PATH entries)
     dirs: Vec<PathBuf>,
-    /// Only list entries whose name or path contains this term
+    /// Only list entries whose name or path contains this term; exits 1 when nothing matches
     #[arg(long)]
     search: Option<String>,
     #[arg(long, value_enum, default_value_t = Format::Text)]
@@ -23,6 +25,13 @@ pub fn run(a: &IconsArgs) -> std::process::ExitCode {
     } else {
         a.dirs.clone()
     };
+    if let Some(d) = dirs.iter().find(|d| !d.is_dir()) {
+        return crate::tool_error(
+            a.format,
+            SCHEMA,
+            &format!("{} is not a directory", d.display()),
+        );
+    }
     let entries = list(&dirs, a.search.as_deref());
     print!(
         "{}",
@@ -31,7 +40,16 @@ pub fn run(a: &IconsArgs) -> std::process::ExitCode {
             Format::Json => json(&entries),
         }
     );
-    std::process::ExitCode::SUCCESS
+    match (&a.search, entries.is_empty()) {
+        (Some(term), true) => {
+            eprintln!(
+                "kashika: no icons or shapes match `{}`",
+                crate::term::line(term)
+            );
+            std::process::ExitCode::from(1)
+        }
+        _ => std::process::ExitCode::SUCCESS,
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -81,9 +99,12 @@ fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
         if e.file_name().to_string_lossy().starts_with('.') {
             continue;
         }
-        if p.is_dir() {
+        let Ok(kind) = e.file_type() else {
+            continue;
+        };
+        if kind.is_dir() {
             walk(&p, out);
-        } else {
+        } else if !kind.is_symlink() || p.is_file() {
             out.push(p);
         }
     }
@@ -154,6 +175,6 @@ pub fn text(entries: &[Entry]) -> String {
 pub fn json(entries: &[Entry]) -> String {
     format!(
         "{}\n",
-        serde_json::json!({ "schema": "kashika.icons/1", "icons": entries })
+        serde_json::json!({ "schema": SCHEMA, "icons": entries })
     )
 }

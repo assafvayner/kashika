@@ -156,7 +156,14 @@ struct Corridors {
 }
 
 pub fn build(name: &str, src: &str, scene: &Scene, diags: &[Diagnostic], req: &Request) -> Inspect {
-    let keep = |id: &str| req.ids.is_empty() || req.ids.iter().any(|i| i == id);
+    let corridors_only = req.ids.is_empty() && req.corridors.is_some();
+    let keep = |id: &str| {
+        if req.ids.is_empty() {
+            !corridors_only
+        } else {
+            req.ids.iter().any(|i| i == id)
+        }
+    };
     let errors = diags
         .iter()
         .filter(|d| d.severity == Severity::Error)
@@ -273,7 +280,7 @@ pub fn build(name: &str, src: &str, scene: &Scene, diags: &[Diagnostic], req: &R
         let ctx = Ctx::new(scene);
         find_ports(&ctx)
             .into_iter()
-            .filter(|x| keep(&x.shape) || keep(&x.line))
+            .filter(|x| req.ids.is_empty() || keep(&x.shape) || keep(&x.line))
             .map(|x| PortInfo {
                 shape: x.shape,
                 side: x.side,

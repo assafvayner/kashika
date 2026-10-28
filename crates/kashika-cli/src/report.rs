@@ -17,6 +17,7 @@ pub struct Output {
 pub struct Opts<'a> {
     pub max: usize,
     pub show_suppressed: bool,
+    pub summary: bool,
     pub metrics: Option<Metrics>,
     /// The scene the diagnostics' deferred help is resolved against.
     pub scene: Option<&'a Scene>,
@@ -39,6 +40,20 @@ pub fn counts(diags: &[Diagnostic]) -> Counts {
         warns: diags.len() - errors - suppressed,
         suppressed,
     }
+}
+
+/// Per code: how many findings are active and how many are suppressed.
+pub fn by_code(diags: &[Diagnostic]) -> BTreeMap<&'static str, (usize, usize)> {
+    let mut m: BTreeMap<&'static str, (usize, usize)> = BTreeMap::new();
+    for d in diags {
+        let e = m.entry(d.code).or_default();
+        if d.suppressed {
+            e.1 += 1;
+        } else {
+            e.0 += 1;
+        }
+    }
+    m
 }
 
 pub fn plural(n: usize, word: &str) -> String {
@@ -143,11 +158,13 @@ struct Selection {
     plan: Vec<Show>,
 }
 
-/// Picks what to show and fills in the deferred help of the diagnostics that are printed.
+/// Picks what to show, errors first and each severity in source order, and fills in the
+/// deferred help of the diagnostics that are printed.
 fn select(diags: &mut [Diagnostic], opts: &Opts, collapse: bool) -> Selection {
-    let idx: Vec<usize> = (0..diags.len())
+    let mut idx: Vec<usize> = (0..diags.len())
         .filter(|&i| opts.show_suppressed || !diags[i].suppressed)
         .collect();
+    idx.sort_by_key(|&i| diags[i].severity != Severity::Error);
     let shown: Vec<&Diagnostic> = idx.iter().map(|&i| &diags[i]).collect();
     let keys: Vec<Key> = shown.iter().map(|d| key(d)).collect();
     let plan = plan(&shown, &keys, opts.max, collapse);
@@ -239,6 +256,16 @@ pub fn text(
     if overflow > 0 {
         out.push_str(&format!("... and {overflow} more\n"));
     }
+    if opts.summary {
+        out.push_str("by code:\n");
+        for (code, (active, suppressed)) in by_code(diags) {
+            out.push_str(&format!("  {code}: {active}"));
+            if suppressed > 0 {
+                out.push_str(&format!(" ({suppressed} suppressed)"));
+            }
+            out.push('\n');
+        }
+    }
     let c = counts(diags);
     out.push_str(&format!(
         "{}, {}",
@@ -287,6 +314,10 @@ pub fn json(
         "input": { "name": name, "sha256": format!("{:x}", Sha256::digest(src.as_bytes())) },
         "output": output.map(|o| serde_json::json!({ "path": o.path, "written": o.written })),
         "counts": { "error": c.errors, "warn": c.warns, "suppressed": c.suppressed },
+        "by_code": by_code(diags)
+            .into_iter()
+            .map(|(k, (active, suppressed))| (k, serde_json::json!({ "active": active, "suppressed": suppressed })))
+            .collect::<BTreeMap<_, _>>(),
         "truncated": listed.len() < sel.idx.len(),
         "metrics": opts.metrics,
         "diagnostics": listed,

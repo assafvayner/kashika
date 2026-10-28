@@ -18,6 +18,8 @@ const STYLES: &str = include_str!("../ref/styles.md");
 const METRICS: &str = include_str!("../ref/metrics.md");
 const CLI: &str = include_str!("../ref/cli.md");
 
+pub const SCHEMA: &str = "kashika.ref/1";
+
 pub const TOPICS: &[&str] = &[
     "syntax", "anchors", "paths", "shapes", "styles", "metrics", "lints", "examples", "cli",
 ];
@@ -108,11 +110,15 @@ fn unknown(topic: &str) -> String {
     let codes: Vec<&str> = rows().map(|r| r[0].trim_matches('`')).collect();
     let mut msg = format!("unknown ref topic `{topic}`");
     let all = TOPICS.iter().copied().chain(codes.iter().copied());
-    if let Some(s) = did_you_mean(topic, all) {
-        msg.push_str(&format!("; did you mean `{s}`?"));
-    }
+    let sep = match did_you_mean(topic, all) {
+        Some(s) => {
+            msg.push_str(&format!("; did you mean `{s}`?"));
+            " "
+        }
+        None => "; ",
+    };
     msg.push_str(&format!(
-        " Topics: {}, or a diagnostic code",
+        "{sep}Topics: {}, or a diagnostic code",
         TOPICS.join(", ")
     ));
     msg
@@ -121,12 +127,12 @@ fn unknown(topic: &str) -> String {
 pub fn run(topic: Option<&str>, json: bool) -> ExitCode {
     let format = if json { Format::Json } else { Format::Text };
     match page(topic) {
-        Err(msg) => crate::tool_error(format, &msg),
+        Err(msg) => crate::tool_error(format, SCHEMA, &msg),
         Ok(md) if json => {
             println!(
                 "{}",
                 serde_json::json!({
-                    "schema": "kashika.ref/1",
+                    "schema": SCHEMA,
                     "tool": env!("CARGO_PKG_VERSION"),
                     "topic": topic,
                     "topics": TOPICS,

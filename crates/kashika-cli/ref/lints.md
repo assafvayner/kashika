@@ -34,7 +34,7 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `group-transit` | warn | a line crosses a group it doesn't connect to | route around the group |
 | `low-contrast` | warn | text contrast below 3:1 | change the color or fill |
 | `label-collision` | warn | a label or text overlaps another element, or a label its own line's marker | move it; the help lists clear `t` |
-| `out-of-canvas` | warn | an element extends past `size` | move it or grow `size` |
+| `out-of-canvas` | warn | an element extends past `size` (children of a group that itself extends past it aren't reported again) | move it or grow `size` |
 | `off-grid` | warn | a literal is not a multiple of `grid` | round it |
 | `block-reducible` | warn | a block of 1–2 items in one style | use the rewrite in the help line |
 | `text-outside-shape` | warn | an absolute block item outside the text area | move it inside the range in the help line |

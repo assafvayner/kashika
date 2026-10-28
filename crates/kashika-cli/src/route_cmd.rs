@@ -1,10 +1,11 @@
-use std::io::Read;
 use std::process::ExitCode;
 
 use clap::Args;
 use kashika_route::{Error, Request, Style, Suggestion, num};
 
 use crate::{Format, term};
+
+pub const SCHEMA: &str = "kashika.route/1";
 
 #[derive(Args)]
 pub struct RouteArgs {
@@ -18,10 +19,10 @@ pub struct RouteArgs {
     #[arg(long)]
     line: Option<String>,
     /// Corner radius for the `arc` style
-    #[arg(long, default_value_t = 8.0)]
+    #[arg(long, default_value_t = 8.0, allow_hyphen_values = true, value_parser = crate::non_negative)]
     radius: f64,
     /// Number of candidates to print
-    #[arg(long, default_value_t = 3)]
+    #[arg(long, default_value_t = 3, value_parser = crate::at_least_one)]
     max: usize,
     #[arg(long, value_enum, default_value_t = Format::Text)]
     format: Format,
@@ -34,9 +35,9 @@ pub struct RouteArgs {
 }
 
 pub fn run(a: &RouteArgs) -> ExitCode {
-    let (name, src) = match read(&a.file, a.stdin_name.as_deref()) {
+    let (name, src) = match crate::read_input(&a.file, a.stdin_name.as_deref()) {
         Ok(v) => v,
-        Err(msg) => return crate::tool_error(a.format, &msg),
+        Err(msg) => return crate::tool_error(a.format, SCHEMA, &msg),
     };
     let mut rest: Vec<&str> = a.rest.iter().map(String::as_str).collect();
     let style = match rest.last().copied() {
@@ -55,6 +56,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
         _ => {
             return crate::tool_error(
                 a.format,
+                SCHEMA,
                 "expected `<from> <to>` and an optional style (corner, arc, bezier)",
             );
         }
@@ -70,13 +72,13 @@ pub fn run(a: &RouteArgs) -> ExitCode {
         opts: &crate::options(&a.file, a.allow_path),
     };
     match kashika_route::suggest(&req) {
-        Err(Error::Usage(msg)) => crate::tool_error(a.format, &msg),
+        Err(Error::Usage(msg)) => crate::tool_error(a.format, SCHEMA, &msg),
         Err(Error::Diagnostics(diags)) => {
             match a.format {
                 Format::Json => println!(
                     "{}",
                     serde_json::json!({
-                        "schema": "kashika.route/1",
+                        "schema": SCHEMA,
                         "tool": env!("CARGO_PKG_VERSION"),
                         "input": { "name": name },
                         "diagnostics": diags,
@@ -99,7 +101,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
                 Format::Json => println!(
                     "{}",
                     serde_json::json!({
-                        "schema": "kashika.route/1",
+                        "schema": SCHEMA,
                         "tool": env!("CARGO_PKG_VERSION"),
                         "input": { "name": name },
                         "from": s.from,
@@ -113,19 +115,6 @@ pub fn run(a: &RouteArgs) -> ExitCode {
             }
             ExitCode::from(u8::from(s.candidates.is_empty()))
         }
-    }
-}
-
-fn read(file: &str, stdin_name: Option<&str>) -> Result<(String, String), String> {
-    if file == "-" {
-        let mut s = String::new();
-        std::io::stdin()
-            .read_to_string(&mut s)
-            .map_err(|e| format!("cannot read stdin: {e}"))?;
-        Ok((stdin_name.unwrap_or("<stdin>").to_string(), s))
-    } else {
-        let s = std::fs::read_to_string(file).map_err(|e| format!("cannot read {file}: {e}"))?;
-        Ok((file.to_string(), s))
     }
 }
 

@@ -22,7 +22,8 @@ use kashika_model::Scene;
 #[command(
     name = "kashika",
     version,
-    about = "Diagrams you place exactly; kashika checks the geometry"
+    about = "Diagrams you place exactly; kashika checks the geometry",
+    after_help = "Exit codes: 0 clean; 1 warnings (check/render with --fail-on warn), `fmt --check` with changes, or `route`/`icons --search` with no result; 2 errors; 3 usage or I/O failure."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -37,7 +38,7 @@ enum Cmd {
     Render {
         #[command(flatten)]
         common: Common,
-        /// Output file (.svg, .png, .jpg, .jpeg or .webp)
+        /// Output file (.svg, .png, .jpg, .jpeg or .webp); an existing file is left untouched when there are errors, unless --force
         #[arg(short, long)]
         output: PathBuf,
         /// Write output even when there are errors
@@ -62,26 +63,42 @@ enum Cmd {
     /// List bundled icons and the importable icons and shapes in directories
     Icons(icons::IconsArgs),
     /// Print the resolved geometry: shapes, anchors, lines, labels and the placement graph
-    Inspect {
-        #[command(flatten)]
-        common: Common,
-        /// Only show these ids
-        ids: Vec<String>,
-        /// List the endpoints on each shape side and the lines that use them
-        #[arg(long)]
-        ports: bool,
-        /// Free horizontal and vertical intervals inside the rectangle x1,y1,x2,y2
-        #[arg(long, value_name = "X1,Y1,X2,Y2", allow_hyphen_values = true)]
-        corridors: Option<String>,
-    },
+    Inspect(InspectArgs),
     /// Rewrite a .kash file in canonical layout (whitespace only)
     Fmt {
-        /// The .kash file to format
+        /// The .kash file to format, or `-` to format stdin to stdout
         file: String,
         /// Exit 1 if the file is not formatted, without rewriting it
         #[arg(long)]
         check: bool,
     },
+}
+
+#[derive(Args)]
+struct InspectArgs {
+    /// Input .kash file, or `-` for stdin
+    file: String,
+    /// Only show these ids
+    ids: Vec<String>,
+    #[arg(long, value_enum, default_value_t = Format::Text)]
+    format: Format,
+    /// File name to report for stdin input
+    #[arg(long)]
+    stdin_name: Option<String>,
+    /// Allow file references outside the input file's directory
+    #[arg(long)]
+    allow_path: bool,
+    /// List the endpoints on each shape side and the lines that use them
+    #[arg(long)]
+    ports: bool,
+    /// Free horizontal and vertical intervals inside the rectangle x1,y1,x2,y2; without ids, prints only these
+    #[arg(
+        long,
+        value_name = "X1,Y1,X2,Y2",
+        allow_hyphen_values = true,
+        value_parser = parse_rect
+    )]
+    corridors: Option<Rect>,
 }
 
 struct RenderOpts {
@@ -110,9 +127,28 @@ struct Common {
     /// Also list suppressed findings
     #[arg(long)]
     show_suppressed: bool,
+    /// Also print the number of findings per diagnostic code
+    #[arg(long)]
+    summary: bool,
     /// Only report warnings that involve these ids (comma-separated); errors are always reported
     #[arg(long, value_delimiter = ',')]
     focus: Vec<String>,
+}
+
+impl Common {
+    fn report_opts<'a>(
+        &self,
+        metrics: Option<kashika_check::Metrics>,
+        scene: Option<&'a Scene>,
+    ) -> report::Opts<'a> {
+        report::Opts {
+            max: self.max,
+            show_suppressed: self.show_suppressed,
+            summary: self.summary,
+            metrics,
+            scene,
+        }
+    }
 }
 
 pub(crate) fn icon_path() -> Vec<PathBuf> {
@@ -167,12 +203,7 @@ fn main() -> ExitCode {
                 debug,
             }),
         ),
-        Cmd::Inspect {
-            common,
-            ids,
-            ports,
-            corridors,
-        } => run_inspect(&common, &ids, ports, corridors.as_deref()),
+        Cmd::Inspect(args) => run_inspect(&args),
         Cmd::Route(args) => route_cmd::run(&args),
         Cmd::Measure(args) => measure::run(&args),
         Cmd::Icons(args) => icons::run(&args),
@@ -181,27 +212,22 @@ fn main() -> ExitCode {
 }
 
 fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
-    let (name, src) = match read_input(c) {
+    let fail = |msg: &str| tool_error(c.format, report::SCHEMA, msg);
+    let (name, src) = match read_input(&c.file, c.stdin_name.as_deref()) {
         Ok(v) => v,
-        Err(msg) => return tool_error(c.format, &msg),
+        Err(msg) => return fail(&msg),
     };
     if let Some(r) = &render {
         if output::kind(&r.output).is_none() {
-            return tool_error(
-                c.format,
-                &format!("output must end in {}", output::SUPPORTED),
-            );
+            return fail(&format!("output must end in {}", output::SUPPORTED));
         }
     }
     let opts = options(&c.file, c.allow_path);
     if let Some(diags) = kashika_model::compile_library_with(&src, &opts) {
         if render.is_some() {
-            return tool_error(
-                c.format,
-                &format!(
-                    "{name} is a library (no `diagram` statement); render a diagram that imports it"
-                ),
-            );
+            return fail(&format!(
+                "{name} is a library (no `diagram` statement); render a diagram that imports it"
+            ));
         }
         return report_library(c, &name, &src, diags);
     }
@@ -210,12 +236,10 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
     kashika_diag::sort(&mut diags);
     let metrics = kashika_check::metrics(&scene, &diags);
     if !c.focus.is_empty() {
-        if let Err(msg) = known_ids(&scene, &c.focus, "--focus") {
-            return tool_error(c.format, &msg);
+        if let Err(msg) = known_ids(&scene_ids(&scene), &c.focus, "--focus") {
+            return fail(&msg);
         }
-        diags.retain(|d| {
-            d.severity == Severity::Error || d.elements.iter().any(|e| c.focus.contains(&e.id))
-        });
+        retain_focus(&mut diags, &c.focus);
     }
     let report::Counts { errors, warns, .. } = report::counts(&diags);
     let output = match &render {
@@ -236,17 +260,11 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
                 let bytes = match output::encode(kind, svg) {
                     Ok(b) => b,
                     Err(e) => {
-                        return tool_error(
-                            c.format,
-                            &format!("cannot render {}: {e}", r.output.display()),
-                        );
+                        return fail(&format!("cannot render {}: {e}", r.output.display()));
                     }
                 };
                 if let Err(e) = write_atomic(&r.output, &bytes) {
-                    return tool_error(
-                        c.format,
-                        &format!("cannot write {}: {e}", r.output.display()),
-                    );
+                    return fail(&format!("cannot write {}: {e}", r.output.display()));
                 }
             }
             Some(report::Output {
@@ -255,12 +273,7 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
             })
         }
     };
-    let opts = report::Opts {
-        max: c.max,
-        show_suppressed: c.show_suppressed,
-        metrics: Some(metrics),
-        scene: Some(&scene),
-    };
+    let opts = c.report_opts(Some(metrics), Some(&scene));
     let report = match c.format {
         Format::Text => report::text(&name, &src, &mut diags, &opts, output.as_ref()),
         Format::Json => report::json(&name, &src, &mut diags, &opts, output.as_ref()),
@@ -269,18 +282,34 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
     ExitCode::from(exit_code(c.fail_on, errors, warns))
 }
 
+fn retain_focus(diags: &mut Vec<kashika_diag::Diagnostic>, focus: &[String]) {
+    diags.retain(|d| {
+        d.severity == Severity::Error || d.elements.iter().any(|e| focus.contains(&e.id))
+    });
+}
+
 fn report_library(
     c: &Common,
     name: &str,
     src: &str,
     mut diags: Vec<kashika_diag::Diagnostic>,
 ) -> ExitCode {
-    let opts = report::Opts {
-        max: c.max,
-        show_suppressed: c.show_suppressed,
-        metrics: None,
-        scene: None,
-    };
+    if !c.focus.is_empty() {
+        let (file, _) = kashika_syntax::parse(src);
+        let defined: Vec<String> = file
+            .stmts
+            .into_iter()
+            .filter_map(|s| match s {
+                kashika_syntax::ast::Stmt::Shape(s) => Some(s.name.name),
+                _ => None,
+            })
+            .collect();
+        if let Err(msg) = known_ids(&defined, &c.focus, "--focus") {
+            return tool_error(c.format, report::SCHEMA, &msg);
+        }
+        retain_focus(&mut diags, &c.focus);
+    }
+    let opts = c.report_opts(None, None);
     let report = match c.format {
         Format::Text => report::text(name, src, &mut diags, &opts, None),
         Format::Json => report::json(name, src, &mut diags, &opts, None),
@@ -290,49 +319,65 @@ fn report_library(
     ExitCode::from(exit_code(c.fail_on, errors, warns))
 }
 
-fn run_inspect(c: &Common, ids: &[String], ports: bool, corridors: Option<&str>) -> ExitCode {
-    let (name, src) = match read_input(c) {
+fn run_inspect(a: &InspectArgs) -> ExitCode {
+    let fail = |msg: &str| tool_error(a.format, inspect::SCHEMA, msg);
+    let (name, src) = match read_input(&a.file, a.stdin_name.as_deref()) {
         Ok(v) => v,
-        Err(msg) => return tool_error(c.format, &msg),
+        Err(msg) => return fail(&msg),
     };
-    let (scene, mut diags) = kashika_model::compile_with(&src, &options(&c.file, c.allow_path));
+    let (scene, mut diags) = kashika_model::compile_with(&src, &options(&a.file, a.allow_path));
     diags.extend(kashika_check::check_deferred(&scene));
     diags.retain(|d| !d.suppressed);
-    if let Err(msg) = known_ids(&scene, ids, "inspect") {
-        return tool_error(c.format, &msg);
+    if let Err(msg) = known_ids(&scene_ids(&scene), &a.ids, "inspect") {
+        return fail(&msg);
     }
-    let corridors = match corridors.map(parse_rect).transpose() {
-        Ok(r) => r,
-        Err(msg) => return tool_error(c.format, &msg),
-    };
     let req = inspect::Request {
-        ids,
-        ports,
-        corridors,
+        ids: &a.ids,
+        ports: a.ports,
+        corridors: a.corridors,
     };
     let data = inspect::build(&name, &src, &scene, &diags, &req);
-    match c.format {
+    match a.format {
         Format::Text => print!("{}", term::text(&inspect::text(&data))),
-        Format::Json => println!("{}", serde_json::to_string(&data).unwrap_or_default()),
+        Format::Json => match serde_json::to_string(&data) {
+            Ok(json) => println!("{json}"),
+            Err(e) => return fail(&format!("cannot serialize inspect output: {e}")),
+        },
     }
     ExitCode::from(0)
 }
 
 fn parse_rect(s: &str) -> Result<Rect, String> {
-    let bad = || format!("--corridors expects x1,y1,x2,y2, got `{s}`");
+    let bad = || format!("expected finite numbers x1,y1,x2,y2, got `{s}`");
     let v: Vec<f64> = s
         .split(',')
         .map(|x| x.trim().parse::<f64>())
         .collect::<Result<_, _>>()
         .map_err(|_| bad())?;
     match v.as_slice() {
-        &[x1, y1, x2, y2] => Ok(Rect::new(
+        &[x1, y1, x2, y2] if v.iter().all(|n| n.is_finite()) => Ok(Rect::new(
             x1.min(x2),
             y1.min(y2),
             (x2 - x1).abs(),
             (y2 - y1).abs(),
         )),
         _ => Err(bad()),
+    }
+}
+
+pub(crate) fn non_negative(s: &str) -> Result<f64, String> {
+    let v: f64 = s.parse().map_err(|_| format!("`{s}` is not a number"))?;
+    if v.is_finite() && v >= 0.0 {
+        Ok(v)
+    } else {
+        Err(format!("`{s}` must be a finite number, 0 or more"))
+    }
+}
+
+pub(crate) fn at_least_one(s: &str) -> Result<usize, String> {
+    match s.parse::<usize>() {
+        Ok(n) if n >= 1 => Ok(n),
+        _ => Err(format!("`{s}` must be a whole number, 1 or more")),
     }
 }
 
@@ -348,8 +393,7 @@ fn scene_ids(scene: &Scene) -> Vec<String> {
         .collect()
 }
 
-fn known_ids(scene: &Scene, ids: &[String], what: &str) -> Result<(), String> {
-    let all = scene_ids(scene);
+fn known_ids(all: &[String], ids: &[String], what: &str) -> Result<(), String> {
     for id in ids {
         if !all.contains(id) {
             let hint = did_you_mean(id, all.iter().map(String::as_str))
@@ -361,17 +405,16 @@ fn known_ids(scene: &Scene, ids: &[String], what: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn read_input(c: &Common) -> Result<(String, String), String> {
-    if c.file == "-" {
+pub(crate) fn read_input(file: &str, stdin_name: Option<&str>) -> Result<(String, String), String> {
+    if file == "-" {
         let mut s = String::new();
         std::io::stdin()
             .read_to_string(&mut s)
             .map_err(|e| format!("cannot read stdin: {e}"))?;
-        Ok((c.stdin_name.clone().unwrap_or_else(|| "<stdin>".into()), s))
+        Ok((stdin_name.unwrap_or("<stdin>").to_string(), s))
     } else {
-        let s =
-            std::fs::read_to_string(&c.file).map_err(|e| format!("cannot read {}: {e}", c.file))?;
-        Ok((c.file.clone(), s))
+        let s = std::fs::read_to_string(file).map_err(|e| format!("cannot read {file}: {e}"))?;
+        Ok((file.to_string(), s))
     }
 }
 
@@ -430,12 +473,12 @@ fn exit_code(fail_on: FailOn, errors: usize, warns: usize) -> u8 {
     }
 }
 
-fn tool_error(format: Format, msg: &str) -> ExitCode {
+pub(crate) fn tool_error(format: Format, schema: &str, msg: &str) -> ExitCode {
     match format {
         Format::Text => eprintln!("kashika: {}", term::text(msg)),
         Format::Json => println!(
             "{}",
-            serde_json::json!({ "schema": report::SCHEMA, "tool": env!("CARGO_PKG_VERSION"), "tool_error": msg })
+            serde_json::json!({ "schema": schema, "tool": env!("CARGO_PKG_VERSION"), "tool_error": msg })
         ),
     }
     ExitCode::from(3)

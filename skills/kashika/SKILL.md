@@ -11,12 +11,12 @@ Kashika has **no auto-layout**. You decide every box position and every line pat
 
 1. Sketch the layout as a grid first: rows/columns, ~60–80px gaps, and lanes for the lines.
 2. Write the `.kash` file, sizing every box from its text (see Sizing). `kashika ref` prints the full reference; `kashika ref <topic>` takes `syntax`, `anchors`, `paths`, `shapes`, `styles`, `metrics`, `lints`, `examples` or `cli`, and `kashika ref <code>` explains a diagnostic (`kashika ref through`).
-3. `kashika check file.kash --format json`. Fix every error first, starting with the first, then every warning. The `help` entries name the fix: did-you-mean names, required sizes, clear lanes (`free`), `label@t` positions, exact anchors.
-4. `--max N` (default 50) caps the diagnostics listed, but every error is always listed; only warnings are cut (`truncated` in JSON). `--focus api,db` limits warnings to those ids; `kashika check - --stdin-name draft.kash < draft` checks stdin.
-5. When a fix needs coordinates, `kashika inspect file.kash <ids> --ports` shows absolute boxes, anchors, line vertices and taken sides; `--corridors x1,y1,x2,y2` lists free lanes in a region.
+3. `kashika check file.kash --format json`. Errors are listed before warnings: fix every error first, starting with the first, then every warning. The `help` entries name the fix: did-you-mean names, required sizes, clear lanes (`free`), `label@t` positions, exact anchors.
+4. `--max N` (default 50) caps the diagnostics listed, but every error is always reported (in text, repeats of the same error are collapsed after three with a count); only warnings are cut (`truncated` in JSON). `--summary` adds per-code counts (JSON always has `by_code`), useful when many findings are suppressed. `--focus api,db` limits warnings to those ids; `kashika check - --stdin-name draft.kash < draft` checks stdin.
+5. When a fix needs coordinates, `kashika inspect file.kash <ids> --ports` shows absolute boxes, anchors, line vertices and taken sides; `--corridors x1,y1,x2,y2` lists free lanes in a region (alone, it prints only the lanes).
 6. `kashika route file.kash api.right db.left@0.3` suggests ready-to-paste `line` statements ranked by the `cross`/`near` findings `check` would report (`arc`, `bezier`, `--line <id>` to reroute; without it an existing line between the same shapes is avoided, and a `hint:` names it). It never edits the file; it tries up to 4 elbows (detours along free lanes), and if nothing is clear, hand-route along a lane from `--corridors`.
 7. If a warning is intentional, suppress it narrowly: `allow=cross:other_line reason="..."` on the line or shape. Prefer `code:id`; for a crossing, name the other line. Several codes share one reason: `allow=overlap:b,overlap:c reason="..."`. On the `diagram` line, `allow=<code>,...` silences a code everywhere. Suppressed findings still count in the summary.
-8. `kashika fmt file.kash` normalizes layout (whitespace only; comments are kept). When the check is clean, `kashika render file.kash -o file.png` (or `.svg`) and look at it.
+8. `kashika fmt file.kash` normalizes layout (whitespace only; comments are kept; `fmt -` formats stdin to stdout). When the check is clean, `kashika render file.kash -o file.png` (or `.svg`) and look at it.
 
 ## Rules people get wrong
 
@@ -37,7 +37,7 @@ Kashika has **no auto-layout**. You decide every box position and every line pat
 
 ## Sizing
 
-- `kashika measure "Payments API"` prints the exact width and height of one text argument (quote it; `\n` for more lines). Add `--size N`, and `--weight bold` for text in a bold style; `**` markup is applied as in a label.
+- `kashika measure "Payments API"` prints the exact width and height of a text argument (quote it; `\n` for more lines; several arguments give one result each). Add `--size N`, and `--weight bold` for text in a bold style; `**` markup is applied as in a label.
 - A line is `1.25 × size` tall (17.5px at the default 14). A sublabel adds a `0.8 × size` line (`--size 11.2`) after `gap`. A text block is as wide as its widest item.
 - Padding defaults to 8 per side, so for `rect`/`rounded` add 16 to each text dimension (`Payments API` is 91.64×17.5, so the box is at least 108×34). Other shapes put the text in a fraction of the box (`diamond` 0.5 × 0.5, `cloud` 0.6 × 0.4; `kashika ref shapes`): add the 16, then divide by the fraction. `icon=` adds `icon-size + padding` (32px) on the icon's side.
 - Easiest for any shape: write a guess, then use the size from the `label-overflow` help, which accounts for shape, icon and sublabel.

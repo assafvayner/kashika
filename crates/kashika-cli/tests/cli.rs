@@ -647,8 +647,8 @@ fn max_never_hides_errors_in_json() {
     assert_eq!(diags.len(), 3);
     assert_eq!(v["truncated"], true);
     assert_eq!(v["counts"]["error"], 1);
-    assert_eq!(diags.last().unwrap()["severity"], "error");
-    assert_eq!(diags[0]["code"], "out-of-canvas");
+    assert_eq!(diags[0]["severity"], "error");
+    assert_eq!(diags[1]["code"], "out-of-canvas");
 
     let out = kashika()
         .args(["check", "-", "--format", "json", "--max", "0"])
@@ -728,4 +728,192 @@ fn tool_errors_escape_control_characters() {
         .assert()
         .code(3)
         .stderr(predicate::str::contains("missing\\u{1b}]0;x\\u{7}.kash"));
+}
+
+fn run_ok(args: &[&str], stdin: &str) -> (i32, String, String) {
+    let out = kashika().args(args).write_stdin(stdin).output().unwrap();
+    (
+        out.status.code().unwrap(),
+        String::from_utf8(out.stdout).unwrap(),
+        String::from_utf8(out.stderr).unwrap(),
+    )
+}
+
+#[test]
+fn text_lists_errors_before_warnings() {
+    let (code, out, _) = run_ok(
+        &["check", "-", "--stdin-name", "w.kash"],
+        &warnings_then_error(2),
+    );
+    assert_eq!(code, 2);
+    let err = out.find("error[parse]").unwrap();
+    let warn = out.find("warn[out-of-canvas]").unwrap();
+    assert!(err < warn, "{out}");
+}
+
+#[test]
+fn summary_counts_per_code() {
+    let src = warnings_then_error(3);
+    let (_, out, _) = run_ok(&["check", "-", "--summary"], &src);
+    assert!(
+        out.contains("by code:\n  out-of-canvas: 3\n  parse: 1\n"),
+        "{out}"
+    );
+    let (_, out, _) = run_ok(&["check", "-", "--format", "json"], &src);
+    let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(v["by_code"]["out-of-canvas"]["active"], 3);
+    assert_eq!(v["by_code"]["parse"]["suppressed"], 0);
+}
+
+#[test]
+fn tool_error_schema_matches_the_command() {
+    let cases: [(&[&str], &str); 7] = [
+        (
+            &["check", "/nonexistent.kash", "--format", "json"],
+            "kashika.check/1",
+        ),
+        (
+            &["route", "/nonexistent.kash", "a", "b", "--format", "json"],
+            "kashika.route/1",
+        ),
+        (
+            &["inspect", "/nonexistent.kash", "--format", "json"],
+            "kashika.inspect/1",
+        ),
+        (&["ref", "nosuch", "--json"], "kashika.ref/1"),
+        (
+            &["measure", "x", "--size", "0", "--format", "json"],
+            "kashika.measure/1",
+        ),
+        (
+            &["icons", "/nonexistent-dir", "--format", "json"],
+            "kashika.icons/1",
+        ),
+        (
+            &[
+                "render",
+                "/nonexistent.kash",
+                "-o",
+                "o.svg",
+                "--format",
+                "json",
+            ],
+            "kashika.check/1",
+        ),
+    ];
+    for (args, schema) in cases {
+        let (code, out, _) = run_ok(args, "");
+        assert_eq!(code, 3, "{args:?}");
+        let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+        assert_eq!(v["schema"], schema, "{args:?}");
+        assert!(v["tool_error"].is_string(), "{args:?}");
+    }
+}
+
+#[test]
+fn inspect_rejects_check_flags() {
+    for flag in [["--fail-on", "never"], ["--max", "3"], ["--focus", "a"]] {
+        let mut args = vec!["inspect", "-"];
+        args.extend(flag);
+        assert_eq!(run_ok(&args, "").0, 3, "{flag:?}");
+    }
+}
+
+#[test]
+fn inspect_corridors_without_ids_prints_only_corridors() {
+    let (code, out, _) = run_ok(
+        &["inspect", "-", "--corridors", "0,0,800,600"],
+        "box a at (10,10) size (100,60)\n",
+    );
+    assert_eq!(code, 0);
+    assert!(out.starts_with("corridors "), "{out}");
+    assert!(!out.contains("box a"), "{out}");
+    let (_, out, _) = run_ok(
+        &["inspect", "-", "a", "--corridors", "0,0,800,600"],
+        "box a at (10,10) size (100,60)\n",
+    );
+    assert!(out.contains("box a"), "{out}");
+}
+
+#[test]
+fn numeric_arguments_are_validated() {
+    let src = "box a at (10,10) size (100,60)\n";
+    for args in [
+        vec!["inspect", "-", "--corridors", "0,0,nan,nan"],
+        vec!["inspect", "-", "--corridors", "0,0,1e999,5"],
+        vec!["route", "-", "a.right", "a.left", "--radius", "nan"],
+        vec!["route", "-", "a.right", "a.left", "--radius", "-3"],
+        vec!["route", "-", "a.right", "a.left", "--max", "0"],
+    ] {
+        let (code, _, err) = run_ok(&args, src);
+        assert_eq!(code, 3, "{args:?}");
+        assert!(!err.contains("-- -3"), "{err}");
+    }
+}
+
+#[test]
+fn fmt_reads_stdin_and_writes_stdout() {
+    let (code, out, _) = run_ok(&["fmt", "-"], "box a at (10,10)   size (100,60)\n");
+    assert_eq!(code, 0);
+    assert_eq!(out, "box a at (10,10) size (100,60)\n");
+    let (code, out, _) = run_ok(
+        &["fmt", "-", "--check"],
+        "box a at (10,10)   size (100,60)\n",
+    );
+    assert_eq!(code, 1);
+    assert!(out.contains("not formatted"), "{out}");
+    let (code, out, _) = run_ok(&["fmt", "-", "--check"], "box a at (10,10) size (100,60)\n");
+    assert_eq!((code, out.as_str()), (0, ""));
+    assert_eq!(run_ok(&["fmt", "-"], "box a at (\n").0, 2);
+}
+
+#[test]
+fn measure_takes_several_strings() {
+    let (code, out, _) = run_ok(&["measure", "a", "bb"], "");
+    assert_eq!(code, 0);
+    assert_eq!(out.lines().count(), 2, "{out}");
+    let (_, out, _) = run_ok(&["measure", "a", "bb", "--format", "json"], "");
+    let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(v["results"].as_array().unwrap().len(), 2);
+    assert_eq!(v["results"][1]["text"], "bb");
+    let (_, out, _) = run_ok(&["measure", "a", "--format", "json"], "");
+    let v: serde_json::Value = serde_json::from_str(&out).unwrap();
+    assert!(v["width"].is_number() && v.get("results").is_none());
+}
+
+#[test]
+fn icons_search_without_hits_and_bad_dir() {
+    let (code, out, err) = run_ok(&["icons", "--search", "zzzzqq"], "");
+    assert_eq!((code, out.as_str()), (1, ""));
+    assert!(err.contains("no icons or shapes match `zzzzqq`"), "{err}");
+    assert_eq!(run_ok(&["icons", "/nonexistent-dir"], "").0, 3);
+}
+
+#[cfg(unix)]
+#[test]
+fn icons_does_not_follow_symlinked_directories() {
+    let dir = std::env::temp_dir().join(format!("kashika-icons-loop-{}", std::process::id()));
+    std::fs::create_dir_all(dir.join("sub")).unwrap();
+    std::os::unix::fs::symlink(&dir, dir.join("sub/loop")).unwrap();
+    let (code, ..) = run_ok(&["icons", dir.to_str().unwrap()], "");
+    std::fs::remove_dir_all(&dir).unwrap();
+    assert_eq!(code, 0);
+}
+
+#[test]
+fn ref_unknown_topic_separates_the_topic_list() {
+    let (code, _, err) = run_ok(&["ref", "zzzzzz"], "");
+    assert_eq!(code, 3);
+    assert!(
+        err.contains("`zzzzzz`; Topics:") || err.contains("`zzzzzz`; topics:"),
+        "{err}"
+    );
+}
+
+#[test]
+fn library_validates_and_applies_focus() {
+    let lib = "shape pill {\n  path \"M0,0 L1,0 L1,1 Z\"\n}\n";
+    let (code, _, err) = run_ok(&["check", "-", "--focus", "nosuch"], lib);
+    assert_eq!(code, 3, "{err}");
+    assert!(err.contains("unknown id `nosuch`"), "{err}");
 }

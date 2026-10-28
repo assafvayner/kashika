@@ -279,7 +279,7 @@ These block output unless `--force` is given:
 | `text-outside-shape` | An absolute block item lies outside the shape's text area (§6), or outside the band under a `text-area=below` shape. The help line gives the text area in the box-local frame |
 | `image-distort` | `fit=stretch` changes an image's aspect ratio by more than 5% |
 | `label-collision` | A label or text box intersects a box, another label or text, a group title, or a line other than its own. A line label also must not cover its own line's markers (arrowheads, diamonds, dots); sitting on its own stroke is fine |
-| `out-of-canvas` | An element extends beyond the diagram size |
+| `out-of-canvas` | An element extends beyond the diagram size; children of a group that itself extends beyond it are not reported again |
 | `off-grid` | An authored literal is not a multiple of `grid` |
 
 ### Suppression
@@ -300,20 +300,22 @@ A clean check does not prove that arrows point the right way or that the right b
 kashika render  <file|-> -o <out.svg|out.png|out.jpg|out.jpeg|out.webp> [--force] [--debug]
 kashika check   <file|->
 kashika inspect <file|-> [ids...] [--ports] [--corridors <x1,y1,x2,y2>]
-kashika fmt     <file> [--check]
-kashika measure "<text>" [--size N] [--weight bold]
+kashika fmt     <file|-> [--check]            // `-` formats stdin to stdout
+kashika measure "<text>"... [--size N] [--weight bold]
 kashika route   <file|-> <from> <to> [corner|arc|bezier] [--line <id>]
 kashika icons   [dir...] [--search <term>]     // list importable shapes and icons: name, path, natural size, library
 kashika ref     [topic] [--json]          // topics: syntax anchors paths shapes styles metrics lints <lint-code> examples cli
 kashika --version
 ```
 
-Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`), `--show-suppressed`, `--focus <id,...>` (only warnings involving these ids), `--max N` (default 50), `--stdin-name <name>`.
+Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`), `--show-suppressed`, `--focus <id,...>` (only warnings involving these ids), `--max N` (default 50), `--stdin-name <name>`, `--summary` (print per-code counts; JSON always has `by_code`). `inspect` takes only `--format`, `--stdin-name`, `--allow-path`, ids, `--ports` and `--corridors`; `--corridors` without ids prints only the corridors.
 
 - `--focus` filters warnings only; errors are always reported. An unknown id is a usage error.
 - Suppressed findings are excluded from `warn` and from the exit code, and counted in `suppressed`. `crossings` in the metrics counts every crossing, suppressed or not, and is computed before `--focus` filtering.
 - `check` on a library file (§3a) reports only the errors in its definitions and prints no metrics; `render` on one is a usage error (exit 3).
-- `inspect` accepts the common flags, but only `--format` and `--stdin-name` change its output; it always exits 0 except on usage or I/O errors.
+- `inspect` never fails on errors in the file; it exits 0 except on usage or I/O errors.
+- `fmt` exits 2 on a parse error. `icons --search` with no match exits 1 and a directory argument that isn't one exits 3. `measure` takes several texts; one gives a single result, several give one each. Numeric options (`--radius`, `route --max`, `--corridors`) reject non-finite or out-of-range values with exit 3.
+- A JSON tool error (exit 3) carries the schema of the command that failed.
 
 **Versioning.** The optional `kashika="MAJOR.MINOR.PATCH"` on the `diagram` line is the minimum tool version that can process the file, always written with all three parts. A tool accepts a file when the file's version is at most the tool's version and the major versions are equal; anything else, including a bare number or a malformed string, is a `version` error. Releases that add language features bump the tool's minor version, so authors set `kashika=` to the release that introduced the newest feature they use. `kashika="…"` written as a statement of its own before `diagram` is a `parse` error whose help moves it onto the `diagram` line; that line doesn't also make `diagram` misplaced.
 
@@ -342,7 +344,7 @@ arch.kash:11:1: warn[cross]: l_d2 crosses l_lb3 at (690,95)
 0 errors, 1 warning · crossings=1 wire=1346px
 ```
 
-Diagnostics that share a severity, code and message template (the message with backticked text and standalone numbers blanked out, so `unknown id `a`` and `unknown id `b`` match) are collapsed: the first 3 are printed in full, followed by one `... and N more like this` line. Collapsed diagnostics don't count toward `--max`. `--max` never hides an error: every error is printed (subject only to collapsing), and warnings fill what is left of `--max` in source order. When warnings are cut, the output ends with `... and N more`. The summary counts every diagnostic. JSON output never collapses: `diagnostics` lists every error and, up to `--max` entries in all, the first warnings, and `truncated` says whether `--max` cut any warning.
+Diagnostics that share a severity, code and message template (the message with backticked text and standalone numbers blanked out, so `unknown id `a`` and `unknown id `b`` match) are collapsed: the first 3 are printed in full, followed by one `... and N more like this` line. Collapsed diagnostics don't count toward `--max`. Errors are listed before warnings, each in source order. `--max` never hides an error: every error is reported (repeats of the same error are collapsed after three, with a count), and warnings fill what is left of `--max` in source order. When warnings are cut, the output ends with `... and N more`. The summary counts every diagnostic. JSON output never collapses: `diagnostics` lists every error and, up to `--max` entries in all, the first warnings, and `truncated` says whether `--max` cut any warning.
 
 Control characters (C0, DEL and C1) and bidirectional overrides that come from the input, in source lines, messages, help and file names, are printed as `\u{1b}`-style escapes, so a file can't send escape sequences to the terminal. Tabs are kept. JSON output carries the original text.
 
