@@ -1,6 +1,6 @@
 # Review synthesis: v0 → v1
 
-Sources: reviews by Sonnet 5.5, GPT-6.1 Sol, Gemini 3.8 Flash and DeepSeek v4.1 Flash. In the Agree column, "4/4" means all four reviewers raised the point. A second round, from Qwen 3.8 and GLM 5.3, independently confirmed the top items: elbows and axis targets, relative placement, group semantics, corridor hints, near-miss lints and syntax hygiene.
+Sources (kept locally, not in git): reviews by Sonnet 5.5, GPT-6.1 Sol, Gemini 3.8 Flash and DeepSeek v4.1 Flash. In the Agree column, "4/4" means all four reviewers raised the point. A second round, from Qwen 3.8 and GLM 5.3, independently confirmed the top items: elbows and axis targets, relative placement, group semantics, corridor hints, near-miss lints and syntax hygiene.
 
 ## Additions from round 2 (Qwen, GLM)
 - Mixed-coordinate points `(db.left.x, lane1.y)`. A junction can serve as a named guide point.
