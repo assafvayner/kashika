@@ -18,3 +18,7 @@ kashika measure "Payments API"           # exact label size with the bundled fon
 ```
 
 The language is specified in [`docs/spec/language.md`](docs/spec/language.md). Agents should start from [`skills/kashika/SKILL.md`](skills/kashika/SKILL.md).
+
+## License
+
+Apache-2.0, see [LICENSE](LICENSE). The bundled fonts in `crates/kashika-text/fonts/` are under the SIL Open Font License; their license files sit next to them.
