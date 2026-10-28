@@ -1,0 +1,37 @@
+diagram "Analytics data pipeline" size (1760,560) kashika="0.1.0"
+
+text "**Analytics data pipeline**" at (40,50) size=22 align=left
+text "Events to dashboards; `exactly-once` from Kafka onward" at (40,80) size=13 align=left muted
+
+box src "Event sources" at (40,200) size (180,110) style=external sublabel="web, mobile; 50k ev/s"
+box kafka "Kafka ingestion" at src.tr+(70,0) size (180,110) pin=tl style=queue sublabel="Kafka 3.7, 12 partitions"
+box stream at kafka.tr+(70,0) size (180,110) pin=tl style=service text-align=left {
+  text "**Stream processing**"
+  text "Flink 1.19, p99 < 2 s" size=11 muted
+  text "• `exactly-once` sinks" size=12
+  text "• 5 min windows" size=12
+}
+box lake at stream.tr+(70,0) size (180,110) pin=tl style=datastore text-align=left {
+  text "**Raw data lake**"
+  text "S3 + Parquet, 11 nines" size=11 muted
+  text "• partitioned by `dt`" size=12
+  text "• 400 d retention" size=12
+}
+box batch "Batch transforms" at lake.tr+(70,0) size (180,110) pin=tl style=service sublabel="dbt + Spark, hourly"
+box wh "Warehouse" at batch.tr+(70,0) size (180,110) pin=tl style=datastore sublabel="Snowflake, 15 min freshness"
+box bi "BI dashboards" at wh.tr+(70,0) size (180,110) pin=tl style=external sublabel="Looker, load < 3 s"
+box fs at lake.bl+(0,70) size (180,100) pin=tl style=datastore text-align=left {
+  text "**ML feature store**"
+  text "Redis + Feast, p99 < 10 ms" size=11 muted
+  text "• online + offline" size=12
+}
+
+line l_src: src.right -> kafka.left end=arrow label="events"
+line l_kafka: kafka.right -> stream.left end=arrow label="topics"
+line l_stream: stream.right -> lake.left end=arrow label="sink"
+line l_lake: lake.right -> batch.left end=arrow label="read"
+line l_batch: batch.right -> wh.left end=arrow label="load"
+line l_wh: wh.right -> bi.left end=arrow label="query"
+line l_feat: stream.bottom -> vh fs.left end=arrow label="features"
+line l_scores: fs.right -> x bi.bottom -> bi.bottom end=arrow label="scores"
+line l_snap: src.bottom -> y 350 -> x batch.bottom -> batch.bottom end=arrow stroke-style=dashed label@0.7="DB snapshots" allow=cross:l_feat reason="Nightly DB snapshots bypass Kafka and must pass the stream-to-feature-store line; the graph is non-planar."

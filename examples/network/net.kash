@@ -1,0 +1,9 @@
+shape router {
+  path "M 0.15 0 L 0.85 0 L 1 0.5 L 0.85 1 L 0.15 1 L 0 0.5 Z"
+  text-area (0.15,0,0.7,1)
+}
+shape switch {
+  path "M 0.08 0 L 1 0 L 0.92 1 L 0 1 Z"
+  text-area (0.08,0,0.84,1)
+}
+style lan { fill=#e8f0fe stroke=#1a73e8 }
