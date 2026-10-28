@@ -30,11 +30,11 @@
           "pieces": [
             {"from":{"x":120,"y":80},"kind":"line","to":{"x":220,"y":80}}
           ],
-          "span": {"col":22,"end_col":23,"end_line":9,"line":9},
+          "span": {"col":21,"end_col":22,"end_line":9,"line":9},
           "to": {"x":220,"y":80}
         }
       ],
-      "span": {"col":3,"end_col":23,"end_line":9,"line":9},
+      "span": {"col":3,"end_col":22,"end_line":9,"line":9},
       "start": "none",
       "start_literal": false,
       "style": {"color":"#0f172a","fill":"#ffffff","font_size":12,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5}

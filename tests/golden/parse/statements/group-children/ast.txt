@@ -53,34 +53,34 @@ File {
                             id: Some(Ident { name: "l", span: 9:8-9:9 }),
                             start: Ref {
                                 r: Ref {
-                                    id: Ident { name: "a", span: 9:11-9:12 },
+                                    id: Ident { name: "a", span: 9:10-9:11 },
                                     anchor: Some(
                                         Anchor {
-                                            name: Ident { name: "right", span: 9:13-9:18 },
+                                            name: Ident { name: "right", span: 9:12-9:17 },
                                             t: None,
                                         },
                                     ),
                                 },
                                 offset: None,
-                                span: 9:11-9:18,
+                                span: 9:10-9:17,
                             },
                             segs: [
                                 Seg {
                                     kind: To(
                                         Ref {
                                             r: Ref {
-                                                id: Ident { name: "j", span: 9:22-9:23 },
+                                                id: Ident { name: "j", span: 9:21-9:22 },
                                                 anchor: None,
                                             },
                                             offset: None,
-                                            span: 9:22-9:23,
+                                            span: 9:21-9:22,
                                         },
                                     ),
-                                    span: 9:22-9:23,
+                                    span: 9:21-9:22,
                                 },
                             ],
                             attrs: [],
-                            span: 9:3-9:23,
+                            span: 9:3-9:22,
                         },
                     ),
                     Group(

@@ -16,7 +16,7 @@ fn prints_ranked_ready_to_paste_candidates() {
         .assert()
         .code(0)
         .stdout(
-            "#1  crossings=0 near=0 segments=3 length=444px  via corridor y 0..34\n    line a_b: a.top -> y wall.tl+(0,-12) -> hv b.top end=arrow\n",
+            "#1  crossings=0 near=0 segments=3 length=444px  via corridor y 0..34\n    line a_b a.top -> y wall.tl+(0,-12) -> hv b.top end=arrow\n",
         );
 }
 
@@ -59,7 +59,7 @@ fn json_output() {
     assert!(v["candidates"][0]["statement"]
         .as_str()
         .unwrap()
-        .starts_with("line a_b:"));
+        .starts_with("line a_b "));
 }
 
 #[test]
@@ -69,7 +69,7 @@ fn reroutes_with_line_flag() {
     let src = std::fs::read_to_string(fixture("route.kash")).unwrap();
     std::fs::write(
         &f,
-        format!("{src}line ab: a.top -> y 28 -> hv b.top end=diamond\n"),
+        format!("{src}line ab a.top -> y 28 -> hv b.top end=diamond\n"),
     )
     .unwrap();
     kashika()
@@ -77,7 +77,7 @@ fn reroutes_with_line_flag() {
         .assert()
         .code(0)
         .stdout(predicate::str::contains(
-            "line ab: a.top -> y wall.tl+(0,-12) -> hv b.top end=diamond",
+            "line ab a.top -> y wall.tl+(0,-12) -> hv b.top end=diamond",
         ));
 }
 
@@ -112,7 +112,7 @@ fn detours_when_no_simple_path_is_clear() {
         .assert()
         .code(0)
         .stdout(predicate::str::contains("segments=5"))
-        .stdout(predicate::str::contains("line a_b: a.right -> x "));
+        .stdout(predicate::str::contains("line a_b a.right -> x "));
 }
 
 #[test]

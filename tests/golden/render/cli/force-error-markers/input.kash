@@ -3,5 +3,5 @@
 // `--force` writes despite errors and draws red markers at each error.
 diagram "forced" size (300,160)
 box a "A" at (20,40) size (80,60)
-line l: a.right -> nowhere.left end=arrow
+line l a.right -> nowhere.left end=arrow
 box tiny "Far too long a label" at (180,40) size (60,30)

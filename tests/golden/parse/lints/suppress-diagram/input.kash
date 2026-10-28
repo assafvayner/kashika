@@ -1,5 +1,5 @@
 // spec: 7
 // `allow=` on `diagram` silences a code everywhere.
 diagram "suppress all" size (300,200) allow=cross,near
-line h1: (20,100) -> h 260
-line v1: (150,20) -> v 160
+line h1 (20,100) -> h 260
+line v1 (150,20) -> v 160

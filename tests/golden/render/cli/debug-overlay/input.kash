@@ -4,5 +4,5 @@
 diagram "debug" size (300,200)
 box a "A" at (20,40) size (80,60)
 box b "B" at (200,120) size (80,60)
-line l: a.right -> hv b.top end=arrow
-line cross_line: (150,20) -> v 160
+line l a.right -> hv b.top end=arrow
+line cross_line (150,20) -> v 160

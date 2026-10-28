@@ -1,0 +1,11 @@
+// spec: 4
+// dump: ast, scene
+// `-(dx,dy)` negates the offset; signed parts work after either sign, also after `@t`.
+diagram "offset signs" size (300,200)
+box a at (100,50) size (100,60)
+junction p1 at a.top+(-10,0)
+junction m1 at a.top-(10,0)
+junction m2 at a.top-(-10,0)
+junction m3 at a.left@0.25-(0,4)
+junction m4 at m1-(5,-5)
+line l a.bottom-(20,0) -> v 30

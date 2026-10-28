@@ -7,4 +7,4 @@ image p "photo.png" at (100,20) size (64,64) fit=contain
 image c "photo.jpg" at (180,20) size (64,64) fit=cover
 image t "photo.png" at (260,20) size (64,32) fit=stretch
 image pinned "pic.svg" at (480,180) size (40,40) pin=br
-line l: s.right -> p.left
+line l s.right -> p.left

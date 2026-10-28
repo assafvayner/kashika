@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use kashika_check::Metrics;
 use kashika_diag::{Diagnostic, Severity};
 use sha2::{Digest, Sha256};
@@ -49,6 +51,40 @@ pub fn visible(diags: &[Diagnostic], show_suppressed: bool) -> Vec<&Diagnostic> 
         .collect()
 }
 
+/// How many diagnostics with the same severity, code and message template the text output
+/// prints before collapsing the rest into one `... and N more like this` line.
+const ALIKE_SHOWN: usize = 3;
+
+type Key = (Severity, &'static str, bool, String);
+
+/// The message with quoted text and numbers blanked, so diagnostics that differ only in
+/// the names or values they mention share a key.
+fn key(d: &Diagnostic) -> Key {
+    let mut template = String::new();
+    let mut word = String::new();
+    let mut quoted = false;
+    let flush = |template: &mut String, word: &mut String| {
+        if !word.chars().all(|c| c.is_ascii_digit()) {
+            template.push_str(word);
+        }
+        word.clear();
+    };
+    for c in d.message.chars() {
+        if c == '`' {
+            quoted = !quoted;
+            word.clear();
+            template.push(c);
+        } else if !quoted && (c.is_ascii_alphanumeric() || c == '_') {
+            word.push(c);
+        } else if !quoted {
+            flush(&mut template, &mut word);
+            template.push(c);
+        }
+    }
+    flush(&mut template, &mut word);
+    (d.severity, d.code, d.suppressed, template)
+}
+
 pub fn text(
     name: &str,
     src: &str,
@@ -63,8 +99,26 @@ pub fn text(
         }
     };
     let shown = visible(diags, opts.show_suppressed);
+    let keys: Vec<Key> = shown.iter().map(|d| key(d)).collect();
+    let mut totals: BTreeMap<&Key, usize> = BTreeMap::new();
+    for k in &keys {
+        *totals.entry(k).or_default() += 1;
+    }
+    let mut seen: BTreeMap<&Key, usize> = BTreeMap::new();
+    let mut printed = 0;
+    let mut overflow = 0;
     let mut out = String::new();
-    for d in shown.iter().take(opts.max) {
+    for (d, k) in shown.iter().zip(&keys) {
+        let n = seen.entry(k).or_default();
+        if *n >= ALIKE_SHOWN {
+            continue;
+        }
+        if printed >= opts.max {
+            overflow += 1;
+            continue;
+        }
+        printed += 1;
+        *n += 1;
         let sev = match d.severity {
             Severity::Error => "error",
             Severity::Warn => "warn",
@@ -88,9 +142,15 @@ pub fn text(
         if let Some(r) = &d.reason {
             out.push_str(&format!("      = reason: {r}\n"));
         }
+        if *n == ALIKE_SHOWN && totals[k] > ALIKE_SHOWN {
+            out.push_str(&format!(
+                "... and {} more like this\n",
+                totals[k] - ALIKE_SHOWN
+            ));
+        }
     }
-    if shown.len() > opts.max {
-        out.push_str(&format!("... and {} more\n", shown.len() - opts.max));
+    if overflow > 0 {
+        out.push_str(&format!("... and {overflow} more\n"));
     }
     let c = counts(diags);
     out.push_str(&format!(

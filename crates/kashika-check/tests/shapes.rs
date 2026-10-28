@@ -9,27 +9,24 @@ const CYLINDER: &str = "box db at (100,100) size (100,100) shape=cylinder\n";
 fn lines_through_a_diamond_follow_its_outline() {
     let d = lint(
         "through",
-        &format!("{DIAMOND}line l: (0,150) -> (300,150)\n"),
+        &format!("{DIAMOND}line l (0,150) -> (300,150)\n"),
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "l passes through box 'd'");
     assert_eq!(d[0].facts["entry"], serde_json::json!([100.0, 150.0]));
     assert!(lint(
         "through",
-        &format!("{DIAMOND}line l: (90,110) -> (110,90)\n")
+        &format!("{DIAMOND}line l (90,110) -> (110,90)\n")
     )
     .is_empty());
 }
 
 #[test]
 fn near_measures_to_the_diamond_edge() {
-    let d = lint(
-        "near",
-        &format!("{DIAMOND}line l: (100,145) -> (145,100)\n"),
-    );
+    let d = lint("near", &format!("{DIAMOND}line l (100,145) -> (145,100)\n"));
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].facts["distance"], serde_json::json!(3.54));
-    assert!(lint("near", &format!("{DIAMOND}line l: (90,140) -> (140,90)\n")).is_empty());
+    assert!(lint("near", &format!("{DIAMOND}line l (90,140) -> (140,90)\n")).is_empty());
 }
 
 #[test]
@@ -51,7 +48,7 @@ fn diamonds_overlap_only_when_their_outlines_do() {
 fn endpoints_snap_to_the_cylinder_cap() {
     let d = lint(
         "endpoint-off-edge",
-        &format!("{CYLINDER}line l: (150,40) -> (150,97)\n"),
+        &format!("{CYLINDER}line l (150,40) -> (150,97)\n"),
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].facts["nearest"], serde_json::json!([150.0, 100.0]));
@@ -61,7 +58,7 @@ fn endpoints_snap_to_the_cylinder_cap() {
     );
     assert!(lint(
         "endpoint-off-edge",
-        &format!("{CYLINDER}line l: (110,40) -> (110,108)\n")
+        &format!("{CYLINDER}line l (110,40) -> (110,108)\n")
     )
     .is_empty());
 }
@@ -70,9 +67,9 @@ fn endpoints_snap_to_the_cylinder_cap() {
 fn anchored_lines_on_built_in_shapes_check_clean() {
     let s = scene(&format!(
         "{CYLINDER}box d at (300,100) size (100,100) shape=diamond\n\
-         line a: d.left -> db.right end=arrow\n\
-         line b: db.top@0.2 -> v -60 end=arrow\n\
-         line c: d.top@0.3 -> v -60 end=arrow\n"
+         line a d.left -> db.right end=arrow\n\
+         line b db.top@0.2 -> v -60 end=arrow\n\
+         line c d.top@0.3 -> v -60 end=arrow\n"
     ));
     assert!(kashika_check::check(&s).is_empty());
     let ctx = kashika_check::ctx::Ctx::new(&s);
@@ -94,7 +91,7 @@ fn images_are_opaque_obstacles() {
     let d = lint_in(
         dir.path(),
         "through",
-        &format!("{LOGO}line l: (0,125) -> (300,125)\n"),
+        &format!("{LOGO}line l (0,125) -> (300,125)\n"),
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "l passes through image 'logo'");
@@ -103,7 +100,7 @@ fn images_are_opaque_obstacles() {
     let d = lint_in(
         dir.path(),
         "near",
-        &format!("{LOGO}line l: (0,97) -> (300,97)\n"),
+        &format!("{LOGO}line l (0,97) -> (300,97)\n"),
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "l runs 3px from image 'logo' (clearance 6)");
@@ -117,7 +114,7 @@ fn images_are_opaque_obstacles() {
     let d = lint_in(
         dir.path(),
         "label-collision",
-        &format!("{LOGO}line l: (0,125) -> (300,125) label=\"to logo\"\n"),
+        &format!("{LOGO}line l (0,125) -> (300,125) label=\"to logo\"\n"),
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert!(
@@ -141,7 +138,7 @@ fn lines_may_attach_to_images() {
         assert!(lint_in(
             dir.path(),
             code,
-            &format!("{LOGO}box b at (400,100) size (100,50)\nline l: logo.right -> b.left\n"),
+            &format!("{LOGO}box b at (400,100) size (100,50)\nline l logo.right -> b.left\n"),
         )
         .is_empty());
     }
@@ -165,7 +162,7 @@ fn labels_below_a_shape_are_checked_where_they_sit() {
     let body = format!("{BELOW}box s \"Uploads\" at (100,100) size (60,60) shape=srv\n");
     let d = lint(
         "label-collision",
-        &format!("{body}line l: (0,177) -> (300,177)\n"),
+        &format!("{body}line l (0,177) -> (300,177)\n"),
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "the label under box 's' collides with line l");
@@ -200,7 +197,7 @@ fn icons_shrink_the_text_area_without_warnings() {
     let s = scene(
         "box q \"Jobs\" at (100,100) size (160,60) icon=\"queue\" style=queue\n\
          box w \"Web\" at (100,200) size (160,80) icon=\"browser\" icon-pos=top\n\
-         line l: q.bottom -> w.top end=arrow\n",
+         line l q.bottom -> w.top end=arrow\n",
     );
     assert!(kashika_check::check(&s).is_empty());
     assert!(s.shapes[0].text_area.x >= 100.0 + 24.0);

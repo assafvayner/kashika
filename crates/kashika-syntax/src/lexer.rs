@@ -15,6 +15,7 @@ pub enum Tok {
     Arrow,
     Dot,
     Plus,
+    Minus,
     Colon,
     At,
     Newline,
@@ -37,6 +38,7 @@ impl Tok {
             Tok::Arrow => "`->`".into(),
             Tok::Dot => "`.`".into(),
             Tok::Plus => "`+`".into(),
+            Tok::Minus => "`-`".into(),
             Tok::Colon => "`:`".into(),
             Tok::At => "`@`".into(),
             Tok::Newline => "end of line".into(),
@@ -162,6 +164,10 @@ impl Lexer {
                     self.push(Tok::Arrow, line, col);
                 }
                 '-' if self.peek(1).is_some_and(|c| c.is_ascii_digit()) => self.number(line, col),
+                '-' => {
+                    self.bump();
+                    self.push(Tok::Minus, line, col);
+                }
                 c if c.is_ascii_digit() => self.number(line, col),
                 c if c.is_ascii_alphabetic() || c == '_' => self.ident(line, col),
                 '(' | ')' | '{' | '}' | ',' | '=' | '.' | '+' | ':' | '@' => {
@@ -224,8 +230,9 @@ impl Lexer {
     fn ident(&mut self, line: u32, col: u32) {
         let mut s = String::new();
         while let Some(c) = self.peek(0) {
-            let continues =
-                c.is_ascii_alphanumeric() || c == '_' || (c == '-' && self.peek(1) != Some('>'));
+            let continues = c.is_ascii_alphanumeric()
+                || c == '_'
+                || (c == '-' && !matches!(self.peek(1), Some('>' | '(')));
             if !continues {
                 break;
             }
@@ -400,6 +407,25 @@ mod tests {
                 Tok::Color("#fff".into()),
                 Tok::Newline,
                 Tok::Eof,
+            ]
+        );
+    }
+
+    #[test]
+    fn minus_before_paren_ends_an_identifier() {
+        assert_eq!(
+            toks("a-b.top-(-1,2)"),
+            vec![
+                Tok::Ident("a-b".into()),
+                Tok::Dot,
+                Tok::Ident("top".into()),
+                Tok::Minus,
+                Tok::LParen,
+                Tok::Num(-1.0),
+                Tok::Comma,
+                Tok::Num(2.0),
+                Tok::RParen,
+                Tok::Eof
             ]
         );
     }

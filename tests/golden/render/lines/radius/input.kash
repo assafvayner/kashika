@@ -1,5 +1,5 @@
 // spec: 5
 // Rounded corners, clamped on short segments.
 diagram "radius" size (300,200)
-line big: (20,20) -> h 100 -> v 100 -> h 100 radius=12 end=arrow
-line clamp: (20,180) -> h 10 -> v -20 -> h 100 radius=50
+line big (20,20) -> h 100 -> v 100 -> h 100 radius=12 end=arrow
+line clamp (20,180) -> h 10 -> v -20 -> h 100 radius=50

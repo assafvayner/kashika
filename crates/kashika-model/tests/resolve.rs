@@ -192,7 +192,7 @@ fn version_rejects_bare_and_malformed() {
 
 #[test]
 fn allow_validates_codes_and_ids() {
-    let d = errors("line l1: (0,0) -> h 5 allow=crosss\nline l2: (0,0) -> v 5 allow=cross:nope\n");
+    let d = errors("line l1 (0,0) -> h 5 allow=crosss\nline l2 (0,0) -> v 5 allow=cross:nope\n");
     assert!(d
         .iter()
         .any(|d| d.code == "attr" && d.help == vec!["did you mean `cross`?".to_string()]));
@@ -211,14 +211,14 @@ fn shapes_report_their_rects_after_errors_elsewhere() {
 
 #[test]
 fn rounded_shape_projects_anchors() {
-    let s = ok("box r at (0,0) size (100,60) shape=rounded\nline l: r.top@0 -> (0,-50)\n");
+    let s = ok("box r at (0,0) size (100,60) shape=rounded\nline l r.top@0 -> (0,-50)\n");
     assert_eq!(pts(&s, "l")[0], Pt::new(0.0, 8.0));
 }
 
 #[test]
 fn every_segment_kind_resolves() {
     let s = ok("box a at (0,0) size (100,60)\nbox b at (300,200) size (100,60)\n\
-                line l: a.right -> h 50 -> y b.top -> x 400 -> v 10 -> hv (500,300) -> vh (520,320)\n");
+                line l a.right -> h 50 -> y b.top -> x 400 -> v 10 -> hv (500,300) -> vh (520,320)\n");
     let p = |x: f64, y: f64| Pt::new(x, y);
     assert_eq!(
         pts(&s, "l"),
@@ -238,13 +238,13 @@ fn every_segment_kind_resolves() {
 
 #[test]
 fn already_aligned_elbows_drop_zero_length_pieces() {
-    let s = ok("line l: (0,0) -> hv (100,0)\n");
+    let s = ok("line l (0,0) -> hv (100,0)\n");
     assert_eq!(s.lines[0].path.len(), 1);
 }
 
 #[test]
 fn numeric_axis_targets_use_the_group_frame() {
-    let s = ok("group g at (100,100) size (300,300) {\n  line l: (0,0) -> x 50 -> y 20\n}\n");
+    let s = ok("group g at (100,100) size (300,300) {\n  line l (0,0) -> x 50 -> y 20\n}\n");
     assert_eq!(
         pts(&s, "l"),
         vec![
@@ -257,7 +257,7 @@ fn numeric_axis_targets_use_the_group_frame() {
 
 #[test]
 fn curve_left_bulges_up_when_travelling_right() {
-    let s = ok("line l: (0,100) -> curve left:20 (100,100)\n");
+    let s = ok("line l (0,100) -> curve left 20 (100,100)\n");
     let PathSeg::Quad { ctrl, .. } = s.lines[0].path[0] else {
         panic!("expected quad")
     };
@@ -267,7 +267,7 @@ fn curve_left_bulges_up_when_travelling_right() {
 
 #[test]
 fn curve_right_bulges_right_when_travelling_up() {
-    let s = ok("line l: (0,100) -> curve right:10 (0,0)\n");
+    let s = ok("line l (0,100) -> curve right 10 (0,0)\n");
     let PathSeg::Quad { ctrl, .. } = s.lines[0].path[0] else {
         panic!("expected quad")
     };
@@ -276,13 +276,13 @@ fn curve_right_bulges_right_when_travelling_up() {
 
 #[test]
 fn curve_via_makes_a_cubic() {
-    let s = ok("line l: (0,0) -> curve via (0,50) (100,50) (100,0)\n");
+    let s = ok("line l (0,0) -> curve via (0,50) (100,50) (100,0)\n");
     assert!(matches!(s.lines[0].path[0], PathSeg::Cubic { .. }));
 }
 
 #[test]
 fn radius_rounds_polyline_corners() {
-    let s = ok("line l: (0,0) -> h 100 -> v 100 radius=10\n");
+    let s = ok("line l (0,0) -> h 100 -> v 100 radius=10\n");
     assert_eq!(s.lines[0].path.len(), 3);
     assert!(matches!(s.lines[0].path[1], PathSeg::Quad { .. }));
 }
@@ -305,19 +305,19 @@ fn labels_markers_and_unnamed_ids() {
 
 #[test]
 fn ortho_rejects_diagonals() {
-    let d = errors("line l: (0,0) -> (10,10) ortho\n");
+    let d = errors("line l (0,0) -> (10,10) ortho\n");
     assert_eq!(d[0].code, "not-ortho");
 }
 
 #[test]
 fn degenerate_curve() {
-    let d = errors("line l: (0,0) -> curve left:10 (0,0)\n");
+    let d = errors("line l (0,0) -> curve left 10 (0,0)\n");
     assert_eq!(d[0].code, "degenerate-curve");
 }
 
 #[test]
 fn zero_length_line() {
-    let d = errors("line l: (0,0) -> h 0\n");
+    let d = errors("line l (0,0) -> h 0\n");
     assert_eq!(d[0].code, "zero-length");
 }
 
@@ -331,7 +331,7 @@ fn codes(body: &str) -> Vec<String> {
 #[test]
 fn failed_segment_stops_the_line() {
     assert_eq!(
-        codes("line l: (0,0) -> nope.left -> curve left:10 (0,0)\n"),
+        codes("line l (0,0) -> nope.left -> curve left 10 (0,0)\n"),
         vec!["unknown-id"]
     );
 }
@@ -342,10 +342,10 @@ fn non_finite_values_are_rejected() {
     for body in [
         format!("box a at ({big},0) size (1,1)\n"),
         format!("box a at (0,0) size ({big},1)\n"),
-        format!("line l: (0,0) -> h {big}\n"),
-        format!("line l: (0,0) -> v {big}\n"),
-        format!("line l: (0,0) -> curve left:{big} (10,0)\n"),
-        format!("line l: (0,0) -> curve via ({big},0) (1,1) (2,2)\n"),
+        format!("line l (0,0) -> h {big}\n"),
+        format!("line l (0,0) -> v {big}\n"),
+        format!("line l (0,0) -> curve left {big} (10,0)\n"),
+        format!("line l (0,0) -> curve via ({big},0) (1,1) (2,2)\n"),
     ] {
         let d = errors(&body);
         assert!(
@@ -388,7 +388,7 @@ fn duplicate_ids_are_not_emitted_twice() {
 
 #[test]
 fn duplicate_label_positions() {
-    let d = errors("line l: (0,0) -> h 10 label=\"a\" label@0.5=\"b\"\n");
+    let d = errors("line l (0,0) -> h 10 label=\"a\" label@0.5=\"b\"\n");
     assert_eq!(
         d.iter()
             .filter(|d| d.code == "attr" && d.message.starts_with("duplicate label at t="))
@@ -396,7 +396,7 @@ fn duplicate_label_positions() {
         1
     );
     let (s, _) = compile(&format!(
-        "{HEAD}line l: (0,0) -> h 10 label@0.3=\"a\" label@0.3=\"b\"\n"
+        "{HEAD}line l (0,0) -> h 10 label@0.3=\"a\" label@0.3=\"b\"\n"
     ));
     assert_eq!(s.lines[0].labels.len(), 1);
     assert_eq!(s.lines[0].labels[0].text, "a");
@@ -412,7 +412,7 @@ fn radius_makes_rect_outline_rounded() {
 
 #[test]
 fn negative_curve_amount() {
-    let d = errors("line l: (0,0) -> curve left:-10 (10,0)\n");
+    let d = errors("line l (0,0) -> curve left -10 (10,0)\n");
     assert_eq!(d[0].code, "degenerate-curve");
     assert_eq!(
         d[0].message,
@@ -428,7 +428,7 @@ fn unknown_attributes_fail_clearly() {
 
 #[test]
 fn duplicate_label_attribute_reports_once() {
-    let d = errors("line l: (0,0) -> h 5 label@0.3=\"a\" label@0.3=\"b\"\n");
+    let d = errors("line l (0,0) -> h 5 label@0.3=\"a\" label@0.3=\"b\"\n");
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].code, "attr");
 }
@@ -442,12 +442,12 @@ fn duplicate_icon_attribute_reports_once() {
 
 #[test]
 fn zero_curve_amount_is_allowed() {
-    ok("line l: (0,0) -> curve left:0 (10,0)\n");
+    ok("line l (0,0) -> curve left 0 (10,0)\n");
 }
 
 #[test]
 fn negative_curve_message() {
-    let d = errors("line l: (0,0) -> curve left:-1 (10,0)\n");
+    let d = errors("line l (0,0) -> curve left -1 (10,0)\n");
     assert!(
         d.iter().any(|x| x.message.contains("must not be negative")),
         "{d:#?}"
@@ -457,7 +457,7 @@ fn negative_curve_message() {
 #[test]
 fn children_of_duplicate_group_are_not_reference_targets() {
     let d = errors(
-        "group g at (0,0) size (100,100) {\n}\ngroup g at (200,0) size (100,100) {\n  box b at (0,0) size (10,10)\n}\nline l: (0,0) -> b.left\n",
+        "group g at (0,0) size (100,100) {\n}\ngroup g at (200,0) size (100,100) {\n  box b at (0,0) size (10,10)\n}\nline l (0,0) -> b.left\n",
     );
     assert_eq!(codes_of(&d), vec!["duplicate-id"], "{d:#?}");
 }
@@ -465,11 +465,11 @@ fn children_of_duplicate_group_are_not_reference_targets() {
 #[test]
 fn grandchildren_of_duplicate_group_are_not_reference_targets() {
     let d = errors(
-        "group g at (0,0) size (100,100) {\n}\ngroup g at (200,0) size (100,100) {\n  group inner at (0,0) size (50,50) {\n    box b at (0,0) size (10,10)\n  }\n}\nline l: (0,0) -> b.left\n",
+        "group g at (0,0) size (100,100) {\n}\ngroup g at (200,0) size (100,100) {\n  group inner at (0,0) size (50,50) {\n    box b at (0,0) size (10,10)\n  }\n}\nline l (0,0) -> b.left\n",
     );
     assert_eq!(codes_of(&d), vec!["duplicate-id"], "{d:#?}");
     let d = errors(
-        "group g at (0,0) size (100,100) {\n}\ngroup g at (200,0) size (100,100) {\n  box b at (0,0) size (10,10)\n}\nline l: (0,0) -> h 5 allow=cross:b\nline m: (0,0) -> bb.left\n",
+        "group g at (0,0) size (100,100) {\n}\ngroup g at (200,0) size (100,100) {\n  box b at (0,0) size (10,10)\n}\nline l (0,0) -> h 5 allow=cross:b\nline m (0,0) -> bb.left\n",
     );
     assert!(d.iter().all(|d| !d.message.contains("`b`")), "{d:#?}");
     assert!(
@@ -485,7 +485,7 @@ fn junction(s: &Scene, id: &str) -> Pt {
 
 #[test]
 fn nested_groups_compose_frames() {
-    let s = ok("group outer at (100,100) size (400,400) {\n  group inner at (50,60) size (200,200) {\n    box a at (5,5) size (10,10)\n    line l: (0,0) -> h 10\n  }\n}\n");
+    let s = ok("group outer at (100,100) size (400,400) {\n  group inner at (50,60) size (200,200) {\n    box a at (5,5) size (10,10)\n    line l (0,0) -> h 10\n  }\n}\n");
     assert_eq!(rect(&s, "inner"), Rect::new(150.0, 160.0, 200.0, 200.0));
     assert_eq!(rect(&s, "a"), Rect::new(155.0, 165.0, 10.0, 10.0));
     assert_eq!(pts(&s, "l")[0], Pt::new(150.0, 160.0));
@@ -493,7 +493,7 @@ fn nested_groups_compose_frames() {
 
 #[test]
 fn anchor_references_inside_a_group_are_absolute() {
-    let s = ok("box a at (300,300) size (100,60)\ngroup g at (100,100) size (100,100) {\n  box b at a.right+(10,0) size (20,20) pin=left\n  junction j at a.tl\n  line l: (0,0) -> a.left\n}\n");
+    let s = ok("box a at (300,300) size (100,60)\ngroup g at (100,100) size (100,100) {\n  box b at a.right+(10,0) size (20,20) pin=left\n  junction j at a.tl\n  line l (0,0) -> a.left\n}\n");
     assert_eq!(rect(&s, "b"), Rect::new(410.0, 320.0, 20.0, 20.0));
     assert_eq!(junction(&s, "j"), Pt::new(300.0, 300.0));
     assert_eq!(*pts(&s, "l").last().unwrap(), Pt::new(300.0, 330.0));
@@ -501,13 +501,13 @@ fn anchor_references_inside_a_group_are_absolute() {
 
 #[test]
 fn references_into_groups_resolve_to_true_positions() {
-    let s = ok("group g at (100,100) size (300,300) {\n  box a at (10,10) size (40,20)\n}\nline l: a.right -> h 50\n");
+    let s = ok("group g at (100,100) size (300,300) {\n  box a at (10,10) size (40,20)\n}\nline l a.right -> h 50\n");
     assert_eq!(pts(&s, "l")[0], Pt::new(150.0, 120.0));
 }
 
 #[test]
 fn hv_and_curve_via_points_use_the_group_frame() {
-    let s = ok("group g at (100,100) size (300,300) {\n  line l: (0,0) -> hv (50,50) -> curve via (60,50) (70,60) (70,70)\n}\n");
+    let s = ok("group g at (100,100) size (300,300) {\n  line l (0,0) -> hv (50,50) -> curve via (60,50) (70,60) (70,70)\n}\n");
     assert_eq!(
         pts(&s, "l"),
         vec![
@@ -533,7 +533,7 @@ fn text_and_junction_literals_use_the_group_frame() {
 
 #[test]
 fn negative_moves_go_left_and_up() {
-    let s = ok("line l: (100,100) -> h -30 -> v -40\n");
+    let s = ok("line l (100,100) -> h -30 -> v -40\n");
     assert_eq!(
         pts(&s, "l"),
         vec![
@@ -547,7 +547,7 @@ fn negative_moves_go_left_and_up() {
 #[test]
 fn axis_targets_take_a_points_coordinate() {
     let s =
-        ok("box a at (200,300) size (100,60)\nline l: (0,0) -> x a.right -> y a.bottom+(0,10)\n");
+        ok("box a at (200,300) size (100,60)\nline l (0,0) -> x a.right -> y a.bottom+(0,10)\n");
     assert_eq!(
         pts(&s, "l"),
         vec![
@@ -607,7 +607,7 @@ fn group_anchors_work_like_box_anchors() {
 #[test]
 fn junction_references_take_offsets_and_axes() {
     let s = ok(
-        "junction j at (40,50)\njunction k at j+(5,-5)\njunction m at (j.x, k.y)\nline l: j -> k\n",
+        "junction j at (40,50)\njunction k at j+(5,-5)\njunction m at (j.x, k.y)\nline l j -> k\n",
     );
     assert_eq!(junction(&s, "k"), Pt::new(45.0, 45.0));
     assert_eq!(junction(&s, "m"), Pt::new(40.0, 45.0));
@@ -616,7 +616,7 @@ fn junction_references_take_offsets_and_axes() {
 
 #[test]
 fn mixed_points_take_each_axis_from_a_reference() {
-    let s = ok("box app1 at (100,0) size (60,40)\njunction lane1 at (0,200)\nline l: app1.bottom -> (app1.bottom.x, lane1.y)\n");
+    let s = ok("box app1 at (100,0) size (60,40)\njunction lane1 at (0,200)\nline l app1.bottom -> (app1.bottom.x, lane1.y)\n");
     assert_eq!(
         pts(&s, "l"),
         vec![Pt::new(130.0, 40.0), Pt::new(130.0, 200.0)]
@@ -715,7 +715,7 @@ fn duplicate_style_has_its_own_code() {
 fn statements_after_unbuilt_ones_still_resolve() {
     let (s, d) = kashika_model::compile(&format!(
         "{HEAD}import \"lib.kash\"\nshape s {{\n  path \"M 0 0\"\n}}\nimage i \"x.png\" at (0,0) size (1,1)\n\
-         box a at (10,10) size (20,20) padding=0 {{\n  text \"x\"\n}}\nbox b at a.right+(10,0) size (20,20) pin=left\nline l: a.right -> b.left\n"
+         box a at (10,10) size (20,20) padding=0 {{\n  text \"x\"\n}}\nbox b at a.right+(10,0) size (20,20) pin=left\nline l a.right -> b.left\n"
     ));
     let codes: Vec<_> = d.iter().map(|x| x.code).collect();
     assert_eq!(codes, vec!["file", "parse", "file"], "{d:#?}");
@@ -756,7 +756,7 @@ fn mixed_point_cycles_are_detected() {
 #[test]
 fn ids_are_unique_across_kinds_and_groups() {
     for body in [
-        "box a at (0,0) size (1,1)\nline a: (0,0) -> h 1\n",
+        "box a at (0,0) size (1,1)\nline a (0,0) -> h 1\n",
         "junction a at (0,0)\ntext a \"x\" at (0,0)\n",
         "box a at (0,0) size (1,1)\ngroup g at (0,0) size (10,10) {\n  junction a at (0,0)\n}\n",
     ] {
@@ -815,7 +815,7 @@ fn every_builtin_style_exists() {
 
 #[test]
 fn line_style_applies_only_stroke_and_font_keys() {
-    let s = ok("style s { fill=#ff0000 stroke=#00ff00 radius=10 font-size=20 }\nline l: (0,0) -> h 100 -> v 100 style=s\n");
+    let s = ok("style s { fill=#ff0000 stroke=#00ff00 radius=10 font-size=20 }\nline l (0,0) -> h 100 -> v 100 style=s\n");
     let l = &s.lines[0];
     assert_eq!(l.style.stroke, "#00ff00");
     assert_eq!(l.style.font_size, 20.0);
@@ -825,44 +825,44 @@ fn line_style_applies_only_stroke_and_font_keys() {
 
 #[test]
 fn line_inline_stroke_attributes() {
-    let s = ok("line l: (0,0) -> h 10 stroke=#123456 stroke-width=3 stroke-style=dashed\n");
+    let s = ok("line l (0,0) -> h 10 stroke=#123456 stroke-width=3 stroke-style=dashed\n");
     let st = &s.lines[0].style;
     assert_eq!(
         (st.stroke.as_str(), st.stroke_width, st.stroke_style),
         ("#123456", 3.0, StrokeStyle::Dashed)
     );
-    assert_eq!(errors("line l: (0,0) -> h 10 fill=#fff\n")[0].code, "attr");
+    assert_eq!(errors("line l (0,0) -> h 10 fill=#fff\n")[0].code, "attr");
 }
 
 #[test]
 fn markers_default_to_none_and_accept_every_kind() {
-    let s = ok("line l: (0,0) -> h 10\n");
+    let s = ok("line l (0,0) -> h 10\n");
     assert_eq!(
         (s.lines[0].start, s.lines[0].end),
         (kashika_model::Marker::None, kashika_model::Marker::None)
     );
     for m in ["arrow", "open", "diamond", "dot", "none"] {
-        ok(&format!("line l: (0,0) -> h 10 start={m} end={m}\n"));
+        ok(&format!("line l (0,0) -> h 10 start={m} end={m}\n"));
     }
-    assert_eq!(errors("line l: (0,0) -> h 10 end=arow\n")[0].code, "attr");
+    assert_eq!(errors("line l (0,0) -> h 10 end=arow\n")[0].code, "attr");
 }
 
 #[test]
 fn label_position_must_be_in_range() {
-    let d = errors("line l: (0,0) -> h 10 label@1.5=\"x\"\n");
+    let d = errors("line l (0,0) -> h 10 label@1.5=\"x\"\n");
     assert_eq!(d[0].code, "attr");
 }
 
 #[test]
 fn ortho_rejects_curves() {
-    let d = errors("line l: (0,0) -> curve left:10 (100,0) ortho\n");
+    let d = errors("line l (0,0) -> curve left 10 (100,0) ortho\n");
     assert_eq!(d[0].code, "not-ortho");
-    ok("line l: (0,0) -> h 10 -> vh (20,20) ortho\n");
+    ok("line l (0,0) -> h 10 -> vh (20,20) ortho\n");
 }
 
 #[test]
 fn reason_is_kept() {
-    let s = ok("line l: (0,0) -> h 10 allow=cross reason=\"bus\"\n");
+    let s = ok("line l (0,0) -> h 10 allow=cross reason=\"bus\"\n");
     assert_eq!(s.lines[0].reason.as_deref(), Some("bus"));
 }
 
@@ -1004,10 +1004,10 @@ fn out_of_range_values_are_rejected() {
         "box a at (1000001,0) size (1,1)\n",
         "box a at (0,-1000001) size (1,1)\n",
         "box a at (999999,0) size (1,1)\nbox b at a.right+(10,0) size (1,1)\n",
-        "line l: (0,0) -> h 2000000\n",
-        "line l: (0,0) -> x 2000000\n",
-        "line l: (0,0) -> curve left:2000000 (10,0)\n",
-        "line l: (0,0) -> curve via (1e7,0) (1,1) (2,2)\n",
+        "line l (0,0) -> h 2000000\n",
+        "line l (0,0) -> x 2000000\n",
+        "line l (0,0) -> curve left 2000000 (10,0)\n",
+        "line l (0,0) -> curve via (1e7,0) (1,1) (2,2)\n",
     ] {
         let body = body.replace("1e7", "10000000");
         let d = errors(&body);
@@ -1067,7 +1067,7 @@ fn long_placement_chains_are_reported_not_crashed() {
 
 #[test]
 fn markup_and_escapes_are_accepted_in_texts_and_labels() {
-    let s = ok("box a \"a \\*\\* b\" at (0,0) size (60,40)\ntext \"**t** \\*\" at (0,0)\nline l: (0,0) -> h 5 label=\"`q`\"\n");
+    let s = ok("box a \"a \\*\\* b\" at (0,0) size (60,40)\ntext \"**t** \\*\" at (0,0)\nline l (0,0) -> h 5 label=\"`q`\"\n");
     assert_eq!(s.shapes[0].label.as_deref(), Some("a \\*\\* b"));
     assert_eq!(s.texts[0].content, "**t** \\*");
     assert_eq!(s.lines[0].labels[0].text, "`q`");
@@ -1090,7 +1090,7 @@ fn numeric_attributes_are_range_checked() {
         "box a at (0,0) size (10,10) padding=-1\n",
         "box a at (0,0) size (10,10) radius=-2\n",
         "style s { font-size=-3 }\n",
-        "line l: (0,0) -> h 5 stroke-width=0\n",
+        "line l (0,0) -> h 5 stroke-width=0\n",
         "box a at (0,0) size (10,10) font-size=2000000\n",
     ] {
         let d = errors(body);
@@ -1143,7 +1143,7 @@ fn text_color_cannot_be_none() {
 
 #[test]
 fn elements_keep_their_frame_origin() {
-    let s = ok("group g at (100,50) size (300,200) {\n  box a at (10,20) size (40,30)\n  junction j at (5,5)\n  text \"t\" at (1,2)\n  line l: (0,0) -> h 10\n}\n");
+    let s = ok("group g at (100,50) size (300,200) {\n  box a at (10,20) size (40,30)\n  junction j at (5,5)\n  text \"t\" at (1,2)\n  line l (0,0) -> h 10\n}\n");
     let a = s.shapes.iter().find(|x| x.id == "a").unwrap();
     assert_eq!(a.origin, Pt::new(100.0, 50.0));
     assert_eq!(a.local_rect(), Rect::new(10.0, 20.0, 40.0, 30.0));
@@ -1186,9 +1186,8 @@ fn placement_graph_survives_cycles() {
 #[test]
 fn lines_keep_their_authored_segments() {
     use kashika_model::SegmentKind;
-    let s = ok(
-        "box a at (0,0) size (40,40)\nline l: a.right -> h 20 -> hv (200,100) -> v 0 radius=5\n",
-    );
+    let s =
+        ok("box a at (0,0) size (40,40)\nline l a.right -> h 20 -> hv (200,100) -> v 0 radius=5\n");
     let l = &s.lines[0];
     let kinds: Vec<SegmentKind> = l.segments.iter().map(|g| g.kind).collect();
     assert_eq!(kinds, [SegmentKind::H, SegmentKind::Hv, SegmentKind::V]);
@@ -1219,7 +1218,7 @@ fn lines_keep_their_authored_segments() {
 
 #[test]
 fn literals_are_recorded_in_their_own_frame() {
-    let s = ok("group g at (100,50) size (300,200) {\n  box a at (10,20) size (40,30)\n}\nline l: a.right+(5,0) -> h 15 -> (300,95)\n");
+    let s = ok("group g at (100,50) size (300,200) {\n  box a at (10,20) size (40,30)\n}\nline l a.right+(5,0) -> h 15 -> (300,95)\n");
     let lits: Vec<(&str, &str, f64)> = s
         .literals
         .iter()
@@ -1248,7 +1247,7 @@ fn literals_are_recorded_in_their_own_frame() {
 
 #[test]
 fn line_endpoints_know_whether_they_are_literal() {
-    let s = ok("box a at (0,0) size (40,40)\nline m: (100,100) -> a.left\nline n: a.top -> y -20\nline o: a.bottom -> x a.right\nline p: a.right -> hv (80,80)\n");
+    let s = ok("box a at (0,0) size (40,40)\nline m (100,100) -> a.left\nline n a.top -> y -20\nline o a.bottom -> x a.right\nline p a.right -> hv (80,80)\n");
     let flags: Vec<(bool, bool)> = s
         .lines
         .iter()

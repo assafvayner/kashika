@@ -8,7 +8,7 @@ use kashika_geom::{Pt, Rect};
 
 #[test]
 fn free_intervals_avoid_boxes_and_lines_with_clearance() {
-    let s = scene("box a at (100,110) size (80,60)\nline l: (0,300) -> h 800\n");
+    let s = scene("box a at (100,110) size (80,60)\nline l (0,300) -> h 800\n");
     let ctx = Ctx::new(&s);
     assert_eq!(
         free_intervals(&ctx, Axis::Y, (50.0, 500.0), (0.0, 600.0), &[]),
@@ -68,7 +68,7 @@ fn free_around_a_vertical_piece_spans_the_canvas_width() {
 
 #[test]
 fn with_free_adds_a_fact_and_help_for_straight_pieces() {
-    let s = scene("box a at (100,110) size (80,60)\nline l: (50,150) -> h 250 -> v 100\n");
+    let s = scene("box a at (100,110) size (80,60)\nline l (50,150) -> h 250 -> v 100\n");
     let ctx = Ctx::new(&s);
     let l = ctx.line("l").unwrap();
     let d = with_free(

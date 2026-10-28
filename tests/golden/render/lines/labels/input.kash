@@ -1,5 +1,5 @@
 // spec: 5, 6
 // Labels at several `t`, on curves, with markup, masking the line beneath.
 diagram "labels" size (400,240)
-line l: (20,40) -> h 200 -> v 100 -> h 160 label="mid" label@0.1="start" label@0.9="end"
-line c: (20,200) -> curve left:40 (380,200) label@0.25="**bold** `code`"
+line l (20,40) -> h 200 -> v 100 -> h 160 label="mid" label@0.1="start" label@0.9="end"
+line c (20,200) -> curve left 40 (380,200) label@0.25="**bold** `code`"

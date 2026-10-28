@@ -9,4 +9,4 @@ text y "y" at (100,20)
 group hv at (130,10) size (40,40) {
 }
 box vh at (180,10) size (20,20)
-line curve: (10,100) -> h 50
+line curve (10,100) -> h 50

@@ -1,0 +1,4 @@
+error[parse] 4:30-4:31: `curve left` and `curve right` take no `:`
+  = help: remove the `:`: write `curve left 30 (120,100)`
+error[parse] 4:58-4:59: `curve left` and `curve right` take no `:`
+  = help: remove the `:`: write `curve right 20 (220,100)`

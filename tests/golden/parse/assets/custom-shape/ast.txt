@@ -67,36 +67,36 @@ File {
                 id: Some(Ident { name: "l", span: 16:6-16:7 }),
                 start: Ref {
                     r: Ref {
-                        id: Ident { name: "lb", span: 16:9-16:11 },
+                        id: Ident { name: "lb", span: 16:8-16:10 },
                         anchor: Some(
-                            Anchor { name: Ident { name: "right", span: 16:12-16:17 }, t: None },
+                            Anchor { name: Ident { name: "right", span: 16:11-16:16 }, t: None },
                         ),
                     },
                     offset: None,
-                    span: 16:9-16:17,
+                    span: 16:8-16:16,
                 },
                 segs: [
                     Seg {
                         kind: To(
                             Ref {
                                 r: Ref {
-                                    id: Ident { name: "c", span: 16:21-16:22 },
+                                    id: Ident { name: "c", span: 16:20-16:21 },
                                     anchor: Some(
                                         Anchor {
-                                            name: Ident { name: "left", span: 16:23-16:27 },
+                                            name: Ident { name: "left", span: 16:22-16:26 },
                                             t: None,
                                         },
                                     ),
                                 },
                                 offset: None,
-                                span: 16:21-16:27,
+                                span: 16:20-16:26,
                             },
                         ),
-                        span: 16:21-16:27,
+                        span: 16:20-16:26,
                     },
                 ],
                 attrs: [],
-                span: 16:1-16:27,
+                span: 16:1-16:26,
             },
         ),
     ],

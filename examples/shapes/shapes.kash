@@ -5,6 +5,6 @@ box web "Web" at user.right+(80,0) size (140,80) shape=rounded style=service pin
 box check "Valid?" at web.right+(80,0) size (160,100) shape=diamond pin=left
 box db "Orders" at check.right+(80,0) size (140,100) shape=cylinder style=datastore pin=left
 
-line l_web: user.right -> web.left end=arrow
-line l_check: web.right -> check.left end=arrow
-line l_db: check.right -> db.left end=arrow label="yes"
+line l_web user.right -> web.left end=arrow
+line l_check web.right -> check.left end=arrow
+line l_db check.right -> db.left end=arrow label="yes"

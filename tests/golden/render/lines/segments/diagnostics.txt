@@ -1,22 +1,22 @@
-warn[cross] 8:1-8:31: l_hv crosses axis at (260,40)
+warn[cross] 8:1-8:30: l_hv crosses axis at (260,40)
   = help: segment 1 runs at y=40; free y-intervals across x 80..430: 0..14, 286..300
   = help: if intentional: allow=cross:axis on l_hv
   = suppressed
-  elements: [{"from":[80,40],"id":"l_hv","kind":"line","segment":1,"span":{"col":1,"end_col":31,"end_line":8,"line":8},"to":[430,220]},{"from":[260,20],"id":"axis","kind":"line","segment":2,"span":{"col":1,"end_col":60,"end_line":7,"line":7},"to":[260,80]}]
+  elements: [{"from":[80,40],"id":"l_hv","kind":"line","segment":1,"span":{"col":1,"end_col":30,"end_line":8,"line":8},"to":[430,220]},{"from":[260,20],"id":"axis","kind":"line","segment":2,"span":{"col":1,"end_col":59,"end_line":7,"line":7},"to":[260,80]}]
   facts: {"at":[260,40],"free":{"axis":"y","band":[80,430],"intervals":[[0,14],[286,300]]}}
-warn[cross] 9:1-9:33: l_vh crosses pts at (50,100)
+warn[cross] 9:1-9:32: l_vh crosses pts at (50,100)
   = help: segment 1 runs at x=50; free x-intervals across y 60..240: 0..14, 166..214, 466..500
   = help: if intentional: allow=cross:pts on l_vh
   = suppressed
-  elements: [{"from":[50,60],"id":"l_vh","kind":"line","segment":1,"span":{"col":1,"end_col":33,"end_line":9,"line":9},"to":[400,240]},{"from":[20,100],"id":"pts","kind":"line","segment":1,"span":{"col":1,"end_col":57,"end_line":6,"line":6},"to":[120,100]}]
+  elements: [{"from":[50,60],"id":"l_vh","kind":"line","segment":1,"span":{"col":1,"end_col":32,"end_line":9,"line":9},"to":[400,240]},{"from":[20,100],"id":"pts","kind":"line","segment":1,"span":{"col":1,"end_col":56,"end_line":6,"line":6},"to":[120,100]}]
   facts: {"at":[50,100],"free":{"axis":"x","band":[60,240],"intervals":[[0,14],[166,214],[466,500]]}}
-warn[cross] 12:1-12:63: via crosses l_vh at (270.37,240)
+warn[cross] 12:1-12:62: via crosses l_vh at (270.37,240)
   = help: if intentional: allow=cross:l_vh on via
   = suppressed
-  elements: [{"from":[220,280],"id":"via","kind":"line","segment":1,"span":{"col":1,"end_col":63,"end_line":12,"line":12},"to":[380,280]},{"from":[50,60],"id":"l_vh","kind":"line","segment":1,"span":{"col":1,"end_col":33,"end_line":9,"line":9},"to":[400,240]}]
+  elements: [{"from":[220,280],"id":"via","kind":"line","segment":1,"span":{"col":1,"end_col":62,"end_line":12,"line":12},"to":[380,280]},{"from":[50,60],"id":"l_vh","kind":"line","segment":1,"span":{"col":1,"end_col":32,"end_line":9,"line":9},"to":[400,240]}]
   facts: {"at":[270.37,240]}
-warn[cross] 12:1-12:63: via crosses l_vh at (329.63,240)
+warn[cross] 12:1-12:62: via crosses l_vh at (329.63,240)
   = help: if intentional: allow=cross:l_vh on via
   = suppressed
-  elements: [{"from":[220,280],"id":"via","kind":"line","segment":1,"span":{"col":1,"end_col":63,"end_line":12,"line":12},"to":[380,280]},{"from":[50,60],"id":"l_vh","kind":"line","segment":1,"span":{"col":1,"end_col":33,"end_line":9,"line":9},"to":[400,240]}]
+  elements: [{"from":[220,280],"id":"via","kind":"line","segment":1,"span":{"col":1,"end_col":62,"end_line":12,"line":12},"to":[380,280]},{"from":[50,60],"id":"l_vh","kind":"line","segment":1,"span":{"col":1,"end_col":32,"end_line":9,"line":9},"to":[400,240]}]
   facts: {"at":[329.63,240]}

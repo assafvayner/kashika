@@ -1,12 +1,12 @@
-warn[near] 5:1-5:29: edge runs 4px from box 'a' (clearance 6)
+warn[near] 5:1-5:28: edge runs 4px from box 'a' (clearance 6)
   = help: segment 1 runs at y=104; free y-intervals across x 20..320: 0..4, 106..194, 210..300
-  elements: [{"from":[20,104],"id":"edge","kind":"line","segment":1,"span":{"col":1,"end_col":29,"end_line":5,"line":5},"to":[320,104]},{"bbox":[[100,40],[200,100]],"id":"a","kind":"box","span":{"col":1,"end_col":32,"end_line":4,"line":4}}]
+  elements: [{"from":[20,104],"id":"edge","kind":"line","segment":1,"span":{"col":1,"end_col":28,"end_line":5,"line":5},"to":[320,104]},{"bbox":[[100,40],[200,100]],"id":"a","kind":"box","span":{"col":1,"end_col":32,"end_line":4,"line":4}}]
   facts: {"clearance":6,"distance":4,"free":{"axis":"y","band":[20,320],"intervals":[[0,4],[106,194],[210,300]]}}
-warn[near] 6:1-6:39: own runs along the edge of its own box 'a', 0px away (clearance 6)
+warn[near] 6:1-6:38: own runs along the edge of its own box 'a', 0px away (clearance 6)
   = help: segment 1 runs at y=40; free y-intervals across x 110..190: 0..34, 110..194, 210..300
-  elements: [{"from":[110,40],"id":"own","kind":"line","segment":1,"span":{"col":1,"end_col":39,"end_line":6,"line":6},"to":[190,40]},{"bbox":[[100,40],[200,100]],"id":"a","kind":"box","span":{"col":1,"end_col":32,"end_line":4,"line":4}}]
+  elements: [{"from":[110,40],"id":"own","kind":"line","segment":1,"span":{"col":1,"end_col":38,"end_line":6,"line":6},"to":[190,40]},{"bbox":[[100,40],[200,100]],"id":"a","kind":"box","span":{"col":1,"end_col":32,"end_line":4,"line":4}}]
   facts: {"clearance":6,"distance":0,"free":{"axis":"y","band":[110,190],"intervals":[[0,34],[110,194],[210,300]]}}
-warn[near] 8:1-8:27: p2 runs 4px from p1 for 300px (clearance 6)
+warn[near] 8:1-8:26: p2 runs 4px from p1 for 300px (clearance 6)
   = help: segment 1 runs at y=204; free y-intervals across x 20..320: 0..4, 110..194, 206..300
-  elements: [{"from":[20,204],"id":"p2","kind":"line","segment":1,"span":{"col":1,"end_col":27,"end_line":8,"line":8},"to":[320,204]},{"from":[20,200],"id":"p1","kind":"line","segment":1,"span":{"col":1,"end_col":27,"end_line":7,"line":7},"to":[320,200]}]
+  elements: [{"from":[20,204],"id":"p2","kind":"line","segment":1,"span":{"col":1,"end_col":26,"end_line":8,"line":8},"to":[320,204]},{"from":[20,200],"id":"p1","kind":"line","segment":1,"span":{"col":1,"end_col":26,"end_line":7,"line":7},"to":[320,200]}]
   facts: {"clearance":6,"distance":4,"free":{"axis":"y","band":[20,320],"intervals":[[0,4],[110,194],[206,300]]},"length":300}

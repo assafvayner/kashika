@@ -1,0 +1,12 @@
+// spec: 5
+// dump: ast
+// A line id is an identifier followed by the start of a point.
+diagram "line ids" size (300,200)
+box a at (20,20) size (60,40)
+box b at (200,20) size (60,40)
+junction j at (150,150)
+line ab a.right -> b.left
+line jb (150,150) -> hv b.bottom
+line j -> h 50
+line a.bottom -> vh j
+line (20,180) -> h 40

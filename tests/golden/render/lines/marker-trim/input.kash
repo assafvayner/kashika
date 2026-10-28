@@ -1,5 +1,5 @@
 // spec: 5
 // Markers trim along curved ends; two markers on a short segment trim in proportion.
 diagram "trim" size (300,200)
-line curved: (20,100) -> curve left:60 (280,100) start=arrow end=arrow
-line short: (100,160) -> h 12 start=diamond end=arrow
+line curved (20,100) -> curve left 60 (280,100) start=arrow end=arrow
+line short (100,160) -> h 12 start=diamond end=arrow

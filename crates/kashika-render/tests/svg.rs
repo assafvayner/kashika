@@ -4,7 +4,7 @@ use kashika_render::render_svg;
 const BASIC: &str = "diagram \"Basic\" size (480,240) kashika=\"0.1.0\"\n\
 box api \"API\" at (40,40) size (120,60) style=service\n\
 box db \"Postgres\" at api.right+(160,0) size (120,60) pin=left style=datastore\n\
-line api_db: api.right -> db.left end=arrow label=\"SQL\"\n";
+line api_db api.right -> db.left end=arrow label=\"SQL\"\n";
 
 fn svg(src: &str) -> String {
     let (scene, diags) = compile(src);
@@ -63,7 +63,7 @@ fn snapshot_basic() {
 fn paint_order_is_groups_boxes_lines_then_overlays_in_file_order() {
     let s = svg("diagram \"p\" size (300,300)\n\
                  text \"T\" at (5,5)\n\
-                 line l: (0,150) -> h 300 label=\"L\"\n\
+                 line l (0,150) -> h 300 label=\"L\"\n\
                  box b at (100,100) size (50,50)\n\
                  group outer at (0,0) size (300,300) {\n  group inner at (20,20) size (100,100) {\n  }\n}\n");
     let pos = |needle: &str| s.find(needle).unwrap_or_else(|| panic!("{needle}"));
@@ -90,7 +90,7 @@ fn path_d(s: &str) -> &str {
 
 #[test]
 fn markers_trim_a_final_curve() {
-    let s = svg("diagram \"c\" size (200,200)\nline l: (0,100) -> curve left:20 (100,100) end=arrow start=diamond\n");
+    let s = svg("diagram \"c\" size (200,200)\nline l (0,100) -> curve left 20 (100,100) end=arrow start=diamond\n");
     let d = path_d(&s);
     assert!(d.starts_with("M ") && !d.starts_with("M 0 100"), "{d}");
     assert!(!d.ends_with(" 100 100"), "{d}");
@@ -98,13 +98,13 @@ fn markers_trim_a_final_curve() {
 
 #[test]
 fn markers_at_both_ends_of_a_short_line_share_it() {
-    let s = svg("diagram \"c\" size (200,200)\nline l: (0,50) -> h 15 start=arrow end=arrow\n");
+    let s = svg("diagram \"c\" size (200,200)\nline l (0,50) -> h 15 start=arrow end=arrow\n");
     assert_eq!(path_d(&s), "M 7.5 50 L 7.5 50");
 }
 
 #[test]
 fn line_labels_get_a_mask_and_texts_do_not() {
-    let s = svg("diagram \"h\" size (200,100)\nline l: (0,50) -> h 200 label=\"L\"\ntext \"T\" at (100,90)\n");
+    let s = svg("diagram \"h\" size (200,100)\nline l (0,50) -> h 200 label=\"L\"\ntext \"T\" at (100,90)\n");
     let rect = r##"fill="#000"/></mask>"##;
     let mask = s.find(rect).expect("label rect in the mask");
     let id = mask_ids(&s)[0].clone();
@@ -151,7 +151,9 @@ fn nested_groups_paint_before_later_sibling_groups() {
 
 #[test]
 fn line_labels_and_texts_paint_in_file_order() {
-    let s = svg("diagram \"t\" size (200,100)\ntext \"T\" at (10,10)\nline l: (0,50) -> h 100 label=\"L\"\n");
+    let s = svg(
+        "diagram \"t\" size (200,100)\ntext \"T\" at (10,10)\nline l (0,50) -> h 100 label=\"L\"\n",
+    );
     assert!(
         s.find("aria-label=\"T\"").unwrap() < s.find("aria-label=\"L\"").unwrap(),
         "{s}"
@@ -175,13 +177,13 @@ fn canvas_is_transparent_unless_background_is_set() {
 
 #[test]
 fn line_labels_mask_their_own_line_without_painting() {
-    let s = svg("diagram \"t\" size (300,100)\nline l: (20,50) -> (280,50) label=\"open\"\n");
+    let s = svg("diagram \"t\" size (300,100)\nline l (20,50) -> (280,50) label=\"open\"\n");
     assert!(!s.contains("#ffffff"), "{s}");
     assert!(s.contains("<mask "), "{s}");
     assert!(s.contains(r#"mask="url(#"#), "{s}");
     assert_eq!(
         s,
-        svg("diagram \"t\" size (300,100)\nline l: (20,50) -> (280,50) label=\"open\"\n")
+        svg("diagram \"t\" size (300,100)\nline l (20,50) -> (280,50) label=\"open\"\n")
     );
 }
 
@@ -207,8 +209,8 @@ fn mask_ids(svg: &str) -> Vec<String> {
 
 #[test]
 fn mask_ids_are_unique_per_diagram_and_stable() {
-    let a = "diagram \"a\" size (200,100)\nline l: (0,50) -> h 200 label=\"L\"\nline m: (0,80) -> h 200 label=\"M\"\n";
-    let b = "diagram \"b\" size (200,100)\nline l: (0,50) -> h 200 label=\"L\"\n";
+    let a = "diagram \"a\" size (200,100)\nline l (0,50) -> h 200 label=\"L\"\nline m (0,80) -> h 200 label=\"M\"\n";
+    let b = "diagram \"b\" size (200,100)\nline l (0,50) -> h 200 label=\"L\"\n";
     let (ia, ib) = (mask_ids(&svg(a)), mask_ids(&svg(b)));
     assert_eq!(ia.len(), 2);
     for id in ia.iter().chain(&ib) {

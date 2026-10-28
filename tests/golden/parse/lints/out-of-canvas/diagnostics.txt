@@ -2,9 +2,9 @@ warn[out-of-canvas] 4:1-4:32: box 'a' extends beyond the 300x200 canvas (right b
   = help: move it inside (0,0)-(300,200) or enlarge `size` on the `diagram` line
   elements: [{"bbox":[[250,20],[350,60]],"id":"a","kind":"box","span":{"col":1,"end_col":32,"end_line":4,"line":4}}]
   facts: {"overflow":{"right":50}}
-warn[out-of-canvas] 5:1-5:45: line l extends beyond the 300x200 canvas (bottom by 29.76px)
+warn[out-of-canvas] 5:1-5:44: line l extends beyond the 300x200 canvas (bottom by 29.76px)
   = help: move it inside (0,0)-(300,200) or enlarge `size` on the `diagram` line
-  elements: [{"id":"l","kind":"line","span":{"col":1,"end_col":45,"end_line":5,"line":5}}]
+  elements: [{"id":"l","kind":"line","span":{"col":1,"end_col":44,"end_line":5,"line":5}}]
   facts: {"overflow":{"bottom":29.76}}
 warn[out-of-canvas] 6:1-6:27: text 't' extends beyond the 300x200 canvas (right by 11.74px)
   = help: move it inside (0,0)-(300,200) or enlarge `size` on the `diagram` line

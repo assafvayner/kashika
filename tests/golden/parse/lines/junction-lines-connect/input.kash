@@ -2,6 +2,6 @@
 // Lines meeting at a junction are connected, not crossing.
 diagram "junction" size (300,200)
 junction j at (150,100) dot
-line a: (20,100) -> j
-line b: j -> h 100
-line c: (150,20) -> j
+line a (20,100) -> j
+line b j -> h 100
+line c (150,20) -> j

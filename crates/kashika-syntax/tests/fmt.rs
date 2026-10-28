@@ -31,16 +31,20 @@ fn normalizes_token_spacing() {
         "box a \"A\" at (10,20) size (1,1) fill=#fff\n"
     );
     assert_eq!(
-        fmt("line l : db.top + ( -10 , 0 ) -> h 20 label @ 0.5 = \"x\"\n"),
-        "line l: db.top+(-10,0) -> h 20 label@0.5=\"x\"\n"
+        fmt("line l  db.top + ( -10 , 0 ) -> h 20 label @ 0.5 = \"x\"\n"),
+        "line l db.top+(-10,0) -> h 20 label@0.5=\"x\"\n"
     );
     assert_eq!(
-        fmt("line l : a.top -> curve left : 30 b.top allow = cross : m , near\n"),
-        "line l: a.top -> curve left:30 b.top allow=cross:m,near\n"
+        fmt("line l db.top - ( -10 , 0 ) -> b.left@0.25 -(0,4)\n"),
+        "line l db.top-(-10,0) -> b.left@0.25-(0,4)\n"
     );
     assert_eq!(
-        fmt("junction j at (a.bottom.x,130)\nline l: (j.x , 10) -> ( 5 , 6 )\n"),
-        "junction j at (a.bottom.x, 130)\nline l: (j.x, 10) -> (5,6)\n"
+        fmt("line l a.top -> curve  left   30 b.top allow = cross : m , near\n"),
+        "line l a.top -> curve left 30 b.top allow=cross:m,near\n"
+    );
+    assert_eq!(
+        fmt("junction j at (a.bottom.x,130)\nline l (j.x , 10) -> ( 5 , 6 )\n"),
+        "junction j at (a.bottom.x, 130)\nline l (j.x, 10) -> (5,6)\n"
     );
 }
 
@@ -57,14 +61,14 @@ fn indents_blocks_and_continuations() {
     let src = "diagram \"d\" size (100,100)\n\
 group g at (0,0) size (100,100) {\n\
 box a at (10,30) size (20,20)\n\
-    line l: a.right\n\
+    line l a.right\n\
   -> h 20\n\
         end=arrow\n\
 }\n";
     let want = "diagram \"d\" size (100,100)\n\
 group g at (0,0) size (100,100) {\n\
 \x20 box a at (10,30) size (20,20)\n\
-\x20 line l: a.right\n\
+\x20 line l a.right\n\
 \x20   -> h 20\n\
 \x20   end=arrow\n\
 }\n";

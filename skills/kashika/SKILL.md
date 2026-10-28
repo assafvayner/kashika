@@ -53,7 +53,7 @@ style svc { fill=#e8f0fe stroke=#1a73e8 }  // built-ins: service datastore exter
 box api "API" at (40,40) size (140,60) style=service fill=#1a73e833 stroke=steelblue  // inline keys override style=; #rrggbbaa alpha works; // shape=rect|rounded|cylinder|diamond|ellipse|hexagon|doc|cloud|person
 box db "DB" at api.right+(120,0) size (140,60) pin=left  // pin: any anchor, `side@t` included (`pin=left@0.25`); default `tl`
 box badge at db.tr size (16,16) pin=center allow=overlap:db reason="corner badge"
-line api_db: api.right -> db.left end=arrow label="SQL"
+line api_db api.right -> db.left end=arrow label="SQL"  // the optional id follows `line` directly, with no colon
 group vpc "VPC" at (20,180) size (600,280) {  // children use vpc-relative coordinates
   box pay "Payments API" at (20,60) size (140,60) sublabel="v2.4.1"  // muted second line at 0.8 × size
   box q "Jobs" at (300,60) size (160,60) icon="queue"  // icon-pos=left|top icon-size=24; bundled: server browser queue lock cloud person
@@ -63,13 +63,13 @@ text note1 "note" at (880,480) size=12 align=right muted  // the id is optional 
 image logo "assets/logo.png" at (780,20) size (80,80) fit=contain  // SVG/PNG/JPEG; fit=contain|cover|stretch
 ```
 
-Anchors: `top bottom left right center tl tr bl br`, plus `side@t` (e.g. `db.left@0.25`) and offsets `+(dx,dy)`. Mixed points take each axis from a reference: `(db.left.x, lane.y)`, `(b.top.x, fan.y)` with a junction. `.x`/`.y` only work inside such a parenthesized point.
+Anchors: `top bottom left right center tl tr bl br`, plus `side@t` (e.g. `db.left@0.25`) and offsets `+(dx,dy)` or `-(dx,dy)` (`db.top-(10,0)` is `db.top+(-10,0)`). Mixed points take each axis from a reference: `(db.left.x, lane.y)`, `(b.top.x, fan.y)` with a junction. `.x`/`.y` only work inside such a parenthesized point.
 
 On non-rectangular shapes, `top`/`bottom`/`left`/`right` (and `@t`) slide along their axis onto the outline, so a vertical line into `db.top` stays vertical. Corners (`tl` …) stay on the bounding box. `kashika ref shapes` lists each shape's outline and text area.
 
 Files (imports, SVG shapes, images, icons) are local only and resolve from the `.kash` file's directory, then `icons="<dir>"` on the `diagram` line, then `KASHIKA_ICON_PATH`, then the bundled icons. Paths outside the file's directory need `--allow-path`. `kashika icons [dir] --search <term>` lists what's available, with natural sizes. `import` goes right after `diagram`. A library file has no `diagram` line and holds only `shape`, `style` and `import`; it can't be checked on its own, so check it through a diagram that imports it. Images are top-level only.
 
-`grid=N` makes `off-grid` check every number you write for a position or distance: point coordinates (also inside mixed points), `+(dx,dy)` offsets, sizes, `h`/`v`, numeric `x`/`y` and `curve via` points. Anchors, `@t`, `curve left:N` and attribute values aren't checked. Round measured sizes up to the grid.
+`grid=N` makes `off-grid` check every number you write for a position or distance: point coordinates (also inside mixed points), `+(dx,dy)` offsets, sizes, `h`/`v`, numeric `x`/`y` and `curve via` points. Anchors, `@t`, `curve left N` and attribute values aren't checked. Round measured sizes up to the grid.
 
 Segments after `->`:
 
@@ -79,7 +79,7 @@ Segments after `->`:
 | `h 40` / `v -20` | move by |
 | `x 300` / `y db.top` | move to that x / y: a number or a point (`x bi.bottom`, not `x bi.bottom.x`) |
 | `hv db.top` / `vh db.left` | one elbow: horizontal then vertical / vertical then horizontal |
-| `curve left:30 db.top` | the curve's midpoint bulges 30px off the straight chord, left/right as seen walking along the line |
+| `curve left 30 db.top` | the curve's midpoint bulges 30px off the straight chord, left/right as seen walking along the line |
 | `curve via (c1) (c2) db.top` | explicit cubic |
 
 Line attributes: `start=`/`end=` (`arrow open diamond dot none`), `stroke-style=dashed|dotted`, `radius=8` (rounded corners), `label="x"`, `label@0.25="x"` (`t` is the fraction of the whole path length, across all segments; a label masks the line under it), `ortho`. A line may start or end at a junction, with or without an arrow.
@@ -99,11 +99,11 @@ box b "B" at (200,200) size (100,40)
 box c "C" at (380,200) size (100,40)
 junction fan at src.bottom+(0,50) dot
 junction mid at (b.top.x, fan.y) dot
-line src_fan: src.bottom -> fan
-line fan_a: fan -> a.top end=arrow
-line fan_c: fan -> hv c.top end=arrow
-line mid_b: mid -> b.top end=arrow
-line again: src.top@0.8 -> curve via src.top@0.8+(0,-50) src.top@0.2+(0,-50) src.top@0.2 end=arrow label="retry"
+line src_fan src.bottom -> fan
+line fan_a fan -> a.top end=arrow
+line fan_c fan -> hv c.top end=arrow
+line mid_b mid -> b.top end=arrow
+line again src.top@0.8 -> curve via src.top@0.8+(0,-50) src.top@0.2+(0,-50) src.top@0.2 end=arrow label="retry"
 ```
 
 ```kash
@@ -112,8 +112,8 @@ box c "Client" at (40,20) size (100,40)
 box s "Server" at (220,20) size (100,40)
 box lc at c.bottom size (8,120) pin=top
 box ls at s.bottom size (8,120) pin=top
-line req: lc.right@0.2 -> ls.left@0.2 end=arrow label="request"
-line res: ls.left@0.6 -> lc.right@0.6 end=arrow stroke-style=dashed label="reply"
+line req lc.right@0.2 -> ls.left@0.2 end=arrow label="request"
+line res ls.left@0.6 -> lc.right@0.6 end=arrow stroke-style=dashed label="reply"
 ```
 
 ## Text

@@ -10,15 +10,15 @@ box notify "Notify customer" at stock.right+(70,0) size (160,50) pin=left style=
 box retry "Retry payment" at pay.left+(-70,0) size (160,50) pin=right style=service
 junction j1 at (stock.bottom.x, 330) dot
 junction j2 at (ship.bottom.x, 690) dot
-line l1: start.bottom -> validate.top end=arrow
-line l2: validate.bottom -> stock.top end=arrow
-line yes1: stock.bottom -> j1 label="yes"
-line l3: j1 -> charge.top end=arrow
-line l4: charge.bottom -> pay.top end=arrow
-line yes2: pay.bottom -> ship.top end=arrow label="yes"
-line no1: stock.right -> notify.left end=arrow label="no"
-line no2: pay.left -> retry.right end=arrow label="no"
-line l5: ship.bottom -> j2
-line l6: notify.bottom -> vh j2
-line l7: j2 -> done.top end=arrow
-line l8: retry.top -> vh j1 end=arrow
+line l1 start.bottom -> validate.top end=arrow
+line l2 validate.bottom -> stock.top end=arrow
+line yes1 stock.bottom -> j1 label="yes"
+line l3 j1 -> charge.top end=arrow
+line l4 charge.bottom -> pay.top end=arrow
+line yes2 pay.bottom -> ship.top end=arrow label="yes"
+line no1 stock.right -> notify.left end=arrow label="no"
+line no2 pay.left -> retry.right end=arrow label="no"
+line l5 ship.bottom -> j2
+line l6 notify.bottom -> vh j2
+line l7 j2 -> done.top end=arrow
+line l8 retry.top -> vh j1 end=arrow

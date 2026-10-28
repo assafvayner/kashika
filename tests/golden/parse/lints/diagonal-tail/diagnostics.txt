@@ -1,3 +1,3 @@
-warn[diagonal-tail] 4:37-4:46: the last segment of l runs diagonally from (120,70) to (200,150)
+warn[diagonal-tail] 4:36-4:45: the last segment of l runs diagonally from (120,70) to (200,150)
   = help: finish with `hv`/`vh` or an `x`/`y` target so the last hop is horizontal or vertical
-  elements: [{"from":[120,70],"id":"l","kind":"line","segment":3,"span":{"col":1,"end_col":46,"end_line":4,"line":4},"to":[200,150]}]
+  elements: [{"from":[120,70],"id":"l","kind":"line","segment":3,"span":{"col":1,"end_col":45,"end_line":4,"line":4},"to":[200,150]}]

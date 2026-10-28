@@ -2,5 +2,5 @@
 // A literal endpoint within 8px of an outline but not on it.
 diagram "off edge" size (300,200)
 box a at (100,60) size (100,60)
-line l: (20,90) -> (96,90)
-line ok: (20,150) -> x a.left
+line l (20,90) -> (96,90)
+line ok (20,150) -> x a.left

@@ -2,4 +2,4 @@
 // dump: scene
 // Point targets and relative `h`/`v` moves, including negative ones.
 diagram "straight" size (300,200)
-line l: (20,20) -> (120,20) -> h 50 -> v 80 -> h -100 -> v -30
+line l (20,20) -> (120,20) -> h 50 -> v 80 -> h -100 -> v -30

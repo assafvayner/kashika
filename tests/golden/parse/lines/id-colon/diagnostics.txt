@@ -1,0 +1,2 @@
+error[parse] 6:8-6:9: a line id takes no `:`
+  = help: remove the `:`: write `line ab a.right -> b.left end=arrow`

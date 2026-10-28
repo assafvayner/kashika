@@ -15,19 +15,39 @@ pub const MAX_GROUP_DEPTH: usize = 64;
 
 pub fn parse(src: &str) -> (File, Vec<Diagnostic>) {
     let (toks, mut diags) = lex(src);
-    let first_stmt = toks
-        .iter()
-        .find(|t| !matches!(t.tok, Tok::Newline | Tok::Eof))
-        .map(|t| t.span);
+    let first_stmt = first_stmt(&toks);
     let mut p = Parser {
         toks,
         pos: 0,
         depth: 0,
         diags: Vec::new(),
+        lines: src.split('\n').map(|l| l.chars().collect()).collect(),
     };
     let stmts = p.stmts(false);
     diags.append(&mut p.diags);
     (File { stmts, first_stmt }, diags)
+}
+
+/// Where the first statement starts, skipping a misplaced `kashika=` line, which is
+/// reported on its own.
+fn first_stmt(toks: &[Token]) -> Option<Span> {
+    let mut i = 0;
+    loop {
+        match &toks.get(i)?.tok {
+            Tok::Newline => i += 1,
+            Tok::Eof => return None,
+            Tok::Ident(s) if s == "kashika" && toks.get(i + 1)?.tok == Tok::Eq => {
+                while !matches!(toks.get(i)?.tok, Tok::Newline | Tok::Eof) {
+                    i += 1;
+                }
+            }
+            _ => return Some(toks[i].span),
+        }
+    }
+}
+
+fn starts_point(t: &Tok) -> bool {
+    matches!(t, Tok::Ident(_) | Tok::LParen)
 }
 
 type PResult<T> = Result<T, ()>;
@@ -65,6 +85,7 @@ struct Parser {
     pos: usize,
     depth: usize,
     diags: Vec<Diagnostic>,
+    lines: Vec<Vec<char>>,
 }
 
 impl Parser {
@@ -100,6 +121,40 @@ impl Parser {
             format!("expected {expected}, found {found}"),
         ));
         Err(())
+    }
+
+    /// The source text from the start of `from` to the end of `to`.
+    fn source(&self, from: Span, to: Span) -> String {
+        let mut out = String::new();
+        for line in from.line..=to.end_line {
+            let Some(chars) = self.lines.get(line as usize - 1) else {
+                break;
+            };
+            let a = if line == from.line {
+                from.col as usize - 1
+            } else {
+                0
+            };
+            let b = if line == to.end_line {
+                to.end_col as usize - 1
+            } else {
+                chars.len()
+            };
+            if !out.is_empty() {
+                out.push(' ');
+            }
+            out.extend(chars.get(a..b.min(chars.len())).unwrap_or_default());
+        }
+        out
+    }
+
+    /// The span of the last token before the end of the current physical line.
+    fn line_end(&self) -> Span {
+        let mut i = self.pos;
+        while i + 1 < self.toks.len() && !matches!(self.toks[i + 1].tok, Tok::Newline | Tok::Eof) {
+            i += 1;
+        }
+        self.toks[i].span
     }
 
     fn is_kw(&self, kw: &str) -> bool {
@@ -166,6 +221,21 @@ impl Parser {
         let Tok::Ident(kw) = self.tok().clone() else {
             return self.error("a statement");
         };
+        if kw == "kashika" && *self.tok_at(1) == Tok::Eq {
+            let end = self.line_end();
+            let version = match self.tok_at(2) {
+                Tok::Str(_) => self.source(self.toks[self.pos + 2].span, end),
+                _ => "\"X.Y.Z\"".to_string(),
+            };
+            self.diags.push(
+                Diagnostic::error("parse", start.to(end), "`kashika=` is not a statement")
+                    .with_help(format!(
+                        "the version is an attribute of `diagram`: \
+                         write `diagram \"…\" size (w,h) kashika={version}`"
+                    )),
+            );
+            return Err(());
+        }
         let stmt = match kw.as_str() {
             "diagram" => {
                 self.bump();
@@ -487,15 +557,61 @@ impl Parser {
         })
     }
 
+    /// A line id is an identifier followed by something that starts a point; a point that
+    /// starts with an identifier never continues with another identifier or `(`.
     fn line(&mut self, start: Span) -> PResult<Line> {
-        let id = if matches!(self.tok(), Tok::Ident(_)) && *self.tok_at(1) == Tok::Colon {
+        let mut colon_diag = None;
+        let mut id = if matches!(self.tok(), Tok::Ident(_)) && *self.tok_at(1) == Tok::Colon {
             let id = self.decl_id("a line id")?;
-            self.bump();
+            let colon = self.bump().span;
+            let rest = if matches!(self.tok(), Tok::Newline | Tok::Eof) {
+                "a.right -> b.left".to_string()
+            } else {
+                self.source(self.span(), self.line_end())
+            };
+            colon_diag = Some(self.diags.len());
+            self.diags.push(
+                Diagnostic::error("parse", colon, "a line id takes no `:`")
+                    .with_help(format!("remove the `:`: write `line {} {rest}`", id.name)),
+            );
             Some(id)
+        } else if matches!(self.tok(), Tok::Ident(_)) && starts_point(self.tok_at(1)) {
+            Some(self.decl_id("a line id")?)
         } else {
             None
         };
+        let from_kw = self.is_kw("from") && starts_point(self.tok_at(1));
+        if from_kw {
+            self.bump();
+        }
         let start_pt = self.point()?;
+        let to_kw = self.is_kw("to") && starts_point(self.tok_at(1));
+        if from_kw || to_kw {
+            if !from_kw && id.as_ref().is_some_and(|i| i.name == "from") {
+                id = None;
+            }
+            let a = self.source(start_pt.span(), start_pt.span());
+            let b = if to_kw {
+                self.bump();
+                let end = self.point()?;
+                self.source(end.span(), end.span())
+            } else {
+                "b.left".to_string()
+            };
+            if let Some(i) = colon_diag {
+                self.diags.remove(i);
+            }
+            let id = id.map(|i| format!("{} ", i.name)).unwrap_or_default();
+            self.diags.push(
+                Diagnostic::error(
+                    "parse",
+                    start.to(self.prev_span()),
+                    "a line is written with `->`, not `from … to`",
+                )
+                .with_help(format!("write `line {id}{a} -> {b}`")),
+            );
+            return Err(());
+        }
         let mut segs = Vec::new();
         loop {
             self.continuation(true, LINE_FLAGS);
@@ -686,9 +802,10 @@ impl Parser {
             });
         }
         let r = self.reference()?;
-        let offset = if *self.tok() == Tok::Plus {
-            self.bump();
-            Some(self.pair()?)
+        let offset = if matches!(self.tok(), Tok::Plus | Tok::Minus) {
+            let neg = self.bump().tok == Tok::Minus;
+            let (dx, dy) = self.pair()?;
+            Some(Offset { neg, dx, dy })
         } else {
             None
         };
@@ -805,12 +922,28 @@ impl Parser {
         } else if self.is_kw("right") {
             Side::Right
         } else {
-            return self.error("`left:<N>`, `right:<N>` or `via`");
+            return self.error("`left <N>`, `right <N>` or `via`");
         };
-        self.bump();
-        self.expect(Tok::Colon)?;
-        let amount = self.number()?;
-        let to = self.point()?;
-        Ok(SegKind::Curve { side, amount, to })
+        let side_span = self.bump().span;
+        let colon = (*self.tok() == Tok::Colon).then(|| self.bump().span);
+        let amount_span = self.span();
+        let amount = self.number();
+        let to = amount.and_then(|_| self.point());
+        if let Some(colon) = colon {
+            let side = self.source(side_span, side_span);
+            let rest = match &to {
+                Ok(p) => self.source(amount_span, p.span()),
+                Err(()) => "<N> <point>".to_string(),
+            };
+            self.diags.push(
+                Diagnostic::error("parse", colon, "`curve left` and `curve right` take no `:`")
+                    .with_help(format!("remove the `:`: write `curve {side} {rest}`")),
+            );
+        }
+        Ok(SegKind::Curve {
+            side,
+            amount: amount?,
+            to: to?,
+        })
     }
 }

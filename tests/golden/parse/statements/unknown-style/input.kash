@@ -2,4 +2,4 @@
 // `style=` names no style; did-you-mean.
 diagram "unknown style" size (300,120)
 box a at (20,20) size (100,60) style=servce
-line l: a.right -> h 50 style=nope
+line l a.right -> h 50 style=nope

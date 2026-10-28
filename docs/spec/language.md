@@ -22,14 +22,14 @@ The CLI renders `.kash` files to SVG, PNG, JPEG or WebP and runs geometric check
 - Comments: `//` to end of line, and `/* ... */` block comments, both outside strings. Block comments don't nest. A block comment that spans lines counts as one line break, so it never joins two statements. An unclosed `/*` is a `parse` error. `#` is never a comment character: a `#` that begins a line, or stands alone outside an attribute value, is one `parse` error suggesting `//`, and the rest of that line is skipped.
 - A UTF-8 byte order mark at the start of the file is ignored.
 - Strings: `"..."` with escapes `\"`, `\\`, `\n`, and the markup escapes `\*` and `` \` `` (§6). Any other escape, such as `\q`, is a `parse` error.
-- Identifiers: `[a-zA-Z_][a-zA-Z0-9_-]*`. **Ids are unique across the whole file** (boxes, groups, images, junctions, lines, texts) and are always referenced by bare id. There are no dotted paths. Only the names of imported shapes and styles are dotted (`shape=aws.s3`, §3a); shape and style names are separate from ids.
+- Identifiers: `[a-zA-Z_][a-zA-Z0-9_-]*`, where a `-` that starts `->` or `-(` ends the identifier (`a->b`, `db.top-(10,0)`). **Ids are unique across the whole file** (boxes, groups, images, junctions, lines, texts) and are always referenced by bare id. There are no dotted paths. Only the names of imported shapes and styles are dotted (`shape=aws.s3`, §3a); shape and style names are separate from ids.
 - The segment keywords `h`, `v`, `x`, `y`, `hv`, `vh` and `curve` are reserved: declaring an id with one of these names is a `parse` error, since it could not be used as a bare segment target. Like any statement that fails to parse, the statement is dropped, so it is never resolved or linted.
 - Numbers: integers or decimals, optionally negative. Colors: `#rgb`, `#rrggbb` or `#rrggbbaa`, one of the 148 CSS Color Module Level 4 names (`steelblue`, `rebeccapurple`; case-insensitive, no `transparent`), or `none` where a style allows it. A name resolves to lowercase `#rrggbb` hex, so the scene, the SVG and `low-contrast` only ever see hex. An unknown word where a color is expected is an `attr` error with a did-you-mean over the names.
 - **Statements** end at a newline, except in three cases:
   - inside `{ }` blocks;
   - when the next non-blank line starts with `->`. A long path can then be written one segment per line:
     ```
-    line app1_db: app1.top
+    line app1_db app1.top
       -> y 40
       -> hv pg.left
       end=arrow label="SQL"
@@ -50,7 +50,7 @@ box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=<shape>] [sty
 group <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [style=<name>] [allow=<code>[:<id>],...] [reason="..."] { ... }
 junction <id> at <point> [dot]
 text  [<id>] "<content>" at <point> [size=N] [color=C] [align=left|center|right] [muted]
-line  [<id>:] <point> (-> <segment>)+ [attrs]
+line  [<id>] <point> (-> <segment>)+ [attrs]
 image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stretch]   // §3a
 ```
 
@@ -137,7 +137,7 @@ Library files may contain only `shape`, `style` and `import`; any other statemen
 
 ```
 point  := "(" coord "," coord ")"
-        | ref ["+(" dx "," dy ")"]
+        | ref [("+" | "-") "(" dx "," dy ")"]
 ref    := <id> "." <anchor> | <junction-id>
 coord  := number                             // literal, in the current frame
         | ref ".x" | ref ".y"                // mixed: (db.left.x, lane1.y)
@@ -147,7 +147,7 @@ anchor := top | bottom | left | right | center
 ```
 
 - **Mixed points** take each axis from a different reference, so lanes can be expressed as relationships: `(app1.bottom.x, lane1.y)`. A `junction` without `dot` that no line ends at works as a named guide point.
-- `@t` and offsets compose: `db.left@0.25+(0,4)`.
+- `@t` and offsets compose: `db.left@0.25+(0,4)`, `db.left@0.25-(0,4)`.
 - **Groups have anchors** just like boxes, e.g. `k8s.top`.
 
 - `top@t`/`bottom@t` run left→right; `left@t`/`right@t` run top→bottom. `top` is the same as `top@0.5`.
@@ -157,12 +157,18 @@ anchor := top | bottom | left | right | center
   - `left@t`/`right@t` keep the y and move horizontally.
 
   A vertical line into `db.top` therefore stays vertical. Outlines are defined in `ref shapes`. For example, the top of a cylinder is the upper arc of its cap ellipse, whose height is `min(20, h/4)`.
-- Offsets use `+` only, with signed components: `db.top+(-10,0)`.
+- `+(dx,dy)` adds the offset and `-(dx,dy)` subtracts it, negating both components. Components are signed after either sign: `db.top+(-10,0)` and `db.top-(10,0)` are the same point, and `db.top-(-10,0)` is 10px to the right of `db.top`.
 - `@t` errors are reported as `unknown-anchor`: a `t` outside 0..1 ("`t` must be between 0 and 1"), and `@t` on a corner or `center` ("`@t` only applies to `top`/`bottom`/`left`/`right`").
 
 ## 5. Line paths
 
 A line is `start -> seg -> seg ...`. Every segment ends at a point, and that point becomes the "previous point" for the next segment.
+
+The optional id comes right after `line`, with no colon: `line api_db api.right -> db.left`. The first token is the id exactly when it is an identifier followed by something that starts a point (an identifier or `(`); a point that starts with an identifier continues only with `.`, `+`, `-(`, `->` or the end of the statement, never with another identifier or `(`, so `line a -> b` is unnamed and `line l a -> b` is named `l`. These common mistakes are `parse` errors whose help line gives the rewrite:
+
+- `line api_db: api.right -> db.left` (help: remove the `:`);
+- `line api_db from api.right to db.left`, with or without the `:` (help: ``write `line api_db api.right -> db.left` ``);
+- `curve left:30 db.top` (help: ``write `curve left 30 db.top` ``).
 
 | segment | path drawn |
 |---|---|
@@ -171,7 +177,7 @@ A line is `start -> seg -> seg ...`. Every segment ends at a point, and that poi
 | `x <X>` / `y <Y>` | horizontal or vertical **move to** x=X / y=Y. X/Y is a number (in the current frame) or a point (its x or y is used), e.g. `y db.top` |
 | `hv <point>` | horizontal, then vertical, to the point (one elbow) |
 | `vh <point>` | vertical, then horizontal, to the point |
-| `curve left:<N> <point>` / `curve right:<N> <point>` | quadratic curve to the point that bulges N px at its midpoint, to the left or right **as seen on screen by someone walking along the line**. Example: a line traveling right with `left:30` bulges **up** |
+| `curve left <N> <point>` / `curve right <N> <point>` | quadratic curve to the point that bulges N px at its midpoint, to the left or right **as seen on screen by someone walking along the line**. Example: a line traveling right with `left 30` bulges **up** |
 | `curve via (c1) (c2) <point>` | cubic Bézier with explicit control points |
 
 Line attributes:
@@ -235,7 +241,7 @@ These block output unless `--force` is given:
 
 | code | trigger |
 |---|---|
-| `parse` | Includes expected tokens and a suggestion. Also: unknown string escapes, reserved ids (§2), groups nested more than 64 deep |
+| `parse` | Includes expected tokens and a suggestion. Also: unknown string escapes, reserved ids (§2), groups nested more than 64 deep, the old `line <id>:` and `curve left:<N>` forms, `from … to` lines (§5) and a `kashika=` statement (§8), each with the rewrite in its help |
 | `unknown-id` / `unknown-anchor` | Includes did-you-mean. `unknown-anchor` also covers a bad `@t`: out of 0..1, or on a corner or `center` |
 | `duplicate-id` | Two statements use the same id |
 | `duplicate-style` | Two `style` statements, or two `shape` definitions, define the same name, or a `shape` reuses a built-in shape name. Style and shape names are separate from element ids |
@@ -308,7 +314,7 @@ Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`
 - `check` on a library file (§3a) reports only the errors in its definitions and prints no metrics; `render` on one is a usage error (exit 3).
 - `inspect` accepts the common flags, but only `--format` and `--stdin-name` change its output; it always exits 0 except on usage or I/O errors.
 
-**Versioning.** The optional `kashika="MAJOR.MINOR.PATCH"` on the `diagram` line is the minimum tool version that can process the file, always written with all three parts. A tool accepts a file when the file's version is at most the tool's version and the major versions are equal; anything else, including a bare number or a malformed string, is a `version` error. Releases that add language features bump the tool's minor version, so authors set `kashika=` to the release that introduced the newest feature they use.
+**Versioning.** The optional `kashika="MAJOR.MINOR.PATCH"` on the `diagram` line is the minimum tool version that can process the file, always written with all three parts. A tool accepts a file when the file's version is at most the tool's version and the major versions are equal; anything else, including a bare number or a malformed string, is a `version` error. Releases that add language features bump the tool's minor version, so authors set `kashika=` to the release that introduced the newest feature they use. `kashika="…"` written as a statement of its own before `diagram` is a `parse` error whose help moves it onto the `diagram` line; that line doesn't also make `diagram` misplaced.
 
 ### render
 
@@ -328,12 +334,14 @@ The text output is compiler-style, deterministic and has no color unless on a TT
 
 ```
 arch.kash:11:1: warn[cross]: l_d2 crosses l_lb3 at (690,95)
-   11 | line l_d2: app2.top@0.8 -> v -85 -> hv pg.top end=arrow
-   10 | line l_lb3: lb.right -> hv app3.top end=arrow
+   11 | line l_d2 app2.top@0.8 -> v -85 -> hv pg.top end=arrow
+   10 | line l_lb3 lb.right -> hv app3.top end=arrow
       = help: segment 2 runs at y=95; free y-intervals across x 504..820: 0..14, 316..400
       = help: if intentional: allow=cross:l_lb3 on l_d2
 0 errors, 1 warning · crossings=1 wire=1346px
 ```
+
+Diagnostics that share a severity, code and message template (the message with backticked text and standalone numbers blanked out, so `unknown id `a`` and `unknown id `b`` match) are collapsed: the first 3 are printed in full, followed by one `... and N more like this` line. Collapsed diagnostics don't count toward `--max`; when more than `--max` remain, the output ends with `... and N more`. The summary counts every diagnostic. JSON output never collapses: `diagnostics` lists every one, up to `--max`, and `truncated` says whether `--max` cut the list.
 
 ### JSON output
 
@@ -386,7 +394,7 @@ Suggests up to `--max` (default 3) candidate paths from `<from>` to `<to>`. Both
   |---|---|
   | `corner` | orthogonal paths with hard corners, written with `h`/`v`/`x`/`y`/`hv`/`vh` |
   | `arc` | the same orthogonal paths plus `radius=N` for rounded corners (default 8, set with `--radius`) |
-  | `bezier` | smooth paths written with `curve left:N` / `right:N` where possible, otherwise `curve via` |
+  | `bezier` | smooth paths written with `curve left N` / `right N` where possible, otherwise `curve via` |
 - `--line <id>` reroutes an existing line. The line is ignored as an obstacle, its endpoints are used when `<from>`/`<to>` are omitted, and its attributes are kept in the output.
 - Candidates must not cross into any box (`through`), and paths must keep `clearance`. They are ranked by:
   1. crossings
@@ -398,9 +406,9 @@ Each candidate lists these numbers, which line it crosses and where, and the cor
 
 ```
 #1  crossings=0 near=0 segments=3 length=412px  via corridor y 200..220
-    line app1_db: app1.top -> y 210 -> hv pg.left@0.25 end=arrow
+    line app1_db app1.top -> y 210 -> hv pg.left@0.25 end=arrow
 #2  crossings=1 (l_lb3 at (640,210)) near=0 segments=2 length=388px
-    line app1_db: app1.right -> hv pg.left@0.25 end=arrow
+    line app1_db app1.right -> hv pg.left@0.25 end=arrow
 ```
 
 Suggestions use anchors and axis targets rather than literals wherever possible, so they survive later moves. `--format json` returns the same data structured. It is a suggestion tool, not a layout engine; the search is bounded:

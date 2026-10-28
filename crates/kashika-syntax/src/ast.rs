@@ -187,9 +187,28 @@ pub enum Point {
     },
     Ref {
         r: Ref,
-        offset: Option<(f64, f64)>,
+        offset: Option<Offset>,
         span: Span,
     },
+}
+
+/// `+(dx,dy)` or `-(dx,dy)`; `neg` records which sign was written.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Offset {
+    pub neg: bool,
+    pub dx: f64,
+    pub dy: f64,
+}
+
+impl Offset {
+    /// The offset with its sign applied.
+    pub fn delta(&self) -> (f64, f64) {
+        if self.neg {
+            (-self.dx, -self.dy)
+        } else {
+            (self.dx, self.dy)
+        }
+    }
 }
 
 impl Point {

@@ -1,0 +1,8 @@
+// spec: 5, 7
+// `from A to B` is a parse error whose help writes `A -> B`, with or without an id colon.
+diagram "from to" size (300,200)
+box a at (20,20) size (60,40)
+box b at (200,20) size (60,40)
+line ab from a.right to b.left
+line ba: from b.bottom to a.bottom
+line from a.top to (100,5)

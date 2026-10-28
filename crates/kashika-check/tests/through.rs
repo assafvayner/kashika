@@ -6,7 +6,7 @@ use common::*;
 fn line_through_a_box_reports_entry_exit_and_free_lanes() {
     let d = lint(
         "through",
-        "box a at (40,110) size (140,60)\nbox cache at (300,110) size (80,60)\nbox c at (520,110) size (100,60)\nline l: a.right -> c.left\n",
+        "box a at (40,110) size (140,60)\nbox cache at (300,110) size (80,60)\nbox c at (520,110) size (100,60)\nline l a.right -> c.left\n",
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "l passes through box 'cache'");
@@ -29,12 +29,12 @@ fn line_through_a_box_reports_entry_exit_and_free_lanes() {
 fn own_boxes_are_exempt_only_on_the_first_and_last_segments() {
     assert!(lint(
         "through",
-        "box a at (0,0) size (100,100)\nbox b at (300,0) size (100,100)\nline l: a.center -> b.center\n"
+        "box a at (0,0) size (100,100)\nbox b at (300,0) size (100,100)\nline l a.center -> b.center\n"
     )
     .is_empty());
     let d = lint(
         "through",
-        "box a at (0,0) size (100,100)\nline l: a.right -> h 50 -> v 150 -> x 50 -> y 50 -> h -100\n",
+        "box a at (0,0) size (100,100)\nline l a.right -> h 50 -> v 150 -> x 50 -> y 50 -> h -100\n",
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].elements[0].segment, Some(4));
@@ -44,7 +44,7 @@ fn own_boxes_are_exempt_only_on_the_first_and_last_segments() {
 fn groups_are_never_obstacles() {
     assert!(lint(
         "through",
-        "group g at (0,0) size (300,300) {\n}\nline l: (10,150) -> h 200\n"
+        "group g at (0,0) size (300,300) {\n}\nline l (10,150) -> h 200\n"
     )
     .is_empty());
 }

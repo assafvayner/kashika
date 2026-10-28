@@ -48,7 +48,7 @@ fn line_labels_on_a_bare_canvas_count_as_white() {
     assert_eq!(
         lint(
             "low-contrast",
-            "style faint { color=#eeeeee }\nline l: (0,0) -> h 100 label=\"x\" style=faint\n"
+            "style faint { color=#eeeeee }\nline l (0,0) -> h 100 label=\"x\" style=faint\n"
         )
         .len(),
         1
@@ -94,12 +94,12 @@ fn canvas_text_is_checked_against_the_background() {
 fn line_labels_take_the_fill_beneath_them() {
     let src = |fill: &str| {
         format!(
-            "style pale {{ color=#f8fafc }}\ngroup g at (0,0) size (300,100) fill={fill} {{\n  line l: (20,50) -> (280,50) label=\"x\" style=pale\n}}\n"
+            "style pale {{ color=#f8fafc }}\ngroup g at (0,0) size (300,100) fill={fill} {{\n  line l (20,50) -> (280,50) label=\"x\" style=pale\n}}\n"
         )
     };
     assert!(lint("low-contrast", &src("#0f172a")).is_empty());
     assert_eq!(lint("low-contrast", &src("#ffffff")).len(), 1);
-    let src = "diagram \"t\" size (400,200) background=#0f172a\nstyle pale { color=#f8fafc }\nline l: (0,50) -> h 100 label=\"x\" style=pale\n";
+    let src = "diagram \"t\" size (400,200) background=#0f172a\nstyle pale { color=#f8fafc }\nline l (0,50) -> h 100 label=\"x\" style=pale\n";
     assert!(kashika_check::check(&scene_src(src))
         .iter()
         .all(|d| d.code != "low-contrast"));

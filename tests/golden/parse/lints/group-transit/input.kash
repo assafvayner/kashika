@@ -3,4 +3,4 @@
 diagram "transit" size (400,200)
 group g at (150,40) size (100,120) {
 }
-line l: (20,100) -> h 360
+line l (20,100) -> h 360

@@ -1,5 +1,5 @@
-warn[shared-segment] 5:1-5:27: b runs along a for 120px, from (100,100) to (220,100)
+warn[shared-segment] 5:1-5:26: b runs along a for 120px, from (100,100) to (220,100)
   = help: nearest free lane: y=94
   = help: free y-intervals across x 100..220: 0..94, 106..200
-  elements: [{"from":[100,100],"id":"b","kind":"line","segment":1,"span":{"col":1,"end_col":27,"end_line":5,"line":5},"to":[280,100]},{"from":[20,100],"id":"a","kind":"line","segment":1,"span":{"col":1,"end_col":26,"end_line":4,"line":4},"to":[220,100]}]
+  elements: [{"from":[100,100],"id":"b","kind":"line","segment":1,"span":{"col":1,"end_col":26,"end_line":5,"line":5},"to":[280,100]},{"from":[20,100],"id":"a","kind":"line","segment":1,"span":{"col":1,"end_col":25,"end_line":4,"line":4},"to":[220,100]}]
   facts: {"free":{"axis":"y","band":[100,220],"intervals":[[0,94],[106,200]]},"from":[100,100],"lane":{"at":94,"axis":"y"},"length":120,"to":[220,100]}

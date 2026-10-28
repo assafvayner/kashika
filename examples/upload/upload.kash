@@ -11,12 +11,12 @@ group vpc "VPC" at (40,160) size (820,320) {
   box worker "Worker" at queue.right+(140,0) size (140,60) pin=left style=service
 }
 
-line client_lb: client.right -> lb.left end=arrow label="HTTPS"
+line client_lb client.right -> lb.left end=arrow label="HTTPS"
 junction fan at (lb.bottom.x, 130)
-line lb_fan: lb.bottom -> fan
-line fan_api1: fan -> hv api1.top end=arrow radius=8
-line fan_api2: fan -> hv api2.top end=arrow radius=8
-line api2_db: api2.right -> db.left end=arrow label="SQL"
-line api1_queue: api1.bottom -> y queue.left -> queue.left end=arrow radius=8
-line queue_worker: queue.right -> worker.left end=arrow label="consume"
-line retry: worker.top -> curve right:30 queue.top end=open stroke-style=dashed label="retry"
+line lb_fan lb.bottom -> fan
+line fan_api1 fan -> hv api1.top end=arrow radius=8
+line fan_api2 fan -> hv api2.top end=arrow radius=8
+line api2_db api2.right -> db.left end=arrow label="SQL"
+line api1_queue api1.bottom -> y queue.left -> queue.left end=arrow radius=8
+line queue_worker queue.right -> worker.left end=arrow label="consume"
+line retry worker.top -> curve right 30 queue.top end=open stroke-style=dashed label="retry"

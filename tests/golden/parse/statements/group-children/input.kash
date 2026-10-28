@@ -6,7 +6,7 @@ group outer "Outer" at (20,20) size (360,260) {
   box a "A" at (20,40) size (80,40)
   junction j at (200,60) dot
   text t "note" at (300,60)
-  line l: a.right -> j
+  line l a.right -> j
   group inner "Inner" at (20,120) size (300,120) {
     box b "B" at (20,40) size (80,40)
   }

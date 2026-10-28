@@ -2,4 +2,4 @@ error[attr] 4:31-4:35: unknown attribute `shpe` on box
   = help: did you mean `shape`?
 error[attr] 5:46-5:51: duplicate attribute `style`
 error[attr] 6:32-6:44: `radius` expects a number
-error[attr] 7:27-7:40: `@` positions only apply to `label`, not `end`
+error[attr] 7:26-7:39: `@` positions only apply to `label`, not `end`

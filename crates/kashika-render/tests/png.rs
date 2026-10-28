@@ -4,7 +4,7 @@ use kashika_render::{render_svg, svg_to_png};
 const BASIC: &str = "diagram \"Basic\" size (480,240)\n\
 box api \"API\" at (40,40) size (120,60) style=service\n\
 box db \"DB\" at api.right+(160,0) size (120,60) pin=left\n\
-line api_db: api.right -> db.left end=arrow\n";
+line api_db api.right -> db.left end=arrow\n";
 
 #[test]
 fn png_has_signature_and_canvas_size() {
@@ -56,7 +56,7 @@ fn png_rasterizes_embedded_images() {
 }
 
 const LABELED: &str = "diagram \"Label\" size (300,100)\n\
-line l: (20,50) -> (280,50) label=\"passive open\" stroke=#dc2626 stroke-width=3\n";
+line l (20,50) -> (280,50) label=\"passive open\" stroke=#dc2626 stroke-width=3\n";
 
 #[test]
 fn line_label_masks_the_line_between_words() {
@@ -171,7 +171,7 @@ fn jpeg_canvas_is_white_by_default_and_takes_the_background() {
 
 const ON_GROUP: &str = "diagram \"g\" size (300,100)\n\
 group g at (0,0) size (300,100) fill=#fde68a stroke=#000000 {\n\
-  line l: (20,50) -> (280,50) label=\"passive open\" stroke=#dc2626 stroke-width=3\n\
+  line l (20,50) -> (280,50) label=\"passive open\" stroke=#dc2626 stroke-width=3\n\
 }\n";
 
 #[test]

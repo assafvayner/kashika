@@ -52,13 +52,14 @@ impl Endpoint {
     }
 }
 
-/// Splits `db.left@0.25+(0,4)` into its id and the side of its anchor.
+/// Splits `db.left@0.25+(0,4)` or `db.left-(0,4)` into its id and the side of its anchor.
 pub fn parse_ref(expr: &str) -> (Option<String>, Option<Side>) {
     let e = expr.trim();
     if e.is_empty() || e.starts_with('(') {
         return (None, None);
     }
     let base = e.split('+').next().unwrap_or(e);
+    let base = base.split("-(").next().unwrap_or(base);
     let (id, anchor) = match base.split_once('.') {
         Some((id, a)) => (id, Some(a)),
         None => (base, None),
@@ -89,7 +90,7 @@ pub fn resolve_endpoints_with(
     opts: &kashika_model::Options,
 ) -> Result<(Endpoint, Endpoint), Error> {
     let first_probe_line = src.lines().count() as u32 + 1;
-    let text = format!("{src}\nline {PROBE}: {from} -> {to}\n");
+    let text = format!("{src}\nline {PROBE} {from} -> {to}\n");
     let (scene, diags) = kashika_model::compile_with(&text, opts);
     let errors: Vec<Diagnostic> = diags
         .into_iter()

@@ -1,0 +1,2 @@
+error[parse] 3:1-3:16: `kashika=` is not a statement
+  = help: the version is an attribute of `diagram`: write `diagram "…" size (w,h) kashika="0.1.0"`

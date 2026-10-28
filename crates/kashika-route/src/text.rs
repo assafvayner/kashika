@@ -38,7 +38,7 @@ pub fn path_text(from: &Endpoint, to: &Endpoint, plan: &Plan, origin: Pt) -> Str
                 l.expr.clone().unwrap_or_else(|| num(l.value - origin.y))
             ),
             Hop::Curve { left, amount } => format!(
-                "curve {}:{} {end}",
+                "curve {} {} {end}",
                 if *left { "left" } else { "right" },
                 num(*amount)
             ),
@@ -56,8 +56,8 @@ pub fn path_text(from: &Endpoint, to: &Endpoint, plan: &Plan, origin: Pt) -> Str
 
 pub fn statement(id: &str, path: &str, attrs: &str) -> String {
     if attrs.is_empty() {
-        format!("line {id}: {path}")
+        format!("line {id} {path}")
     } else {
-        format!("line {id}: {path} {attrs}")
+        format!("line {id} {path} {attrs}")
     }
 }

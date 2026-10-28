@@ -77,6 +77,7 @@ fn tok_text(t: &Token, lines: &[Vec<char>]) -> String {
         Tok::Arrow => "->".into(),
         Tok::Dot => ".".into(),
         Tok::Plus => "+".into(),
+        Tok::Minus => "-".into(),
         Tok::Colon => ":".into(),
         Tok::At => "@".into(),
         Tok::Newline | Tok::Eof => String::new(),
@@ -191,7 +192,14 @@ fn space(row: &[Item], i: usize) -> bool {
     };
     if matches!(
         n,
-        Tok::RParen | Tok::Comma | Tok::Dot | Tok::At | Tok::Eq | Tok::Colon | Tok::Plus
+        Tok::RParen
+            | Tok::Comma
+            | Tok::Dot
+            | Tok::At
+            | Tok::Eq
+            | Tok::Colon
+            | Tok::Plus
+            | Tok::Minus
     ) {
         return false;
     }
@@ -203,8 +211,7 @@ fn space(row: &[Item], i: usize) -> bool {
             let ident = |t: Option<&Tok>| matches!(t, Some(Tok::Ident(_)));
             open > close && ((i >= 2 && ident(row[i - 2].tok.as_ref())) || ident(Some(n)))
         }
-        Tok::LParen | Tok::Dot | Tok::At | Tok::Eq | Tok::Plus => false,
-        Tok::Colon => i == 3 && row[0].is_ident("line"),
+        Tok::LParen | Tok::Dot | Tok::At | Tok::Eq | Tok::Plus | Tok::Minus | Tok::Colon => false,
         _ => true,
     }
 }

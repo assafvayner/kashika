@@ -6,6 +6,6 @@ group outer at (50,40) size (320,240) {
   box a at (10,10) size (40,30)
   group inner at (100,80) size (200,140) {
     box b at (10,10) size (40,30)
-    line l: (10,100) -> (60,100) -> y 120
+    line l (10,100) -> (60,100) -> y 120
   }
 }

@@ -13,4 +13,4 @@ shape curvy {
 }
 box lb "LB" at (20,40) size (160,120) shape=lb_icon
 box c at (200,40) size (90,120) shape=curvy
-line l: lb.right -> c.left
+line l lb.right -> c.left

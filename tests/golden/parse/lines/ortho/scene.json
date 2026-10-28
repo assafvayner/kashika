@@ -30,11 +30,11 @@
             {"from":{"x":80,"y":40},"kind":"line","to":{"x":230,"y":40}},
             {"from":{"x":230,"y":40},"kind":"line","to":{"x":230,"y":120}}
           ],
-          "span": {"col":20,"end_col":28,"end_line":7,"line":7},
+          "span": {"col":19,"end_col":27,"end_line":7,"line":7},
           "to": {"x":230,"y":120}
         }
       ],
-      "span": {"col":1,"end_col":34,"end_line":7,"line":7},
+      "span": {"col":1,"end_col":33,"end_line":7,"line":7},
       "start": "none",
       "start_literal": false,
       "style": {"color":"#0f172a","fill":"#ffffff","font_size":12,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5}

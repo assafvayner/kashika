@@ -99,7 +99,7 @@ fn image_paint_order_follows_file_order_with_boxes() {
     let s = svg_in(
         dir.path(),
         "diagram \"o\" size (300,200)\nbox a at (0,0) size (50,50)\nimage i \"logo.png\" at (60,0) size (50,50)\n\
-         box b at (120,0) size (50,50)\nline l: a.bottom -> v 20\n",
+         box b at (120,0) size (50,50)\nline l a.bottom -> v 20\n",
     );
     let a = s.find(r#"<rect x="0" y="0" width="50""#).unwrap();
     let i = s.find("<image").unwrap();

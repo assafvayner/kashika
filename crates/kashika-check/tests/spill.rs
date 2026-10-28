@@ -43,7 +43,7 @@ fn title_band_is_reserved() {
 fn lines_and_texts_inside_groups_spill_too() {
     let d = lint(
         "spill",
-        "group g at (0,0) size (200,100) {\n  line l: (10,50) -> h 250\n}\n",
+        "group g at (0,0) size (200,100) {\n  line l (10,50) -> h 250\n}\n",
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(

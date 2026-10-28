@@ -28,13 +28,13 @@ File {
                 id: Some(Ident { name: "l", span: 7:6-7:7 }),
                 start: Ref {
                     r: Ref {
-                        id: Ident { name: "a", span: 7:9-7:10 },
+                        id: Ident { name: "a", span: 7:8-7:9 },
                         anchor: Some(
-                            Anchor { name: Ident { name: "bottom", span: 7:11-7:17 }, t: None },
+                            Anchor { name: Ident { name: "bottom", span: 7:10-7:16 }, t: None },
                         ),
                     },
                     offset: None,
-                    span: 7:9-7:17,
+                    span: 7:8-7:16,
                 },
                 segs: [
                     Seg { kind: Y(Num(100.0)), span: 8:6-8:11 },

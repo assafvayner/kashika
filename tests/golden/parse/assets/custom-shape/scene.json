@@ -28,11 +28,11 @@
           "pieces": [
             {"from":{"x":180,"y":100},"kind":"line","to":{"x":200,"y":100}}
           ],
-          "span": {"col":21,"end_col":27,"end_line":16,"line":16},
+          "span": {"col":20,"end_col":26,"end_line":16,"line":16},
           "to": {"x":200,"y":100}
         }
       ],
-      "span": {"col":1,"end_col":27,"end_line":16,"line":16},
+      "span": {"col":1,"end_col":26,"end_line":16,"line":16},
       "start": "none",
       "start_literal": false,
       "style": {"color":"#0f172a","fill":"#ffffff","font_size":12,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5}

@@ -6,7 +6,7 @@ use common::*;
 fn crossing_lines_are_reported_on_the_later_line() {
     let d = lint(
         "cross",
-        "line a: (100,100) -> h 200\nline b: (200,50) -> v 100\n",
+        "line a (100,100) -> h 200\nline b (200,50) -> v 100\n",
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "b crosses a at (200,100)");
@@ -29,12 +29,12 @@ fn crossing_lines_are_reported_on_the_later_line() {
 fn shared_endpoints_and_junctions_are_not_crossings() {
     assert!(lint(
         "cross",
-        "line a: (0,0) -> (100,100)\nline b: (100,100) -> (200,0)\n"
+        "line a (0,0) -> (100,100)\nline b (100,100) -> (200,0)\n"
     )
     .is_empty());
     assert!(lint(
         "cross",
-        "junction j at (100,100)\nline a: (0,100) -> h 200\nline b: (100,0) -> j\nline c: j -> v 100\n"
+        "junction j at (100,100)\nline a (0,100) -> h 200\nline b (100,0) -> j\nline c j -> v 100\n"
     )
     .is_empty());
 }
@@ -43,7 +43,7 @@ fn shared_endpoints_and_junctions_are_not_crossings() {
 fn a_shared_segment_is_not_also_a_crossing() {
     assert!(lint(
         "cross",
-        "line a: (100,100) -> h 200\nline b: (100,100) -> h 100 -> v 100\n"
+        "line a (100,100) -> h 200\nline b (100,100) -> h 100 -> v 100\n"
     )
     .is_empty());
 }
@@ -52,12 +52,12 @@ fn a_shared_segment_is_not_also_a_crossing() {
 fn tangency_counts_once_and_curves_take_part() {
     let d = lint(
         "cross",
-        "line a: (0,100) -> h 200\nline b: (50,50) -> curve right:50 (150,50)\n",
+        "line a (0,100) -> h 200\nline b (50,50) -> curve right 50 (150,50)\n",
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     let d = lint(
         "cross",
-        "line a: (0,100) -> h 200\nline b: (50,50) -> curve right:100 (150,50)\n",
+        "line a (0,100) -> h 200\nline b (50,50) -> curve right 100 (150,50)\n",
     );
     assert_eq!(d.len(), 2, "{d:#?}");
 }
@@ -66,7 +66,7 @@ fn tangency_counts_once_and_curves_take_part() {
 fn unnamed_lines_are_told_to_take_a_name() {
     let d = lint(
         "cross",
-        "line (100,100) -> h 200\nline b: (200,50) -> v 100\n",
+        "line (100,100) -> h 200\nline b (200,50) -> v 100\n",
     );
     assert_eq!(
         d[0].help.last().unwrap(),

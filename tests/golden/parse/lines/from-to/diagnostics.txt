@@ -1,0 +1,6 @@
+error[parse] 6:1-6:31: a line is written with `->`, not `from … to`
+  = help: write `line ab a.right -> b.left`
+error[parse] 7:1-7:35: a line is written with `->`, not `from … to`
+  = help: write `line ba b.bottom -> a.bottom`
+error[parse] 8:1-8:27: a line is written with `->`, not `from … to`
+  = help: write `line a.top -> (100,5)`

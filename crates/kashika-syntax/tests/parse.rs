@@ -33,8 +33,8 @@ fn parses_diagram_and_box() {
 #[test]
 fn parses_every_segment_kind() {
     let f = parse_ok(
-        "line l1: a.right -> h 10 -> v -20 -> x 50 -> y b.top -> hv c.left@0.25 -> vh (1,2) \
-         -> curve left:30 d.top -> curve via (0,0) (5,5) e.bottom -> f.left+(0,-4) end=arrow ortho\n",
+        "line l1 a.right -> h 10 -> v -20 -> x 50 -> y b.top -> hv c.left@0.25 -> vh (1,2) \
+         -> curve left 30 d.top -> curve via (0,0) (5,5) e.bottom -> f.left+(0,-4) end=arrow ortho\n",
     );
     let Stmt::Line(l) = &f.stmts[0] else {
         panic!("expected line")
@@ -94,7 +94,14 @@ fn parses_mixed_coordinates_and_offsets() {
         panic!("expected ref")
     };
     assert_eq!(r.anchor.as_ref().unwrap().t, Some(0.5));
-    assert_eq!(*offset, Some((0.0, -10.0)));
+    assert_eq!(
+        *offset,
+        Some(Offset {
+            neg: false,
+            dx: 0.0,
+            dy: -10.0
+        })
+    );
 }
 
 #[test]
@@ -246,7 +253,7 @@ fn unclosed_block_comment_is_a_parse_error() {
 
 #[test]
 fn line_attributes_parse() {
-    let f = parse_ok("line l: (0,0) -> h 5 start=dot end=arrow stroke=#000 stroke-width=2 stroke-style=dashed style=s radius=4 label=\"a\" label@0.25=\"b\" ortho allow=cross reason=\"r\"\n");
+    let f = parse_ok("line l (0,0) -> h 5 start=dot end=arrow stroke=#000 stroke-width=2 stroke-style=dashed style=s radius=4 label=\"a\" label@0.25=\"b\" ortho allow=cross reason=\"r\"\n");
     let Stmt::Line(l) = &f.stmts[0] else {
         panic!("expected line")
     };
@@ -485,7 +492,7 @@ fn segment_keywords_are_reserved_ids() {
             format!("group {kw} at (0,0) size (1,1) {{\n}}\n"),
             format!("junction {kw} at (0,0)\n"),
             format!("text {kw} \"t\" at (0,0)\n"),
-            format!("line {kw}: (0,0) -> h 1\n"),
+            format!("line {kw} (0,0) -> h 1\n"),
         ] {
             let (_, d) = parse(&src);
             assert_eq!(d.len(), 1, "{src}: {d:#?}");
@@ -559,7 +566,7 @@ fn unclosed_text_block_is_reported() {
 #[test]
 fn reserved_id_statements_are_dropped() {
     let (f, d) = parse(
-        "box h at (0,0) size (1,1)\ngroup v at (0,0) size (9,9) {\n  box inner at (1,1) size (1,1)\n}\njunction x at (0,0)\ntext y \"t\" at (0,0)\nline hv: (0,0) -> h 1\nimage vh \"a.png\" at (0,0) size (1,1)\nbox ok at (0,0) size (1,1)\n",
+        "box h at (0,0) size (1,1)\ngroup v at (0,0) size (9,9) {\n  box inner at (1,1) size (1,1)\n}\njunction x at (0,0)\ntext y \"t\" at (0,0)\nline hv (0,0) -> h 1\nimage vh \"a.png\" at (0,0) size (1,1)\nbox ok at (0,0) size (1,1)\n",
     );
     assert_eq!(d.len(), 6, "{d:#?}");
     assert_eq!(f.stmts.len(), 1, "{:#?}", f.stmts);
@@ -639,4 +646,124 @@ fn duplicate_or_missing_at_and_size_are_parse_errors() {
         assert!(d[0].message.contains(msg), "{src:?}: {}", d[0].message);
         assert!(f.stmts.is_empty(), "{src:?}");
     }
+}
+
+fn line_stmt(f: &File) -> &Line {
+    let Stmt::Line(l) = &f.stmts[0] else {
+        panic!("expected line")
+    };
+    l
+}
+
+fn helps(src: &str) -> Vec<(String, String)> {
+    parse(src)
+        .1
+        .into_iter()
+        .map(|d| (d.message, d.help.join("; ")))
+        .collect()
+}
+
+#[test]
+fn line_id_is_an_identifier_before_a_point() {
+    let f = parse_ok(
+        "line l1 a.right -> b.left
+line l2 (0,0) -> h 10
+line a -> b
+line a.top -> b
+line (0,0) -> b
+",
+    );
+    let ids: Vec<Option<String>> = f
+        .stmts
+        .iter()
+        .map(|s| match s {
+            Stmt::Line(l) => l.id.as_ref().map(|i| i.name.clone()),
+            _ => panic!("expected line"),
+        })
+        .collect();
+    assert_eq!(
+        ids,
+        vec![Some("l1".into()), Some("l2".into()), None, None, None]
+    );
+}
+
+#[test]
+fn offsets_keep_their_sign() {
+    for (src, neg, dx, delta) in [
+        ("line a.top+(-10,0) -> h 1\n", false, -10.0, (-10.0, 0.0)),
+        ("line a.top-(10,0) -> h 1\n", true, 10.0, (-10.0, 0.0)),
+        ("line a.top-(-10,0) -> h 1\n", true, -10.0, (10.0, 0.0)),
+        ("line a-b.left@0.25-(0,4) -> h 1\n", true, 0.0, (0.0, -4.0)),
+    ] {
+        let f = parse_ok(src);
+        let Point::Ref { offset, .. } = &line_stmt(&f).start else {
+            panic!("expected ref")
+        };
+        let o = offset.unwrap();
+        assert_eq!((o.neg, o.dx), (neg, dx), "{src}");
+        assert_eq!(o.delta(), delta, "{src}");
+    }
+}
+
+#[test]
+fn old_line_id_colon_is_an_error_with_help() {
+    let (f, d) = parse("line l1: a.right -> b.left end=arrow\n");
+    assert_eq!(d.len(), 1);
+    assert_eq!(d[0].message, "a line id takes no `:`");
+    assert_eq!(
+        d[0].help,
+        ["remove the `:`: write `line l1 a.right -> b.left end=arrow`"]
+    );
+    assert_eq!(line_stmt(&f).id.as_ref().unwrap().name, "l1");
+}
+
+#[test]
+fn from_to_lines_are_errors_with_help() {
+    let want = "write `line l1 a.right -> b.left`";
+    for src in [
+        "line l1 from a.right to b.left\n",
+        "line l1: from a.right to b.left\n",
+    ] {
+        assert_eq!(
+            helps(src),
+            vec![(
+                "a line is written with `->`, not `from … to`".to_string(),
+                want.to_string()
+            )],
+            "{src}"
+        );
+    }
+    assert_eq!(
+        helps("line from a.right to (1,2)\n")[0].1,
+        "write `line a.right -> (1,2)`"
+    );
+}
+
+#[test]
+fn old_curve_colon_is_an_error_with_help() {
+    let (f, d) = parse("line a.right -> curve left:30 b.top+(0,-4) -> h 10\n");
+    assert_eq!(d.len(), 1);
+    assert_eq!(
+        d[0].help,
+        ["remove the `:`: write `curve left 30 b.top+(0,-4)`"]
+    );
+    assert!(matches!(
+        line_stmt(&f).segs[0].kind,
+        SegKind::Curve {
+            side: Side::Left,
+            amount,
+            ..
+        } if amount == 30.0
+    ));
+}
+
+#[test]
+fn kashika_version_statement_is_an_error_with_help() {
+    let (f, d) = parse("kashika=\"0.1.0\"\ndiagram \"t\" size (10,10)\n");
+    assert_eq!(d.len(), 1);
+    assert_eq!(
+        d[0].help,
+        ["the version is an attribute of `diagram`: write `diagram \"…\" size (w,h) kashika=\"0.1.0\"`"]
+    );
+    assert_eq!(f.first_stmt.map(|s| s.line), Some(2));
 }

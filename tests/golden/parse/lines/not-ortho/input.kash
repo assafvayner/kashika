@@ -1,4 +1,4 @@
 // spec: 5, 7
 // A diagonal segment on an `ortho` line is an error.
 diagram "not ortho" size (300,200)
-line l: (20,20) -> h 50 -> (150,90) -> v 50 ortho
+line l (20,20) -> h 50 -> (150,90) -> v 50 ortho

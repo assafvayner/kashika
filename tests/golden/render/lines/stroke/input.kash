@@ -2,7 +2,7 @@
 // Line stroke color, width and style; a style on a line applies only stroke and font keys.
 diagram "stroke" size (300,200)
 style loud { stroke=#d93025 stroke-width=3 fill=#000000 font-size=10 }
-line a: (20,30) -> h 260 stroke=#1a73e8 stroke-width=2
-line b: (20,80) -> h 260 stroke-style=dashed
-line c: (20,130) -> h 260 stroke-style=dotted
-line d: (20,180) -> h 260 style=loud label="loud"
+line a (20,30) -> h 260 stroke=#1a73e8 stroke-width=2
+line b (20,80) -> h 260 stroke-style=dashed
+line c (20,130) -> h 260 stroke-style=dotted
+line d (20,180) -> h 260 style=loud label="loud"

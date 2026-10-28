@@ -1,0 +1,6 @@
+// spec: 5, 7
+// The old `line <id>:` form is a parse error whose help drops the colon.
+diagram "id colon" size (300,200)
+box a at (20,20) size (60,40)
+box b at (200,20) size (60,40)
+line ab: a.right -> b.left end=arrow

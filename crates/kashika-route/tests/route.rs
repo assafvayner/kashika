@@ -97,10 +97,10 @@ fn bezier_plans_curve_both_ways_and_via_the_sides() {
         .map(|p| path_text(&a, &b, p, Pt::default()))
         .collect();
     assert!(
-        texts.contains(&"a.right -> curve left:34 b.left".to_string()),
+        texts.contains(&"a.right -> curve left 34 b.left".to_string()),
         "{texts:?}"
     );
-    assert!(texts.contains(&"a.right -> curve right:68 b.left".to_string()));
+    assert!(texts.contains(&"a.right -> curve right 68 b.left".to_string()));
     assert!(
         texts.contains(&"a.right -> curve via a.right+(76,0) b.left+(-76,0) b.left".to_string())
     );
@@ -110,11 +110,11 @@ fn bezier_plans_curve_both_ways_and_via_the_sides() {
 fn statements_and_numbers() {
     assert_eq!(
         statement("ab", "a.right -> b.left", "end=arrow"),
-        "line ab: a.right -> b.left end=arrow"
+        "line ab a.right -> b.left end=arrow"
     );
     assert_eq!(
         statement("ab", "a.right -> b.left", ""),
-        "line ab: a.right -> b.left"
+        "line ab a.right -> b.left"
     );
     assert_eq!(
         (num(12.0), num(-0.0), num(0.256)),
@@ -152,7 +152,7 @@ fn routes_over_the_wall() {
     let c = &s.candidates[0];
     assert_eq!(
         c.statement,
-        "line a_b: a.top -> y wall.tl+(0,-12) -> hv b.top end=arrow"
+        "line a_b a.top -> y wall.tl+(0,-12) -> hv b.top end=arrow"
     );
     assert_eq!(
         (c.crossings, c.near, c.segments, c.length),
@@ -175,7 +175,7 @@ fn detours_around_a_wall_between_facing_sides() {
     let c = &s.candidates[0];
     assert_eq!((c.crossings, c.near, c.segments), (0, 0, 5), "{c:?}");
     assert!(
-        c.statement.starts_with("line a_b: a.right -> x ") && c.statement.contains(" -> vh b.left"),
+        c.statement.starts_with("line a_b a.right -> x ") && c.statement.contains(" -> vh b.left"),
         "{}",
         c.statement
     );
@@ -197,7 +197,7 @@ fn detours_around_a_box_into_a_top_anchor() {
     assert_eq!((c.crossings, c.near, c.segments), (0, 0, 4), "{c:?}");
     assert_eq!(
         c.statement,
-        "line orders_db: orders.right -> x orders.tr+(12,0) -> y db.tl+(0,-12) -> hv db.top end=arrow"
+        "line orders_db orders.right -> x orders.tr+(12,0) -> y db.tl+(0,-12) -> hv db.top end=arrow"
     );
     agrees_with_check(QUEUE, &s);
 }
@@ -249,7 +249,7 @@ fn simple_paths_outrank_clean_detours() {
     let s = suggest(&r).unwrap();
     assert_eq!(
         s.candidates[0].statement,
-        "line orders_db: orders.bottom -> vh db.left end=arrow"
+        "line orders_db orders.bottom -> vh db.left end=arrow"
     );
 }
 
@@ -265,7 +265,7 @@ fn grid(n: usize) -> String {
                 40 + 120 * i
             ));
         }
-        src.push_str(&format!("line r{i}: b{i}_0.right -> b{i}_1.left\n"));
+        src.push_str(&format!("line r{i} b{i}_0.right -> b{i}_1.left\n"));
     }
     src
 }
@@ -296,7 +296,7 @@ fn detour_search_stays_bounded_on_a_large_diagram() {
 
 #[test]
 fn counts_crossings_with_other_lines() {
-    let src = format!("{WALL}line blocker: (160,10) -> (160,230)\n");
+    let src = format!("{WALL}line blocker (160,10) -> (160,230)\n");
     let s = suggest(&req(&src, "a.top", "b.top", Style::Corner)).unwrap();
     let c = &s.candidates[0];
     assert_eq!(c.crossings, 1);
@@ -336,7 +336,7 @@ box b at (300,160) size (100,40)\n";
     assert_eq!(border.near, 1, "{border:?}");
     assert_eq!(
         s.candidates[0].statement,
-        "line a_b: a.bottom -> y a.bl+(0,12) -> hv b.top end=arrow"
+        "line a_b a.bottom -> y a.bl+(0,12) -> hv b.top end=arrow"
     );
     assert_eq!(
         s.candidates[0].corridor,
@@ -351,7 +351,7 @@ box b at (300,160) size (100,40)\n";
 fn default_id_avoids_existing_ids() {
     let src = format!("{WALL}junction a_b at (10,10)\n");
     let s = suggest(&req(&src, "a.top", "b.top", Style::Corner)).unwrap();
-    assert!(s.candidates[0].statement.starts_with("line a_b_2: "));
+    assert!(s.candidates[0].statement.starts_with("line a_b_2 "));
 }
 
 #[test]
@@ -393,7 +393,7 @@ box b at (220,20) size (40,40)\n";
         .filter(|c| c.segments <= 3)
         .map(|c| c.statement.as_str())
         .collect();
-    assert_eq!(statements, ["line a_b: a.right -> b.left end=arrow"]);
+    assert_eq!(statements, ["line a_b a.right -> b.left end=arrow"]);
 }
 
 #[test]
@@ -419,7 +419,7 @@ const GROUPED: &str = "diagram \"g\" size (400,300)\n\
 group g \"G\" at (100,100) size (280,180) {\n\
   box a \"A\" at (20,40) size (60,40)\n\
   box b \"B\" at (180,40) size (60,40)\n\
-  line ab: a.right -> (180,60) end=open label=\"x\" radius=4\n\
+  line ab a.right -> (180,60) end=open label=\"x\" radius=4\n\
 }\n";
 
 fn reroute(src: &str, id: &str, style: Style) -> Result<Suggestion, Error> {
@@ -440,7 +440,7 @@ fn reroutes_an_existing_line_in_its_frame_and_keeps_attributes() {
     let s = reroute(GROUPED, "ab", Style::Corner).unwrap();
     assert_eq!(
         s.candidates[0].statement,
-        "line ab: a.right -> (180,60) end=open label=\"x\""
+        "line ab a.right -> (180,60) end=open label=\"x\""
     );
     assert_eq!(s.from.at, Pt::new(180.0, 160.0));
     assert_eq!(s.to.at, Pt::new(280.0, 160.0));
@@ -448,11 +448,11 @@ fn reroutes_an_existing_line_in_its_frame_and_keeps_attributes() {
 
 #[test]
 fn rerouted_line_is_not_its_own_obstacle() {
-    let src = format!("{WALL}line ab: a.top -> y 28 -> hv b.top\n");
+    let src = format!("{WALL}line ab a.top -> y 28 -> hv b.top\n");
     let s = reroute(&src, "ab", Style::Arc).unwrap();
     assert_eq!(s.candidates[0].crossings, 0);
     assert_eq!(s.candidates[0].near, 0);
-    assert!(s.candidates[0].statement.starts_with("line ab: a.top -> "));
+    assert!(s.candidates[0].statement.starts_with("line ab a.top -> "));
 }
 
 #[test]
@@ -469,7 +469,7 @@ fn mixed_points_in_a_group_keep_their_text_and_frame() {
 group g \"G\" at (100,100) size (280,180) {\n\
   box a \"A\" at (20,40) size (60,40)\n\
   box b \"B\" at (180,100) size (60,40)\n\
-  line ab: a.bottom -> (b.left.x, 120) end=arrow\n\
+  line ab a.bottom -> (b.left.x, 120) end=arrow\n\
 }\n";
     let s = reroute(src, "ab", Style::Corner).unwrap();
     assert_eq!(s.to.expr.as_deref(), Some("(b.left.x, 120)"));
@@ -482,7 +482,7 @@ group g \"G\" at (100,100) size (280,180) {\n\
             c.statement
         );
         let replaced = src.replace(
-            "  line ab: a.bottom -> (b.left.x, 120) end=arrow",
+            "  line ab a.bottom -> (b.left.x, 120) end=arrow",
             &c.statement,
         );
         let (scene, diags) = kashika_model::compile(&replaced);
@@ -496,7 +496,7 @@ group g \"G\" at (100,100) size (280,180) {\n\
 fn agrees_with_check(src: &str, s: &Suggestion) {
     assert!(!s.candidates.is_empty(), "no candidates for\n{src}");
     for c in &s.candidates {
-        let id = c.statement["line ".len()..].split(':').next().unwrap();
+        let id = c.statement["line ".len()..].split(' ').next().unwrap();
         let (scene, diags) = kashika_model::compile(&format!("{src}{}\n", c.statement));
         assert!(diags.is_empty(), "{}: {diags:#?}", c.statement);
         let mine: Vec<_> = kashika_check::check(&scene)
@@ -529,7 +529,7 @@ fn routes_through_the_bounding_box_corner_of_a_diamond() {
         .filter(|c| c.segments <= 3)
         .map(|c| c.statement.as_str())
         .collect();
-    assert_eq!(statements, ["line a_b: a.right -> hv b.bottom end=arrow"]);
+    assert_eq!(statements, ["line a_b a.right -> hv b.bottom end=arrow"]);
     assert_eq!((s.candidates[0].crossings, s.candidates[0].near), (0, 0));
     agrees_with_check(DIAMOND, &s);
 }
@@ -543,7 +543,7 @@ fn routes_over_a_cylinder_and_an_image() {
         let src = WALL.replace("box wall \"W\" at (200,40) size (40,160)", wall);
         let s = suggest(&req(&src, "a.top", "b.top", Style::Corner)).unwrap();
         assert_eq!(
-            s.candidates[0].statement, "line a_b: a.top -> y wall.tl+(0,-12) -> hv b.top end=arrow",
+            s.candidates[0].statement, "line a_b a.top -> y wall.tl+(0,-12) -> hv b.top end=arrow",
             "{wall}"
         );
         agrees_with_check(&src, &s);
@@ -552,7 +552,7 @@ fn routes_over_a_cylinder_and_an_image() {
 
 #[test]
 fn candidate_numbers_match_kashika_check() {
-    let blocked = format!("{WALL}line blocker: (160,10) -> (160,230)\n");
+    let blocked = format!("{WALL}line blocker (160,10) -> (160,230)\n");
     let near = "diagram \"n\" size (300,200)\n\
 box a at (20,20) size (40,40)\n\
 box b at (220,20) size (40,40)\n\
@@ -574,7 +574,7 @@ box c at (100,76) size (40,40)\n";
 
 #[test]
 fn reroutes_a_line_through_a_wall_with_a_detour_in_its_group() {
-    let line = "  line ab: a.right -> b.left end=arrow";
+    let line = "  line ab a.right -> b.left end=arrow";
     let src = format!(
         "diagram \"g\" size (560,400)\n\
 group g \"G\" at (60,60) size (480,300) {{\n\
@@ -601,7 +601,7 @@ group g \"G\" at (60,60) size (480,300) {{\n\
     );
     for c in &s.candidates {
         assert!(
-            c.statement.starts_with("line ab: a.right -> "),
+            c.statement.starts_with("line ab a.right -> "),
             "{}",
             c.statement
         );

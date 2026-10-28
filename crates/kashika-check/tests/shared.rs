@@ -6,7 +6,7 @@ use common::*;
 fn collinear_overlap_is_reported_with_the_nearest_free_lane() {
     let d = lint(
         "shared-segment",
-        "box s at (40,80) size (60,40)\nline a: s.right -> h 200\nline b: s.right -> h 100 -> v 100\n",
+        "box s at (40,80) size (60,40)\nline a s.right -> h 200\nline b s.right -> h 100 -> v 100\n",
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(
@@ -28,12 +28,12 @@ fn collinear_overlap_is_reported_with_the_nearest_free_lane() {
 fn parallel_or_tiny_overlaps_are_not_shared() {
     assert!(lint(
         "shared-segment",
-        "line a: (0,100) -> h 100\nline b: (0,110) -> h 100\n"
+        "line a (0,100) -> h 100\nline b (0,110) -> h 100\n"
     )
     .is_empty());
     assert!(lint(
         "shared-segment",
-        "line a: (0,100) -> h 100\nline b: (99.5,100) -> h 100\n"
+        "line a (0,100) -> h 100\nline b (99.5,100) -> h 100\n"
     )
     .is_empty());
 }

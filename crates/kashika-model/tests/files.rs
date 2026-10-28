@@ -114,7 +114,7 @@ fn svg_shapes_use_bbox_or_hull() {
         &format!(
             "{HEAD}shape tb from \"t.svg\"\nshape th from \"t.svg\" outline=hull text-area=below\n\
              box a \"A\" at (100,100) size (80,40) shape=tb\nbox b \"B\" at (300,100) size (80,40) shape=th\n\
-             line la: a.top@0.1 -> v -20\nline lb: b.top@0.1 -> v -20\n"
+             line la a.top@0.1 -> v -20\nline lb b.top@0.1 -> v -20\n"
         ),
     );
     assert!(d.is_empty(), "{d:#?}");
@@ -464,7 +464,7 @@ fn images_resolve_with_their_natural_size() {
         &format!(
             "{HEAD}image logo \"assets/logo.png\" at (20,20) size (80,80) fit=cover\n\
              image mark \"assets/logo.png\" at logo.right+(20,0) size (40,40) pin=left\n\
-             line l: logo.right -> mark.left\n"
+             line l logo.right -> mark.left\n"
         ),
     );
     assert!(d.is_empty(), "{d:#?}");
@@ -733,7 +733,7 @@ fn images_are_anchorable_and_pinnable() {
         dir.path(),
         &format!(
             "{HEAD}image i \"logo.png\" at (100,100) size (40,20) pin=center\n\
-             line l: i.top -> v -5\n"
+             line l i.top -> v -5\n"
         ),
     );
     assert!(d.is_empty(), "{d:#?}");

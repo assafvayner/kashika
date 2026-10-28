@@ -21,7 +21,7 @@ shape tri {
 }
 box a "A" at (20,30) size (120,80) shape=cylinder style=datastore
 box t "Go" at (240,20) size (120,100) shape=tri
-line l: a.right -> t.left end=arrow
+line l a.right -> t.left end=arrow
 ```
 
 - `path` takes absolute `M L H V C Q A Z` with coordinates in 0..1. Several subpaths are drawn; `outline N` (default 1) picks the one used for anchors and checks.

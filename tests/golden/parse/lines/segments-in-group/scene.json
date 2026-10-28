@@ -31,7 +31,7 @@
           "pieces": [
             {"from":{"x":110,"y":120},"kind":"line","to":{"x":150,"y":120}}
           ],
-          "span": {"col":22,"end_col":26,"end_line":6,"line":6},
+          "span": {"col":21,"end_col":25,"end_line":6,"line":6},
           "to": {"x":150,"y":120}
         },
         {
@@ -40,7 +40,7 @@
           "pieces": [
             {"from":{"x":150,"y":120},"kind":"line","to":{"x":200,"y":120}}
           ],
-          "span": {"col":30,"end_col":35,"end_line":6,"line":6},
+          "span": {"col":29,"end_col":34,"end_line":6,"line":6},
           "to": {"x":200,"y":120}
         },
         {
@@ -49,7 +49,7 @@
           "pieces": [
             {"from":{"x":200,"y":120},"kind":"line","to":{"x":200,"y":160}}
           ],
-          "span": {"col":39,"end_col":43,"end_line":6,"line":6},
+          "span": {"col":38,"end_col":42,"end_line":6,"line":6},
           "to": {"x":200,"y":160}
         },
         {
@@ -58,11 +58,11 @@
           "pieces": [
             {"c1":{"x":220,"y":160},"c2":{"x":240,"y":180},"from":{"x":200,"y":160},"kind":"cubic","to":{"x":240,"y":200}}
           ],
-          "span": {"col":47,"end_col":84,"end_line":6,"line":6},
+          "span": {"col":46,"end_col":83,"end_line":6,"line":6},
           "to": {"x":240,"y":200}
         }
       ],
-      "span": {"col":3,"end_col":84,"end_line":6,"line":6},
+      "span": {"col":3,"end_col":83,"end_line":6,"line":6},
       "start": "none",
       "start_literal": true,
       "style": {"color":"#0f172a","fill":"#ffffff","font_size":12,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5}
@@ -73,17 +73,17 @@
     {"owner":"g","span":{"col":12,"end_col":21,"end_line":5,"line":5},"value":100,"what":"y"},
     {"owner":"g","span":{"col":1,"end_col":36,"end_line":5,"line":5},"value":280,"what":"width"},
     {"owner":"g","span":{"col":1,"end_col":36,"end_line":5,"line":5},"value":180,"what":"height"},
-    {"owner":"l","span":{"col":11,"end_col":18,"end_line":6,"line":6},"value":10,"what":"x"},
-    {"owner":"l","span":{"col":11,"end_col":18,"end_line":6,"line":6},"value":20,"what":"y"},
-    {"owner":"l","span":{"col":22,"end_col":26,"end_line":6,"line":6},"value":40,"what":"h"},
-    {"owner":"l","span":{"col":30,"end_col":35,"end_line":6,"line":6},"value":100,"what":"x"},
-    {"owner":"l","span":{"col":39,"end_col":43,"end_line":6,"line":6},"value":60,"what":"y"},
-    {"owner":"l","span":{"col":57,"end_col":65,"end_line":6,"line":6},"value":120,"what":"x"},
-    {"owner":"l","span":{"col":57,"end_col":65,"end_line":6,"line":6},"value":60,"what":"y"},
-    {"owner":"l","span":{"col":66,"end_col":74,"end_line":6,"line":6},"value":140,"what":"x"},
-    {"owner":"l","span":{"col":66,"end_col":74,"end_line":6,"line":6},"value":80,"what":"y"},
-    {"owner":"l","span":{"col":75,"end_col":84,"end_line":6,"line":6},"value":140,"what":"x"},
-    {"owner":"l","span":{"col":75,"end_col":84,"end_line":6,"line":6},"value":100,"what":"y"}
+    {"owner":"l","span":{"col":10,"end_col":17,"end_line":6,"line":6},"value":10,"what":"x"},
+    {"owner":"l","span":{"col":10,"end_col":17,"end_line":6,"line":6},"value":20,"what":"y"},
+    {"owner":"l","span":{"col":21,"end_col":25,"end_line":6,"line":6},"value":40,"what":"h"},
+    {"owner":"l","span":{"col":29,"end_col":34,"end_line":6,"line":6},"value":100,"what":"x"},
+    {"owner":"l","span":{"col":38,"end_col":42,"end_line":6,"line":6},"value":60,"what":"y"},
+    {"owner":"l","span":{"col":56,"end_col":64,"end_line":6,"line":6},"value":120,"what":"x"},
+    {"owner":"l","span":{"col":56,"end_col":64,"end_line":6,"line":6},"value":60,"what":"y"},
+    {"owner":"l","span":{"col":65,"end_col":73,"end_line":6,"line":6},"value":140,"what":"x"},
+    {"owner":"l","span":{"col":65,"end_col":73,"end_line":6,"line":6},"value":80,"what":"y"},
+    {"owner":"l","span":{"col":74,"end_col":83,"end_line":6,"line":6},"value":140,"what":"x"},
+    {"owner":"l","span":{"col":74,"end_col":83,"end_line":6,"line":6},"value":100,"what":"y"}
   ],
   "placement": [],
   "shapes": [

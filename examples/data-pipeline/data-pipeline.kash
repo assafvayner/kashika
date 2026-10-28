@@ -26,12 +26,12 @@ box fs at lake.bl+(0,70) size (180,100) pin=tl style=datastore text-align=left {
   text "• online + offline" size=12
 }
 
-line l_src: src.right -> kafka.left end=arrow label="events"
-line l_kafka: kafka.right -> stream.left end=arrow label="topics"
-line l_stream: stream.right -> lake.left end=arrow label="sink"
-line l_lake: lake.right -> batch.left end=arrow label="read"
-line l_batch: batch.right -> wh.left end=arrow label="load"
-line l_wh: wh.right -> bi.left end=arrow label="query"
-line l_feat: stream.bottom -> vh fs.left end=arrow label="features"
-line l_scores: fs.right -> x bi.bottom -> bi.bottom end=arrow label="scores"
-line l_snap: src.bottom -> y 350 -> x batch.bottom -> batch.bottom end=arrow stroke-style=dashed label@0.7="DB snapshots" allow=cross:l_feat reason="Nightly DB snapshots bypass Kafka and must pass the stream-to-feature-store line; the graph is non-planar."
+line l_src src.right -> kafka.left end=arrow label="events"
+line l_kafka kafka.right -> stream.left end=arrow label="topics"
+line l_stream stream.right -> lake.left end=arrow label="sink"
+line l_lake lake.right -> batch.left end=arrow label="read"
+line l_batch batch.right -> wh.left end=arrow label="load"
+line l_wh wh.right -> bi.left end=arrow label="query"
+line l_feat stream.bottom -> vh fs.left end=arrow label="features"
+line l_scores fs.right -> x bi.bottom -> bi.bottom end=arrow label="scores"
+line l_snap src.bottom -> y 350 -> x batch.bottom -> batch.bottom end=arrow stroke-style=dashed label@0.7="DB snapshots" allow=cross:l_feat reason="Nightly DB snapshots bypass Kafka and must pass the stream-to-feature-store line; the graph is non-planar."

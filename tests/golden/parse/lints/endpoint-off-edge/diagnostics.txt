@@ -1,8 +1,8 @@
-warn[near] 5:1-5:27: l runs 4px from box 'a' (clearance 6)
+warn[near] 5:1-5:26: l runs 4px from box 'a' (clearance 6)
   = help: segment 1 runs at y=90; free y-intervals across x 20..96: 0..54, 126..144, 156..200
-  elements: [{"from":[20,90],"id":"l","kind":"line","segment":1,"span":{"col":1,"end_col":27,"end_line":5,"line":5},"to":[96,90]},{"bbox":[[100,60],[200,120]],"id":"a","kind":"box","span":{"col":1,"end_col":32,"end_line":4,"line":4}}]
+  elements: [{"from":[20,90],"id":"l","kind":"line","segment":1,"span":{"col":1,"end_col":26,"end_line":5,"line":5},"to":[96,90]},{"bbox":[[100,60],[200,120]],"id":"a","kind":"box","span":{"col":1,"end_col":32,"end_line":4,"line":4}}]
   facts: {"clearance":6,"distance":4,"free":{"axis":"y","band":[20,96],"intervals":[[0,54],[126,144],[156,200]]}}
-warn[endpoint-off-edge] 5:20-5:27: l ends at (96,90), 4px from the outline of 'a'
+warn[endpoint-off-edge] 5:19-5:26: l ends at (96,90), 4px from the outline of 'a'
   = help: snap it to the outline with an anchor: `a.left`
-  elements: [{"from":[20,90],"id":"l","kind":"line","segment":1,"span":{"col":1,"end_col":27,"end_line":5,"line":5},"to":[96,90]},{"bbox":[[100,60],[200,120]],"id":"a","kind":"box","span":{"col":1,"end_col":32,"end_line":4,"line":4}}]
+  elements: [{"from":[20,90],"id":"l","kind":"line","segment":1,"span":{"col":1,"end_col":26,"end_line":5,"line":5},"to":[96,90]},{"bbox":[[100,60],[200,120]],"id":"a","kind":"box","span":{"col":1,"end_col":32,"end_line":4,"line":4}}]
   facts: {"nearest":[100,90]}

@@ -1,8 +1,8 @@
-warn[port-crowding] 7:1-7:38: l2 and l1 meet 'a' 6px apart (minimum 8px)
+warn[port-crowding] 7:1-7:37: l2 and l1 meet 'a' 6px apart (minimum 8px)
   = help: spread the endpoints at least 8px apart, e.g. `a.right@0.3` and `a.right@0.7`, or meet at a `junction`
-  elements: [{"from":[100,133],"id":"l2","kind":"line","segment":1,"span":{"col":1,"end_col":38,"end_line":7,"line":7},"to":[160,133]},{"from":[100,127],"id":"l1","kind":"line","segment":1,"span":{"col":1,"end_col":37,"end_line":6,"line":6},"to":[300,127]},{"bbox":[[20,100],[100,160]],"id":"a","kind":"box","span":{"col":1,"end_col":31,"end_line":4,"line":4}}]
+  elements: [{"from":[100,133],"id":"l2","kind":"line","segment":1,"span":{"col":1,"end_col":37,"end_line":7,"line":7},"to":[160,133]},{"from":[100,127],"id":"l1","kind":"line","segment":1,"span":{"col":1,"end_col":36,"end_line":6,"line":6},"to":[300,127]},{"bbox":[[20,100],[100,160]],"id":"a","kind":"box","span":{"col":1,"end_col":31,"end_line":4,"line":4}}]
   facts: {"gap":6}
-warn[port-crowding] 9:1-9:37: s2 and s1 both draw a marker at (340,100) on 'b'
+warn[port-crowding] 9:1-9:36: s2 and s1 both draw a marker at (340,100) on 'b'
   = help: spread the endpoints at least 8px apart, e.g. `b.top@0.3` and `b.top@0.7`, or meet at a `junction`
-  elements: [{"from":[340,20],"id":"s2","kind":"line","segment":1,"span":{"col":1,"end_col":37,"end_line":9,"line":9},"to":[340,100]},{"from":[200,40],"id":"s1","kind":"line","segment":1,"span":{"col":1,"end_col":37,"end_line":8,"line":8},"to":[340,100]},{"bbox":[[300,100],[380,160]],"id":"b","kind":"box","span":{"col":1,"end_col":32,"end_line":5,"line":5}}]
+  elements: [{"from":[340,20],"id":"s2","kind":"line","segment":1,"span":{"col":1,"end_col":36,"end_line":9,"line":9},"to":[340,100]},{"from":[200,40],"id":"s1","kind":"line","segment":1,"span":{"col":1,"end_col":36,"end_line":8,"line":8},"to":[340,100]},{"bbox":[[300,100],[380,160]],"id":"b","kind":"box","span":{"col":1,"end_col":32,"end_line":5,"line":5}}]
   facts: {"gap":0}

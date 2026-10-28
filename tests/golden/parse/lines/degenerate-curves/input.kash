@@ -1,5 +1,5 @@
 // spec: 5, 7
 // Zero-length curves and negative amounts.
 diagram "degenerate" size (300,200)
-line same: (20,20) -> curve left:30 (20,20)
-line neg: (20,100) -> curve right:-5 (200,100)
+line same (20,20) -> curve left 30 (20,20)
+line neg (20,100) -> curve right -5 (200,100)

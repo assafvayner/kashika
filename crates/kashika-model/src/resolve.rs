@@ -1393,7 +1393,7 @@ impl<'a> Resolver<'a> {
             }
             Point::Ref { r, offset, span } => {
                 let base = self.eval_ref(r)?;
-                let (dx, dy) = offset.unwrap_or((0.0, 0.0));
+                let (dx, dy) = offset.map_or((0.0, 0.0), |o| o.delta());
                 let p = base + Pt::new(dx, dy);
                 self.finite(&[p.x, p.y], *span).then_some(p)
             }

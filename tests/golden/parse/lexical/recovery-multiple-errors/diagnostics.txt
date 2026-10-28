@@ -1,4 +1,4 @@
 error[parse] 5:29-5:30: expected `)`, found end of line
 error[parse] 7:1-7:2: unexpected `}`
-error[parse] 8:20-8:22: expected a point: `(x,y)` or a reference like `db.left`, found `->`
+error[parse] 8:19-8:21: expected a point: `(x,y)` or a reference like `db.left`, found `->`
 error[attr] 9:32-9:49: `stroke-style` expects one of: solid, dashed, dotted

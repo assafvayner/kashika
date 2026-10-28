@@ -4,11 +4,11 @@ group g "G" at (10,10) size (180,120) {
 }
 box a "A" at (220,20) size (80,40) color=#eeeeee
 box b at (260,40) size (80,40)
-line l1: a.bottom -> v 100 -> (215,205)
-line l2: (200,130) -> h 150 label="over"
-line l3: (100,150) -> h 60
-line l4: (100,154) -> h 60
-line l5: a.left@0.5 -> h -30
-line l6: a.left@0.55 -> h -30
-line l7: (225,80) -> h 10
-line l8: (0,250) -> h 500
+line l1 a.bottom -> v 100 -> (215,205)
+line l2 (200,130) -> h 150 label="over"
+line l3 (100,150) -> h 60
+line l4 (100,154) -> h 60
+line l5 a.left@0.5 -> h -30
+line l6 a.left@0.55 -> h -30
+line l7 (225,80) -> h 10
+line l8 (0,250) -> h 500

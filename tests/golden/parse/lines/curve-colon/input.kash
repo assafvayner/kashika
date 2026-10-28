@@ -1,0 +1,4 @@
+// spec: 5, 7
+// The old `curve left:<N>` form is a parse error whose help drops the colon.
+diagram "curve colon" size (300,200)
+line l (20,100) -> curve left:30 (120,100) -> curve right:20 (220,100)

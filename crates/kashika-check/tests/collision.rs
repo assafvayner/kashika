@@ -6,7 +6,7 @@ use common::*;
 fn label_over_a_box_suggests_clear_positions() {
     let d = lint(
         "label-collision",
-        "box b at (180,80) size (40,40)\nline l: (0,100) -> h 400 label=\"SQL\"\n",
+        "box b at (180,80) size (40,40)\nline l (0,100) -> h 400 label=\"SQL\"\n",
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "label \"SQL\" of l collides with box 'b'");
@@ -21,7 +21,7 @@ fn texts_lines_and_other_labels() {
     assert_eq!(
         lint(
             "label-collision",
-            "line a: (0,100) -> h 400\ntext \"note\" at (200,100)\n"
+            "line a (0,100) -> h 400\ntext \"note\" at (200,100)\n"
         )
         .len(),
         1
@@ -36,7 +36,7 @@ fn texts_lines_and_other_labels() {
     );
     assert!(lint(
         "label-collision",
-        "line a: (0,100) -> h 400 label=\"x\"\ntext \"note\" at (200,50)\n"
+        "line a (0,100) -> h 400 label=\"x\"\ntext \"note\" at (200,50)\n"
     )
     .is_empty());
 }
@@ -58,7 +58,7 @@ fn group_titles_are_obstacles() {
 fn label_over_its_own_arrowhead() {
     let d = lint(
         "label-collision",
-        "line l: (20,100) -> h 40 end=arrow label=\"hello\"\n",
+        "line l (20,100) -> h 40 end=arrow label=\"hello\"\n",
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(
@@ -72,7 +72,7 @@ fn label_over_its_own_arrowhead() {
     );
     let d = lint(
         "label-collision",
-        "line l: (20,100) -> h 40 start=diamond label@0.2=\"hello\"\n",
+        "line l (20,100) -> h 40 start=diamond label@0.2=\"hello\"\n",
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(
@@ -85,7 +85,7 @@ fn label_over_its_own_arrowhead() {
 fn label_on_its_own_stroke_away_from_markers() {
     assert!(lint(
         "label-collision",
-        "line l: (20,100) -> h 300 -> v 100 start=dot end=arrow label=\"hello\" label@0.9=\"x\"\n"
+        "line l (20,100) -> h 300 -> v 100 start=dot end=arrow label=\"hello\" label@0.9=\"x\"\n"
     )
     .is_empty());
 }
@@ -94,7 +94,7 @@ fn label_on_its_own_stroke_away_from_markers() {
 fn label_over_the_boxes_its_line_connects() {
     let d = lint(
         "label-collision",
-        "box a at (20,80) size (80,40)\nbox b at (140,80) size (80,40)\nline l: a.right -> b.left label=\"calls the api\"\n",
+        "box a at (20,80) size (80,40)\nbox b at (140,80) size (80,40)\nline l a.right -> b.left label=\"calls the api\"\n",
     );
     let hits: Vec<_> = d.iter().map(|d| d.message.as_str()).collect();
     assert_eq!(

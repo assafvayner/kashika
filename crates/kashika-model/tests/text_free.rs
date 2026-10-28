@@ -43,7 +43,7 @@ fn free_text_markup_picks_fonts() {
 
 #[test]
 fn line_labels_are_placed_on_the_path() {
-    let s = ok("line l: (0,100) -> h 200 label=\"SQL\" label@0.25=\"a\"\n");
+    let s = ok("line l (0,100) -> h 200 label=\"SQL\" label@0.25=\"a\"\n");
     let l = &s.lines[0];
     assert_eq!(l.labels[0].at, Pt::new(100.0, 100.0));
     assert!(close(l.labels[0].rect.center().y, 100.0));
@@ -58,7 +58,7 @@ fn unclosed_markup_in_free_text_and_labels_is_a_parse_error() {
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].code, "parse");
     assert_eq!(d[0].message, "unclosed ``` in text");
-    let d = errors("line l: (0,0) -> h 50 label=\"**x\"\n");
+    let d = errors("line l (0,0) -> h 50 label=\"**x\"\n");
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].code, "parse");
     assert_eq!(d[0].message, "unclosed `**` in text");
@@ -66,7 +66,7 @@ fn unclosed_markup_in_free_text_and_labels_is_a_parse_error() {
 
 #[test]
 fn escapes_are_literal_and_raw_strings_are_kept() {
-    let s = ok("text \"\\*\\*x\\*\\* \\\\ y\" at (0,0)\nline l: (0,0) -> h 5 label=\"\\`\"\n");
+    let s = ok("text \"\\*\\*x\\*\\* \\\\ y\" at (0,0)\nline l (0,0) -> h 5 label=\"\\`\"\n");
     assert_eq!(s.texts[0].content, "\\*\\*x\\*\\* \\\\ y");
     let runs: Vec<_> = s.texts[0].lines[0].runs.iter().collect();
     assert_eq!(runs.len(), 1);

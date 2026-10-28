@@ -29,7 +29,7 @@
           "pieces": [
             {"from":{"x":160,"y":220},"kind":"line","to":{"x":210,"y":220}}
           ],
-          "span": {"col":25,"end_col":33,"end_line":9,"line":9},
+          "span": {"col":24,"end_col":32,"end_line":9,"line":9},
           "to": {"x":210,"y":220}
         },
         {
@@ -38,11 +38,11 @@
           "pieces": [
             {"from":{"x":210,"y":220},"kind":"line","to":{"x":210,"y":240}}
           ],
-          "span": {"col":37,"end_col":42,"end_line":9,"line":9},
+          "span": {"col":36,"end_col":41,"end_line":9,"line":9},
           "to": {"x":210,"y":240}
         }
       ],
-      "span": {"col":5,"end_col":42,"end_line":9,"line":9},
+      "span": {"col":5,"end_col":41,"end_line":9,"line":9},
       "start": "none",
       "start_literal": true,
       "style": {"color":"#0f172a","fill":"#ffffff","font_size":12,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5}
@@ -65,11 +65,11 @@
     {"owner":"b","span":{"col":14,"end_col":21,"end_line":8,"line":8},"value":10,"what":"y"},
     {"owner":"b","span":{"col":5,"end_col":34,"end_line":8,"line":8},"value":40,"what":"width"},
     {"owner":"b","span":{"col":5,"end_col":34,"end_line":8,"line":8},"value":30,"what":"height"},
-    {"owner":"l","span":{"col":13,"end_col":21,"end_line":9,"line":9},"value":10,"what":"x"},
-    {"owner":"l","span":{"col":13,"end_col":21,"end_line":9,"line":9},"value":100,"what":"y"},
-    {"owner":"l","span":{"col":25,"end_col":33,"end_line":9,"line":9},"value":60,"what":"x"},
-    {"owner":"l","span":{"col":25,"end_col":33,"end_line":9,"line":9},"value":100,"what":"y"},
-    {"owner":"l","span":{"col":37,"end_col":42,"end_line":9,"line":9},"value":120,"what":"y"}
+    {"owner":"l","span":{"col":12,"end_col":20,"end_line":9,"line":9},"value":10,"what":"x"},
+    {"owner":"l","span":{"col":12,"end_col":20,"end_line":9,"line":9},"value":100,"what":"y"},
+    {"owner":"l","span":{"col":24,"end_col":32,"end_line":9,"line":9},"value":60,"what":"x"},
+    {"owner":"l","span":{"col":24,"end_col":32,"end_line":9,"line":9},"value":100,"what":"y"},
+    {"owner":"l","span":{"col":36,"end_col":41,"end_line":9,"line":9},"value":120,"what":"y"}
   ],
   "placement": [{"from":"a","kind":"frame","to":"outer"},{"from":"inner","kind":"frame","to":"outer"},{"from":"b","kind":"frame","to":"inner"}],
   "shapes": [

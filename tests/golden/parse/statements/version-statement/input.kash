@@ -1,0 +1,4 @@
+// spec: 3, 8
+// `kashika=` before `diagram` is a parse error pointing at the diagram attribute; `diagram` is not misplaced.
+kashika="0.1.0"
+diagram "v" size (100,100)

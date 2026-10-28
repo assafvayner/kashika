@@ -3,4 +3,4 @@
 diagram "grid" size (300,200) grid=10
 box a at (20,20) size (61,40)
 box b at a.right+(33,0) size (60,40) pin=left
-line l: a.right@0.3 -> b.left@0.3
+line l a.right@0.3 -> b.left@0.3

@@ -23,7 +23,7 @@ fn clean_scene_has_no_findings() {
 
 #[test]
 fn line_allow_suppresses_matching_findings_and_keeps_the_reason() {
-    let s = scene("line a: (0,0) -> h 10 allow=cross:b reason=\"bus\"\nline b: (5,-5) -> v 10\nline c: (0,20) -> h 10\n");
+    let s = scene("line a (0,0) -> h 10 allow=cross:b reason=\"bus\"\nline b (5,-5) -> v 10\nline c (0,20) -> h 10\n");
     let mut ds = vec![
         diag("cross", &["b", "a"]),
         diag("cross", &["c", "a"]),
@@ -38,7 +38,7 @@ fn line_allow_suppresses_matching_findings_and_keeps_the_reason() {
 
 #[test]
 fn shape_and_diagram_allow() {
-    let s = scene_src("diagram \"t\" size (100,100) allow=near\nbox a at (0,0) size (10,10) allow=overlap\nline l: (0,50) -> h 10 allow=cross\n");
+    let s = scene_src("diagram \"t\" size (100,100) allow=near\nbox a at (0,0) size (10,10) allow=overlap\nline l (0,50) -> h 10 allow=cross\n");
     let mut ds = vec![
         diag("near", &["l"]),
         diag("overlap", &["a", "z"]),
@@ -52,7 +52,7 @@ fn shape_and_diagram_allow() {
 
 #[test]
 fn metrics_count_crossings_and_wire() {
-    let s = scene("line a: (0,0) -> h 10\nline b: (0,20) -> h 30\n");
+    let s = scene("line a (0,0) -> h 10\nline b (0,20) -> h 30\n");
     let m = metrics(&s, &[diag("cross", &["a", "b"]), diag("near", &["a"])]);
     assert_eq!((m.crossings, m.wire_px), (1, 40));
 }
@@ -98,7 +98,7 @@ fn rect_and_anchor_helpers() {
 
 #[test]
 fn text_boxes_are_the_measured_rects() {
-    let s = scene("text \"abc\" at (100,50) size=10\nline l: (0,300) -> h 200 label@0.25=\"hi\"\n");
+    let s = scene("text \"abc\" at (100,50) size=10\nline l (0,300) -> h 200 label@0.25=\"hi\"\n");
     let t = &s.texts[0];
     assert_eq!(text_box(t), t.rect);
     assert!(t.rect.w > 0.0 && t.rect.h > 0.0);
@@ -133,7 +133,7 @@ fn group_title_band_and_box() {
 
 #[test]
 fn ports_list_endpoints_on_outlines() {
-    let s = scene("box a at (100,100) size (100,60)\njunction j at (0,0)\nline l: a.top -> v -50 end=arrow\nline m: j -> a.left@0.25\n");
+    let s = scene("box a at (100,100) size (100,60)\njunction j at (0,0)\nline l a.top -> v -50 end=arrow\nline m j -> a.left@0.25\n");
     let p = ports(&Ctx::new(&s));
     let got: Vec<(&str, &str, f64, &str, &str, bool)> = p
         .iter()

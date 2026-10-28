@@ -15,17 +15,17 @@ File {
         Line(
             Line {
                 id: Some(Ident { name: "l", span: 6:6-6:7 }),
-                start: Lit { x: Num(250.0), y: Num(150.0), span: 6:9-6:18 },
+                start: Lit { x: Num(250.0), y: Num(150.0), span: 6:8-6:17 },
                 segs: [
-                    Seg { kind: H(-100.5), span: 6:22-6:30 },
-                    Seg { kind: V(-0.5), span: 6:34-6:40 },
+                    Seg { kind: H(-100.5), span: 6:21-6:29 },
+                    Seg { kind: V(-0.5), span: 6:33-6:39 },
                     Seg {
-                        kind: Hv(Lit { x: Num(20.0), y: Num(180.0), span: 6:47-6:55 }),
-                        span: 6:44-6:55,
+                        kind: Hv(Lit { x: Num(20.0), y: Num(180.0), span: 6:46-6:54 }),
+                        span: 6:43-6:54,
                     },
                 ],
                 attrs: [],
-                span: 6:1-6:55,
+                span: 6:1-6:54,
             },
         ),
     ],

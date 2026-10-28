@@ -1,7 +1,7 @@
 ## Anchors and points
 
 ```text
-point := (x,y) | ref [+(dx,dy)]
+point := (x,y) | ref [+(dx,dy) | -(dx,dy)]
 ref   := <id>.<anchor> | <junction-id>
 x, y  := number | ref.x | ref.y        // mixed point: (db.left.x, lane.y)
 ```
@@ -14,6 +14,6 @@ x, y  := number | ref.x | ref.y        // mixed point: (db.left.x, lane.y)
 | `center` | center |
 | `tl` `tr` `bl` `br` | bounding-box corners; also `top-left` and so on |
 
-- Offsets use `+` with signed parts, `db.top+(-10,0)`, and combine with `@t`: `db.left@0.25+(0,4)`.
+- `+(dx,dy)` adds an offset and `-(dx,dy)` subtracts it; parts are signed either way, so `db.top+(-10,0)` is `db.top-(10,0)`. Offsets combine with `@t`: `db.left@0.25-(0,4)`.
 - Groups have anchors too: `vpc.top`.
 - Edge anchors on non-rectangular shapes move straight onto the outline, so a vertical line into `db.top` stays vertical.

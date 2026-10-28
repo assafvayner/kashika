@@ -6,7 +6,7 @@ use common::*;
 fn literal_endpoint_near_an_outline() {
     let d = lint(
         "endpoint-off-edge",
-        "box a at (100,100) size (100,60)\nline l: (0,115) -> (97,115)\n",
+        "box a at (100,100) size (100,60)\nline l (0,115) -> (97,115)\n",
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(
@@ -19,17 +19,17 @@ fn literal_endpoint_near_an_outline() {
     );
     assert!(lint(
         "endpoint-off-edge",
-        "box a at (100,100) size (100,60)\nline l: (0,115) -> (100,115)\n"
+        "box a at (100,100) size (100,60)\nline l (0,115) -> (100,115)\n"
     )
     .is_empty());
     assert!(lint(
         "endpoint-off-edge",
-        "box a at (100,100) size (100,60)\nline l: (0,115) -> a.left@0.25+(-3,0)\n"
+        "box a at (100,100) size (100,60)\nline l (0,115) -> a.left@0.25+(-3,0)\n"
     )
     .is_empty());
     assert!(lint(
         "endpoint-off-edge",
-        "box a at (100,100) size (100,60)\nline l: (0,115) -> (80,115)\n"
+        "box a at (100,100) size (100,60)\nline l (0,115) -> (80,115)\n"
     )
     .is_empty());
 }

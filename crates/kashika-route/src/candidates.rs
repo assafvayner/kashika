@@ -408,7 +408,7 @@ fn ctrl(e: &Endpoint, k: f64) -> Ctrl {
     let expr = e
         .expr
         .as_ref()
-        .filter(|x| !x.contains('+'))
+        .filter(|x| !x.contains('+') && !x.contains("-("))
         .map(|x| format!("{x}+({},{})", num(off.x), num(off.y)));
     Ctrl {
         at: e.at + off,

@@ -1,6 +1,6 @@
 ## Line paths
 
-A line is `start -> segment -> segment ...`. Each segment ends at a point, which starts the next one.
+A line is `start -> segment -> segment ...`. Each segment ends at a point, which starts the next one. The optional id follows `line` directly, with no colon: `line api_db api.right -> db.left`.
 
 | segment | path |
 |---|---|
@@ -9,8 +9,8 @@ A line is `start -> segment -> segment ...`. Each segment ends at a point, which
 | `x X` / `y Y` | move to x=X / y=Y; X or Y is a number or a point (`y db.top`) |
 | `hv <point>` | horizontal, then vertical: one elbow |
 | `vh <point>` | vertical, then horizontal |
-| `curve left:N <point>` | curve that bulges N px to the left of the direction of travel |
-| `curve right:N <point>` | the same, to the right |
+| `curve left N <point>` | curve that bulges N px to the left of the direction of travel |
+| `curve right N <point>` | the same, to the right |
 | `curve via (c1) (c2) <point>` | cubic Bézier with explicit control points |
 
 | attribute | default | meaning |

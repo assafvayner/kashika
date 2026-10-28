@@ -1,23 +1,23 @@
-warn[cross] 5:1-5:27: v1 crosses h1 at (100,100)
+warn[cross] 5:1-5:26: v1 crosses h1 at (100,100)
   = help: segment 1 runs at x=100; free x-intervals across y 20..280: 0..14, 286..300
   = help: if intentional: allow=cross:h1 on v1
   = suppressed: bus
-  elements: [{"from":[100,20],"id":"v1","kind":"line","segment":1,"span":{"col":1,"end_col":27,"end_line":5,"line":5},"to":[100,280]},{"from":[20,100],"id":"h1","kind":"line","segment":1,"span":{"col":1,"end_col":52,"end_line":4,"line":4},"to":[280,100]}]
+  elements: [{"from":[100,20],"id":"v1","kind":"line","segment":1,"span":{"col":1,"end_col":26,"end_line":5,"line":5},"to":[100,280]},{"from":[20,100],"id":"h1","kind":"line","segment":1,"span":{"col":1,"end_col":51,"end_line":4,"line":4},"to":[280,100]}]
   facts: {"at":[100,100],"free":{"axis":"x","band":[20,280],"intervals":[[0,14],[286,300]]}}
-warn[cross] 6:1-6:42: h2 crosses v1 at (100,200)
+warn[cross] 6:1-6:41: h2 crosses v1 at (100,200)
   = help: segment 1 runs at y=200; free y-intervals across x 20..280: 0..14, 286..300
   = help: if intentional: allow=cross:v1 on h2
-  elements: [{"from":[20,200],"id":"h2","kind":"line","segment":1,"span":{"col":1,"end_col":42,"end_line":6,"line":6},"to":[280,200]},{"from":[100,20],"id":"v1","kind":"line","segment":1,"span":{"col":1,"end_col":27,"end_line":5,"line":5},"to":[100,280]}]
+  elements: [{"from":[20,200],"id":"h2","kind":"line","segment":1,"span":{"col":1,"end_col":41,"end_line":6,"line":6},"to":[280,200]},{"from":[100,20],"id":"v1","kind":"line","segment":1,"span":{"col":1,"end_col":26,"end_line":5,"line":5},"to":[100,280]}]
   facts: {"at":[100,200],"free":{"axis":"y","band":[20,280],"intervals":[[0,14],[286,300]]}}
-warn[cross] 7:1-7:27: v2 crosses h1 at (200,100)
+warn[cross] 7:1-7:26: v2 crosses h1 at (200,100)
   = help: segment 1 runs at x=200; free x-intervals across y 20..280: 0..14, 286..300
   = help: if intentional: allow=cross:h1 on v2
   = suppressed: bus
-  elements: [{"from":[200,20],"id":"v2","kind":"line","segment":1,"span":{"col":1,"end_col":27,"end_line":7,"line":7},"to":[200,280]},{"from":[20,100],"id":"h1","kind":"line","segment":1,"span":{"col":1,"end_col":52,"end_line":4,"line":4},"to":[280,100]}]
+  elements: [{"from":[200,20],"id":"v2","kind":"line","segment":1,"span":{"col":1,"end_col":26,"end_line":7,"line":7},"to":[200,280]},{"from":[20,100],"id":"h1","kind":"line","segment":1,"span":{"col":1,"end_col":51,"end_line":4,"line":4},"to":[280,100]}]
   facts: {"at":[200,100],"free":{"axis":"x","band":[20,280],"intervals":[[0,14],[286,300]]}}
-warn[cross] 7:1-7:27: v2 crosses h2 at (200,200)
+warn[cross] 7:1-7:26: v2 crosses h2 at (200,200)
   = help: segment 1 runs at x=200; free x-intervals across y 20..280: 0..14, 286..300
   = help: if intentional: allow=cross:h2 on v2
   = suppressed
-  elements: [{"from":[200,20],"id":"v2","kind":"line","segment":1,"span":{"col":1,"end_col":27,"end_line":7,"line":7},"to":[200,280]},{"from":[20,200],"id":"h2","kind":"line","segment":1,"span":{"col":1,"end_col":42,"end_line":6,"line":6},"to":[280,200]}]
+  elements: [{"from":[200,20],"id":"v2","kind":"line","segment":1,"span":{"col":1,"end_col":26,"end_line":7,"line":7},"to":[200,280]},{"from":[20,200],"id":"h2","kind":"line","segment":1,"span":{"col":1,"end_col":41,"end_line":6,"line":6},"to":[280,200]}]
   facts: {"at":[200,200],"free":{"axis":"x","band":[20,280],"intervals":[[0,14],[286,300]]}}

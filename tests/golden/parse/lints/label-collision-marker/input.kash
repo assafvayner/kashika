@@ -1,5 +1,5 @@
 // spec: 7
 // A label on a short line covers its own arrowhead; a label on a long line sits on its stroke.
 diagram "label over marker" size (300,200)
-line short: (20,60) -> h 40 end=arrow label="hello"
-line long: (20,140) -> h 240 start=diamond end=arrow label="hello"
+line short (20,60) -> h 40 end=arrow label="hello"
+line long (20,140) -> h 240 start=diamond end=arrow label="hello"

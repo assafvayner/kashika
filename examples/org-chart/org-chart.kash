@@ -21,19 +21,19 @@ box l6 "Lead, Pipelines" at l5.right+(40,0) size (160,40) pin=left
 box l7 "Lead, Analytics" at l6.right+(20,0) size (160,40) pin=left
 box l8 "Lead, ML Systems" at l7.right+(20,0) size (160,40) pin=left
 
-line vp_bus: vp.bottom -> vbus
-line vb_d1: vbus -> hv d1.top end=arrow
-line vb_d2: vbus -> d2.top end=arrow
-line vb_d3: vbus -> hv d3.top end=arrow
+line vp_bus vp.bottom -> vbus
+line vb_d1 vbus -> hv d1.top end=arrow
+line vb_d2 vbus -> d2.top end=arrow
+line vb_d3 vbus -> hv d3.top end=arrow
 
-line d1_b: d1.bottom -> b1
-line b1_l1: b1 -> hv l1.top end=arrow
-line b1_l2: b1 -> l2.top end=arrow
-line b1_l3: b1 -> hv l3.top end=arrow
-line d2_b: d2.bottom -> b2
-line b2_l4: b2 -> hv l4.top end=arrow
-line b2_l5: b2 -> hv l5.top end=arrow
-line d3_b: d3.bottom -> b3
-line b3_l6: b3 -> hv l6.top end=arrow
-line b3_l7: b3 -> l7.top end=arrow
-line b3_l8: b3 -> hv l8.top end=arrow
+line d1_b d1.bottom -> b1
+line b1_l1 b1 -> hv l1.top end=arrow
+line b1_l2 b1 -> l2.top end=arrow
+line b1_l3 b1 -> hv l3.top end=arrow
+line d2_b d2.bottom -> b2
+line b2_l4 b2 -> hv l4.top end=arrow
+line b2_l5 b2 -> hv l5.top end=arrow
+line d3_b d3.bottom -> b3
+line b3_l6 b3 -> hv l6.top end=arrow
+line b3_l7 b3 -> l7.top end=arrow
+line b3_l8 b3 -> hv l8.top end=arrow

@@ -129,8 +129,8 @@ fn every_builtin_shape_resolves_inside_its_box() {
 #[test]
 fn diamond_anchors_are_axis_projected() {
     let s = ok("box d at (0,0) size (120,80) shape=diamond\n\
-                line l: d.right@0.25 -> h 40\nline m: d.top@0.25 -> v -40\n\
-                line n: d.tl -> v -10\nline c: d.center -> h 1\n");
+                line l d.right@0.25 -> h 40\nline m d.top@0.25 -> v -40\n\
+                line n d.tl -> v -10\nline c d.center -> h 1\n");
     assert_eq!(start(&s, "l"), Pt::new(90.0, 20.0));
     assert_eq!(start(&s, "m"), Pt::new(30.0, 20.0));
     assert_eq!(
@@ -144,7 +144,7 @@ fn diamond_anchors_are_axis_projected() {
 #[test]
 fn cylinder_top_follows_the_cap() {
     let s = ok("box c at (0,0) size (120,80) shape=cylinder\n\
-                line a: c.top -> v -20\nline b: c.top@0.25 -> v -20\nline e: c.bottom -> v 20\n");
+                line a c.top -> v -20\nline b c.top@0.25 -> v -20\nline e c.bottom -> v 20\n");
     assert!(close(start(&s, "a"), Pt::new(60.0, 0.0)));
     assert!(close(
         start(&s, "b"),
@@ -170,7 +170,7 @@ fn builtin_text_areas() {
 
 #[test]
 fn hexagon_inset_is_a_quarter_of_the_height() {
-    let s = ok("box hx at (0,0) size (120,80) shape=hexagon\nline l: hx.left@0.25 -> h -20\n");
+    let s = ok("box hx at (0,0) size (120,80) shape=hexagon\nline l hx.left@0.25 -> h -20\n");
     assert!(close(start(&s, "l"), Pt::new(10.0, 20.0)));
 }
 
@@ -223,7 +223,7 @@ fn builtin_source_is_exposed_for_ref() {
 #[test]
 fn custom_shapes_stretch_to_the_box() {
     let s = ok("shape tri {\n  path \"M 0.5 0 L 1 1 L 0 1 Z  M 0.2 0.8 L 0.8 0.8\"\n  text-area (0.25,0.5,0.5,0.5)\n}\n\
-                box t at (100,100) size (200,100) shape=tri\nline l: t.left -> h -20\n");
+                box t at (100,100) size (200,100) shape=tri\nline l t.left -> h -20\n");
     let t = shape(&s, "t");
     assert_eq!(t.shape, "tri");
     assert_eq!(t.outline, Outline::Path);
@@ -235,7 +235,7 @@ fn custom_shapes_stretch_to_the_box() {
 #[test]
 fn outline_picks_the_subpath() {
     let s = ok("shape two {\n  path \"M 0 0 L 1 0 L 1 0.2 L 0 0.2 Z M 0 0.5 L 1 0.5 L 1 1 L 0 1 Z\"\n  outline 2\n}\n\
-                box b at (0,0) size (100,100) shape=two\nline l: b.top -> v -10\n");
+                box b at (0,0) size (100,100) shape=two\nline l b.top -> v -10\n");
     assert_eq!(start(&s, "l"), Pt::new(50.0, 50.0));
 }
 

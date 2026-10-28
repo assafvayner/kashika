@@ -2,4 +2,4 @@
 // `clearance=` on the diagram line changes the `near` distance.
 diagram "clearance" size (400,200) clearance=2
 box a at (100,40) size (100,60)
-line edge: (20,104) -> h 300
+line edge (20,104) -> h 300

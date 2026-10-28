@@ -53,12 +53,13 @@ impl Resolver<'_> {
                 }
             }
             Point::Ref {
-                offset: Some((dx, dy)),
+                offset: Some(o),
                 span,
                 ..
             } => {
-                self.literal(owner, "dx", *dx, *span);
-                self.literal(owner, "dy", *dy, *span);
+                let (dx, dy) = o.delta();
+                self.literal(owner, "dx", dx, *span);
+                self.literal(owner, "dy", dy, *span);
             }
             Point::Ref { offset: None, .. } => {}
         }

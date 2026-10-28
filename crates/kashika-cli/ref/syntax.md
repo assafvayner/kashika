@@ -7,7 +7,7 @@ box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=<shape>] [sty
 group <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [style=<name>] [sublabel="..."] [text-align=...] [gap=N] { children }
 junction <id> at <point> [dot]
 text  [<id>] "<content>" at <point> [size=N] [color=C] [align=left|center|right] [muted]
-line  [<id>:] <point> -> <segment> [-> <segment> ...] [line attributes] [ortho]
+line  [<id>] <point> -> <segment> [-> <segment> ...] [line attributes] [ortho]
 ```
 
 - `diagram` comes first. Units are pixels. The canvas is transparent unless `background=C` (`kashika ref styles`). One statement per line; a line that starts with `->`, `key=` or `ortho` continues the statement above. After the id and label, `at`, `size` and attributes may come in any order.

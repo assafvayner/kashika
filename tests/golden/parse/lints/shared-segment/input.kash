@@ -1,5 +1,5 @@
 // spec: 7
 // Two lines overlapping collinearly for more than 1px.
 diagram "shared" size (300,200)
-line a: (20,100) -> h 200
-line b: (100,100) -> h 180
+line a (20,100) -> h 200
+line b (100,100) -> h 180

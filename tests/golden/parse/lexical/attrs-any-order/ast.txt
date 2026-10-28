@@ -66,55 +66,55 @@ File {
                 id: Some(Ident { name: "l", span: 7:6-7:7 }),
                 start: Ref {
                     r: Ref {
-                        id: Ident { name: "a", span: 7:9-7:10 },
+                        id: Ident { name: "a", span: 7:8-7:9 },
                         anchor: Some(
-                            Anchor { name: Ident { name: "right", span: 7:11-7:16 }, t: None },
+                            Anchor { name: Ident { name: "right", span: 7:10-7:15 }, t: None },
                         ),
                     },
                     offset: None,
-                    span: 7:9-7:16,
+                    span: 7:8-7:15,
                 },
                 segs: [
                     Seg {
                         kind: To(
                             Ref {
                                 r: Ref {
-                                    id: Ident { name: "b", span: 7:20-7:21 },
+                                    id: Ident { name: "b", span: 7:19-7:20 },
                                     anchor: Some(
                                         Anchor {
-                                            name: Ident { name: "left", span: 7:22-7:26 },
+                                            name: Ident { name: "left", span: 7:21-7:25 },
                                             t: None,
                                         },
                                     ),
                                 },
                                 offset: None,
-                                span: 7:20-7:26,
+                                span: 7:19-7:25,
                             },
                         ),
-                        span: 7:20-7:26,
+                        span: 7:19-7:25,
                     },
                 ],
                 attrs: [
                     Attr {
-                        key: Ident { name: "label", span: 7:27-7:32 },
+                        key: Ident { name: "label", span: 7:26-7:31 },
                         at_t: None,
                         value: Str("x"),
-                        span: 7:27-7:36,
+                        span: 7:26-7:35,
                     },
                     Attr {
-                        key: Ident { name: "end", span: 7:37-7:40 },
+                        key: Ident { name: "end", span: 7:36-7:39 },
                         at_t: None,
                         value: Word("arrow"),
-                        span: 7:37-7:46,
+                        span: 7:36-7:45,
                     },
                     Attr {
-                        key: Ident { name: "start", span: 7:47-7:52 },
+                        key: Ident { name: "start", span: 7:46-7:51 },
                         at_t: None,
                         value: Word("dot"),
-                        span: 7:47-7:56,
+                        span: 7:46-7:55,
                     },
                 ],
-                span: 7:1-7:56,
+                span: 7:1-7:55,
             },
         ),
     ],

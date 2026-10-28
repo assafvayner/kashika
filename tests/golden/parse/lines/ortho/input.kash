@@ -4,4 +4,4 @@
 diagram "ortho" size (300,200)
 box a at (20,20) size (60,40)
 box b at (200,120) size (60,40)
-line l: a.right -> hv b.top ortho
+line l a.right -> hv b.top ortho

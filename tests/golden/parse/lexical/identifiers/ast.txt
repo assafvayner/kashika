@@ -28,36 +28,36 @@ File {
                 id: Some(Ident { name: "_private-to-api", span: 7:6-7:21 }),
                 start: Ref {
                     r: Ref {
-                        id: Ident { name: "_private", span: 7:23-7:31 },
+                        id: Ident { name: "_private", span: 7:22-7:30 },
                         anchor: Some(
-                            Anchor { name: Ident { name: "right", span: 7:32-7:37 }, t: None },
+                            Anchor { name: Ident { name: "right", span: 7:31-7:36 }, t: None },
                         ),
                     },
                     offset: None,
-                    span: 7:23-7:37,
+                    span: 7:22-7:36,
                 },
                 segs: [
                     Seg {
                         kind: To(
                             Ref {
                                 r: Ref {
-                                    id: Ident { name: "api-v2_1", span: 7:41-7:49 },
+                                    id: Ident { name: "api-v2_1", span: 7:40-7:48 },
                                     anchor: Some(
                                         Anchor {
-                                            name: Ident { name: "left", span: 7:50-7:54 },
+                                            name: Ident { name: "left", span: 7:49-7:53 },
                                             t: None,
                                         },
                                     ),
                                 },
                                 offset: None,
-                                span: 7:41-7:54,
+                                span: 7:40-7:53,
                             },
                         ),
-                        span: 7:41-7:54,
+                        span: 7:40-7:53,
                     },
                 ],
                 attrs: [],
-                span: 7:1-7:54,
+                span: 7:1-7:53,
             },
         ),
     ],

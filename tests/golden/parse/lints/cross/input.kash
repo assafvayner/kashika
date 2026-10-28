@@ -1,5 +1,5 @@
 // spec: 7
 // Two lines intersecting away from shared endpoints and junctions.
 diagram "cross" size (300,200)
-line h1: (20,100) -> h 260
-line v1: (150,20) -> v 160
+line h1 (20,100) -> h 260
+line v1 (150,20) -> v 160

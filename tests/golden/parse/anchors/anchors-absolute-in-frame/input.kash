@@ -5,5 +5,5 @@ diagram "absolute anchors" size (400,300)
 box top at (20,20) size (80,40)
 group g at (150,100) size (220,180) {
   box inner at (20,40) size (80,40)
-  line l: top.bottom -> vh inner.left
+  line l top.bottom -> vh inner.left
 }

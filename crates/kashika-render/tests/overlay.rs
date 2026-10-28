@@ -5,8 +5,8 @@ use kashika_render::{render_svg, render_svg_with, Overlay};
 const SRC: &str = "diagram \"o\" size (300,200)\n\
 box a \"A\" at (10,10) size (40,20) colr=#fff\n\
 box b \"B\" at (100,100) size (40,20)\n\
-line ab: a.right -> hv b.top\n\
-line bad: a.rigth -> b.left\n";
+line ab a.right -> hv b.top\n\
+line bad a.rigth -> b.left\n";
 
 fn warn_on_line_4() -> Diagnostic {
     let mut d = Diagnostic::error("near", Span::new(4, 1, 4, 5), "test warning");
@@ -94,7 +94,7 @@ fn debug_marks_a_through_warning_at_its_entry_point() {
 box a at (10,30) size (40,40)\n\
 box w at (120,20) size (40,60)\n\
 box b at (240,30) size (40,40)\n\
-line ab: a.right -> b.left\n";
+line ab a.right -> b.left\n";
     let (scene, _) = compile(src);
     let d = kashika_check::check(&scene)
         .into_iter()

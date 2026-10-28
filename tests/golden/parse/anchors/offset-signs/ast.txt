@@ -1,0 +1,115 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "offset signs", size: (300.0, 200.0), attrs: [], span: 4:1-4:38 }),
+        Box(
+            Node {
+                id: Ident { name: "a", span: 5:5-5:6 },
+                label: None,
+                at: Lit { x: Num(100.0), y: Num(50.0), span: 5:10-5:18 },
+                size: (100.0, 60.0),
+                attrs: [],
+                block: None,
+                span: 5:1-5:32,
+            },
+        ),
+        Junction(
+            Junction {
+                id: Ident { name: "p1", span: 6:10-6:12 },
+                at: Ref {
+                    r: Ref {
+                        id: Ident { name: "a", span: 6:16-6:17 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "top", span: 6:18-6:21 }, t: None },
+                        ),
+                    },
+                    offset: Some(Offset { neg: false, dx: -10.0, dy: 0.0 }),
+                    span: 6:16-6:29,
+                },
+                attrs: [],
+                span: 6:1-6:29,
+            },
+        ),
+        Junction(
+            Junction {
+                id: Ident { name: "m1", span: 7:10-7:12 },
+                at: Ref {
+                    r: Ref {
+                        id: Ident { name: "a", span: 7:16-7:17 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "top", span: 7:18-7:21 }, t: None },
+                        ),
+                    },
+                    offset: Some(Offset { neg: true, dx: 10.0, dy: 0.0 }),
+                    span: 7:16-7:28,
+                },
+                attrs: [],
+                span: 7:1-7:28,
+            },
+        ),
+        Junction(
+            Junction {
+                id: Ident { name: "m2", span: 8:10-8:12 },
+                at: Ref {
+                    r: Ref {
+                        id: Ident { name: "a", span: 8:16-8:17 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "top", span: 8:18-8:21 }, t: None },
+                        ),
+                    },
+                    offset: Some(Offset { neg: true, dx: -10.0, dy: 0.0 }),
+                    span: 8:16-8:29,
+                },
+                attrs: [],
+                span: 8:1-8:29,
+            },
+        ),
+        Junction(
+            Junction {
+                id: Ident { name: "m3", span: 9:10-9:12 },
+                at: Ref {
+                    r: Ref {
+                        id: Ident { name: "a", span: 9:16-9:17 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "left", span: 9:18-9:22 }, t: Some(0.25) },
+                        ),
+                    },
+                    offset: Some(Offset { neg: true, dx: 0.0, dy: 4.0 }),
+                    span: 9:16-9:33,
+                },
+                attrs: [],
+                span: 9:1-9:33,
+            },
+        ),
+        Junction(
+            Junction {
+                id: Ident { name: "m4", span: 10:10-10:12 },
+                at: Ref {
+                    r: Ref { id: Ident { name: "m1", span: 10:16-10:18 }, anchor: None },
+                    offset: Some(Offset { neg: true, dx: 5.0, dy: -5.0 }),
+                    span: 10:16-10:25,
+                },
+                attrs: [],
+                span: 10:1-10:25,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "l", span: 11:6-11:7 }),
+                start: Ref {
+                    r: Ref {
+                        id: Ident { name: "a", span: 11:8-11:9 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "bottom", span: 11:10-11:16 }, t: None },
+                        ),
+                    },
+                    offset: Some(Offset { neg: true, dx: 20.0, dy: 0.0 }),
+                    span: 11:8-11:23,
+                },
+                segs: [Seg { kind: V(30.0), span: 11:27-11:31 }],
+                attrs: [],
+                span: 11:1-11:31,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}

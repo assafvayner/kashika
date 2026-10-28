@@ -20,15 +20,15 @@ box srv "App server" at (620,620) size (130,50) style=service
 box ws3 "Workstation 3" at (790,620) size (130,50)
 box lap "Laptop" at (435,620) size (130,50)
 
-line l1: inet.bottom -> fwall.top end=arrow start=arrow
-line l2: fwall.bottom -> rtr.top
-line l3: rtr.bottom -> core.top
-line l4: core.left -> hv sw1.top
-line l5: core.bottom -> ap.top
-line l6: core.right -> nas.left
-line l7: core.right@0.9 -> x 770 -> sw2.top
-line l8: sw1.bottom@0.25 -> y 585 -> hv ws1.top
-line l9: sw1.bottom@0.75 -> y 585 -> hv ws2.top
-line l10: sw2.bottom@0.25 -> y 585 -> hv srv.top
-line l11: sw2.bottom@0.75 -> y 585 -> hv ws3.top
-line l12: ap.bottom -> lap.top stroke-style=dashed label="wifi"
+line l1 inet.bottom -> fwall.top end=arrow start=arrow
+line l2 fwall.bottom -> rtr.top
+line l3 rtr.bottom -> core.top
+line l4 core.left -> hv sw1.top
+line l5 core.bottom -> ap.top
+line l6 core.right -> nas.left
+line l7 core.right@0.9 -> x 770 -> sw2.top
+line l8 sw1.bottom@0.25 -> y 585 -> hv ws1.top
+line l9 sw1.bottom@0.75 -> y 585 -> hv ws2.top
+line l10 sw2.bottom@0.25 -> y 585 -> hv srv.top
+line l11 sw2.bottom@0.75 -> y 585 -> hv ws3.top
+line l12 ap.bottom -> lap.top stroke-style=dashed label="wifi"

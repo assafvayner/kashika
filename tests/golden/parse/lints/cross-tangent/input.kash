@@ -1,5 +1,5 @@
 // spec: 7
 // Tangency counts as a crossing.
 diagram "tangent" size (300,200)
-line flat: (20,100) -> h 260
-line arc: (40,140) -> curve left:40 (260,140)
+line flat (20,100) -> h 260
+line arc (40,140) -> curve left 40 (260,140)

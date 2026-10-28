@@ -2,5 +2,5 @@
 // Resolved coordinates must stay within ±1,000,000.
 diagram "limits" size (300,200)
 junction ok at (1000000,-1000000)
-line far: (10,10) -> (2000000,10)
+line far (10,10) -> (2000000,10)
 box b at ok+(1,0) size (10,10)

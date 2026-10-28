@@ -1,0 +1,152 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "line ids", size: (300.0, 200.0), attrs: [], span: 4:1-4:34 }),
+        Box(
+            Node {
+                id: Ident { name: "a", span: 5:5-5:6 },
+                label: None,
+                at: Lit { x: Num(20.0), y: Num(20.0), span: 5:10-5:17 },
+                size: (60.0, 40.0),
+                attrs: [],
+                block: None,
+                span: 5:1-5:30,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "b", span: 6:5-6:6 },
+                label: None,
+                at: Lit { x: Num(200.0), y: Num(20.0), span: 6:10-6:18 },
+                size: (60.0, 40.0),
+                attrs: [],
+                block: None,
+                span: 6:1-6:31,
+            },
+        ),
+        Junction(
+            Junction {
+                id: Ident { name: "j", span: 7:10-7:11 },
+                at: Lit { x: Num(150.0), y: Num(150.0), span: 7:15-7:24 },
+                attrs: [],
+                span: 7:1-7:24,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "ab", span: 8:6-8:8 }),
+                start: Ref {
+                    r: Ref {
+                        id: Ident { name: "a", span: 8:9-8:10 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "right", span: 8:11-8:16 }, t: None },
+                        ),
+                    },
+                    offset: None,
+                    span: 8:9-8:16,
+                },
+                segs: [
+                    Seg {
+                        kind: To(
+                            Ref {
+                                r: Ref {
+                                    id: Ident { name: "b", span: 8:20-8:21 },
+                                    anchor: Some(
+                                        Anchor {
+                                            name: Ident { name: "left", span: 8:22-8:26 },
+                                            t: None,
+                                        },
+                                    ),
+                                },
+                                offset: None,
+                                span: 8:20-8:26,
+                            },
+                        ),
+                        span: 8:20-8:26,
+                    },
+                ],
+                attrs: [],
+                span: 8:1-8:26,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "jb", span: 9:6-9:8 }),
+                start: Lit { x: Num(150.0), y: Num(150.0), span: 9:9-9:18 },
+                segs: [
+                    Seg {
+                        kind: Hv(
+                            Ref {
+                                r: Ref {
+                                    id: Ident { name: "b", span: 9:25-9:26 },
+                                    anchor: Some(
+                                        Anchor {
+                                            name: Ident { name: "bottom", span: 9:27-9:33 },
+                                            t: None,
+                                        },
+                                    ),
+                                },
+                                offset: None,
+                                span: 9:25-9:33,
+                            },
+                        ),
+                        span: 9:22-9:33,
+                    },
+                ],
+                attrs: [],
+                span: 9:1-9:33,
+            },
+        ),
+        Line(
+            Line {
+                id: None,
+                start: Ref {
+                    r: Ref { id: Ident { name: "j", span: 10:6-10:7 }, anchor: None },
+                    offset: None,
+                    span: 10:6-10:7,
+                },
+                segs: [Seg { kind: H(50.0), span: 10:11-10:15 }],
+                attrs: [],
+                span: 10:1-10:15,
+            },
+        ),
+        Line(
+            Line {
+                id: None,
+                start: Ref {
+                    r: Ref {
+                        id: Ident { name: "a", span: 11:6-11:7 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "bottom", span: 11:8-11:14 }, t: None },
+                        ),
+                    },
+                    offset: None,
+                    span: 11:6-11:14,
+                },
+                segs: [
+                    Seg {
+                        kind: Vh(
+                            Ref {
+                                r: Ref { id: Ident { name: "j", span: 11:21-11:22 }, anchor: None },
+                                offset: None,
+                                span: 11:21-11:22,
+                            },
+                        ),
+                        span: 11:18-11:22,
+                    },
+                ],
+                attrs: [],
+                span: 11:1-11:22,
+            },
+        ),
+        Line(
+            Line {
+                id: None,
+                start: Lit { x: Num(20.0), y: Num(180.0), span: 12:6-12:14 },
+                segs: [Seg { kind: H(40.0), span: 12:18-12:22 }],
+                attrs: [],
+                span: 12:1-12:22,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}
