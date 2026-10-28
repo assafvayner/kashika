@@ -142,6 +142,30 @@ pub struct Diagnostic {
     pub suppressed: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    /// Help and facts still to be worked out by `kashika_check::resolve`.
+    #[serde(skip)]
+    pub deferred: Vec<Deferred>,
+}
+
+/// Help that is costly to work out, so it is filled in only for diagnostics that are shown.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Deferred {
+    /// Where in `help` its lines go.
+    pub help_at: usize,
+    pub kind: DeferredKind,
+    /// The straight run the free lanes are around.
+    pub from: [f64; 2],
+    pub to: [f64; 2],
+    /// Ids ignored when looking for free lanes.
+    pub skip: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DeferredKind {
+    /// "segment N runs at ..." help and the `free` fact, for 0-based authored segment N.
+    Segment(usize),
+    /// "nearest free lane" and free-interval help, with the `lane` and `free` facts.
+    Lane,
 }
 
 impl Diagnostic {
@@ -157,6 +181,7 @@ impl Diagnostic {
             suggestions: Vec::new(),
             suppressed: false,
             reason: None,
+            deferred: Vec::new(),
         }
     }
 
@@ -175,6 +200,23 @@ impl Diagnostic {
 
     pub fn with_element(mut self, element: Element) -> Self {
         self.elements.push(element);
+        self
+    }
+
+    pub fn with_deferred(
+        mut self,
+        kind: DeferredKind,
+        from: [f64; 2],
+        to: [f64; 2],
+        skip: &[&str],
+    ) -> Self {
+        self.deferred.push(Deferred {
+            help_at: self.help.len(),
+            kind,
+            from,
+            to,
+            skip: skip.iter().map(|s| s.to_string()).collect(),
+        });
         self
     }
 

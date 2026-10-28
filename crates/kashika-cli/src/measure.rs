@@ -81,7 +81,7 @@ pub fn run(a: &MeasureArgs) -> ExitCode {
         }
         Err(e) => {
             match a.format {
-                Format::Text => println!("error[parse]: {e}"),
+                Format::Text => println!("error[parse]: {}", crate::term::line(&e.to_string())),
                 Format::Json => println!(
                     "{}",
                     serde_json::json!({

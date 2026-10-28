@@ -27,7 +27,7 @@ pub fn run(a: &IconsArgs) -> std::process::ExitCode {
     print!(
         "{}",
         match a.format {
-            Format::Text => text(&entries),
+            Format::Text => crate::term::text(&text(&entries)).into_owned(),
             Format::Json => json(&entries),
         }
     );

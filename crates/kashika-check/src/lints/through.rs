@@ -39,7 +39,7 @@ pub fn through(ctx: &Ctx) -> Vec<Diagnostic> {
             .with_element(shape_el(s.shape))
             .with_fact("entry", arr(entry))
             .with_fact("exit", arr(exit));
-            out.push(with_free(ctx, d, l, k, &skip));
+            out.push(with_free(d, l, k, &skip));
         }
     }
     out

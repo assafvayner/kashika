@@ -99,7 +99,7 @@ fn near_boxes(ctx: &Ctx) -> Vec<Diagnostic> {
                 .with_fact("clearance", c);
             let mut skip = vec![l.line.id.as_str()];
             skip.extend(own.iter().copied().filter(|o| *o != id));
-            out.push(with_free(ctx, d, l, k, &skip));
+            out.push(with_free(d, l, k, &skip));
         }
     }
     out
@@ -143,7 +143,7 @@ fn near_groups(ctx: &Ctx) -> Vec<Diagnostic> {
                 .with_element(shape_el(g.shape))
                 .with_fact("distance", round2(gap))
                 .with_fact("clearance", c);
-            out.push(with_free(ctx, d, l, k, &[l.line.id.as_str()]));
+            out.push(with_free(d, l, k, &[l.line.id.as_str()]));
         }
     }
     out
@@ -194,7 +194,7 @@ fn near_lines(ctx: &Ctx) -> Vec<Diagnostic> {
             .with_fact("distance", round2(gap))
             .with_fact("length", round2(run))
             .with_fact("clearance", c);
-            out.push(with_free(ctx, d, b, bi, &[b.line.id.as_str()]));
+            out.push(with_free(d, b, bi, &[b.line.id.as_str()]));
         }
     }
     out

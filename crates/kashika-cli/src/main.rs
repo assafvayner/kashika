@@ -6,6 +6,7 @@ mod output;
 mod ref_cmd;
 mod report;
 mod route_cmd;
+mod term;
 
 use std::hash::BuildHasher;
 use std::io::{Read, Write};
@@ -202,10 +203,10 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
                 ),
             );
         }
-        return report_library(c, &name, &src, &diags);
+        return report_library(c, &name, &src, diags);
     }
     let (scene, mut diags) = kashika_model::compile_with(&src, &opts);
-    diags.extend(kashika_check::check(&scene));
+    diags.extend(kashika_check::check_deferred(&scene));
     kashika_diag::sort(&mut diags);
     let metrics = kashika_check::metrics(&scene, &diags);
     if !c.focus.is_empty() {
@@ -258,10 +259,11 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
         max: c.max,
         show_suppressed: c.show_suppressed,
         metrics: Some(metrics),
+        scene: Some(&scene),
     };
     let report = match c.format {
-        Format::Text => report::text(&name, &src, &diags, &opts, output.as_ref()),
-        Format::Json => report::json(&name, &src, &diags, &opts, output.as_ref()),
+        Format::Text => report::text(&name, &src, &mut diags, &opts, output.as_ref()),
+        Format::Json => report::json(&name, &src, &mut diags, &opts, output.as_ref()),
     };
     print!("{report}");
     ExitCode::from(exit_code(c.fail_on, errors, warns))
@@ -271,19 +273,20 @@ fn report_library(
     c: &Common,
     name: &str,
     src: &str,
-    diags: &[kashika_diag::Diagnostic],
+    mut diags: Vec<kashika_diag::Diagnostic>,
 ) -> ExitCode {
     let opts = report::Opts {
         max: c.max,
         show_suppressed: c.show_suppressed,
         metrics: None,
+        scene: None,
     };
     let report = match c.format {
-        Format::Text => report::text(name, src, diags, &opts, None),
-        Format::Json => report::json(name, src, diags, &opts, None),
+        Format::Text => report::text(name, src, &mut diags, &opts, None),
+        Format::Json => report::json(name, src, &mut diags, &opts, None),
     };
     print!("{report}");
-    let report::Counts { errors, warns, .. } = report::counts(diags);
+    let report::Counts { errors, warns, .. } = report::counts(&diags);
     ExitCode::from(exit_code(c.fail_on, errors, warns))
 }
 
@@ -293,7 +296,7 @@ fn run_inspect(c: &Common, ids: &[String], ports: bool, corridors: Option<&str>)
         Err(msg) => return tool_error(c.format, &msg),
     };
     let (scene, mut diags) = kashika_model::compile_with(&src, &options(&c.file, c.allow_path));
-    diags.extend(kashika_check::check(&scene));
+    diags.extend(kashika_check::check_deferred(&scene));
     diags.retain(|d| !d.suppressed);
     if let Err(msg) = known_ids(&scene, ids, "inspect") {
         return tool_error(c.format, &msg);
@@ -309,7 +312,7 @@ fn run_inspect(c: &Common, ids: &[String], ports: bool, corridors: Option<&str>)
     };
     let data = inspect::build(&name, &src, &scene, &diags, &req);
     match c.format {
-        Format::Text => print!("{}", inspect::text(&data)),
+        Format::Text => print!("{}", term::text(&inspect::text(&data))),
         Format::Json => println!("{}", serde_json::to_string(&data).unwrap_or_default()),
     }
     ExitCode::from(0)
@@ -429,7 +432,7 @@ fn exit_code(fail_on: FailOn, errors: usize, warns: usize) -> u8 {
 
 fn tool_error(format: Format, msg: &str) -> ExitCode {
     match format {
-        Format::Text => eprintln!("kashika: {msg}"),
+        Format::Text => eprintln!("kashika: {}", term::text(msg)),
         Format::Json => println!(
             "{}",
             serde_json::json!({ "schema": report::SCHEMA, "tool": env!("CARGO_PKG_VERSION"), "tool_error": msg })

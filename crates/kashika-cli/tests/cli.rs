@@ -603,6 +603,129 @@ fn collapsed_errors_do_not_count_against_max() {
         .code(2)
         .stdout(
             predicate::str::contains("... and 3 more like this\n")
-                .and(predicate::str::contains("... and 1 more\n")),
+                .and(predicate::str::contains("error[duplicate-id]"))
+                .and(predicate::str::contains("... and 1 more").not()),
         );
+}
+
+/// `n` boxes off a 100x100 canvas, one distinct `out-of-canvas` warning each, then a parse error.
+fn warnings_then_error(n: usize) -> String {
+    let mut src = String::from("diagram \"t\" size (100,100)\n");
+    for i in 0..n {
+        src.push_str(&format!("box b{i} at (200,{}) size (10,10)\n", i * 20));
+    }
+    src.push_str("line l: (0,0) -> h 10\n");
+    src
+}
+
+#[test]
+fn max_never_hides_errors_in_text() {
+    let out = kashika()
+        .args(["check", "-", "--stdin-name", "w.kash", "--max", "5"])
+        .write_stdin(warnings_then_error(8))
+        .assert()
+        .code(2)
+        .get_output()
+        .stdout
+        .clone();
+    let out = String::from_utf8(out).unwrap();
+    assert_eq!(out.matches(": warn[out-of-canvas]").count(), 4, "{out}");
+    assert!(out.contains("w.kash:10:7: error[parse]"), "{out}");
+    assert!(out.contains("... and 4 more\n1 error, 8 warnings"), "{out}");
+}
+
+#[test]
+fn max_never_hides_errors_in_json() {
+    let out = kashika()
+        .args(["check", "-", "--format", "json", "--max", "3"])
+        .write_stdin(warnings_then_error(8))
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let diags = v["diagnostics"].as_array().unwrap();
+    assert_eq!(diags.len(), 3);
+    assert_eq!(v["truncated"], true);
+    assert_eq!(v["counts"]["error"], 1);
+    assert_eq!(diags.last().unwrap()["severity"], "error");
+    assert_eq!(diags[0]["code"], "out-of-canvas");
+
+    let out = kashika()
+        .args(["check", "-", "--format", "json", "--max", "0"])
+        .write_stdin(warnings_then_error(2))
+        .output()
+        .unwrap();
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let codes: Vec<&str> = v["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|d| d["code"].as_str().unwrap())
+        .collect();
+    assert_eq!(codes, ["parse"]);
+    assert_eq!(v["truncated"], true);
+}
+
+#[test]
+fn errors_print_even_when_they_alone_exceed_max() {
+    let mut src = String::from("diagram \"t\" size (100,100)\n");
+    for i in 0..4 {
+        src.push_str(&format!(
+            "box a{i} at (0,0) size (10,10)\nbox a{i} at (20,0) size (10,10)\n"
+        ));
+    }
+    let out = kashika()
+        .args(["check", "-", "--max", "1"])
+        .write_stdin(src)
+        .assert()
+        .code(2)
+        .get_output()
+        .stdout
+        .clone();
+    let out = String::from_utf8(out).unwrap();
+    assert_eq!(out.matches("error[duplicate-id]").count(), 3, "{out}");
+    assert!(
+        out.contains("... and 1 more like this\n... and 6 more\n4 errors, 6 warnings"),
+        "{out}"
+    );
+}
+
+#[test]
+fn text_output_escapes_control_characters() {
+    let src = "diagram \"t\" size (100,100)\ntext t \"\u{1b}]52;c;aGk=\u{7}\u{9b}x\" at (90,50)\n";
+    let out = kashika()
+        .args(["check", "-", "--stdin-name", "a\u{1b}[2J.kash"])
+        .write_stdin(src)
+        .output()
+        .unwrap();
+    let text = String::from_utf8(out.stdout).unwrap();
+    assert!(
+        !text.chars().any(|c| c.is_control() && c != '\n'),
+        "{text:?}"
+    );
+    assert!(text.contains("a\\u{1b}[2J.kash:2:1: warn["), "{text}");
+    assert!(
+        text.contains("text t \"\\u{1b}]52;c;aGk=\\u{7}\\u{9b}x\""),
+        "{text}"
+    );
+
+    let out = kashika()
+        .args(["check", "-", "--format", "json"])
+        .write_stdin(src)
+        .output()
+        .unwrap();
+    let json = String::from_utf8(out.stdout).unwrap();
+    assert!(
+        !json.chars().any(|c| c.is_control() && c != '\n'),
+        "{json:?}"
+    );
+}
+
+#[test]
+fn tool_errors_escape_control_characters() {
+    kashika()
+        .args(["check", "missing\u{1b}]0;x\u{7}.kash"])
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains("missing\\u{1b}]0;x\\u{7}.kash"));
 }

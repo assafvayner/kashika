@@ -2,7 +2,7 @@ mod common;
 
 use common::*;
 use kashika_check::ctx::Ctx;
-use kashika_check::free::{Axis, corridors, free_around, free_intervals, with_free};
+use kashika_check::free::{Axis, corridors, free_around, free_intervals, resolve, with_free};
 use kashika_diag::{Diagnostic, Span};
 use kashika_geom::{Pt, Rect};
 
@@ -71,13 +71,15 @@ fn with_free_adds_a_fact_and_help_for_straight_pieces() {
     let s = scene("box a at (100,110) size (80,60)\nline l (50,150) -> h 250 -> v 100\n");
     let ctx = Ctx::new(&s);
     let l = ctx.line("l").unwrap();
-    let d = with_free(
-        &ctx,
+    let mut d = with_free(
         Diagnostic::warn("through", Span::default(), "x"),
         l,
         0,
         &["l"],
     );
+    assert!(d.help.is_empty() && d.deferred.len() == 1);
+    resolve(&ctx, &mut d);
+    assert!(d.deferred.is_empty());
     assert_eq!(
         d.help,
         ["segment 1 runs at y=150; free y-intervals across x 50..300: 0..104, 176..600"]
@@ -91,4 +93,28 @@ fn corridors_cover_both_axes() {
     let (h, v) = corridors(&s, Rect::new(0.0, 0.0, 400.0, 400.0));
     assert_eq!(h, vec![(0.0, 94.0), (206.0, 400.0)]);
     assert_eq!(v, vec![(0.0, 94.0), (206.0, 400.0)]);
+}
+
+#[test]
+fn deferred_help_resolves_to_what_check_reports() {
+    let s = scene(
+        "box a at (100,100) size (80,60)\nbox b at (400,100) size (80,60)\n\
+         line lx (0,130) -> h 600\nline ly (300,0) -> v 400\n\
+         line p (0,300) -> h 400\nline q (100,300) -> h 400\n\
+         line n (0,163) -> h 90\n",
+    );
+    let eager = kashika_check::check(&s);
+    let mut lazy = kashika_check::check_deferred(&s);
+    let codes: Vec<&str> = lazy
+        .iter()
+        .filter(|d| !d.deferred.is_empty())
+        .map(|d| d.code)
+        .collect();
+    for code in ["cross", "through", "shared-segment"] {
+        assert!(codes.contains(&code), "{code} not deferred: {codes:?}");
+    }
+    assert_ne!(lazy, eager);
+    kashika_check::resolve(&s, &mut lazy);
+    assert_eq!(lazy, eager);
+    assert!(eager.iter().all(|d| d.deferred.is_empty()));
 }

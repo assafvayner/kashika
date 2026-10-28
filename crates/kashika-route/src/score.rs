@@ -18,7 +18,7 @@ pub struct Score {
 /// Findings that also name `ignore`, the line being rerouted, don't count. `None` means the
 /// probe enters a box.
 pub fn score(scene: &Scene, probe: &Line, ignore: Option<&str>) -> Option<Score> {
-    let mine: Vec<Diagnostic> = kashika_check::check(scene)
+    let mine: Vec<Diagnostic> = kashika_check::check_deferred(scene)
         .into_iter()
         .filter(|d| involves(d, &probe.id) && !ignore.is_some_and(|id| involves(d, id)))
         .collect();

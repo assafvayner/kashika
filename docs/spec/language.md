@@ -341,7 +341,9 @@ arch.kash:11:1: warn[cross]: l_d2 crosses l_lb3 at (690,95)
 0 errors, 1 warning · crossings=1 wire=1346px
 ```
 
-Diagnostics that share a severity, code and message template (the message with backticked text and standalone numbers blanked out, so `unknown id `a`` and `unknown id `b`` match) are collapsed: the first 3 are printed in full, followed by one `... and N more like this` line. Collapsed diagnostics don't count toward `--max`; when more than `--max` remain, the output ends with `... and N more`. The summary counts every diagnostic. JSON output never collapses: `diagnostics` lists every one, up to `--max`, and `truncated` says whether `--max` cut the list.
+Diagnostics that share a severity, code and message template (the message with backticked text and standalone numbers blanked out, so `unknown id `a`` and `unknown id `b`` match) are collapsed: the first 3 are printed in full, followed by one `... and N more like this` line. Collapsed diagnostics don't count toward `--max`. `--max` never hides an error: every error is printed (subject only to collapsing), and warnings fill what is left of `--max` in source order. When warnings are cut, the output ends with `... and N more`. The summary counts every diagnostic. JSON output never collapses: `diagnostics` lists every error and, up to `--max` entries in all, the first warnings, and `truncated` says whether `--max` cut any warning.
+
+Control characters (C0, DEL and C1) and bidirectional overrides that come from the input, in source lines, messages, help and file names, are printed as `\u{1b}`-style escapes, so a file can't send escape sequences to the terminal. Tabs are kept. JSON output carries the original text.
 
 ### JSON output
 

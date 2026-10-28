@@ -1,4 +1,4 @@
-use kashika_diag::Diagnostic;
+use kashika_diag::{DeferredKind, Diagnostic};
 use kashika_geom::{Pt, Rect, TOLERANCE};
 use kashika_model::Scene;
 use serde::Serialize;
@@ -177,20 +177,54 @@ impl Free {
     }
 }
 
-/// Adds the `free` fact and a "segment N runs at ..." help line for `path[k]` of `l`, when it is straight.
-pub fn with_free(ctx: &Ctx, d: Diagnostic, l: &LineGeom, k: usize, skip: &[&str]) -> Diagnostic {
-    match l
-        .straight_ends(k)
-        .and_then(|(p, q)| free_around(ctx, p, q, skip))
-    {
-        Some(f) => d.with_fact("free", f.fact()).with_help(format!(
-            "segment {} runs at {}={}; {}",
-            l.segment(k) + 1,
-            f.axis.name(),
-            fmt_num(f.at),
-            f.describe()
-        )),
+/// Defers the `free` fact and a "segment N runs at ..." help line for `path[k]` of `l`, when it
+/// is straight, to `resolve`.
+pub fn with_free(d: Diagnostic, l: &LineGeom, k: usize, skip: &[&str]) -> Diagnostic {
+    match l.straight_ends(k) {
+        Some((p, q)) => d.with_deferred(DeferredKind::Segment(l.segment(k)), raw(p), raw(q), skip),
         None => d,
+    }
+}
+
+pub(crate) fn raw(p: Pt) -> [f64; 2] {
+    [p.x, p.y]
+}
+
+/// Works out the help and facts `d` deferred.
+pub fn resolve(ctx: &Ctx, d: &mut Diagnostic) {
+    for x in std::mem::take(&mut d.deferred).into_iter().rev() {
+        let skip: Vec<&str> = x.skip.iter().map(String::as_str).collect();
+        let pt = |a: [f64; 2]| Pt::new(a[0], a[1]);
+        let Some(f) = free_around(ctx, pt(x.from), pt(x.to), &skip) else {
+            continue;
+        };
+        let mut help = Vec::new();
+        match x.kind {
+            DeferredKind::Segment(n) => help.push(format!(
+                "segment {} runs at {}={}; {}",
+                n + 1,
+                f.axis.name(),
+                fmt_num(f.at),
+                f.describe()
+            )),
+            DeferredKind::Lane => {
+                if let Some(lane) = f.nearest() {
+                    d.facts.insert(
+                        "lane".into(),
+                        serde_json::json!({"axis": f.axis.name(), "at": lane}),
+                    );
+                    help.push(format!(
+                        "nearest free lane: {}={}",
+                        f.axis.name(),
+                        fmt_num(lane)
+                    ));
+                }
+                help.push(f.describe());
+            }
+        }
+        d.facts.insert("free".into(), f.fact());
+        let at = x.help_at.min(d.help.len());
+        d.help.splice(at..at, help);
     }
 }
 

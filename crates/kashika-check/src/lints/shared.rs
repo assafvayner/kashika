@@ -1,8 +1,8 @@
-use kashika_diag::Diagnostic;
+use kashika_diag::{DeferredKind, Diagnostic};
 use kashika_geom::{Hit, Pt, TOLERANCE, seg_hit};
 
 use crate::ctx::{Ctx, LineGeom, arr, fmt_num, fmt_pt, line_el, round2};
-use crate::free::free_around;
+use crate::free::raw;
 
 /// `shared-segment`: two lines overlap collinearly for more than 1px. Only straight pieces
 /// are compared, because flattened curves would report artifacts.
@@ -27,7 +27,7 @@ pub fn shared_segment(ctx: &Ctx) -> Vec<Diagnostic> {
                 }
             }
             if let Some((p, q, ai, bi)) = first {
-                out.push(report(ctx, b, bi, a, ai, (p, q), total));
+                out.push(report(b, bi, a, ai, (p, q), total));
             }
         }
     }
@@ -35,7 +35,6 @@ pub fn shared_segment(ctx: &Ctx) -> Vec<Diagnostic> {
 }
 
 fn report(
-    ctx: &Ctx,
     l: &LineGeom,
     li: usize,
     other: &LineGeom,
@@ -44,7 +43,7 @@ fn report(
     total: f64,
 ) -> Diagnostic {
     let id = l.line.id.as_str();
-    let mut d = Diagnostic::warn(
+    Diagnostic::warn(
         "shared-segment",
         l.line.span,
         format!(
@@ -59,21 +58,6 @@ fn report(
     .with_element(line_el(other.line, Some(other.segment(oi))))
     .with_fact("from", arr(p))
     .with_fact("to", arr(q))
-    .with_fact("length", round2(total));
-    if let Some(f) = free_around(ctx, p, q, &[id]) {
-        if let Some(lane) = f.nearest() {
-            d = d
-                .with_fact(
-                    "lane",
-                    serde_json::json!({"axis": f.axis.name(), "at": lane}),
-                )
-                .with_help(format!(
-                    "nearest free lane: {}={}",
-                    f.axis.name(),
-                    fmt_num(lane)
-                ));
-        }
-        d = d.with_fact("free", f.fact()).with_help(f.describe());
-    }
-    d
+    .with_fact("length", round2(total))
+    .with_deferred(DeferredKind::Lane, raw(p), raw(q), &[id])
 }

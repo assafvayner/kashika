@@ -9,17 +9,22 @@ pub fn run(file: &str, check: bool) -> ExitCode {
         Err(e) => return crate::tool_error(Format::Text, &format!("cannot read {file}: {e}")),
     };
     match kashika_syntax::format(&src) {
-        Err(diags) => {
+        Err(mut diags) => {
             let opts = crate::report::Opts {
                 max: 50,
                 show_suppressed: false,
                 metrics: None,
+                scene: None,
             };
-            print!("{}", crate::report::text(file, &src, &diags, &opts, None));
+            print!(
+                "{}",
+                crate::report::text(file, &src, &mut diags, &opts, None)
+            );
             ExitCode::from(2)
         }
         Ok(out) if out == src => ExitCode::SUCCESS,
         Ok(_) if check => {
+            let file = crate::term::line(file);
             println!("{file}: not formatted; run `kashika fmt {file}`");
             ExitCode::from(1)
         }

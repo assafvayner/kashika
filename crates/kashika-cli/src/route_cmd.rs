@@ -4,7 +4,7 @@ use std::process::ExitCode;
 use clap::Args;
 use kashika_route::{Error, Request, Style, Suggestion, num};
 
-use crate::Format;
+use crate::{Format, term};
 
 #[derive(Args)]
 pub struct RouteArgs {
@@ -83,10 +83,11 @@ pub fn run(a: &RouteArgs) -> ExitCode {
                     })
                 ),
                 Format::Text => {
+                    let name = term::line(&name);
                     for d in &diags {
-                        println!("{name}: error[{}]: {}", d.code, d.message);
+                        println!("{name}: error[{}]: {}", d.code, term::line(&d.message));
                         for h in &d.help {
-                            println!("      = help: {h}");
+                            println!("      = help: {}", term::line(h));
                         }
                     }
                 }
@@ -108,7 +109,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
                         "existing_lines": s.existing_lines,
                     })
                 ),
-                Format::Text => print!("{}", text(&s)),
+                Format::Text => print!("{}", term::text(&text(&s))),
             }
             ExitCode::from(u8::from(s.candidates.is_empty()))
         }

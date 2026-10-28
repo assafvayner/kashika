@@ -14,7 +14,7 @@ pub fn cross(ctx: &Ctx) -> Vec<Diagnostic> {
             }
             let b = &ctx.lines[j];
             for (ka, kb, p) in crossings(ctx, a, b) {
-                out.push(report(ctx, b, b.pieces[kb].2, a, a.pieces[ka].2, p));
+                out.push(report(b, b.pieces[kb].2, a, a.pieces[ka].2, p));
             }
         }
     }
@@ -70,7 +70,7 @@ fn crossings(ctx: &Ctx, a: &LineGeom, b: &LineGeom) -> Vec<(usize, usize, Pt)> {
         .collect()
 }
 
-fn report(ctx: &Ctx, l: &LineGeom, li: usize, other: &LineGeom, oi: usize, p: Pt) -> Diagnostic {
+fn report(l: &LineGeom, li: usize, other: &LineGeom, oi: usize, p: Pt) -> Diagnostic {
     let (id, oid) = (l.line.id.as_str(), other.line.id.as_str());
     let d = Diagnostic::warn(
         "cross",
@@ -87,5 +87,5 @@ fn report(ctx: &Ctx, l: &LineGeom, li: usize, other: &LineGeom, oi: usize, p: Pt
             "if intentional: name {oid} and add allow=cross:<its id> on {id}, or allow=cross on {id}"
         )
     };
-    with_free(ctx, d, l, li, &[id]).with_help(allow)
+    with_free(d, l, li, &[id]).with_help(allow)
 }
