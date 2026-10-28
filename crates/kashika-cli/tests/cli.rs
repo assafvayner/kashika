@@ -139,3 +139,9 @@ fn missing_file_is_a_tool_error() {
         .code(3)
         .stderr(predicate::str::contains("cannot read nope.kash"));
 }
+
+#[test]
+fn bundled_example_checks_clean() {
+    let example = format!("{}/../../examples/upload.kash", env!("CARGO_MANIFEST_DIR"));
+    kashika().args(["check", &example]).assert().code(0);
+}
