@@ -1,0 +1,4 @@
+diagram "Typo" size (300,200)
+box api "API" at (20,20) size (100,50)
+box db "DB" at (180,20) size (100,50)
+line api.rigth -> db.left end=arrow
