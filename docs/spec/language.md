@@ -2,7 +2,7 @@
 
 Kashika is a text-to-diagram language for technical design diagrams (architecture, data flow, system boundaries). **There is no automatic layout.** The author states the exact position of every shape and the exact path of every line. Coding agents are the main authors, since they handle that precision well; humans read and review the results.
 
-The CLI renders `.ksh` files to SVG or PNG and runs geometric checks (crossings, overlaps, near-misses, text overflow). It also exposes the resolved geometry, so an author who cannot see the image can still verify and repair it.
+The CLI renders `.kash` files to SVG or PNG and runs geometric checks (crossings, overlaps, near-misses, text overflow). It also exposes the resolved geometry, so an author who cannot see the image can still verify and repair it.
 
 How v0 became v1 is recorded in `docs/review/review-synthesis.md`.
 
@@ -40,7 +40,7 @@ How v0 became v1 is recorded in `docs/review/review-synthesis.md`.
 
 ```
 diagram "<title>" size (w,h) [kashika=1] [grid=N] [clearance=N] [icons="<dir>"] [allow=<code>,...]
-import "<file.ksh>" [as <ns>]                      // §3a
+import "<file.kash>" [as <ns>]                      // §3a
 style <name> { key=value ... }
 shape <name> { ... }  |  shape <name> from "<file.svg>" [...]   // §3a
 box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=<shape>] [style=<name>] [attrs]
@@ -105,8 +105,8 @@ image logo "assets/hf.png" at (20,20) size (80,80) [fit=contain|cover|stretch]
 
 ### Imports
 ```
-import "lib/aws.ksh"          // brings in shape and style definitions
-import "lib/aws.ksh" as aws   // namespaced: shape=aws.s3 style=aws.service
+import "lib/aws.kash"          // brings in shape and style definitions
+import "lib/aws.kash" as aws   // namespaced: shape=aws.s3 style=aws.service
 ```
 Library files may contain only `shape`, `style` and `import`. An import cycle is an error.
 
@@ -293,7 +293,7 @@ An optional `kashika=1` on the `diagram` line declares which language version th
 The text output is compiler-style, deterministic and has no color unless on a TTY. It ends with a summary that includes metrics:
 
 ```
-arch.ksh:14:1: warn[cross]: l_d2 crosses l_lb3 at (640,165)
+arch.kash:14:1: warn[cross]: l_d2 crosses l_lb3 at (640,165)
    14 | line l_d2: app2.top@0.8 -> v -85 -> hv pg.top
    11 | line l_lb3: lb.bottom@0.8 -> vh app3.top
    = free x-intervals for l_lb3's vertical in band y 130..230: [520,600] [700,780]
@@ -307,7 +307,7 @@ A single versioned envelope is written to stdout. Progress goes to stderr.
 
 ```json
 {"schema":"kashika.check/1","tool":"0.1.0",
- "input":{"name":"arch.ksh","sha256":"…"},
+ "input":{"name":"arch.kash","sha256":"…"},
  "output":{"path":"arch.svg","written":false},
  "counts":{"error":2,"warn":3,"suppressed":1},"truncated":false,
  "metrics":{"crossings":2,"wire_px":4210},
