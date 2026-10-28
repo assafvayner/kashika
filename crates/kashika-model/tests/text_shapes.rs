@@ -97,7 +97,7 @@ fn label_overflow_reports_the_required_size() {
     assert_eq!(d[0].code, "label-overflow");
     assert_eq!(
         d[0].message,
-        "its text needs 91.64x17.5px but the text area of `a` is 64x14px"
+        "its text needs 91.64x17.5px but the text area of `a` is 64x14px (too small: 27.64px narrower, 3.5px shorter)"
     );
     assert_eq!(
         d[0].help,
@@ -247,4 +247,19 @@ fn group_label_markup_is_checked() {
     let d = errors("group g \"`VPC\" at (0,0) size (300,200) {\n}\n");
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].code, "parse");
+}
+
+#[test]
+fn label_overflow_names_the_short_dimension() {
+    let d = errors("box a \"Payments API\" at (0,0) size (200,30)\n");
+    assert_eq!(d[0].code, "label-overflow");
+    assert_eq!(
+        d[0].message,
+        "its text needs 91.64x17.5px but the text area of `a` is 184x14px (too short by 3.5px)"
+    );
+    let d = errors("box a \"Payments API\" at (0,0) size (80,60)\n");
+    assert_eq!(
+        d[0].message,
+        "its text needs 91.64x17.5px but the text area of `a` is 64x44px (too narrow by 27.64px)"
+    );
 }

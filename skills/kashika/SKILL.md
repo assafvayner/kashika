@@ -5,16 +5,18 @@ description: Use when creating or editing a technical diagram (architecture, dat
 
 # Writing Kashika diagrams
 
-Kashika has **no auto-layout**. You decide every box position and every line path, and the `kashika` CLI checks the result. You may not be able to see the image: treat `kashika check` as your eyes, and if you can view the PNG, look at it too. A clean check is not a good diagram.
+Kashika has **no auto-layout**. You decide every box position and every line path, and the `kashika` CLI checks the result. Treat `kashika check` as your eyes, and look at the render too: `kashika render file.kash -o file.png`, then open or read the PNG if you can view images. A clean check is not a good diagram.
 
 ## Loop
 
-1. Sketch the layout as a grid on paper first: rows/columns, ~60–80px gaps, and lanes for the lines.
-2. Write the `.kash` file and size every box from its text (see Sizing). `kashika ref` prints the full reference; `kashika ref <topic>` takes `syntax`, `anchors`, `paths`, `shapes`, `styles`, `metrics`, `lints`, `examples` or `cli`, and `kashika ref <code>` explains any diagnostic (`kashika ref through`).
-3. `kashika check file.kash --format json`. Fix every error first, starting with the first one, then every warning. The `help` entries name the fix: did-you-mean names, required sizes. Warnings name their `elements` (with the authored `segment` index for lines): `free` lists clear lanes for `through`/`near`/`cross`, `shared-segment` names the nearest free lane, `label-collision` lists clear `label@t` positions, and `endpoint-off-edge` gives the exact anchor. `--focus api,db` limits warnings to those ids; `kashika check - --stdin-name draft.kash < draft` checks stdin.
-4. When a fix needs coordinates, `kashika inspect file.kash <ids> --ports` shows resolved (absolute) boxes, anchors, line vertices and which side anchors are taken; `--corridors x1,y1,x2,y2` lists free lanes in a region. `kashika route file.kash api.right db.left@0.3` suggests ready-to-paste `line` statements, ranked by the `cross` and `near` findings `check` would report; add `arc` for rounded corners or `bezier` for curves, and `--line <id>` to reroute an existing line. It never edits the file, and only tries paths with at most 2 elbows: write longer detours by hand along a lane from `--corridors`.
-5. If a warning is intentional, suppress it narrowly on the line or shape: `allow=cross:other_line reason="..."`. Prefer `code:id` over a bare code; for a crossing, put it on either line, naming the other. Suppressed findings still count in the summary.
-6. `kashika fmt file.kash` to normalize layout (whitespace only; comments are kept), then `kashika render file.kash -o file.svg` (or `-o file.png`) when the check is clean.
+1. Sketch the layout as a grid first: rows/columns, ~60–80px gaps, and lanes for the lines.
+2. Write the `.kash` file, sizing every box from its text (see Sizing). `kashika ref` prints the full reference; `kashika ref <topic>` takes `syntax`, `anchors`, `paths`, `shapes`, `styles`, `metrics`, `lints`, `examples` or `cli`, and `kashika ref <code>` explains a diagnostic (`kashika ref through`).
+3. `kashika check file.kash --format json`. Fix every error first, starting with the first, then every warning. The `help` entries name the fix: did-you-mean names, required sizes, clear lanes (`free`), `label@t` positions, exact anchors.
+4. `--focus api,db` limits warnings to those ids; `kashika check - --stdin-name draft.kash < draft` checks stdin.
+5. When a fix needs coordinates, `kashika inspect file.kash <ids> --ports` shows absolute boxes, anchors, line vertices and taken sides; `--corridors x1,y1,x2,y2` lists free lanes in a region.
+6. `kashika route file.kash api.right db.left@0.3` suggests ready-to-paste `line` statements ranked by the `cross`/`near` findings `check` would report (`arc`, `bezier`, `--line <id>` to reroute). It never edits the file and tries only paths with at most 2 elbows; write longer detours by hand along a lane from `--corridors`.
+7. If a warning is intentional, suppress it narrowly: `allow=cross:other_line reason="..."` on the line or shape. Prefer `code:id`; for a crossing, name the other line. Several codes share one reason: `allow=overlap:b,overlap:c reason="..."`. On the `diagram` line, `allow=<code>,...` silences a code everywhere. Suppressed findings still count in the summary.
+8. `kashika fmt file.kash` normalizes layout (whitespace only; comments are kept). When the check is clean, `kashika render file.kash -o file.png` (or `.svg`) and look at it.
 
 ## Rules people get wrong
 
@@ -22,9 +24,23 @@ Kashika has **no auto-layout**. You decide every box position and every line pat
 2. **Literal coordinates are relative to the enclosing group.** Anchors (`db.left`) are always absolute. `kashika inspect file.kash <id>` prints a child's absolute box.
 3. **Ids are global** and referenced bare (`db.left`, never `vpc.db.left`). The segment keywords `h v x y hv vh curve` can't be ids.
 4. **Prefer relationships to numbers.** `at api.right+(80,0) pin=left`, `-> hv db.top`, `-> y queue.left`, `junction j at stock.bottom+(0,50)`. They survive later edits; literals don't.
-5. **The last hop must line up.** Use `hv`/`vh` or `x`/`y` targets so the path stays orthogonal. Add `ortho` to a line to make any diagonal an error.
-6. **The last segment sets the arrow direction.** `hv` goes horizontal first, then vertical; `vh` vertical first, then horizontal. `a.right -> hv b.left` ends with a vertical hop, so the arrow lands sideways on a left edge pointing up or down. To enter a `left`/`right` anchor horizontally, finish with a horizontal move: `a.right -> x 360 -> y b.left -> b.left`. Use `hv` into `top`/`bottom` and `vh` into `left`/`right`.
-7. **`check` covers geometry only:** crossings, overlaps, near-misses, boxes in the way, crowded ports, contrast, labels on things, the canvas and the grid. It doesn't prove that arrows point the right way or that the right boxes are connected.
+5. **The last hop must line up**, so the path stays orthogonal (`ortho` on a line makes any diagonal an error). The last segment sets the arrow direction: `hv` is horizontal then vertical, `vh` vertical then horizontal.
+
+   | the line enters | finish with |
+   |---|---|
+   | `top` / `bottom` | `hv`: `a.right -> hv b.top` |
+   | `left` / `right` | `vh`: `a.top -> vh b.left`; for a longer detour `a.right -> x 360 -> y b.left -> b.left` |
+
+6. **Space labeled lines.** A labeled line needs a gap ≥ the label's `kashika measure` width + ~30px between its boxes, or move it with `label@t`. `check` won't flag a cramped label.
+7. **Text inside a shape goes in its text block.** A free `text` over a box or ellipse raises `label-collision`. Put it in the shape's `{ }` block with `at (x,y)` (box-local coordinates, see Text); free `text` only on empty canvas.
+8. **`check` covers geometry only:** crossings, overlaps, near-misses, boxes in the way, crowded ports, contrast, labels on things, the canvas and the grid. It doesn't prove that arrows point the right way or that the right boxes are connected.
+
+## Sizing
+
+- `kashika measure "Payments API"` prints the exact width and height of one text argument (quote it; `\n` for more lines). Add `--size N`, and `--weight bold` for text in a bold style; `**` markup is applied as in a label.
+- A line is `1.25 × size` tall (17.5px at the default 14). A sublabel adds a `0.8 × size` line (`--size 11.2`) after `gap`. A text block is as wide as its widest item.
+- Padding defaults to 8 per side, so for `rect`/`rounded` add 16 to each text dimension (`Payments API` is 91.64×17.5, so the box is at least 108×34). Other shapes put the text in a fraction of the box (`diamond` 0.5 × 0.5, `cloud` 0.6 × 0.4; `kashika ref shapes`): add the 16, then divide by the fraction. `icon=` adds `icon-size + padding` (32px) on the icon's side.
+- Easiest for any shape: write a guess, then use the size from the `label-overflow` help, which accounts for shape, icon and sublabel.
 
 ## Cheat sheet
 
@@ -34,7 +50,7 @@ import "lib/aws.kash" as aws  // library shapes and styles: shape=aws.s3 style=a
 shape tri { path "M 0.5 0 L 1 1 L 0 1 Z" }  // unit coordinates 0..1, stretched to the box; M L H V C Q A Z
 shape s3 from "icons/s3.svg" text-area=below  // an SVG file as a shape; outline=bbox|hull
 style svc { fill=#e8f0fe stroke=#1a73e8 }  // built-ins: service datastore external queue boundary note; colors are hex or CSS names (steelblue), case-insensitive
-box api "API" at (40,40) size (140,60) style=service  // shape=rect|rounded|cylinder|diamond|ellipse|hexagon|doc|cloud|person
+box api "API" at (40,40) size (140,60) style=service fill=#1a73e833 stroke=steelblue  // inline keys override style=; #rrggbbaa alpha works; // shape=rect|rounded|cylinder|diamond|ellipse|hexagon|doc|cloud|person
 box db "DB" at api.right+(120,0) size (140,60) pin=left  // pin: any anchor, `side@t` included (`pin=left@0.25`); default `tl`
 box badge at db.tr size (16,16) pin=center allow=overlap:db reason="corner badge"
 line api_db: api.right -> db.left end=arrow label="SQL"
@@ -43,7 +59,7 @@ group vpc "VPC" at (20,180) size (600,280) {  // children use vpc-relative coord
   box q "Jobs" at (300,60) size (160,60) icon="queue"  // icon-pos=left|top icon-size=24; bundled: server browser queue lock cloud person
 }
 junction fan at api.bottom+(0,40) dot  // a point lines meet at; draws nothing without `dot`
-text "note" at (880,480) size=12 align=right muted  // centered on `at` unless align=left|right
+text note1 "note" at (880,480) size=12 align=right muted  // the id is optional (a text is not a line endpoint); centered on `at` unless align=left|right
 image logo "assets/logo.png" at (780,20) size (80,80) fit=contain  // SVG/PNG/JPEG; fit=contain|cover|stretch
 ```
 
@@ -73,7 +89,7 @@ Line attributes: `start=`/`end=` (`arrow open diamond dot none`), `stroke-style=
 - **Fan-out without `shared-segment`:** one line into a junction, then one line per child into its `top` (`hv` when it's off to the side). When two branches leave the junction the same way, run the trunk to the farthest child and put a second junction on it for the nearer one (`mid` below).
 - **Two lines on one side** of a box: spread them with `side@t` (`core.right@0.3`, `core.right@0.7`) to avoid `port-crowding`/`shared-segment`.
 - **Self-loop:** `curve via` from `top@0.8` back to `top@0.2`, with control points above the box. `out-of-canvas` measures a curve's true extent, labels included, so leave room.
-- **Short lines:** `check` doesn't yet flag a label pressed against an arrowhead or box edge. Leave the label's width + ~30px (≥ 70px) between boxes joined by a labeled line, or move the label with `label@t`.
+- **Sequence diagram:** lifelines are tall narrow boxes under each participant; messages are horizontal lines between `side@t` anchors at the same `t` (see below). Space lifelines by label width + ~30px.
 
 ```kash
 diagram "Recipes" size (500,260) kashika="0.1.0"
@@ -90,6 +106,16 @@ line mid_b: mid -> b.top end=arrow
 line again: src.top@0.8 -> curve via src.top@0.8+(0,-50) src.top@0.2+(0,-50) src.top@0.2 end=arrow label="retry"
 ```
 
+```kash
+diagram "Lifelines" size (360,200) kashika="0.1.0"
+box c "Client" at (40,20) size (100,40)
+box s "Server" at (220,20) size (100,40)
+box lc at c.bottom size (8,120) pin=top
+box ls at s.bottom size (8,120) pin=top
+line req: lc.right@0.2 -> ls.left@0.2 end=arrow label="request"
+line res: ls.left@0.6 -> lc.right@0.6 end=arrow stroke-style=dashed label="reply"
+```
+
 ## Text
 
 - Markup in any label or text (including a line's `label=`): `**bold**`, `` `code` ``. No nesting. `\*` and `` \` `` are literal. An unclosed marker is a `parse` error.
@@ -104,46 +130,18 @@ line again: src.top@0.8 -> curve via src.top@0.8+(0,-50) src.top@0.2+(0,-50) src
     text "• validates cards" size=12
   }
   ```
-  Items stack top to bottom. Each item takes `size`, `color`, `align` and `muted`. An item with `at (x,y)` is absolute, in box-local coordinates (`at` is its alignment point and vertical center), and leaves the stack. Don't combine `label`/`sublabel` with stacked items (`text-conflict`). Absolute items are fine.
+  Items stack top to bottom. Each item takes `size`, `color`, `align` and `muted`. An item with `at (x,y)` is absolute, in box-local coordinates (`at` is its alignment point and vertical center), and leaves the stack. This is how to put text inside a shape: `text "x" at (100,60)` in the shape's block (a free `text` over a shape is `label-collision`). Don't combine `label`/`sublabel` with stacked items (`text-conflict`). Absolute items are fine.
 
 Comments: `// to end of line` and `/* block */` (no nesting; an unclosed `/*` is a `parse` error). `#` is not a comment. Long lines can continue on the next line by starting it with `->`; attributes and `ortho` may follow on their own line.
 
-## Sizing
+## Diagnostics
 
-- `kashika measure "Payments API"` prints the exact width and height of one text argument (quote it; `\n` for more lines). Add `--size N`, and `--weight bold` for text in a bold style; `**` markup is applied as in a label.
-- A line is `1.25 × size` tall (17.5px at the default 14). A sublabel adds a `0.8 × size` line (`--size 11.2`) after `gap`. A text block is as wide as its widest item.
-- `rect`/`rounded`: box = text + 2 × padding (16px by default). Other shapes put the text in a fraction of the box (`diamond` 0.5 × 0.5, `cloud` 0.6 × 0.4; `kashika ref shapes`): add the padding, then divide by the fraction. `icon=` takes `icon-size + padding` (32px) from the icon's side. Easiest for any shape: write a guess, then use the size from the `label-overflow` help, which accounts for shape, icon and sublabel.
+`kashika ref lints` lists every code; `kashika ref <code>` explains one. The fixes needed most:
 
-## Common errors
+- `label-overflow`: grow the box to the size in the help, shorten the text, or break it with `\n`.
+- `cross` / `through` / `near`: move the segment to a lane from the `free` help; `allow=cross:<other>` only for a non-planar graph.
+- `shared-segment` / `port-crowding`: spread ports with `side@t`, or fan out from a `junction`.
+- `not-ortho` / `diagonal-tail`: finish with `hv`/`vh` or `x`/`y`.
+- `text-conflict`: move `label`/`sublabel` into the block as its first items, or give every block item an `at`.
 
-| code | usual fix |
-|---|---|
-| `unknown-anchor` / `unknown-id` / `attr` | apply the did-you-mean suggestion |
-| `placement-cycle` | give one box in the cycle literal coordinates |
-| `not-ortho` | replace the diagonal hop with `hv`/`vh` or `x`/`y` |
-| `label-overflow` | grow the box to the size in the help line, shorten the text, or break it with `\n` |
-| `text-conflict` | move `label`/`sublabel` into the text block as its first items, or give every block item an `at` |
-| `degenerate-curve` / `zero-length` | the endpoints coincide; check your coordinates (loops need `curve via`) |
-| `diagram` | the file must start with `diagram "<title>" size (w,h)` |
-| `file` | a referenced file is missing, outside the project root, a URL, unreadable or the wrong type, or imports form a cycle. Fix the path (see the did-you-mean) or pass `--allow-path`. Errors inside an imported file are reported at the `import`, prefixed ``in `file` at L:C:`` |
-| `unsupported` | feature is in the spec but not built into this binary. Remove it; put the info in the label or a text block |
-| `duplicate-id` / `duplicate-style` / `unknown-style` / `size` / `parse` | fix as the message says; ids are unique across boxes, groups, images, junctions, lines and texts; style names are unique among styles and shape names among shapes (built-in names included). Coordinates stay within ±1,000,000, sizes at most 1,000,000 |
-
-## Warnings
-
-| code | usual fix |
-|---|---|
-| `cross` | move one line to a lane from the `free` help, or route around; `allow=cross:<other>` if the graph is non-planar |
-| `shared-segment` | give the later line its own lane (the help names the nearest one), fan out from a `junction`, or spread ports with `side@t` |
-| `through` / `group-transit` | move the segment to a `free` interval or route around; images block lines like boxes |
-| `near` | keep `clearance` (default 6px) from box edges and parallel lines |
-| `overlap` / `spill` | move or resize; only a `group` may contain shapes; keep children below its title band |
-| `diagonal-tail` | finish with `hv`/`vh` or `x`/`y` |
-| `endpoint-off-edge` | use the anchor from the help instead of a literal |
-| `port-crowding` | spread endpoints ≥8px apart (`side@t`) or meet at a `junction` |
-| `label-collision` | move the label to a clear `label@t` from the help, or the line to another side |
-| `image-distort` | use `fit=contain`/`cover`, or the size in the help line |
-| `out-of-canvas` | move it in or enlarge `size`; curves and labels count at their true extent |
-| `low-contrast` / `off-grid` | as the message says |
-
-Exit codes: `0` clean, `1` warnings, `2` errors, `3` tool/usage failure. `render` writes nothing on errors unless `--force` is given (it then marks each error in red). `render -o file.png` writes PNG; `--debug` overlays rulers, ids and anchor dots to help you locate problems. The `block-reducible` and `text-outside-shape` warnings aren't reported yet.
+Exit codes: `0` clean, `1` warnings, `2` errors, `3` tool/usage failure. `render` writes nothing on errors unless `--force` is given (it then marks each error in red). `render -o file.png` writes PNG; `--debug` overlays rulers, ids and anchor dots to help you locate problems.

@@ -255,7 +255,7 @@ fn check_reports_label_overflow() {
         .code(2)
         .stdout(
             predicate::str::contains(
-                "overflow.kash:2:1: error[label-overflow]: its text needs 91.64x17.5px but the text area of `api` is 64x14px",
+                "overflow.kash:2:1: error[label-overflow]: its text needs 91.64x17.5px but the text area of `api` is 64x14px (too small: 27.64px narrower, 3.5px shorter)",
             )
             .and(predicate::str::contains(
                 "= help: make `api` at least size (108,34), or shorten the text",

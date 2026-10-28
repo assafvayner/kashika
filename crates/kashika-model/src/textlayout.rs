@@ -428,11 +428,21 @@ fn overflow(s: &ShapeInput, what: &str, need: (f64, f64), area: Rect, span: Span
     let need = (need.0 + inset.0, need.1 + inset.1);
     let (w, h) = required_size(s.shape, s.custom_text_area, need, s.style.padding, s.rect);
     let size = (w.ceil(), h.ceil());
+    let (dw, dh) = (need.0 - area.w, need.1 - area.h);
+    let short = match (dw > TOLERANCE, dh > TOLERANCE) {
+        (true, false) => format!("too narrow by {}px", px(dw)),
+        (false, true) => format!("too short by {}px", px(dh)),
+        _ => format!(
+            "too small: {}px narrower, {}px shorter",
+            px(dw.max(0.0)),
+            px(dh.max(0.0))
+        ),
+    };
     Diagnostic::error(
         "label-overflow",
         span,
         format!(
-            "{what} needs {}x{}px but the text area of `{}` is {}x{}px",
+            "{what} needs {}x{}px but the text area of `{}` is {}x{}px ({short})",
             px(need.0),
             px(need.1),
             s.id,

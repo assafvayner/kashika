@@ -36,6 +36,6 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `label-collision` | warn | a label or text overlaps another element | move it; the help lists clear `t` |
 | `out-of-canvas` | warn | an element extends past `size` | move it or grow `size` |
 | `off-grid` | warn | a literal is not a multiple of `grid` | round it |
-| `block-reducible` | warn | a block of 1–2 items in one style | use the rewrite in the help line |
-| `text-outside-shape` | warn | an absolute block item outside the text area | move it inside |
+| `block-reducible` | warn | (not reported yet) a block of 1–2 items in one style | use the rewrite in the help line |
+| `text-outside-shape` | warn | (not reported yet) an absolute block item outside the text area | move it inside |
 | `image-distort` | warn | `fit=stretch` distorts by over 5% | use `fit=contain` |
