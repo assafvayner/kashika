@@ -28,10 +28,12 @@ pub fn svg_to_jpeg(svg: &str) -> Result<Vec<u8>, String> {
     );
     let rgb: Vec<u8> = pixmap
         .data()
-        .chunks_exact(4)
-        .flat_map(|p| {
-            let inv = 255 - u16::from(p[3]);
-            [p[0], p[1], p[2]].map(|c| (u16::from(c) + inv).min(255) as u8)
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .flat_map(|&[r, g, b, a]| {
+            let inv = 255 - u16::from(a);
+            [r, g, b].map(|c| (u16::from(c) + inv).min(255) as u8)
         })
         .collect();
     let mut out = Vec::new();
