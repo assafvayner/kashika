@@ -375,3 +375,71 @@ fn flag_lines_do_not_continue_other_statements() {
     assert_eq!(diags.len(), 1, "{diags:#?}");
     assert_eq!(diags[0].code, "parse");
 }
+
+fn nested_groups(depth: usize, close: bool) -> String {
+    let mut s = String::new();
+    for i in 0..depth {
+        s.push_str(&format!("group g{i} at (0,0) size (1,1) {{\n"));
+    }
+    if close {
+        s.push_str(&"}\n".repeat(depth));
+    }
+    s
+}
+
+#[test]
+fn group_nesting_is_limited() {
+    parse_ok(&nested_groups(64, true));
+    for close in [true, false] {
+        let (f, diags) = parse(&nested_groups(20_000, close));
+        assert!(
+            diags
+                .iter()
+                .any(|d| d.code == "parse" && d.message.contains("nested more than 64")),
+            "{:#?}",
+            &diags[..diags.len().min(3)]
+        );
+        assert_eq!(f.stmts.len(), 1);
+    }
+    let (f, diags) = parse(&format!(
+        "{}box after at (0,0) size (1,1)\n",
+        nested_groups(70, true)
+    ));
+    assert_eq!(diags.len(), 1, "{diags:#?}");
+    assert_eq!(f.stmts.len(), 2);
+}
+
+#[test]
+fn unknown_string_escapes_are_parse_errors() {
+    let (_, d) = parse("text \"a\\qb\" at (0,0)\n");
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "parse");
+    assert!(d[0].message.contains("`\\q`"), "{}", d[0].message);
+    parse_ok("text \"\\\" \\\\ \\n \\* \\`\" at (0,0)\n");
+}
+
+#[test]
+fn leading_byte_order_mark_is_skipped() {
+    let f = parse_ok("\u{feff}diagram \"t\" size (10,10)\n");
+    assert_eq!(f.stmts.len(), 1);
+}
+
+#[test]
+fn segment_keywords_are_reserved_ids() {
+    for kw in ["h", "v", "x", "y", "hv", "vh", "curve"] {
+        for src in [
+            format!("box {kw} at (0,0) size (1,1)\n"),
+            format!("group {kw} at (0,0) size (1,1) {{\n}}\n"),
+            format!("junction {kw} at (0,0)\n"),
+            format!("text {kw} \"t\" at (0,0)\n"),
+            format!("line {kw}: (0,0) -> h 1\n"),
+        ] {
+            let (_, d) = parse(&src);
+            assert_eq!(d.len(), 1, "{src}: {d:#?}");
+            assert_eq!(d[0].code, "parse");
+            assert!(d[0].message.contains("reserved"), "{}", d[0].message);
+            assert!(!d[0].help.is_empty());
+        }
+    }
+    parse_ok("box hx at (0,0) size (1,1)\njunction curves at (0,0)\n");
+}

@@ -433,19 +433,23 @@ fn children_of_duplicate_group_are_not_reference_targets() {
     let d = errors(
         "group g at (0,0) size (100,100) {\n}\ngroup g at (200,0) size (100,100) {\n  box b at (0,0) size (10,10)\n}\nline l: (0,0) -> b.left\n",
     );
-    assert!(d.iter().any(|x| x.code == "duplicate-id"), "{d:#?}");
-    assert!(d.iter().any(|x| x.code == "unknown-id"), "{d:#?}");
+    assert_eq!(codes_of(&d), vec!["duplicate-id"], "{d:#?}");
 }
 
 #[test]
 fn grandchildren_of_duplicate_group_are_not_reference_targets() {
     let d = errors(
-        "group g at (0,0) size (100,100) {\n}\ngroup g at (200,0) size (100,100) {\n  group h at (0,0) size (50,50) {\n    box b at (0,0) size (10,10)\n  }\n}\nline l: (0,0) -> b.left\n",
+        "group g at (0,0) size (100,100) {\n}\ngroup g at (200,0) size (100,100) {\n  group inner at (0,0) size (50,50) {\n    box b at (0,0) size (10,10)\n  }\n}\nline l: (0,0) -> b.left\n",
     );
+    assert_eq!(codes_of(&d), vec!["duplicate-id"], "{d:#?}");
+    let d = errors(
+        "group g at (0,0) size (100,100) {\n}\ngroup g at (200,0) size (100,100) {\n  box b at (0,0) size (10,10)\n}\nline l: (0,0) -> h 5 allow=cross:b\nline m: (0,0) -> bb.left\n",
+    );
+    assert!(d.iter().all(|d| !d.message.contains("`b`")), "{d:#?}");
     assert!(
         d.iter()
-            .any(|d| d.code == "unknown-id" && d.message.contains("`b`")),
-        "{d:#?}"
+            .any(|d| d.code == "unknown-id" && d.message.contains("`bb`") && d.help.is_empty()),
+        "skipped ids are not suggested: {d:#?}"
     );
 }
 
@@ -945,4 +949,161 @@ fn duplicate_and_mistyped_attributes() {
 fn style_inside_a_group_is_rejected() {
     let d = errors("group g at (0,0) size (10,10) {\n  style s { fill=#fff }\n}\n");
     assert_eq!(d[0].code, "parse");
+}
+
+fn codes_of(d: &[Diagnostic]) -> Vec<&'static str> {
+    d.iter().map(|x| x.code).collect()
+}
+
+#[test]
+fn out_of_range_values_are_rejected() {
+    for body in [
+        "box a at (1000001,0) size (1,1)\n",
+        "box a at (0,-1000001) size (1,1)\n",
+        "box a at (999999,0) size (1,1)\nbox b at a.right+(10,0) size (1,1)\n",
+        "line l: (0,0) -> h 2000000\n",
+        "line l: (0,0) -> x 2000000\n",
+        "line l: (0,0) -> curve left:2000000 (10,0)\n",
+        "line l: (0,0) -> curve via (1e7,0) (1,1) (2,2)\n",
+    ] {
+        let body = body.replace("1e7", "10000000");
+        let d = errors(&body);
+        assert!(
+            d.iter().any(|d| d.code == "degenerate-curve"
+                && d.message == "value is out of range (more than 1000000 from the origin)"),
+            "{body}: {d:#?}"
+        );
+    }
+    for body in [
+        "box a at (0,0) size (1000001,1)\n",
+        "group g at (0,0) size (1,2000000) {\n}\n",
+    ] {
+        let d = errors(body);
+        assert_eq!(codes_of(&d), vec!["size"], "{body}: {d:#?}");
+    }
+    let (s, d) = compile("diagram \"t\" size (2000000,10)\n");
+    assert_eq!(codes_of(&d), vec!["size"], "{d:#?}");
+    assert_eq!(s.size, (0.0, 0.0));
+    ok("box a at (-1000000,1000000) size (1000000,1)\n");
+}
+
+#[test]
+fn long_placement_chains_are_reported_not_crashed() {
+    let n = 5_000;
+    let mut body = String::new();
+    for i in 0..n {
+        body.push_str(&format!(
+            "box b{i} at b{}.right size (1,1) pin=left\n",
+            i + 1
+        ));
+    }
+    body.push_str(&format!("box b{n} at (0,0) size (1,1)\n"));
+    let d = errors(&body);
+    assert_eq!(
+        codes_of(&d),
+        vec!["placement-cycle"],
+        "{:#?}",
+        &d[..d.len().min(3)]
+    );
+    assert!(d[0].message.contains("deeper than 256"), "{}", d[0].message);
+
+    let mut body = String::new();
+    for i in 0..200 {
+        body.push_str(&format!(
+            "box b{i} at b{}.right size (1,1) pin=left\n",
+            i + 1
+        ));
+    }
+    body.push_str("box b200 at (0,0) size (1,1)\n");
+    let s = ok(&body);
+    assert_eq!(rect(&s, "b0").x, 200.0);
+}
+
+#[test]
+fn markup_is_unsupported_and_escapes_are_literal() {
+    for body in [
+        "box a \"**API**\" at (0,0) size (10,10)\n",
+        "box a \"run `x`\" at (0,0) size (10,10)\n",
+        "group g \"**G**\" at (0,0) size (10,10) {\n}\n",
+        "text \"**t**\" at (0,0)\n",
+        "line l: (0,0) -> h 5 label=\"`q`\"\n",
+        "line l: (0,0) -> h 5 label@0.2=\"\\***x**\"\n",
+    ] {
+        let d = errors(body);
+        assert_eq!(codes_of(&d), vec!["unsupported"], "{body}: {d:#?}");
+        assert!(d[0].message.contains("markup"), "{}", d[0].message);
+        assert!(!d[0].help.is_empty());
+    }
+    let s = ok("box a \"a \\*\\* b * c \\` d\" at (0,0) size (10,10)\ntext \"\\*\\*x\\*\\*\" at (0,0)\nline l: (0,0) -> h 5 label=\"\\`\"\n");
+    assert_eq!(s.shapes[0].label.as_deref(), Some("a ** b * c ` d"));
+    assert_eq!(s.texts[0].content, "**x**");
+    assert_eq!(s.lines[0].labels[0].text, "`");
+    let (s, _) = compile("diagram \"a \\* b\" size (10,10)\n");
+    assert_eq!(s.title, "a * b");
+}
+
+#[test]
+fn missing_diagram_in_an_empty_file_has_a_real_span() {
+    let (_, d) = compile("");
+    assert_eq!(codes_of(&d), vec!["diagram"]);
+    assert_eq!((d[0].span.line, d[0].span.col), (1, 1));
+}
+
+#[test]
+fn numeric_attributes_are_range_checked() {
+    for body in [
+        "box a at (0,0) size (10,10) font-size=0\n",
+        "box a at (0,0) size (10,10) stroke-width=-1\n",
+        "box a at (0,0) size (10,10) padding=-1\n",
+        "box a at (0,0) size (10,10) radius=-2\n",
+        "style s { font-size=-3 }\n",
+        "line l: (0,0) -> h 5 stroke-width=0\n",
+        "box a at (0,0) size (10,10) font-size=2000000\n",
+    ] {
+        let d = errors(body);
+        assert_eq!(codes_of(&d), vec!["attr"], "{body}: {d:#?}");
+    }
+    for head in [
+        "diagram \"t\" size (10,10) grid=0\n",
+        "diagram \"t\" size (10,10) grid=-5\n",
+        "diagram \"t\" size (10,10) clearance=-1\n",
+    ] {
+        let (_, d) = compile(head);
+        assert_eq!(codes_of(&d), vec!["attr"], "{head}: {d:#?}");
+    }
+    let (_, d) = compile("diagram \"t\" size (10,10) grid=10 clearance=0\nbox a at (0,0) size (10,10) padding=0 radius=0 stroke-width=0.5\n");
+    assert!(d.is_empty(), "{d:#?}");
+}
+
+#[test]
+fn boxes_with_a_bad_size_are_not_placed() {
+    let (s, d) = compile(&format!(
+        "{HEAD}box a at (0,0) size (0,10)\nbox b at a.right size (10,10)\ngroup g at (0,0) size (-1,10) {{\n  box c at (0,0) size (1,1)\n}}\n"
+    ));
+    assert_eq!(codes_of(&d), vec!["size", "size"], "{d:#?}");
+    assert!(s.shapes.is_empty(), "{:#?}", s.shapes);
+}
+
+#[test]
+fn diagram_must_come_first_even_after_a_broken_statement() {
+    for src in [
+        "bogus\ndiagram \"t\" size (10,10)\n",
+        "box a at\ndiagram \"t\" size (10,10)\n",
+        "import \"x.kash\"\ndiagram \"t\" size (10,10)\n",
+    ] {
+        let (_, d) = compile(src);
+        assert!(
+            d.iter()
+                .any(|d| d.code == "diagram" && d.message.contains("first")),
+            "{src}: {d:#?}"
+        );
+    }
+    let (_, d) = compile("// c\n\n/* b */\ndiagram \"t\" size (10,10)\n");
+    assert!(d.is_empty(), "{d:#?}");
+}
+
+#[test]
+fn text_color_cannot_be_none() {
+    let d = errors("text \"t\" at (0,0) color=none\n");
+    assert_eq!(codes_of(&d), vec!["attr"], "{d:#?}");
 }

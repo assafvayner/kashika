@@ -3,6 +3,8 @@ use kashika_diag::Span;
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct File {
     pub stmts: Vec<Stmt>,
+    /// Where the first statement starts, whether or not it parsed.
+    pub first_stmt: Option<Span>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

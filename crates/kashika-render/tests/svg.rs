@@ -88,3 +88,22 @@ fn text_at_is_the_vertical_center() {
     ));
     assert!(s.contains(r#"text-anchor="start" dominant-baseline="central""#));
 }
+
+fn path_d(s: &str) -> &str {
+    let start = s.find("<path d=\"").unwrap() + 9;
+    &s[start..start + s[start..].find('"').unwrap()]
+}
+
+#[test]
+fn markers_trim_a_final_curve() {
+    let s = svg("diagram \"c\" size (200,200)\nline l: (0,100) -> curve left:20 (100,100) end=arrow start=diamond\n");
+    let d = path_d(&s);
+    assert!(d.starts_with("M ") && !d.starts_with("M 0 100"), "{d}");
+    assert!(!d.ends_with(" 100 100"), "{d}");
+}
+
+#[test]
+fn markers_at_both_ends_of_a_short_line_share_it() {
+    let s = svg("diagram \"c\" size (200,200)\nline l: (0,50) -> h 15 start=arrow end=arrow\n");
+    assert_eq!(path_d(&s), "M 7.5 50 L 7.5 50");
+}

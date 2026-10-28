@@ -5,7 +5,8 @@ use kashika_geom::{round_corners, PathSeg, Pt, Rect, TOLERANCE};
 use kashika_syntax::ast::{self, Axis, Coord, Point, SegKind, Side, Stmt, Target};
 
 use crate::anchor;
-use crate::attrs::{self, Attrs};
+use crate::attrs::{self, Attrs, Min, LIMIT};
+use crate::markup;
 use crate::scene::*;
 use crate::style::{self, Style, StyleProps, STYLE_KEYS};
 
@@ -36,6 +37,8 @@ const UNSUPPORTED_KEYS: &[&str] = &[
     "icon-pos",
     "icon-size",
 ];
+/// Deepest chain of placement references followed before giving up.
+const MAX_PLACEMENT_DEPTH: usize = 256;
 const UNSUPPORTED_SHAPES: &[&str] = &[
     "cylinder", "diamond", "ellipse", "hexagon", "doc", "cloud", "person",
 ];
@@ -81,6 +84,8 @@ struct NodeProps {
     outline: Outline,
     style: Style,
     pin: &'static str,
+    label: Option<String>,
+    size_ok: bool,
 }
 
 struct LineProps {
@@ -95,6 +100,7 @@ struct LineProps {
 }
 
 struct TextProps {
+    content: String,
     size: f64,
     color: String,
     align: Align,
@@ -111,7 +117,10 @@ pub fn resolve(file: &ast::File) -> (Scene, Vec<Diagnostic>) {
         dots: HashMap::new(),
         placed: HashMap::new(),
         stack: Vec::new(),
+        on_stack: HashMap::new(),
+        depth_reported: false,
         skipped: HashSet::new(),
+        skipped_ids: HashSet::new(),
         diags: Vec::new(),
     };
     r.styles(file);
@@ -133,7 +142,12 @@ struct Resolver<'a> {
     /// Canvas rect per placed entry (junctions use a zero-size rect); `None` = failed.
     placed: HashMap<usize, Option<Rect>>,
     stack: Vec<usize>,
+    /// Position of each entry in `stack`.
+    on_stack: HashMap<usize, usize>,
+    depth_reported: bool,
     skipped: HashSet<usize>,
+    /// Ids declared inside a skipped duplicate group; references to them stay silent.
+    skipped_ids: HashSet<String>,
     diags: Vec<Diagnostic>,
 }
 
@@ -151,7 +165,7 @@ impl<'a> Resolver<'a> {
             lines: Vec::new(),
         };
         let mut seen = false;
-        for (i, stmt) in file.stmts.iter().enumerate() {
+        for stmt in &file.stmts {
             let Stmt::Diagram(d) = stmt else { continue };
             if seen {
                 self.diags.push(Diagnostic::error(
@@ -162,21 +176,17 @@ impl<'a> Resolver<'a> {
                 continue;
             }
             seen = true;
-            if i != 0 {
+            let first = file.first_stmt.map(|f| (f.line, f.col));
+            if first != Some((d.span.line, d.span.col)) {
                 self.diags.push(Diagnostic::error(
                     "diagram",
                     d.span,
                     "`diagram` must be the first statement",
                 ));
             }
-            scene.title = d.title.clone();
-            scene.size = d.size;
-            if self.finite(&[d.size.0, d.size.1], d.span) && (d.size.0 <= 0.0 || d.size.1 <= 0.0) {
-                self.diags.push(Diagnostic::error(
-                    "size",
-                    d.span,
-                    "diagram size must be positive",
-                ));
+            scene.title = markup::unescape(&d.title);
+            if self.size_ok(d.size, d.span, "the diagram") {
+                scene.size = d.size;
             }
 
             let a = Attrs::new(&d.attrs, "diagram", DIAGRAM_KEYS, &mut self.diags);
@@ -192,10 +202,10 @@ impl<'a> Resolver<'a> {
                 }
             }
             if let Some(x) = a.get("grid") {
-                scene.grid = attrs::num(x, &mut self.diags);
+                scene.grid = attrs::num_in(x, Min::Positive, &mut self.diags);
             }
             if let Some(x) = a.get("clearance") {
-                if let Some(v) = attrs::num(x, &mut self.diags) {
+                if let Some(v) = attrs::num_in(x, Min::NonNegative, &mut self.diags) {
                     scene.clearance = v;
                 }
             }
@@ -207,7 +217,7 @@ impl<'a> Resolver<'a> {
             }
         }
         if !seen {
-            let span = file.stmts.first().map_or(Span::default(), Stmt::span);
+            let span = file.stmts.first().map_or(Span::new(1, 1, 1, 1), Stmt::span);
             self.diags.push(
                 Diagnostic::error("diagram", span, "missing `diagram` statement")
                     .with_help("start the file with `diagram \"<title>\" size (w,h)`"),
@@ -268,6 +278,9 @@ impl<'a> Resolver<'a> {
             });
             if parent.is_some_and(|p| self.skipped.contains(&p)) {
                 self.skipped.insert(idx);
+                if let Some(id) = item.id() {
+                    self.skipped_ids.insert(id.name.clone());
+                }
             } else if let Some(id) = item.id() {
                 self.register(id, idx);
             }
@@ -327,6 +340,9 @@ impl<'a> Resolver<'a> {
                     continue;
                 }
                 if !self.ids.contains_key(o) {
+                    if self.skipped_ids.contains(o) {
+                        continue;
+                    }
                     let d = self.unknown_id(o, a.span);
                     self.diags.push(d);
                     continue;
@@ -340,17 +356,65 @@ impl<'a> Resolver<'a> {
         out
     }
 
+    /// Checks that every value is a finite number within `LIMIT` of zero.
     fn finite(&mut self, vals: &[f64], span: Span) -> bool {
-        if vals.iter().all(|v| v.is_finite()) {
-            true
-        } else {
+        if vals.iter().any(|v| !v.is_finite()) {
             self.diags.push(Diagnostic::error(
                 "degenerate-curve",
                 span,
                 "value is not a finite number",
             ));
             false
+        } else if vals.iter().any(|v| v.abs() > LIMIT) {
+            self.diags.push(
+                Diagnostic::error(
+                    "degenerate-curve",
+                    span,
+                    format!("value is out of range (more than {LIMIT} from the origin)"),
+                )
+                .with_help(format!("keep coordinates within -{LIMIT}..{LIMIT}")),
+            );
+            false
+        } else {
+            true
         }
+    }
+
+    fn size_ok(&mut self, (w, h): (f64, f64), span: Span, what: &str) -> bool {
+        if !self.finite_only(&[w, h], span) {
+            return false;
+        }
+        let msg = if w <= 0.0 || h <= 0.0 {
+            format!("{what} must have a positive size")
+        } else if w > LIMIT || h > LIMIT {
+            format!("{what} is larger than {LIMIT}")
+        } else {
+            return true;
+        };
+        self.diags.push(Diagnostic::error("size", span, msg));
+        false
+    }
+
+    fn finite_only(&mut self, vals: &[f64], span: Span) -> bool {
+        if vals.iter().all(|v| v.is_finite()) {
+            return true;
+        }
+        self.finite(vals, span)
+    }
+
+    /// A label or text string: reports markup (not built yet) and resolves escapes.
+    fn markup(&mut self, s: &str, span: Span) -> String {
+        if markup::has_markup(s) {
+            self.diags.push(
+                Diagnostic::error(
+                    "unsupported",
+                    span,
+                    "inline markup (`**bold**`, `` `code` ``) is not supported in this version yet",
+                )
+                .with_help("write a literal `*` or `` ` `` as `\\*` or `` \\` ``"),
+            );
+        }
+        markup::unescape(s)
     }
 
     fn unknown_id(&self, name: &str, span: Span) -> Diagnostic {
@@ -407,13 +471,8 @@ impl<'a> Resolver<'a> {
             }
         }
 
-        if n.size.0 <= 0.0 || n.size.1 <= 0.0 {
-            self.diags.push(Diagnostic::error(
-                "size",
-                n.span,
-                format!("`{}` must have a positive size", n.id.name),
-            ));
-        }
+        let size_ok = self.size_ok(n.size, n.span, &format!("`{}`", n.id.name));
+        let label = n.label.as_deref().map(|l| self.markup(l, n.span));
         let mut shape = None;
         if let Some(x) = a.get("shape") {
             match &x.value {
@@ -456,6 +515,8 @@ impl<'a> Resolver<'a> {
             outline,
             style: props.resolve(),
             pin,
+            label,
+            size_ok,
         }
     }
 
@@ -501,11 +562,11 @@ impl<'a> Resolver<'a> {
             .get("size")
             .and_then(|x| {
                 let v = attrs::num(x, &mut self.diags)?;
-                if v <= 0.0 {
+                if v <= 0.0 || v > LIMIT {
                     self.diags.push(Diagnostic::error(
                         "size",
                         x.span,
-                        "text size must be positive",
+                        format!("text size must be greater than 0 and at most {LIMIT}"),
                     ));
                     return None;
                 }
@@ -514,7 +575,15 @@ impl<'a> Resolver<'a> {
             .unwrap_or(14.0);
         let color = a
             .get("color")
-            .and_then(|x| attrs::color(x, &mut self.diags))
+            .and_then(|x| {
+                let c = attrs::color(x, &mut self.diags)?;
+                if c == "none" {
+                    self.diags
+                        .push(attrs::type_err(x, "a color like `#1a73e8`"));
+                    return None;
+                }
+                Some(c)
+            })
             .unwrap_or_else(|| Style::default().color);
         let align = match a
             .get("align")
@@ -524,7 +593,13 @@ impl<'a> Resolver<'a> {
             Some("right") => Align::Right,
             _ => Align::Center,
         };
-        TextProps { size, color, align }
+        let content = self.markup(&t.content, t.span);
+        TextProps {
+            content,
+            size,
+            color,
+            align,
+        }
     }
 
     fn line_props(&mut self, l: &ast::Line) -> LineProps {
@@ -574,6 +649,7 @@ impl<'a> Resolver<'a> {
                 continue;
             }
             if let Some(text) = attrs::text(x, &mut self.diags) {
+                let text = self.markup(&text, x.span);
                 labels.push(Label { t, text });
             }
         }
@@ -586,7 +662,8 @@ impl<'a> Resolver<'a> {
             .unwrap_or_default();
         let reason = a
             .get("reason")
-            .and_then(|x| attrs::text(x, &mut self.diags));
+            .and_then(|x| attrs::text(x, &mut self.diags))
+            .map(|r| markup::unescape(&r));
         let radius = props.radius.unwrap_or(0.0);
         LineProps {
             start,
@@ -642,7 +719,7 @@ impl<'a> Resolver<'a> {
                     let p = &self.texts[&idx];
                     scene.texts.push(Text {
                         id: t.id.as_ref().map(|i| i.name.clone()),
-                        content: t.content.clone(),
+                        content: p.content.clone(),
                         at,
                         size: p.size,
                         color: p.color.clone(),
@@ -675,7 +752,7 @@ impl<'a> Resolver<'a> {
             id: n.id.name.clone(),
             kind,
             outline: p.outline,
-            label: n.label.clone(),
+            label: p.label.clone(),
             rect,
             parent,
             depth,
@@ -689,7 +766,7 @@ impl<'a> Resolver<'a> {
         if let Some(r) = self.placed.get(&idx) {
             return *r;
         }
-        if let Some(pos) = self.stack.iter().position(|&i| i == idx) {
+        if let Some(&pos) = self.on_stack.get(&idx) {
             let names: Vec<String> = self.stack[pos..]
                 .iter()
                 .chain(std::iter::once(&idx))
@@ -714,9 +791,34 @@ impl<'a> Resolver<'a> {
             }
             return None;
         }
+        if self.stack.len() >= MAX_PLACEMENT_DEPTH {
+            if !self.depth_reported {
+                self.depth_reported = true;
+                let name = |i: usize| {
+                    self.entries[i]
+                        .item
+                        .id()
+                        .map_or("?".to_string(), |id| id.name.clone())
+                };
+                let d = Diagnostic::error(
+                    "placement-cycle",
+                    self.entries[idx].item.span(),
+                    format!(
+                        "placement chain from `{}` to `{}` is deeper than {MAX_PLACEMENT_DEPTH} references",
+                        name(self.stack[0]),
+                        name(idx)
+                    ),
+                )
+                .with_help("place some shapes in this chain with literal coordinates");
+                self.diags.push(d);
+            }
+            return None;
+        }
+        self.on_stack.insert(idx, self.stack.len());
         self.stack.push(idx);
         let computed = self.compute_place(idx);
         self.stack.pop();
+        self.on_stack.remove(&idx);
         let result = if self.placed.get(&idx) == Some(&None) {
             None
         } else {
@@ -739,11 +841,11 @@ impl<'a> Resolver<'a> {
     }
 
     fn place_node(&mut self, idx: usize, n: &'a ast::Node, origin: Pt) -> Option<Rect> {
-        let at = self.eval_point(&n.at, origin)?;
-        let (w, h) = n.size;
-        if !self.finite(&[at.x, at.y, w, h], n.span) {
+        if !self.nodes[&idx].size_ok {
             return None;
         }
+        let at = self.eval_point(&n.at, origin)?;
+        let (w, h) = n.size;
 
         let off = anchor::pin_offset(self.nodes[&idx].pin, w, h);
         Some(Rect::new(at.x - off.x, at.y - off.y, w, h))
@@ -798,6 +900,9 @@ impl<'a> Resolver<'a> {
     fn eval_ref(&mut self, r: &'a ast::Ref) -> Option<Pt> {
         let name = &r.id.name;
         let Some(&idx) = self.ids.get(name) else {
+            if self.skipped_ids.contains(name) {
+                return None;
+            }
             let d = self.unknown_id(name, r.id.span);
             self.diags.push(d);
             return None;
@@ -932,12 +1037,12 @@ impl<'a> Resolver<'a> {
             SegKind::To(p) => vec![line(cur, self.eval_point(p, origin)?)],
             SegKind::H(dx) => {
                 let x = cur.x + dx;
-                self.finite(&[*dx, x], seg.span).then_some(())?;
+                self.finite(&[x], seg.span).then_some(())?;
                 vec![line(cur, Pt::new(x, cur.y))]
             }
             SegKind::V(dy) => {
                 let y = cur.y + dy;
-                self.finite(&[*dy, y], seg.span).then_some(())?;
+                self.finite(&[y], seg.span).then_some(())?;
                 vec![line(cur, Pt::new(cur.x, y))]
             }
             SegKind::X(t) => {

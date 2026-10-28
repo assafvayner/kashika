@@ -5,6 +5,9 @@ use crate::point::{Pt, TOLERANCE};
 /// Maximum distance between a curve and its flattened polyline.
 pub const FLATTEN_TOLERANCE: f64 = 0.25;
 
+/// Upper bound on the pieces one curve is flattened into, whatever its size.
+pub const MAX_FLATTEN_STEPS: usize = 4096;
+
 #[derive(Debug, Clone, Copy, PartialEq, Serialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum PathSeg {
@@ -71,6 +74,105 @@ impl PathSeg {
         d.norm()
     }
 
+    pub fn length(&self) -> f64 {
+        length(std::slice::from_ref(self))
+    }
+
+    /// Splits the segment at parameter `t` (de Casteljau).
+    pub fn split(&self, t: f64) -> (PathSeg, PathSeg) {
+        match *self {
+            PathSeg::Line { from, to } => {
+                let m = from.lerp(to, t);
+                (PathSeg::Line { from, to: m }, PathSeg::Line { from: m, to })
+            }
+            PathSeg::Quad { from, ctrl, to } => {
+                let a = from.lerp(ctrl, t);
+                let b = ctrl.lerp(to, t);
+                let m = a.lerp(b, t);
+                (
+                    PathSeg::Quad {
+                        from,
+                        ctrl: a,
+                        to: m,
+                    },
+                    PathSeg::Quad {
+                        from: m,
+                        ctrl: b,
+                        to,
+                    },
+                )
+            }
+            PathSeg::Cubic { from, c1, c2, to } => {
+                let a = from.lerp(c1, t);
+                let b = c1.lerp(c2, t);
+                let c = c2.lerp(to, t);
+                let d = a.lerp(b, t);
+                let e = b.lerp(c, t);
+                let m = d.lerp(e, t);
+                (
+                    PathSeg::Cubic {
+                        from,
+                        c1: a,
+                        c2: d,
+                        to: m,
+                    },
+                    PathSeg::Cubic {
+                        from: m,
+                        c1: e,
+                        c2: c,
+                        to,
+                    },
+                )
+            }
+        }
+    }
+
+    /// Removes `start` and `end` px of arc length from the two ends. When they add up to
+    /// more than the segment's length, each end gives up length in proportion.
+    pub fn trim(&self, start: f64, end: f64) -> PathSeg {
+        let len = self.length();
+        let (mut a, mut b) = (start.max(0.0), end.max(0.0));
+        if a + b > len {
+            let k = len / (a + b);
+            a *= k;
+            b *= k;
+        }
+        if let PathSeg::Line { from, to } = *self {
+            let dir = (to - from).norm();
+            return PathSeg::Line {
+                from: from + dir * a,
+                to: to - dir * b,
+            };
+        }
+        let t0 = self.param_at(a);
+        let t1 = self.param_at(len - b).max(t0);
+        let mut seg = *self;
+        if a > 0.0 {
+            seg = seg.split(t0).1;
+        }
+        if b > 0.0 && t0 < 1.0 {
+            seg = seg.split((t1 - t0) / (1.0 - t0)).0;
+        }
+        seg
+    }
+
+    /// The parameter at arc length `s` from the start, measured on the flattened curve.
+    fn param_at(&self, s: f64) -> f64 {
+        let n = self.flatten_steps();
+        let mut prev = self.from();
+        let mut acc = 0.0;
+        for k in 1..=n {
+            let p = self.eval(k as f64 / n as f64);
+            let d = prev.dist(p);
+            if acc + d >= s && d > 0.0 {
+                return ((k - 1) as f64 + (s - acc) / d) / n as f64;
+            }
+            acc += d;
+            prev = p;
+        }
+        1.0
+    }
+
     fn flatten_steps(&self) -> usize {
         match *self {
             PathSeg::Line { .. } => 1,
@@ -95,7 +197,7 @@ fn nonzero(a: Pt, fallback: Pt) -> Pt {
 /// Uniform step count that keeps the chord error of a curve with the given
 /// second-derivative bound under FLATTEN_TOLERANCE.
 fn steps(deviation: f64) -> usize {
-    ((deviation / FLATTEN_TOLERANCE).sqrt().ceil() as usize).max(1)
+    ((deviation / FLATTEN_TOLERANCE).sqrt().ceil() as usize).clamp(1, MAX_FLATTEN_STEPS)
 }
 
 pub fn flatten(path: &[PathSeg]) -> Vec<Pt> {

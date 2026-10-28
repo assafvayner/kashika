@@ -52,6 +52,7 @@ pub struct Token {
 }
 
 pub fn lex(src: &str) -> (Vec<Token>, Vec<Diagnostic>) {
+    let src = src.strip_prefix('\u{feff}').unwrap_or(src);
     let mut lx = Lexer {
         chars: src.chars().collect(),
         pos: 0,
@@ -219,18 +220,32 @@ impl Lexer {
                     break;
                 }
                 Some('\\') => {
+                    let (el, ec) = (self.line, self.col);
                     self.bump();
-                    match self.bump() {
+                    match self.peek(0) {
                         Some('n') => s.push('\n'),
                         Some('"') => s.push('"'),
-                        Some('\\') => s.push('\\'),
-                        // Markup escapes like `\*` are kept for the text layer.
-                        Some(other) => {
+                        // `\\` and the markup escapes are kept for the text layer.
+                        Some(c @ ('\\' | '*' | '`')) => {
                             s.push('\\');
-                            s.push(other);
+                            s.push(c);
                         }
-                        None => {}
+                        Some(other) if other != '\n' => {
+                            s.push(other);
+                            self.diags.push(
+                                Diagnostic::error(
+                                    "parse",
+                                    Span::new(el, ec, el, ec + 2),
+                                    format!("unknown escape `\\{other}`"),
+                                )
+                                .with_help(
+                                    "strings support `\\\"`, `\\\\`, `\\n`, `\\*` and `\\``; write `\\\\` for a backslash",
+                                ),
+                            );
+                        }
+                        _ => continue,
                     }
+                    self.bump();
                 }
                 Some(c) => {
                     s.push(c);
@@ -354,6 +369,7 @@ mod tests {
     #[test]
     fn string_escapes_keep_markup_escapes() {
         assert_eq!(toks(r#""a\nb\"c\*""#)[0], Tok::Str("a\nb\"c\\*".into()));
+        assert_eq!(toks(r#""a\\*""#)[0], Tok::Str("a\\\\*".into()));
     }
 
     #[test]

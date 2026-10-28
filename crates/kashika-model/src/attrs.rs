@@ -88,6 +88,32 @@ pub fn num(a: &Attr, diags: &mut Vec<Diagnostic>) -> Option<f64> {
     }
 }
 
+/// Largest magnitude allowed for any coordinate, size or numeric attribute.
+pub const LIMIT: f64 = 1e6;
+
+#[derive(Clone, Copy)]
+pub enum Min {
+    Positive,
+    NonNegative,
+}
+
+/// A number in `min..=LIMIT`; anything else is an `attr` error.
+pub fn num_in(a: &Attr, min: Min, diags: &mut Vec<Diagnostic>) -> Option<f64> {
+    let v = num(a, diags)?;
+    let low = match min {
+        Min::Positive if v <= 0.0 => Some("greater than 0"),
+        Min::NonNegative if v < 0.0 => Some("at least 0"),
+        _ => None,
+    };
+    let msg = match low {
+        Some(bound) => format!("`{}` must be {bound}", a.key.name),
+        None if v > LIMIT => format!("`{}` must be at most {LIMIT}", a.key.name),
+        None => return Some(v),
+    };
+    diags.push(Diagnostic::error("attr", a.span, msg));
+    None
+}
+
 pub fn text(a: &Attr, diags: &mut Vec<Diagnostic>) -> Option<String> {
     if let Value::Str(s) = &a.value {
         Some(s.clone())
@@ -154,7 +180,7 @@ pub fn style_props(a: &Attrs, diags: &mut Vec<Diagnostic>) -> StyleProps {
         p.stroke = color(x, diags);
     }
     if let Some(x) = a.get("stroke-width") {
-        p.stroke_width = num(x, diags);
+        p.stroke_width = num_in(x, Min::Positive, diags);
     }
     if let Some(x) = a.get("stroke-style") {
         p.stroke_style = word(x, &["solid", "dashed", "dotted"], diags).map(|w| match w {
@@ -164,7 +190,7 @@ pub fn style_props(a: &Attrs, diags: &mut Vec<Diagnostic>) -> StyleProps {
         });
     }
     if let Some(x) = a.get("font-size") {
-        p.font_size = num(x, diags);
+        p.font_size = num_in(x, Min::Positive, diags);
     }
     if let Some(x) = a.get("font-weight") {
         p.font_weight = word(x, &["normal", "bold"], diags).map(|w| {
@@ -179,10 +205,10 @@ pub fn style_props(a: &Attrs, diags: &mut Vec<Diagnostic>) -> StyleProps {
         p.color = color(x, diags);
     }
     if let Some(x) = a.get("radius") {
-        p.radius = num(x, diags);
+        p.radius = num_in(x, Min::NonNegative, diags);
     }
     if let Some(x) = a.get("padding") {
-        p.padding = num(x, diags);
+        p.padding = num_in(x, Min::NonNegative, diags);
     }
     if let Some(x) = a.get("muted") {
         p.muted = color(x, diags);

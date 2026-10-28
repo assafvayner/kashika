@@ -15,14 +15,17 @@ How v0 became v1 is recorded in `docs/review/review-synthesis.md`.
 - **Rule: every literal coordinate is in the frame of the group where the statement is written.** This covers `at`, literal points in lines, `curve via` control points and numeric `x`/`y` targets. Top-level statements use the canvas frame.
 - Anchor references (`db.left`) always resolve to the referenced shape's true position, whatever frame you write them in.
 - Relative moves (`h`, `v`) and offsets (`+(dx,dy)`) are deltas, so they are the same in every frame.
+- Every resolved coordinate (positions, line points, curve control points, and curve amounts) must lie within ±1,000,000 of the canvas origin; anything further is a `degenerate-curve` error ("value is out of range"). Every size must be at most 1,000,000 (`size` error).
 
 `kashika inspect` prints both canvas and local coordinates for everything.
 
 ## 2. Lexical rules
 
 - Comments: `//` to end of line, and `/* ... */` block comments, both outside strings. Block comments don't nest. A block comment that spans lines counts as one line break, so it never joins two statements. An unclosed `/*` is a `parse` error. `#` is never a comment character.
-- Strings: `"..."` with escapes `\"`, `\\`, `\n`.
+- A UTF-8 byte order mark at the start of the file is ignored.
+- Strings: `"..."` with escapes `\"`, `\\`, `\n`, and the markup escapes `\*` and `` \` `` (§6). Any other escape, such as `\q`, is a `parse` error.
 - Identifiers: `[a-zA-Z_][a-zA-Z0-9_-]*`. **Ids are unique across the whole file** (shapes, groups, junctions, lines, texts) and are always referenced by bare id. There are no dotted paths.
+- The segment keywords `h`, `v`, `x`, `y`, `hv`, `vh` and `curve` are reserved: declaring an id with one of these names is a `parse` error, since it could not be used as a bare segment target.
 - Numbers: integers or decimals, optionally negative. Colors: `#rgb`, `#rrggbb` or `#rrggbbaa`.
 - **Statements** end at a newline, except in three cases:
   - inside `{ }` blocks;
@@ -52,9 +55,10 @@ line  [<id>:] <point> (-> <segment>)+ [attrs]
 image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stretch]   // §3a
 ```
 
-`diagram` comes first, then any `import` statements, then everything else. Boxes and groups accept `sublabel=`, `text-align=`, `text-valign=`, `gap=`, `icon=` and a `{ }` text block (§6).
+`diagram` comes first, then any `import` statements, then everything else. "First" means first in the source: a statement before `diagram` makes it misplaced even when that statement failed to parse. Boxes and groups accept `sublabel=`, `text-align=`, `text-valign=`, `gap=`, `icon=` and a `{ }` text block (§6).
 
 - `grid=N` makes `off-grid` check authored literals only, never resolved anchors. `clearance=N` (default `6`) is the minimum gap used by the `near` lint.
+- Numeric attributes must be in range, or they are `attr` errors: `font-size`, `stroke-width` and `grid` must be greater than 0; `radius`, `padding` and `clearance` must be at least 0. All of them must be at most 1,000,000. A `text` `size=` outside that range is a `size` error.
 - `style` keys:
   - `fill`, `stroke`, `stroke-width`, `stroke-style=solid|dashed|dotted`
   - `font-size`, `font-weight=normal|bold`, `color`
@@ -63,10 +67,10 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
   Built-in styles: `service`, `datastore`, `external`, `queue`, `boundary`, `note`. A user style with a built-in's name overrides it **key by key**. Precedence: inline attribute > `style=` > built-in default.
 - `box` shapes: built-in `rect` (default), `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`, or any `shape` that is defined or imported (§3a).
 - `pin=<anchor>` picks which anchor of the new shape lands on `at` (default `tl`). It takes a plain anchor name, so `@t` is not allowed. For example, `box cache at db.right+(60,0) size (120,60) pin=left` vertically centers `cache` beside `db`.
-- `at` may reference other shapes, so boxes can be placed relative to each other. Placement references form a DAG; a cycle is an error that prints the cycle.
-- `group`: children are `box`, `group`, `junction`, `text`, `line`. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. The label sits inside the top-left corner, and its title band (`font line-height + padding`) is reserved space. Children that intrude on the title band trigger `spill`.
+- `at` may reference other shapes, so boxes can be placed relative to each other. Placement references form a DAG; a cycle is an error that prints the cycle. A chain of placement references deeper than 256 is also a `placement-cycle` error.
+- `group`: children are `box`, `group`, `junction`, `text`, `line`. Groups nest at most 64 deep; a deeper `group` is a `parse` error. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. The label sits inside the top-left corner, and its title band (`font line-height + padding`) is reserved space. Children that intrude on the title band trigger `spill`.
 - `junction`: a zero-size named point that lines can start or end at. Lines meeting at a junction are connected, not crossing. `dot` draws a 6px dot there. Junctions model buses and fan-in/fan-out.
-- `text`: `at` is the anchor point for the alignment. Vertically, `at` is the **center** of the text block, not the baseline.
+- `text`: `at` is the anchor point for the alignment. `color=none` is an `attr` error. Vertically, `at` is the **center** of the text block, not the baseline.
 
 **Paint order is fixed:** groups (outer before inner) → boxes and images → lines → line labels and texts. Within a layer, file order applies. Lines are never hidden by boxes.
 
@@ -162,7 +166,7 @@ A line is `start -> seg -> seg ...`. Every segment ends at a point, and that poi
 | `curve via (c1) (c2) <point>` | cubic Bézier with explicit control points |
 
 Line attributes:
-- `start=` / `end=`: `arrow`, `open`, `diamond`, `dot`, `none` (both default to `none`). The stroke is trimmed so the marker's tip sits on the endpoint.
+- `start=` / `end=`: `arrow`, `open`, `diamond`, `dot`, `none` (both default to `none`). The stroke is trimmed so the marker's tip sits on the endpoint. The trim follows the end segment, whether straight or curved. When both markers sit on the same segment and their lengths add up to more than the segment, each end is trimmed in proportion to its marker's length.
 - `stroke-style=solid|dashed|dotted`, `stroke`, `stroke-width`, `style=`. On lines, a style applies only its `stroke*` and font keys.
 - `radius=N` rounds every polyline corner. The radius is clamped to half the shorter adjacent segment.
 - `label="..."` is the same as `label@0.5="..."`. `label@t="..."` is repeatable. `t` is the fraction of the final rendered path's **arc length**. Labels are horizontal, centered on the point, and drawn over a background halo.
@@ -179,7 +183,7 @@ Unnamed lines are referred to as `line@L<n>`, where n is the source line of the 
   - The label is the name.
   - The sublabel is one muted line below it, at `0.8 × font-size` in the style's `muted` color.
 - `text-align=left|center|right` (default center) and `text-valign=top|middle|bottom` (default middle) position the whole text stack within the shape's **text area**.
-- **Inline markup** works in `label`, `sublabel` and all `text`: `**bold**` and `` `code` `` (monospace). Markup does not nest. Escape with `\*` and `` \` ``. An unclosed marker is a `parse` error.
+- **Inline markup** works in `label`, `sublabel` and all `text`: `**bold**` and `` `code` `` (monospace). Markup does not nest. The markers are `**` and `` ` ``; a single `*` is literal. Escape with `\*` and `` \` ``, which always produce a literal `*` or `` ` ``. An unclosed marker is a `parse` error.
 - **Text block**, for 3 or more lines, bullet lists, or mixed sizes and alignment:
   ```
   box api at (100,80) size (200,120) style=service text-align=left {
@@ -220,17 +224,17 @@ These block output unless `--force` is given:
 
 | code | trigger |
 |---|---|
-| `parse` | Includes expected tokens and a suggestion |
+| `parse` | Includes expected tokens and a suggestion. Also: unknown string escapes, reserved ids (§2), groups nested more than 64 deep |
 | `unknown-id` / `unknown-anchor` | Includes did-you-mean. `unknown-anchor` also covers a bad `@t`: out of 0..1, or on a corner or `center` |
 | `duplicate-id` | Two statements use the same id |
-| `placement-cycle` | Relative placements form a cycle |
+| `placement-cycle` | Relative placements form a cycle, or a chain of them is deeper than 256 |
 | `label-overflow` | Reports the required size |
 | `not-ortho` | A segment is diagonal on a line marked `ortho` |
-| `degenerate-curve` | A zero-length curve, a negative curve amount, or a non-finite value |
+| `degenerate-curve` | A zero-length curve, a negative curve amount, or a non-finite or out-of-range value (a coordinate more than 1,000,000 from the origin, §1) |
 | `zero-length` | A line whose segments all have zero length |
-| `attr` | Unknown, duplicate or mistyped attribute, or a duplicate label position |
+| `attr` | Unknown, duplicate, mistyped or out-of-range attribute (§3), or a duplicate label position |
 | `unknown-style` | `style=` names no built-in or user style |
-| `size` | A non-positive size |
+| `size` | A non-positive size, or one larger than 1,000,000 |
 | `diagram` | Missing, misplaced or repeated `diagram` statement |
 | `version` | `kashika=N` doesn't match the binary |
 | `unsupported` | A spec feature this build doesn't implement yet |

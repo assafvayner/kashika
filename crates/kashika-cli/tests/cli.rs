@@ -145,3 +145,42 @@ fn bundled_example_checks_clean() {
     let example = format!("{}/../../examples/upload.kash", env!("CARGO_MANIFEST_DIR"));
     kashika().args(["check", &example]).assert().code(0);
 }
+
+#[test]
+fn failed_write_leaves_no_temp_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let out = dir.path().join("out.svg");
+    std::fs::create_dir(&out).unwrap();
+    kashika()
+        .args([
+            "render",
+            &fixture("basic.kash"),
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .assert()
+        .code(3);
+    let names: Vec<_> = std::fs::read_dir(dir.path())
+        .unwrap()
+        .map(|e| e.unwrap().file_name())
+        .collect();
+    assert_eq!(names, vec!["out.svg"], "no temp files left behind");
+}
+
+#[test]
+fn huge_coordinates_fail_cleanly_even_when_forced() {
+    let dir = tempfile::tempdir().unwrap();
+    let out = dir.path().join("out.svg");
+    let big = "1".repeat(300);
+    let src = format!(
+        "diagram \"x\" size ({big},100)\nbox a at (0,0) size ({big},10)\nline l: (0,0) -> curve via ({big},0) (0,{big}) (10,10) end=arrow\n"
+    );
+    kashika()
+        .args(["render", "-", "-o", out.to_str().unwrap(), "--force"])
+        .write_stdin(src)
+        .timeout(std::time::Duration::from_secs(20))
+        .assert()
+        .code(2);
+    let svg = std::fs::read_to_string(&out).unwrap();
+    assert!(!svg.contains("inf") && !svg.contains("NaN"), "{svg}");
+}

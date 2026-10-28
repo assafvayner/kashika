@@ -8,17 +8,25 @@ const STATEMENTS: &[&str] = &[
 ];
 const UNBUILT_STATEMENTS: &[&str] = &["import", "shape", "image"];
 const LINE_FLAGS: &[&str] = &["ortho"];
+/// Segment keywords; an id with one of these names could not be a bare segment target.
+pub const RESERVED_IDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve"];
+pub const MAX_GROUP_DEPTH: usize = 64;
 
 pub fn parse(src: &str) -> (File, Vec<Diagnostic>) {
     let (toks, mut diags) = lex(src);
+    let first_stmt = toks
+        .iter()
+        .find(|t| !matches!(t.tok, Tok::Newline | Tok::Eof))
+        .map(|t| t.span);
     let mut p = Parser {
         toks,
         pos: 0,
+        depth: 0,
         diags: Vec::new(),
     };
     let stmts = p.stmts(false);
     diags.append(&mut p.diags);
-    (File { stmts }, diags)
+    (File { stmts, first_stmt }, diags)
 }
 
 type PResult<T> = Result<T, ()>;
@@ -26,6 +34,7 @@ type PResult<T> = Result<T, ()>;
 struct Parser {
     toks: Vec<Token>,
     pos: usize,
+    depth: usize,
     diags: Vec<Diagnostic>,
 }
 
@@ -167,10 +176,29 @@ impl Parser {
                 }
                 Stmt::Box(node)
             }
+            "group" if self.depth >= MAX_GROUP_DEPTH => {
+                let closed = self.skip_unbuilt();
+                self.diags.push(
+                    Diagnostic::error(
+                        "parse",
+                        start.to(self.prev_span()),
+                        format!("groups are nested more than {MAX_GROUP_DEPTH} deep"),
+                    )
+                    .with_help("flatten the hierarchy; ids are global, so children need no parent"),
+                );
+                if !closed {
+                    return self.error("`}`");
+                }
+                self.end_of_stmt()?;
+                return Ok(None);
+            }
             "group" => {
                 self.bump();
                 let node = self.node(start)?;
-                let children = self.block()?;
+                self.depth += 1;
+                let children = self.block();
+                self.depth -= 1;
+                let children = children?;
                 Stmt::Group(Group { node, children })
             }
             "junction" => {
@@ -260,6 +288,26 @@ impl Parser {
         }
     }
 
+    /// An id being declared; segment keywords are reserved.
+    fn decl_id(&mut self, what: &str) -> PResult<Ident> {
+        let id = self.ident(what)?;
+        if RESERVED_IDS.contains(&id.name.as_str()) {
+            self.diags.push(
+                Diagnostic::error(
+                    "parse",
+                    id.span,
+                    format!("`{}` is a reserved word and cannot be an id", id.name),
+                )
+                .with_help(format!(
+                    "segment keywords ({}) are reserved; pick another name, e.g. `{}_1`",
+                    RESERVED_IDS.join(" "),
+                    id.name
+                )),
+            );
+        }
+        Ok(id)
+    }
+
     fn keyword(&mut self, kw: &str) -> PResult<()> {
         if self.is_kw(kw) {
             self.bump();
@@ -339,7 +387,7 @@ impl Parser {
     }
 
     fn node(&mut self, start: Span) -> PResult<Node> {
-        let id = self.ident("an id")?;
+        let id = self.decl_id("an id")?;
         let label = if let Tok::Str(s) = self.tok().clone() {
             self.bump();
             Some(s)
@@ -362,7 +410,7 @@ impl Parser {
     }
 
     fn junction(&mut self, start: Span) -> PResult<Junction> {
-        let id = self.ident("an id")?;
+        let id = self.decl_id("an id")?;
         self.keyword("at")?;
         let at = self.point()?;
         let attrs = self.attrs(&[])?;
@@ -376,7 +424,7 @@ impl Parser {
 
     fn text(&mut self, start: Span) -> PResult<Text> {
         let id = if matches!(self.tok(), Tok::Ident(_)) {
-            Some(self.ident("an id")?)
+            Some(self.decl_id("an id")?)
         } else {
             None
         };
@@ -395,7 +443,7 @@ impl Parser {
 
     fn line(&mut self, start: Span) -> PResult<Line> {
         let id = if matches!(self.tok(), Tok::Ident(_)) && *self.tok_at(1) == Tok::Colon {
-            let id = self.ident("a line id")?;
+            let id = self.decl_id("a line id")?;
             self.bump();
             Some(id)
         } else {

@@ -70,6 +70,7 @@ pub fn render_svg(scene: &Scene) -> String {
 
 fn n(v: f64) -> String {
     let r = (v * 100.0).round() / 100.0;
+    let r = if r.is_finite() { r } else { v };
     if r == 0.0 {
         "0".to_string()
     } else {
@@ -191,28 +192,16 @@ fn marker_len(m: Marker) -> f64 {
     }
 }
 
-/// Shortens a straight end segment so the stroke stops at the marker's base.
-fn trim(path: &mut [PathSeg], m: Marker, at_end: bool) {
-    let len = marker_len(m);
-    if len == 0.0 {
-        return;
-    }
-    let seg = if at_end {
-        path.last_mut()
-    } else {
-        path.first_mut()
-    };
-    let Some(PathSeg::Line { from, to }) = seg else {
-        return;
-    };
-    if from.dist(*to) <= len {
-        return;
-    }
-    let dir = (*to - *from).norm();
-    if at_end {
-        *to = *to - dir * len;
-    } else {
-        *from = *from + dir * len;
+/// Shortens the end segments so the stroke stops at each marker's base.
+fn trim(path: &mut [PathSeg], start: Marker, end: Marker) {
+    let (a, b) = (marker_len(start), marker_len(end));
+    match path {
+        [] => {}
+        [only] => *only = only.trim(a, b),
+        [first, .., last] => {
+            *first = first.trim(a, 0.0);
+            *last = last.trim(0.0, b);
+        }
     }
 }
 
@@ -248,8 +237,7 @@ fn path_data(path: &[PathSeg]) -> String {
 
 fn line(out: &mut String, l: &Line) {
     let mut path = l.path.clone();
-    trim(&mut path, l.end, true);
-    trim(&mut path, l.start, false);
+    trim(&mut path, l.start, l.end);
     out.push_str(&format!(
         "<path d=\"{}\" fill=\"none\" stroke-linejoin=\"round\" {}/>\n",
         path_data(&path),

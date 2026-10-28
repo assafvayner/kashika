@@ -1,5 +1,6 @@
 mod anchor;
 mod attrs;
+mod markup;
 mod resolve;
 mod scene;
 mod style;

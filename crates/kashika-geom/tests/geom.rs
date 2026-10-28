@@ -1,5 +1,6 @@
 use kashika_geom::{
     flatten, length, point_at, round_corners, PathSeg, Pt, Rect, FLATTEN_TOLERANCE,
+    MAX_FLATTEN_STEPS,
 };
 
 fn line(a: (f64, f64), b: (f64, f64)) -> PathSeg {
@@ -88,4 +89,44 @@ fn directions_at_ends() {
     };
     assert_eq!(q.start_dir(), Pt::new(0.0, -1.0));
     assert_eq!(q.end_dir(), Pt::new(1.0, 0.0));
+}
+
+#[test]
+fn flattening_huge_curves_is_bounded() {
+    let c = PathSeg::Cubic {
+        from: Pt::new(0.0, 0.0),
+        c1: Pt::new(1e300, 0.0),
+        c2: Pt::new(0.0, 1e300),
+        to: Pt::new(10.0, 10.0),
+    };
+    assert!(flatten(&[c]).len() <= MAX_FLATTEN_STEPS + 1);
+}
+
+#[test]
+fn trim_follows_the_curve() {
+    let q = PathSeg::Quad {
+        from: Pt::new(0.0, 0.0),
+        ctrl: Pt::new(50.0, -100.0),
+        to: Pt::new(100.0, 0.0),
+    };
+    let t = q.trim(0.0, 10.0);
+    assert!(matches!(t, PathSeg::Quad { .. }));
+    assert_eq!(t.from(), q.from());
+    assert!((q.length() - t.length() - 10.0).abs() < 0.5);
+    let on_curve = (0..=1000)
+        .map(|k| q.eval(k as f64 / 1000.0).dist(t.to()))
+        .fold(f64::INFINITY, f64::min);
+    assert!(on_curve < 1.0, "{on_curve}");
+
+    let t = q.trim(10.0, 0.0);
+    assert_eq!(t.to(), q.to());
+    assert!((q.length() - t.length() - 10.0).abs() < 0.5);
+}
+
+#[test]
+fn trim_splits_overlapping_ends_in_proportion() {
+    let t = line((0.0, 0.0), (15.0, 0.0)).trim(10.0, 10.0);
+    assert_eq!(t, line((7.5, 0.0), (7.5, 0.0)));
+    let t = line((0.0, 0.0), (100.0, 0.0)).trim(10.0, 12.0);
+    assert_eq!(t, line((10.0, 0.0), (88.0, 0.0)));
 }

@@ -20,7 +20,7 @@ Check snippets without a file: `kashika check - --stdin-name draft.kash < draft`
 
 1. **y grows down.** `(0,0)` is the top-left. `v -40` moves up.
 2. **Literal coordinates are relative to the enclosing group.** Anchors (`db.left`) are always absolute.
-3. **Ids are global** and referenced bare (`db.left`, never `vpc.db.left`).
+3. **Ids are global** and referenced bare (`db.left`, never `vpc.db.left`). The segment keywords `h v x y hv vh curve` can't be ids.
 4. **Prefer relationships to numbers.** `at api.right+(80,0) pin=left`, `-> hv db.top`, `-> y queue.left`. They survive later edits; literals don't.
 5. **The last hop must line up.** Use `hv`/`vh` or `x`/`y` targets so the path stays orthogonal. Add `ortho` to a line to make any diagonal an error.
 6. **The last segment sets the arrow direction.** `a.right -> hv b.left` ends with a vertical hop, so the arrow lands sideways on a left edge pointing up or down. To enter a `left`/`right` anchor horizontally, finish with a horizontal move: `a.right -> x 360 -> y b.left -> b.left`. Use `hv`/`vh` only when the final hop matches the anchor's side (`hv` into `top`/`bottom`, `vh` into `left`/`right`).
@@ -67,11 +67,11 @@ Long lines can continue on the next line by starting it with `->`; attributes an
 | `not-ortho` | replace the diagonal hop with `hv`/`vh` or `x`/`y` |
 | `degenerate-curve` / `zero-length` | the endpoints coincide; check your coordinates |
 | `diagram` | the file must start with `diagram "<title>" size (w,h)` |
-| `unsupported` | feature is in the spec but not built yet (`sublabel`, `icon`, `text-align`, shapes other than `rect`/`rounded`, `{ }` text blocks, `import`/`shape`/`image`, `icons=`, `pin=side@t`). Remove it; put the info in the `label` (use `\n` for extra lines) |
-| `duplicate-id` / `unknown-style` / `size` / `parse` | fix as the message says; ids are unique across boxes, groups, junctions, lines and texts |
+| `unsupported` | feature is in the spec but not built yet (`sublabel`, `icon`, `text-align`, shapes other than `rect`/`rounded`, `{ }` text blocks, `import`/`shape`/`image`, `icons=`, `pin=side@t`, inline markup `**bold**`/`` `code` ``). Remove it; put the info in the `label` (use `\n` for extra lines; write a literal `*` or `` ` `` as `\*` or `` \` ``) |
+| `duplicate-id` / `unknown-style` / `size` / `parse` | fix as the message says; ids are unique across boxes, groups, junctions, lines and texts. Coordinates stay within ±1,000,000, sizes at most 1,000,000 |
 
 Exit codes: `0` clean, `1` warnings, `2` errors, `3` tool/usage failure. `render` writes nothing on errors unless `--force` is given.
 
 ## Not supported yet
 
-Text measurement and overflow checks, all warnings (crossing, overlap, through-box, ...), `inspect`, `route`, `fmt`, shapes other than `rect`/`rounded`, `sublabel`/`icon`/text blocks, custom `shape`s, images, imports, `icons=`, and PNG output (`render` accepts `.svg` only). These arrive in later versions. Until then, leave about 20% spare room around labels and check crossings yourself by tracing each line's coordinates.
+Text measurement and overflow checks, all warnings (crossing, overlap, through-box, ...), `inspect`, `route`, `fmt`, shapes other than `rect`/`rounded`, `sublabel`/`icon`/text blocks, inline markup (`**bold**`, `` `code` ``), custom `shape`s, images, imports, `icons=`, and PNG output (`render` accepts `.svg` only). These arrive in later versions. Until then, leave about 20% spare room around labels and check crossings yourself by tracing each line's coordinates.
