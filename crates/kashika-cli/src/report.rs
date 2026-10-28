@@ -1,3 +1,4 @@
+use kashika_check::Metrics;
 use kashika_diag::{Diagnostic, Severity};
 use sha2::{Digest, Sha256};
 
@@ -8,15 +9,32 @@ pub struct Output {
     pub written: bool,
 }
 
-fn counts(diags: &[Diagnostic]) -> (usize, usize) {
+pub struct Opts {
+    pub max: usize,
+    pub show_suppressed: bool,
+    pub metrics: Option<Metrics>,
+}
+
+pub struct Counts {
+    pub errors: usize,
+    pub warns: usize,
+    pub suppressed: usize,
+}
+
+pub fn counts(diags: &[Diagnostic]) -> Counts {
     let errors = diags
         .iter()
         .filter(|d| d.severity == Severity::Error)
         .count();
-    (errors, diags.len() - errors)
+    let suppressed = diags.iter().filter(|d| d.suppressed).count();
+    Counts {
+        errors,
+        warns: diags.len() - errors - suppressed,
+        suppressed,
+    }
 }
 
-fn plural(n: usize, word: &str) -> String {
+pub fn plural(n: usize, word: &str) -> String {
     if n == 1 {
         format!("1 {word}")
     } else {
@@ -24,43 +42,71 @@ fn plural(n: usize, word: &str) -> String {
     }
 }
 
+pub fn visible(diags: &[Diagnostic], show_suppressed: bool) -> Vec<&Diagnostic> {
+    diags
+        .iter()
+        .filter(|d| show_suppressed || !d.suppressed)
+        .collect()
+}
+
 pub fn text(
     name: &str,
     src: &str,
     diags: &[Diagnostic],
-    max: usize,
+    opts: &Opts,
     output: Option<&Output>,
 ) -> String {
     let lines: Vec<&str> = src.lines().collect();
+    let source = |out: &mut String, line: u32| {
+        if let Some(l) = (line as usize).checked_sub(1).and_then(|i| lines.get(i)) {
+            out.push_str(&format!("{line:>5} | {l}\n"));
+        }
+    };
+    let shown = visible(diags, opts.show_suppressed);
     let mut out = String::new();
-    for d in diags.iter().take(max) {
+    for d in shown.iter().take(opts.max) {
         let sev = match d.severity {
             Severity::Error => "error",
             Severity::Warn => "warn",
         };
+        let note = if d.suppressed { " (suppressed)" } else { "" };
         out.push_str(&format!(
-            "{name}:{}:{}: {sev}[{}]: {}\n",
+            "{name}:{}:{}: {sev}[{}]: {}{note}\n",
             d.span.line, d.span.col, d.code, d.message
         ));
-        if let Some(l) = (d.span.line as usize)
-            .checked_sub(1)
-            .and_then(|i| lines.get(i))
-        {
-            out.push_str(&format!("{:>5} | {l}\n", d.span.line));
+        let mut seen = vec![d.span.line];
+        source(&mut out, d.span.line);
+        for e in &d.elements {
+            if !seen.contains(&e.span.line) {
+                seen.push(e.span.line);
+                source(&mut out, e.span.line);
+            }
         }
         for h in &d.help {
             out.push_str(&format!("      = help: {h}\n"));
         }
+        if let Some(r) = &d.reason {
+            out.push_str(&format!("      = reason: {r}\n"));
+        }
     }
-    if diags.len() > max {
-        out.push_str(&format!("... and {} more\n", diags.len() - max));
+    if shown.len() > opts.max {
+        out.push_str(&format!("... and {} more\n", shown.len() - opts.max));
     }
-    let (errors, warns) = counts(diags);
+    let c = counts(diags);
     out.push_str(&format!(
         "{}, {}",
-        plural(errors, "error"),
-        plural(warns, "warning")
+        plural(c.errors, "error"),
+        plural(c.warns, "warning")
     ));
+    if c.suppressed > 0 {
+        out.push_str(&format!(" ({} suppressed)", c.suppressed));
+    }
+    if let Some(m) = opts.metrics {
+        out.push_str(&format!(
+            " · crossings={} wire={}px",
+            m.crossings, m.wire_px
+        ));
+    }
     if let Some(o) = output {
         out.push_str(if o.written {
             " · output: written"
@@ -76,18 +122,20 @@ pub fn json(
     name: &str,
     src: &str,
     diags: &[Diagnostic],
-    max: usize,
+    opts: &Opts,
     output: Option<&Output>,
 ) -> String {
-    let (errors, warns) = counts(diags);
+    let shown = visible(diags, opts.show_suppressed);
+    let c = counts(diags);
     let v = serde_json::json!({
         "schema": SCHEMA,
         "tool": env!("CARGO_PKG_VERSION"),
         "input": { "name": name, "sha256": format!("{:x}", Sha256::digest(src.as_bytes())) },
         "output": output.map(|o| serde_json::json!({ "path": o.path, "written": o.written })),
-        "counts": { "error": errors, "warn": warns, "suppressed": 0 },
-        "truncated": diags.len() > max,
-        "diagnostics": &diags[..diags.len().min(max)],
+        "counts": { "error": c.errors, "warn": c.warns, "suppressed": c.suppressed },
+        "truncated": shown.len() > opts.max,
+        "metrics": opts.metrics,
+        "diagnostics": &shown[..shown.len().min(opts.max)],
     });
     format!("{v}\n")
 }

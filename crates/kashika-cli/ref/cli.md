@@ -3,6 +3,7 @@
 ```text
 kashika check   <file|->
 kashika render  <file|-> -o <out.svg|out.png> [--force] [--debug]
+kashika inspect <file|-> [id ...] [--ports] [--corridors x1,y1,x2,y2]
 kashika fmt     <file> [--check]
 kashika measure "<text>" [--size N] [--weight bold]
 kashika route   <file|-> <from> <to> [corner|arc|bezier] [--line <id>] [--radius N] [--max N]
@@ -10,8 +11,9 @@ kashika ref     [topic] [--json]
 kashika --version
 ```
 
-- `check` and `render` take `--format text|json`, `--fail-on error|warn|never` (default `warn`), `--max N` (diagnostics shown) and `--stdin-name <name>`.
+- `check` and `render` take `--format text|json`, `--fail-on error|warn|never` (default `warn`), `--max N` (diagnostics shown), `--stdin-name <name>`, `--focus <id,...>` (only warnings naming these ids; errors always show) and `--show-suppressed` (list suppressed findings with their `reason`).
 - `render` writes only when there are no errors, atomically. `--force` writes anyway, with red markers at each error. `--debug` adds rulers, ids, anchor dots and markers for every diagnostic.
+- `inspect` prints resolved geometry (never fails on errors): boxes and groups with bbox and anchors, junctions, texts, lines with vertices, authored segments (`line:col`), length and label positions, and the placement graph. Ids limit the output (unknown id: exit 3). Elements inside a group also show local coordinates. `--ports` lists each line endpoint on a shape side. `--corridors` lists the free `y` and `x` intervals in the rectangle. `--format json` writes `kashika.inspect/1`.
 - `fmt` changes only whitespace: indentation, spacing and blank lines. Comments and the spelling of numbers and strings are kept. `--check` exits 1 when the file isn't formatted.
 - `measure` prints the exact width and height of a label, with markup applied.
 - `route` prints up to `--max` (default 3) ready-to-paste `line` statements from `<from>` to `<to>`, ranked by crossings, near-misses, segments and length. It never edits the file. Styles: `corner` (`x`/`y`/`hv`/`vh`), `arc` (the same plus `radius=N`, default 8), `bezier` (`curve`). `--line <id>` reroutes an existing line and keeps its attributes. Literal points are canvas coordinates. `--format json` is supported.

@@ -1,0 +1,6 @@
+diagram "Crossing" size (400,300)
+box a "A" at (20,120) size (80,60)
+box b "B" at (300,120) size (80,60)
+line ab: a.right -> b.left end=arrow
+line v1: (200,20) -> v 260
+line v2: (240,20) -> v 260 allow=cross:ab reason="bus"

@@ -10,7 +10,12 @@ pub fn run(file: &str, check: bool) -> ExitCode {
     };
     match kashika_syntax::format(&src) {
         Err(diags) => {
-            print!("{}", crate::report::text(file, &src, &diags, 50, None));
+            let opts = crate::report::Opts {
+                max: 50,
+                show_suppressed: false,
+                metrics: None,
+            };
+            print!("{}", crate::report::text(file, &src, &diags, &opts, None));
             ExitCode::from(2)
         }
         Ok(out) if out == src => ExitCode::SUCCESS,

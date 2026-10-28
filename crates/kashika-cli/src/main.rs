@@ -1,4 +1,5 @@
 mod fmt_cmd;
+mod inspect;
 mod measure;
 mod output;
 mod ref_cmd;
@@ -10,7 +11,9 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
-use kashika_diag::Severity;
+use kashika_diag::{did_you_mean, Severity};
+use kashika_geom::Rect;
+use kashika_model::Scene;
 
 #[derive(Parser)]
 #[command(
@@ -53,6 +56,19 @@ enum Cmd {
         #[arg(long)]
         json: bool,
     },
+    /// Print the resolved geometry: shapes, anchors, lines, labels and the placement graph
+    Inspect {
+        #[command(flatten)]
+        common: Common,
+        /// Only show these ids
+        ids: Vec<String>,
+        /// List the endpoints on each shape side and the lines that use them
+        #[arg(long)]
+        ports: bool,
+        /// Free horizontal and vertical intervals inside the rectangle x1,y1,x2,y2
+        #[arg(long, value_name = "X1,Y1,X2,Y2", allow_hyphen_values = true)]
+        corridors: Option<String>,
+    },
     /// Rewrite a .kash file in canonical layout (whitespace only)
     Fmt {
         /// The .kash file to format
@@ -83,6 +99,12 @@ struct Common {
     /// File name to report for stdin input
     #[arg(long)]
     stdin_name: Option<String>,
+    /// Also list suppressed findings
+    #[arg(long)]
+    show_suppressed: bool,
+    /// Only report warnings that involve these ids (comma-separated); errors are always reported
+    #[arg(long, value_delimiter = ',')]
+    focus: Vec<String>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -123,6 +145,12 @@ fn main() -> ExitCode {
                 debug,
             }),
         ),
+        Cmd::Inspect {
+            common,
+            ids,
+            ports,
+            corridors,
+        } => run_inspect(&common, &ids, ports, corridors.as_deref()),
         Cmd::Route(args) => route_cmd::run(&args),
         Cmd::Measure(args) => measure::run(&args),
         Cmd::Ref { topic, json } => ref_cmd::run(topic.as_deref(), json),
@@ -139,12 +167,19 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
             return tool_error(c.format, "output must end in .svg or .png");
         }
     }
-    let (scene, diags) = kashika_model::compile(&src);
-    let errors = diags
-        .iter()
-        .filter(|d| d.severity == Severity::Error)
-        .count();
-    let warns = diags.len() - errors;
+    let (scene, mut diags) = kashika_model::compile(&src);
+    diags.extend(kashika_check::check(&scene));
+    kashika_diag::sort(&mut diags);
+    let metrics = kashika_check::metrics(&scene, &diags);
+    if !c.focus.is_empty() {
+        if let Err(msg) = known_ids(&scene, &c.focus, "--focus") {
+            return tool_error(c.format, &msg);
+        }
+        diags.retain(|d| {
+            d.severity == Severity::Error || d.elements.iter().any(|e| c.focus.contains(&e.id))
+        });
+    }
+    let report::Counts { errors, warns, .. } = report::counts(&diags);
     let output = match &render {
         None => None,
         Some(r) => {
@@ -154,7 +189,11 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
                     error_markers: errors > 0,
                     debug: r.debug,
                 };
-                let svg = kashika_render::render_svg_with(&scene, &diags, overlay);
+                let marked: Vec<_> = report::visible(&diags, c.show_suppressed)
+                    .into_iter()
+                    .cloned()
+                    .collect();
+                let svg = kashika_render::render_svg_with(&scene, &marked, overlay);
                 let kind = output::kind(&r.output).expect("checked above");
                 let bytes = match output::encode(kind, svg) {
                     Ok(b) => b,
@@ -178,12 +217,88 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
             })
         }
     };
+    let opts = report::Opts {
+        max: c.max,
+        show_suppressed: c.show_suppressed,
+        metrics: Some(metrics),
+    };
     let report = match c.format {
-        Format::Text => report::text(&name, &src, &diags, c.max, output.as_ref()),
-        Format::Json => report::json(&name, &src, &diags, c.max, output.as_ref()),
+        Format::Text => report::text(&name, &src, &diags, &opts, output.as_ref()),
+        Format::Json => report::json(&name, &src, &diags, &opts, output.as_ref()),
     };
     print!("{report}");
     ExitCode::from(exit_code(c.fail_on, errors, warns))
+}
+
+fn run_inspect(c: &Common, ids: &[String], ports: bool, corridors: Option<&str>) -> ExitCode {
+    let (name, src) = match read_input(c) {
+        Ok(v) => v,
+        Err(msg) => return tool_error(c.format, &msg),
+    };
+    let (scene, mut diags) = kashika_model::compile(&src);
+    diags.extend(kashika_check::check(&scene));
+    diags.retain(|d| !d.suppressed);
+    if let Err(msg) = known_ids(&scene, ids, "inspect") {
+        return tool_error(c.format, &msg);
+    }
+    let corridors = match corridors.map(parse_rect).transpose() {
+        Ok(r) => r,
+        Err(msg) => return tool_error(c.format, &msg),
+    };
+    let req = inspect::Request {
+        ids,
+        ports,
+        corridors,
+    };
+    let data = inspect::build(&name, &src, &scene, &diags, &req);
+    match c.format {
+        Format::Text => print!("{}", inspect::text(&data)),
+        Format::Json => println!("{}", serde_json::to_string(&data).unwrap_or_default()),
+    }
+    ExitCode::from(0)
+}
+
+fn parse_rect(s: &str) -> Result<Rect, String> {
+    let bad = || format!("--corridors expects x1,y1,x2,y2, got `{s}`");
+    let v: Vec<f64> = s
+        .split(',')
+        .map(|x| x.trim().parse::<f64>())
+        .collect::<Result<_, _>>()
+        .map_err(|_| bad())?;
+    match v.as_slice() {
+        &[x1, y1, x2, y2] => Ok(Rect::new(
+            x1.min(x2),
+            y1.min(y2),
+            (x2 - x1).abs(),
+            (y2 - y1).abs(),
+        )),
+        _ => Err(bad()),
+    }
+}
+
+/// Every id in the scene, with `line@L<n>`/`text@L<n>` for unnamed lines and texts.
+fn scene_ids(scene: &Scene) -> Vec<String> {
+    scene
+        .shapes
+        .iter()
+        .map(|s| s.id.clone())
+        .chain(scene.junctions.iter().map(|j| j.id.clone()))
+        .chain(scene.lines.iter().map(|l| l.id.clone()))
+        .chain(scene.texts.iter().map(kashika_check::ctx::text_id))
+        .collect()
+}
+
+fn known_ids(scene: &Scene, ids: &[String], what: &str) -> Result<(), String> {
+    let all = scene_ids(scene);
+    for id in ids {
+        if !all.contains(id) {
+            let hint = did_you_mean(id, all.iter().map(String::as_str))
+                .map(|s| format!("; did you mean `{s}`?"))
+                .unwrap_or_default();
+            return Err(format!("unknown id `{id}` in {what}{hint}"));
+        }
+    }
+    Ok(())
 }
 
 fn read_input(c: &Common) -> Result<(String, String), String> {

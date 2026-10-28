@@ -5,8 +5,7 @@ const TOPICS: &[&str] = &[
     "syntax", "anchors", "paths", "shapes", "styles", "metrics", "lints", "examples", "cli",
 ];
 
-/// Error codes from spec §7, plus `text-conflict` from §6. Warnings aren't reported by this
-/// build, so they have no pages.
+/// Error codes from spec §7, plus `text-conflict` from §6.
 const ERROR_CODES: &[&str] = &[
     "parse",
     "unknown-id",
@@ -86,11 +85,16 @@ fn every_topic_has_a_page() {
 }
 
 #[test]
-fn every_error_code_has_a_page() {
-    for code in ERROR_CODES {
-        let p = page(&[*code]);
-        assert!(p.starts_with(&format!("# {code} (")), "{code}: {p}");
-        assert!(p.contains("Fix: "), "{code}");
+fn every_diagnostic_code_has_a_page() {
+    for (codes, severity) in [(ERROR_CODES, "error"), (kashika_diag::LINT_CODES, "warn")] {
+        for code in codes {
+            let p = page(&[*code]);
+            assert!(
+                p.starts_with(&format!("# {code} ({severity})")),
+                "{code}: {p}"
+            );
+            assert!(p.contains("Fix: "), "{code}");
+        }
     }
 }
 
@@ -164,7 +168,12 @@ fn ref_examples_check_clean_and_are_formatted() {
     }
     assert!(blocks.len() >= 9, "found {} blocks", blocks.len());
     for b in blocks {
-        let (_, diags) = kashika_model::compile(&b);
+        let (scene, mut diags) = kashika_model::compile(&b);
+        diags.extend(
+            kashika_check::check(&scene)
+                .into_iter()
+                .filter(|d| !d.suppressed),
+        );
         assert!(diags.is_empty(), "{b}\n{diags:#?}");
         assert_eq!(
             kashika_syntax::format(&b).unwrap(),

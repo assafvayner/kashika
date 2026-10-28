@@ -250,10 +250,10 @@ These block output unless `--force` is given:
 | `shared-segment` | Two lines overlap collinearly for more than 1px |
 | `through` | A line enters a box's interior. For a line's own start and end boxes, only the first and last segments are exempt, so leaving and re-entering is flagged. Groups are never obstacles |
 | `near` | A line runs within `clearance` of a box edge it doesn't attach to, or within `clearance` of a parallel line for more than 20px. **This includes a line running along its own box's edge** |
-| `overlap` | Two shapes, neither containing the other, have intersecting interiors. Containment without a group is still an overlap |
+| `overlap` | Two shapes have intersecting interiors. A group whose rectangle contains the other shape is not an overlap, and a shape nested inside a group in the source is left to `spill`. A box containing another shape is an overlap |
 | `spill` | A child extends outside its group or into the group's title band. Touching the edge is fine |
 | `diagonal-tail` | A line's final segment is diagonal when all its other straight segments are horizontal or vertical |
-| `endpoint-off-edge` | A literal endpoint is within 8px of a shape outline but not on it |
+| `endpoint-off-edge` | A literal endpoint is within 8px of a shape outline but not on it. A start point is literal unless it is written `id.anchor[+offset]` or a junction (a mixed point is literal). An end is literal when the last segment is `h`, `v`, a numeric `x`/`y`, or goes to a literal point; `x`/`y` with a point target is not |
 | `port-crowding` | Two endpoints on the same shape are within 8px of each other. This includes identical endpoints where both lines draw a marker (stacked arrowheads). Junctions are exempt |
 | `group-transit` | A line passes through a group's interior while neither of its endpoints is inside that group |
 | `low-contrast` | The contrast ratio between text color and its background fill is below 3:1 |
@@ -263,6 +263,8 @@ These block output unless `--force` is given:
 | `label-collision` | A label or text box intersects a box, another label or text, a group title, or a line other than its own |
 | `out-of-canvas` | An element extends beyond the diagram size |
 | `off-grid` | An authored literal is not a multiple of `grid` |
+
+`block-reducible`, `text-outside-shape` and `image-distort` are not reported yet; `allow=` already accepts their codes.
 
 ### Suppression
 
@@ -290,7 +292,11 @@ kashika ref     [topic] [--json]          // topics: syntax anchors paths shapes
 kashika --version
 ```
 
-Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`), `--show-suppressed`, `--focus <id,...>` (only diagnostics involving these ids), `--max N`, `--stdin-name <name>`.
+Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`), `--show-suppressed`, `--focus <id,...>` (only warnings involving these ids), `--max N`, `--stdin-name <name>`.
+
+- `--focus` filters warnings only; errors are always reported. An unknown id is a usage error.
+- Suppressed findings are excluded from `warn` and from the exit code, and counted in `suppressed`. `crossings` in the metrics counts every crossing, suppressed or not, and is computed before `--focus` filtering.
+- `inspect` accepts the common flags, but only `--format` and `--stdin-name` change its output; it always exits 0 except on usage or I/O errors.
 
 An optional `kashika=1` on the `diagram` line declares which language version the file was written for. A mismatch with the binary is an error.
 
@@ -307,15 +313,15 @@ An optional `kashika=1` on the `diagram` line declares which language version th
 
 ### Text output
 
-The text output is compiler-style, deterministic and has no color unless on a TTY. It ends with a summary that includes metrics:
+The text output is compiler-style, deterministic and has no color unless on a TTY. Each diagnostic shows its source line, the source line of every other element it names, and its `= help:` lines; a suppressed finding (with `--show-suppressed`) is marked `(suppressed)` and adds `= reason:`. It ends with a summary that includes metrics:
 
 ```
-arch.kash:14:1: warn[cross]: l_d2 crosses l_lb3 at (640,165)
-   14 | line l_d2: app2.top@0.8 -> v -85 -> hv pg.top
-   11 | line l_lb3: lb.bottom@0.8 -> vh app3.top
-   = free x-intervals for l_lb3's vertical in band y 130..230: [520,600] [700,780]
-   = if intentional: allow=cross:l_lb3 on l_d2
-2 errors, 3 warnings (1 suppressed) · crossings=2 wire=4210px · output: not written
+arch.kash:11:1: warn[cross]: l_d2 crosses l_lb3 at (690,95)
+   11 | line l_d2: app2.top@0.8 -> v -85 -> hv pg.top end=arrow
+   10 | line l_lb3: lb.right -> hv app3.top end=arrow
+      = help: segment 2 runs at y=95; free y-intervals across x 504..820: 0..14, 316..400
+      = help: if intentional: allow=cross:l_lb3 on l_d2
+0 errors, 1 warning · crossings=1 wire=1346px
 ```
 
 ### JSON output
@@ -352,7 +358,7 @@ Prints the resolved geometry: every shape's bounding box and anchors in both can
 
 - `--ports` lists, for each shape side, which anchors are already used and by which lines.
 - `--corridors` lists the free horizontal and vertical intervals within a rectangle.
-- `--format json` is supported.
+- `--format json` writes one object with schema `kashika.inspect/1`: `shapes` (with `bbox`, `local_bbox`, `anchors`, `local_anchors`), `junctions`, `texts`, `lines` (with `vertices`, `segments`, `length`, `labels`), `placement`, and `ports`/`corridors` when requested. Positional ids limit the output to those elements. An unknown id is a usage error.
 - Errors don't stop it, so a file with errors can still be inspected.
 
 ### route

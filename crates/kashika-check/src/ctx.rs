@@ -1,0 +1,313 @@
+use kashika_diag::Element;
+use kashika_geom::{boundary_nearest, pieces, point_in_polygon, PathSeg, Pt, Rect, TOLERANCE};
+use kashika_model::{Junction, Line, Scene, Shape, ShapeKind, Text};
+
+use crate::outline::polygon;
+use crate::text_box::text_box;
+
+pub struct ShapeGeom<'a> {
+    pub shape: &'a Shape,
+    pub poly: Vec<Pt>,
+}
+
+pub struct LineGeom<'a> {
+    pub line: &'a Line,
+    /// Straight pieces of the rendered path, curves flattened: (from, to, index into `line.path`).
+    pub pieces: Vec<(Pt, Pt, usize)>,
+    pub start: Pt,
+    pub end: Pt,
+}
+
+impl LineGeom<'_> {
+    /// Index into `line.segments` of the authored segment that drew `line.path[path_index]`.
+    pub fn segment(&self, path_index: usize) -> usize {
+        self.line.path_seg.get(path_index).copied().unwrap_or(0)
+    }
+
+    pub fn last_segment(&self) -> usize {
+        self.line.segments.len().saturating_sub(1)
+    }
+
+    pub fn straight(&self, path_index: usize) -> bool {
+        matches!(self.line.path.get(path_index), Some(PathSeg::Line { .. }))
+    }
+
+    pub fn straight_ends(&self, path_index: usize) -> Option<(Pt, Pt)> {
+        match self.line.path.get(path_index) {
+            Some(&PathSeg::Line { from, to }) => Some((from, to)),
+            _ => None,
+        }
+    }
+}
+
+/// The scene plus geometry shared by every lint.
+pub struct Ctx<'a> {
+    pub scene: &'a Scene,
+    pub shapes: Vec<ShapeGeom<'a>>,
+    pub lines: Vec<LineGeom<'a>>,
+}
+
+impl<'a> Ctx<'a> {
+    pub fn new(scene: &'a Scene) -> Self {
+        let shapes = scene
+            .shapes
+            .iter()
+            .map(|s| ShapeGeom {
+                shape: s,
+                poly: polygon(s),
+            })
+            .collect();
+        let lines = scene
+            .lines
+            .iter()
+            .filter(|l| !l.path.is_empty())
+            .map(|l| LineGeom {
+                line: l,
+                pieces: pieces(&l.path),
+                start: l.path[0].from(),
+                end: l.path[l.path.len() - 1].to(),
+            })
+            .collect();
+        Ctx {
+            scene,
+            shapes,
+            lines,
+        }
+    }
+
+    pub fn boxes(&self) -> impl Iterator<Item = &ShapeGeom<'a>> + '_ {
+        self.shapes
+            .iter()
+            .filter(|s| s.shape.kind == ShapeKind::Box)
+    }
+
+    pub fn groups(&self) -> impl Iterator<Item = &ShapeGeom<'a>> + '_ {
+        self.shapes
+            .iter()
+            .filter(|s| s.shape.kind == ShapeKind::Group)
+    }
+
+    /// Boxes that `p` lies on or inside: the boxes a line ending at `p` attaches to.
+    pub fn attached(&self, p: Pt) -> Vec<&'a str> {
+        self.boxes()
+            .filter(|s| point_in_polygon(p, &s.poly) || boundary_nearest(p, &s.poly).0 <= TOLERANCE)
+            .map(|s| s.shape.id.as_str())
+            .collect()
+    }
+
+    pub fn is_junction(&self, p: Pt) -> bool {
+        self.scene
+            .junctions
+            .iter()
+            .any(|j| j.at.dist(p) <= TOLERANCE)
+    }
+
+    pub fn shape(&self, id: &str) -> Option<&'a Shape> {
+        self.scene.shapes.iter().find(|s| s.id == id)
+    }
+
+    pub fn line(&self, id: &str) -> Option<&LineGeom<'a>> {
+        self.lines.iter().find(|l| l.line.id == id)
+    }
+
+    /// True when `anc` is a parent, grandparent, ... of shape `id`.
+    pub fn is_ancestor(&self, anc: &str, id: &str) -> bool {
+        let mut cur = self.shape(id).and_then(|s| s.parent.as_deref());
+        while let Some(p) = cur {
+            if p == anc {
+                return true;
+            }
+            cur = self.shape(p).and_then(|s| s.parent.as_deref());
+        }
+        false
+    }
+
+    /// An element for any id in the scene.
+    pub fn element(&self, id: &str) -> Option<Element> {
+        if let Some(s) = self.shape(id) {
+            return Some(shape_el(s));
+        }
+        if let Some(l) = self.scene.lines.iter().find(|l| l.id == id) {
+            return Some(line_el(l, None));
+        }
+        if let Some(j) = self.scene.junctions.iter().find(|j| j.id == id) {
+            return Some(junction_el(j));
+        }
+        self.scene
+            .texts
+            .iter()
+            .find(|t| text_id(t) == id)
+            .map(text_el)
+    }
+}
+
+pub fn round2(v: f64) -> f64 {
+    let r = (v * 100.0).round() / 100.0;
+    if r == 0.0 {
+        0.0
+    } else {
+        r
+    }
+}
+
+pub fn fmt_num(v: f64) -> String {
+    format!("{}", round2(v))
+}
+
+pub fn fmt_pt(p: Pt) -> String {
+    format!("({},{})", fmt_num(p.x), fmt_num(p.y))
+}
+
+pub fn arr(p: Pt) -> [f64; 2] {
+    [round2(p.x), round2(p.y)]
+}
+
+pub fn bbox(r: Rect) -> [[f64; 2]; 2] {
+    [arr(r.origin()), arr(Pt::new(r.right(), r.bottom()))]
+}
+
+pub fn kind_name(s: &Shape) -> &'static str {
+    match s.kind {
+        ShapeKind::Box => "box",
+        ShapeKind::Group => "group",
+    }
+}
+
+/// The id of a text, or `text@L<n>` when it has none.
+pub fn text_id(t: &Text) -> String {
+    t.id.clone()
+        .unwrap_or_else(|| format!("text@L{}", t.span.line))
+}
+
+pub fn shape_el(s: &Shape) -> Element {
+    let mut e = Element::new(s.id.clone(), kind_name(s), s.span);
+    e.bbox = Some(bbox(s.rect));
+    if let Some(p) = &s.parent {
+        e.frame = Some(p.clone());
+        e.local_bbox = Some(bbox(s.local_rect()));
+    }
+    e
+}
+
+/// A line element; `seg` is an index into `l.segments`.
+pub fn line_el(l: &Line, seg: Option<usize>) -> Element {
+    let mut e = Element::new(l.id.clone(), "line", l.span);
+    if let Some((i, s)) = seg.and_then(|i| l.segments.get(i).map(|s| (i, s))) {
+        e.segment = Some(i + 1);
+        e.from = Some(arr(s.from));
+        e.to = Some(arr(s.to));
+    }
+    e
+}
+
+pub fn junction_el(j: &Junction) -> Element {
+    let mut e = Element::new(j.id.clone(), "junction", j.span);
+    e.bbox = Some(bbox(Rect::new(j.at.x, j.at.y, 0.0, 0.0)));
+    e
+}
+
+pub fn text_el(t: &Text) -> Element {
+    let mut e = Element::new(text_id(t), "text", t.span);
+    e.bbox = Some(bbox(text_box(t)));
+    e
+}
+
+/// Whether `inner` lies within `outer`, touching allowed.
+pub fn contains(outer: Rect, inner: Rect) -> bool {
+    inner.x >= outer.x - TOLERANCE
+        && inner.y >= outer.y - TOLERANCE
+        && inner.right() <= outer.right() + TOLERANCE
+        && inner.bottom() <= outer.bottom() + TOLERANCE
+}
+
+/// The overlap of two rects, when it is more than TOLERANCE in both directions.
+pub fn intersection(a: Rect, b: Rect) -> Option<Rect> {
+    let (x0, y0) = (a.x.max(b.x), a.y.max(b.y));
+    let (x1, y1) = (a.right().min(b.right()), a.bottom().min(b.bottom()));
+    (x1 - x0 > TOLERANCE && y1 - y0 > TOLERANCE).then(|| Rect::new(x0, y0, x1 - x0, y1 - y0))
+}
+
+pub fn points_bbox(pts: impl IntoIterator<Item = Pt>) -> Rect {
+    let mut it = pts.into_iter();
+    let Some(first) = it.next() else {
+        return Rect::default();
+    };
+    let (mut lo, mut hi) = (first, first);
+    for p in it {
+        lo = Pt::new(lo.x.min(p.x), lo.y.min(p.y));
+        hi = Pt::new(hi.x.max(p.x), hi.y.max(p.y));
+    }
+    Rect::new(lo.x, lo.y, hi.x - lo.x, hi.y - lo.y)
+}
+
+pub fn line_bbox(l: &LineGeom) -> Rect {
+    points_bbox(l.pieces.iter().flat_map(|&(p, q, _)| [p, q]))
+}
+
+/// How far `inner` sticks out of `outer` on each side, ignoring anything within TOLERANCE.
+pub fn overflow(outer: Rect, inner: Rect) -> Vec<(&'static str, f64)> {
+    [
+        ("left", outer.x - inner.x),
+        ("top", outer.y - inner.y),
+        ("right", inner.right() - outer.right()),
+        ("bottom", inner.bottom() - outer.bottom()),
+    ]
+    .into_iter()
+    .filter(|(_, d)| *d > TOLERANCE)
+    .map(|(s, d)| (s, round2(d)))
+    .collect()
+}
+
+/// e.g. "right by 20px, bottom by 5px"
+pub fn describe_overflow(over: &[(&str, f64)]) -> String {
+    over.iter()
+        .map(|(s, d)| format!("{s} by {}px", fmt_num(*d)))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+pub fn overflow_fact(over: &[(&str, f64)]) -> serde_json::Value {
+    serde_json::Value::Object(
+        over.iter()
+            .map(|(s, d)| (s.to_string(), serde_json::json!(d)))
+            .collect(),
+    )
+}
+
+/// The bounding-box side nearest to `p`, and `p`'s position along it (0..1).
+pub fn side_anchor(s: &Shape, p: Pt) -> (&'static str, f64) {
+    let r = s.rect;
+    let sides = [
+        ("top", (p.y - r.y).abs()),
+        ("bottom", (p.y - r.bottom()).abs()),
+        ("left", (p.x - r.x).abs()),
+        ("right", (p.x - r.right()).abs()),
+    ];
+    let side = sides
+        .iter()
+        .min_by(|a, b| a.1.total_cmp(&b.1))
+        .map_or("top", |s| s.0);
+    let t = match side {
+        "top" | "bottom" => (p.x - r.x) / r.w,
+        _ => (p.y - r.y) / r.h,
+    };
+    (
+        side,
+        if t.is_finite() {
+            t.clamp(0.0, 1.0)
+        } else {
+            0.5
+        },
+    )
+}
+
+/// `id.side` or `id.side@t` for the anchor of `s` at outline point `p`.
+pub fn anchor_text(s: &Shape, p: Pt) -> String {
+    let (side, t) = side_anchor(s, p);
+    let t = round2(t);
+    if t == 0.5 {
+        format!("{}.{side}", s.id)
+    } else {
+        format!("{}.{side}@{t}", s.id)
+    }
+}

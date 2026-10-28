@@ -1,0 +1,84 @@
+use kashika_diag::{Diagnostic, Element, Span};
+use kashika_geom::Rect;
+
+use crate::ctx::{
+    describe_overflow, fmt_num, junction_el, kind_name, line_bbox, line_el, overflow,
+    overflow_fact, shape_el, text_el, text_id, Ctx,
+};
+use crate::text_box::{label_box, text_box};
+
+/// `out-of-canvas`: an element extends beyond the diagram size. Strokes and markers are ignored.
+pub fn out_of_canvas(ctx: &Ctx) -> Vec<Diagnostic> {
+    let (w, h) = ctx.scene.size;
+    if w <= 0.0 || h <= 0.0 {
+        return Vec::new();
+    }
+    let canvas = Rect::new(0.0, 0.0, w, h);
+    let mut out = Vec::new();
+    let mut check = |what: String, el: Element, span: Span, extent: Rect| {
+        let over = overflow(canvas, extent);
+        if over.is_empty() {
+            return;
+        }
+        out.push(
+            Diagnostic::warn(
+                "out-of-canvas",
+                span,
+                format!(
+                    "{what} extends beyond the {}x{} canvas ({})",
+                    fmt_num(w),
+                    fmt_num(h),
+                    describe_overflow(&over)
+                ),
+            )
+            .with_element(el)
+            .with_fact("overflow", overflow_fact(&over))
+            .with_help(format!(
+                "move it inside (0,0)-({},{}) or enlarge `size` on the `diagram` line",
+                fmt_num(w),
+                fmt_num(h)
+            )),
+        );
+    };
+    for s in &ctx.scene.shapes {
+        check(
+            format!("{} '{}'", kind_name(s), s.id),
+            shape_el(s),
+            s.span,
+            s.rect,
+        );
+    }
+    for j in &ctx.scene.junctions {
+        check(
+            format!("junction '{}'", j.id),
+            junction_el(j),
+            j.span,
+            Rect::new(j.at.x, j.at.y, 0.0, 0.0),
+        );
+    }
+    for t in &ctx.scene.texts {
+        check(
+            format!("text '{}'", text_id(t)),
+            text_el(t),
+            t.span,
+            text_box(t),
+        );
+    }
+    for l in &ctx.lines {
+        check(
+            format!("line {}", l.line.id),
+            line_el(l.line, None),
+            l.line.span,
+            line_bbox(l),
+        );
+        for lab in &l.line.labels {
+            check(
+                format!("label \"{}\" of {}", lab.text, l.line.id),
+                line_el(l.line, None),
+                lab.span,
+                label_box(lab),
+            );
+        }
+    }
+    out
+}

@@ -13,6 +13,7 @@ kashika-geom = { path = "crates/kashika-geom" }
 kashika-syntax = { path = "crates/kashika-syntax" }
 kashika-text = { path = "crates/kashika-text" }
 kashika-model = { path = "crates/kashika-model" }
+kashika-check = { path = "crates/kashika-check" }
 kashika-render = { path = "crates/kashika-render" }
 kashika-route = { path = "crates/kashika-route" }
 serde = { version = "1", features = ["derive"] }

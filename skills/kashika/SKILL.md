@@ -11,10 +11,12 @@ Kashika has **no auto-layout**. You decide every box position and every line pat
 
 1. Sketch the layout as a grid on paper first: rows/columns, ~60–80px gaps, and lanes for the lines.
 2. Write the `.kash` file.
-3. `kashika check file.kash --format json` and fix every error, starting with the first one. The `help` entries name the fix: did-you-mean names, the required sizes. Size boxes from the text: `kashika measure "Payments API"` prints the exact width and height; add 2 × padding (16px by default).
-4. `kashika fmt file.kash` to normalize layout, then `kashika render file.kash -o file.svg` when the check is clean.
+3. `kashika check file.kash --format json`. Fix every error first, starting with the first one, then every warning. The `help` entries name the fix: did-you-mean names, required sizes. Size boxes from the text: `kashika measure "Payments API"` prints the exact width and height; add 2 × padding (16px by default). Warnings name their `elements` (with the authored `segment` index for lines): `free` lists clear lanes for `through`/`near`/`cross`, `shared-segment` names the nearest free lane, `label-collision` lists clear `label@t` positions, and `endpoint-off-edge` gives the exact anchor.
+4. When a fix needs coordinates, `kashika inspect file.kash <ids> --ports` shows resolved boxes, anchors, line vertices and which side anchors are taken; `--corridors x1,y1,x2,y2` lists free lanes in a region. `kashika route file.kash api.right db.left` suggests ready-to-paste `line` statements ranked by crossings (`--line <id>` reroutes an existing one).
+5. If a warning is intentional, suppress it narrowly on the line or shape: `allow=cross:other_line reason="..."`. Prefer `code:id` over a bare code. Suppressed findings still count in the summary.
+6. `kashika fmt file.kash` to normalize layout, then `kashika render file.kash -o file.svg` when the check is clean.
 
-Check snippets without a file: `kashika check - --stdin-name draft.kash < draft`.
+Check snippets without a file: `kashika check - --stdin-name draft.kash < draft`. Focus on one area with `--focus api,db` (warnings involving those ids only).
 
 ## Rules people get wrong
 
@@ -24,7 +26,7 @@ Check snippets without a file: `kashika check - --stdin-name draft.kash < draft`
 4. **Prefer relationships to numbers.** `at api.right+(80,0) pin=left`, `-> hv db.top`, `-> y queue.left`. They survive later edits; literals don't.
 5. **The last hop must line up.** Use `hv`/`vh` or `x`/`y` targets so the path stays orthogonal. Add `ortho` to a line to make any diagonal an error.
 6. **The last segment sets the arrow direction.** `a.right -> hv b.left` ends with a vertical hop, so the arrow lands sideways on a left edge pointing up or down. To enter a `left`/`right` anchor horizontally, finish with a horizontal move: `a.right -> x 360 -> y b.left -> b.left`. Use `hv`/`vh` only when the final hop matches the anchor's side (`hv` into `top`/`bottom`, `vh` into `left`/`right`).
-7. **A clean check is not a good diagram.** There are no crossing/overlap warnings yet, so two lines from one source that share a first segment pass silently. Give each its own lane (different `x`/`y`) or fan out from a `junction`.
+7. **A clean check is not a good diagram.** It covers geometry only: crossings, overlaps, near-misses, boxes in the way, crowded ports, contrast, labels on things, the canvas and the grid. It doesn't prove that arrows point the right way or that the right boxes are connected.
 
 ## Cheat sheet
 
@@ -38,6 +40,7 @@ group vpc "VPC" at (20,140) size (600,300) { ... }         // children use vpc-r
 junction fan at (api.bottom.x, 130)                        // shared point for fan-out/fan-in
 text "note" at (700,480) size=12 align=right muted
 line api_db: api.right -> db.left end=arrow label="SQL"
+box badge at db.tr size (16,16) pin=center allow=overlap:db reason="corner badge"
 ```
 
 Anchors: `top bottom left right center tl tr bl br`, plus `side@t` (e.g. `db.left@0.25`) and offsets `+(dx,dy)`. Mixed points: `(db.left.x, lane.y)`.
@@ -90,8 +93,23 @@ Long lines can continue on the next line by starting it with `->`; attributes an
 | `unsupported` | feature is in the spec but not built yet (`icon`, shapes other than `rect`/`rounded`, `import`/`shape`/`image`, `icons=`). Remove it; put the info in the label or a text block |
 | `duplicate-id` / `duplicate-style` / `unknown-style` / `size` / `parse` | fix as the message says; ids are unique across boxes, groups, junctions, lines and texts; style names are unique among styles. Coordinates stay within ±1,000,000, sizes at most 1,000,000 |
 
+## Warnings
+
+| code | usual fix |
+|---|---|
+| `cross` | move one line to a lane from the `free` help, or route around; `allow=cross:<other>` if the graph is non-planar |
+| `shared-segment` | give the later line its own lane (the help names the nearest one) or fan out from a `junction` |
+| `through` / `group-transit` | move the segment to a `free` interval or route around |
+| `near` | keep `clearance` (default 6px) from box edges and parallel lines |
+| `overlap` / `spill` | move or resize; only a `group` may contain shapes; keep children below its title band |
+| `diagonal-tail` | finish with `hv`/`vh` or `x`/`y` |
+| `endpoint-off-edge` | use the anchor from the help instead of a literal |
+| `port-crowding` | spread endpoints ≥8px apart (`side@t`) or meet at a `junction` |
+| `label-collision` | move the label to a clear `label@t` from the help |
+| `low-contrast` / `out-of-canvas` / `off-grid` | as the message says |
+
 Exit codes: `0` clean, `1` warnings, `2` errors, `3` tool/usage failure. `render` writes nothing on errors unless `--force` is given (it then marks each error in red). `render -o file.png` writes PNG; `--debug` overlays rulers, ids and anchor dots to help you locate problems.
 
 ## Not supported yet
 
-All warnings (crossing, overlap, through-box, ...), `inspect`, shapes other than `rect`/`rounded`, `icon=`, custom `shape`s, images, imports, `icons=`. These arrive in later versions. Until then, check crossings and label collisions yourself by tracing each line's coordinates against the label rectangles.
+Shapes other than `rect`/`rounded`, `icon=`, custom `shape`s, images, imports, `icons=`, and the `block-reducible`, `text-outside-shape` and `image-distort` warnings. These arrive in later versions.

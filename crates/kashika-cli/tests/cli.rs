@@ -273,3 +273,240 @@ fn text_fixture_checks_clean_and_renders_deterministically() {
     assert!(svg.contains(r#"aria-label="• retries charge()""#));
     assert!(!svg.contains("<text"));
 }
+
+#[test]
+fn warnings_suppression_and_metrics_in_text() {
+    kashika()
+        .args(["check", &fixture("crossing.kash")])
+        .assert()
+        .code(1)
+        .stdout(
+            predicate::str::contains("crossing.kash:5:1: warn[cross]: v1 crosses ab at (200,150)")
+                .and(predicate::str::contains(
+                    "    5 | line v1: (200,20) -> v 260",
+                ))
+                .and(predicate::str::contains(
+                    "    4 | line ab: a.right -> b.left end=arrow",
+                ))
+                .and(predicate::str::contains(
+                    "= help: if intentional: allow=cross:ab on v1",
+                ))
+                .and(predicate::str::contains(
+                    "0 errors, 1 warning (1 suppressed) · crossings=2 wire=720px",
+                ))
+                .and(predicate::str::contains("v2 crosses").not()),
+        );
+}
+
+#[test]
+fn show_suppressed_lists_them_with_the_reason() {
+    kashika()
+        .args(["check", &fixture("crossing.kash"), "--show-suppressed"])
+        .assert()
+        .code(1)
+        .stdout(
+            predicate::str::contains("warn[cross]: v2 crosses ab at (240,150) (suppressed)")
+                .and(predicate::str::contains("      = reason: bus")),
+        );
+}
+
+#[test]
+fn json_has_counts_metrics_elements_and_facts() {
+    let out = kashika()
+        .args(["check", &fixture("crossing.kash"), "--format", "json"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(1));
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(
+        v["counts"],
+        serde_json::json!({"error": 0, "warn": 1, "suppressed": 1})
+    );
+    assert_eq!(
+        v["metrics"],
+        serde_json::json!({"crossings": 2, "wire_px": 720})
+    );
+    let diags = v["diagnostics"].as_array().unwrap();
+    assert_eq!(diags.len(), 1);
+    assert_eq!(diags[0]["elements"][0]["id"], "v1");
+    assert_eq!(diags[0]["elements"][0]["segment"], 1);
+    assert_eq!(diags[0]["elements"][1]["id"], "ab");
+    assert_eq!(diags[0]["facts"]["at"], serde_json::json!([200.0, 150.0]));
+    assert_eq!(diags[0]["suggestions"], serde_json::json!([]));
+}
+
+#[test]
+fn focus_keeps_only_matching_warnings() {
+    kashika()
+        .args(["check", &fixture("crossing.kash"), "--focus", "b"])
+        .assert()
+        .code(0)
+        .stdout(predicate::str::contains("0 errors, 0 warnings"));
+    kashika()
+        .args(["check", &fixture("crossing.kash"), "--focus", "a,v1"])
+        .assert()
+        .code(1);
+    kashika()
+        .args(["check", &fixture("crossing.kash"), "--focus", "v3"])
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains(
+            "unknown id `v3` in --focus; did you mean `v1`?",
+        ));
+}
+
+#[test]
+fn warnings_exit_one_unless_fail_on_relaxes_it() {
+    for (fail_on, code) in [("warn", 1), ("error", 0), ("never", 0)] {
+        kashika()
+            .args(["check", &fixture("crossing.kash"), "--fail-on", fail_on])
+            .assert()
+            .code(code);
+    }
+}
+
+#[test]
+fn render_still_writes_with_warnings() {
+    let dir = tempfile::tempdir().unwrap();
+    let out = dir.path().join("x.svg");
+    kashika()
+        .args([
+            "render",
+            &fixture("crossing.kash"),
+            "-o",
+            out.to_str().unwrap(),
+        ])
+        .assert()
+        .code(1)
+        .stdout(predicate::str::contains("output: written"));
+    assert!(out.exists());
+}
+
+#[test]
+fn inspect_prints_geometry_in_text() {
+    kashika()
+        .args(["inspect", &fixture("basic.kash")])
+        .assert()
+        .code(0)
+        .stdout(
+            predicate::str::contains("box api \"API\" (line 2)")
+                .and(predicate::str::contains(
+                    "  anchors top (100,40) bottom (100,100) left (40,70) right (160,70)",
+                ))
+                .and(predicate::str::contains(
+                    "line api_db (line 4) length 160px",
+                ))
+                .and(predicate::str::contains("  segment 1 to (4:"))
+                .and(predicate::str::contains("  label@0.5 \"SQL\" at (240,70)"))
+                .and(predicate::str::contains("placement\n  db -> api (at)"))
+                .and(predicate::str::contains("0 errors, 0 warnings")),
+        );
+}
+
+#[test]
+fn inspect_json_with_ids_ports_and_corridors() {
+    let out = kashika()
+        .args([
+            "inspect",
+            &fixture("basic.kash"),
+            "db",
+            "--ports",
+            "--corridors",
+            "0,0,480,240",
+            "--format",
+            "json",
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(v["schema"], "kashika.inspect/1");
+    assert_eq!(v["shapes"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        v["shapes"][0]["bbox"],
+        serde_json::json!([[320.0, 40.0], [440.0, 100.0]])
+    );
+    assert_eq!(
+        v["shapes"][0]["anchors"]["left"],
+        serde_json::json!([320.0, 70.0])
+    );
+    assert_eq!(
+        v["shapes"][0]["local_anchors"]["left"],
+        serde_json::json!([320.0, 70.0])
+    );
+    assert_eq!(
+        v["ports"],
+        serde_json::json!([{"shape": "db", "side": "left", "t": 0.5, "at": [320.0, 70.0], "line": "api_db", "end": "end"}])
+    );
+    assert_eq!(
+        v["corridors"]["horizontal"],
+        serde_json::json!([[0.0, 34.0], [106.0, 240.0]])
+    );
+    assert_eq!(
+        v["corridors"]["vertical"],
+        serde_json::json!([[0.0, 34.0], [446.0, 480.0]])
+    );
+    assert_eq!(
+        v["placement"],
+        serde_json::json!([{"from": "db", "to": "api", "kind": "at"}])
+    );
+}
+
+#[test]
+fn inspect_works_on_files_with_errors() {
+    kashika()
+        .args(["inspect", &fixture("typo.kash")])
+        .assert()
+        .code(0)
+        .stdout(
+            predicate::str::contains("box api \"API\" (line 2)")
+                .and(predicate::str::contains("1 error, 0 warnings")),
+        );
+}
+
+#[test]
+fn inspect_rejects_unknown_ids_and_bad_corridors() {
+    kashika()
+        .args(["inspect", &fixture("basic.kash"), "nope"])
+        .assert()
+        .code(3);
+    kashika()
+        .args(["inspect", &fixture("basic.kash"), "--corridors", "1,2,3"])
+        .assert()
+        .code(3);
+}
+
+#[test]
+fn seeded_mistakes_trigger_their_lints() {
+    let out = kashika()
+        .args([
+            "check",
+            &fixture("mistakes.kash"),
+            "--format",
+            "json",
+            "--max",
+            "200",
+        ])
+        .output()
+        .unwrap();
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let codes: std::collections::BTreeSet<&str> = v["diagnostics"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|d| d["code"].as_str().unwrap())
+        .collect();
+    for code in [
+        "cross",
+        "near",
+        "overlap",
+        "spill",
+        "diagonal-tail",
+        "port-crowding",
+        "low-contrast",
+        "out-of-canvas",
+        "off-grid",
+    ] {
+        assert!(codes.contains(code), "{code} missing from {codes:?}");
+    }
+}
