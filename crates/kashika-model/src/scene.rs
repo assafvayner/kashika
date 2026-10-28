@@ -1,8 +1,10 @@
 use kashika_diag::Span;
 use kashika_geom::{PathSeg, Pt, Rect};
+use kashika_text::PlacedLine;
 use serde::Serialize;
 
 use crate::style::Style;
+use crate::textlayout::TextItem;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Scene {
@@ -41,6 +43,13 @@ pub struct Shape {
     pub parent: Option<String>,
     pub depth: usize,
     pub style: Style,
+    /// The bounding box inset by `padding` (and by the shape's own reduction).
+    pub text_area: Rect,
+    /// Label, sublabel and text block items, laid out.
+    pub text: Vec<TextItem>,
+    /// Height of a group's reserved title band from its top edge; 0 for boxes and
+    /// unlabeled groups.
+    pub title_band: f64,
     pub span: Span,
 }
 
@@ -79,6 +88,8 @@ pub struct Text {
     pub size: f64,
     pub color: String,
     pub align: Align,
+    pub rect: Rect,
+    pub lines: Vec<PlacedLine>,
     pub parent: Option<String>,
     pub span: Span,
 }
@@ -97,6 +108,11 @@ pub enum Marker {
 pub struct Label {
     pub t: f64,
     pub text: String,
+    /// The point on the path at `t`; the label's center.
+    pub at: Pt,
+    pub rect: Rect,
+    pub lines: Vec<PlacedLine>,
+    pub span: Span,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

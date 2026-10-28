@@ -4,12 +4,15 @@ mod markup;
 mod resolve;
 mod scene;
 mod style;
+mod textlayout;
 
 use kashika_diag::Diagnostic;
 
+pub use kashika_text::{Font, PlacedLine, Run};
 pub use resolve::resolve;
 pub use scene::*;
 pub use style::{FontWeight, StrokeStyle, Style};
+pub use textlayout::{TextItem, TextRole};
 
 /// Parses and resolves a source file. Always returns a (possibly partial) scene, so tools
 /// like `inspect` work on files with errors.

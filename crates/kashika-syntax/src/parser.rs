@@ -161,18 +161,9 @@ impl Parser {
             }
             "box" => {
                 self.bump();
-                let node = self.node(start)?;
+                let mut node = self.node(start)?;
                 if *self.tok() == Tok::LBrace {
-                    let open = self.span();
-                    let closed = self.skip_unbuilt();
-                    self.unsupported(
-                        open.to(self.prev_span()),
-                        "text blocks are not supported in this version yet",
-                        "text blocks arrive in a later version of Kashika; put extra lines in the label with `\\n`",
-                    );
-                    if !closed {
-                        return self.error("`}`");
-                    }
+                    node.block = Some(self.text_block()?);
                 }
                 Stmt::Box(node)
             }
@@ -405,8 +396,63 @@ impl Parser {
             at,
             size,
             attrs,
+            block: None,
             span: start.to(self.prev_span()),
         })
+    }
+
+    /// Parses a box's `{ }` text block: `text "<content>" [at <point>] [attrs]` per line.
+    fn text_block(&mut self) -> PResult<Vec<BlockText>> {
+        self.bump();
+        let mut items = Vec::new();
+        loop {
+            self.skip_newlines();
+            match self.tok() {
+                Tok::RBrace => {
+                    self.bump();
+                    return Ok(items);
+                }
+                Tok::Eof => return self.error("`}`"),
+                _ => {}
+            }
+            match self.block_text() {
+                Ok(t) => items.push(t),
+                Err(()) => self.recover(),
+            }
+        }
+    }
+
+    fn block_text(&mut self) -> PResult<BlockText> {
+        let start = self.span();
+        if !self.is_kw("text") {
+            return self.error("`text` or `}` in a text block");
+        }
+        self.bump();
+        if let Tok::Ident(name) = self.tok().clone() {
+            self.diags.push(
+                Diagnostic::error("parse", self.span(), "text block items take no id")
+                    .with_help(format!("remove `{name}`")),
+            );
+            return Err(());
+        }
+        let content = self.string()?;
+        let at = if self.is_kw("at") {
+            self.bump();
+            Some(self.point()?)
+        } else {
+            None
+        };
+        let attrs = self.attrs(&[])?;
+        let span = start.to(self.prev_span());
+        match self.tok() {
+            Tok::Newline | Tok::RBrace => Ok(BlockText {
+                content,
+                at,
+                attrs,
+                span,
+            }),
+            _ => self.error("end of statement"),
+        }
     }
 
     fn junction(&mut self, start: Span) -> PResult<Junction> {

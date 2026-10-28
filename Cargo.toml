@@ -11,6 +11,7 @@ license = "Apache-2.0"
 kashika-diag = { path = "crates/kashika-diag" }
 kashika-geom = { path = "crates/kashika-geom" }
 kashika-syntax = { path = "crates/kashika-syntax" }
+kashika-text = { path = "crates/kashika-text" }
 kashika-model = { path = "crates/kashika-model" }
 kashika-render = { path = "crates/kashika-render" }
 serde = { version = "1", features = ["derive"] }
@@ -21,3 +22,4 @@ insta = "1"
 assert_cmd = "2"
 predicates = "3"
 tempfile = "3"
+ttf-parser = "0.25"

@@ -55,6 +55,17 @@ pub struct Node {
     pub at: Point,
     pub size: (f64, f64),
     pub attrs: Vec<Attr>,
+    /// A box's `{ }` text block; always `None` on a group header.
+    pub block: Option<Vec<BlockText>>,
+    pub span: Span,
+}
+
+/// A `text` item inside a box's text block. `at` is in the box-local frame.
+#[derive(Debug, Clone, PartialEq)]
+pub struct BlockText {
+    pub content: String,
+    pub at: Option<Point>,
+    pub attrs: Vec<Attr>,
     pub span: Span,
 }
 

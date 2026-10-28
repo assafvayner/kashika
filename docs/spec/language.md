@@ -50,12 +50,12 @@ shape <name> { ... }  |  shape <name> from "<file.svg>" [...]   // §3a
 box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=<shape>] [style=<name>] [attrs]
 group <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [style=<name>] { ... }
 junction <id> at <point> [dot]
-text  [<id>] "<content>" at <point> [size=N] [color=C] [align=left|center|right]
+text  [<id>] "<content>" at <point> [size=N] [color=C] [align=left|center|right] [muted]
 line  [<id>:] <point> (-> <segment>)+ [attrs]
 image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stretch]   // §3a
 ```
 
-`diagram` comes first, then any `import` statements, then everything else. "First" means first in the source: a statement before `diagram` makes it misplaced even when that statement failed to parse. Boxes and groups accept `sublabel=`, `text-align=`, `text-valign=`, `gap=`, `icon=` and a `{ }` text block (§6).
+`diagram` comes first, then any `import` statements, then everything else. "First" means first in the source: a statement before `diagram` makes it misplaced even when that statement failed to parse. Boxes accept `sublabel=`, `text-align=`, `text-valign=`, `gap=`, `icon=` and a `{ }` text block (§6). Groups accept `sublabel=`, `text-align=` and `gap=`; a group's `{ }` holds its children, and `text-valign` on a group is an `attr` error because the title always sits at the top.
 
 - `grid=N` makes `off-grid` check authored literals only, never resolved anchors. `clearance=N` (default `6`) is the minimum gap used by the `near` lint.
 - Numeric attributes must be in range, or they are `attr` errors: `font-size`, `stroke-width` and `grid` must be greater than 0; `radius`, `padding` and `clearance` must be at least 0. All of them must be at most 1,000,000. A `text` `size=` outside that range is a `size` error.
@@ -183,7 +183,7 @@ Unnamed lines are referred to as `line@L<n>`, where n is the source line of the 
   - The label is the name.
   - The sublabel is one muted line below it, at `0.8 × font-size` in the style's `muted` color.
 - `text-align=left|center|right` (default center) and `text-valign=top|middle|bottom` (default middle) position the whole text stack within the shape's **text area**.
-- **Inline markup** works in `label`, `sublabel` and all `text`: `**bold**` and `` `code` `` (monospace). Markup does not nest. The markers are `**` and `` ` ``; a single `*` is literal. Escape with `\*` and `` \` ``, which always produce a literal `*` or `` ` ``. An unclosed marker is a `parse` error.
+- **Inline markup** works in `label`, `sublabel`, all `text` and a line's `label=`: `**bold**` and `` `code` `` (monospace). Markup does not nest. The markers are `**` and `` ` ``; a single `*` is literal. Escape with `\*` and `` \` ``, which always produce a literal `*` or `` ` ``. An unclosed marker is a `parse` error.
 - **Text block**, for 3 or more lines, bullet lists, or mixed sizes and alignment:
   ```
   box api at (100,80) size (200,120) style=service text-align=left {
@@ -211,7 +211,8 @@ Unnamed lines are referred to as `line@L<n>`, where n is the source line of the 
   | ellipse | the inscribed rectangle |
   | hexagon | horizontally inset by `h/4` |
   | cylinder | below the cap |
-- The stacked text (or each absolute item) must fit the text area. `label-overflow` reports the required box size. For small text areas, such as a diamond's, it suggests a roomier shape.
+  | rounded | same as `rect` |
+- The stacked text (or each absolute item) must fit the text area. `label-overflow` reports the required box size; for an absolute item it fires only when the item is larger than the text area. Placing an item outside the text area is the `text-outside-shape` warning (§7), not an error. For small text areas, such as a diamond's, it suggests a roomier shape.
 - `kashika measure "text" [--size N] [--weight bold]` prints a label's exact width and height, with markup applied. `kashika ref metrics` lists average character widths at common sizes.
 
 ## 7. Checks
@@ -229,6 +230,7 @@ These block output unless `--force` is given:
 | `duplicate-id` | Two statements use the same id |
 | `placement-cycle` | Relative placements form a cycle, or a chain of them is deeper than 256 |
 | `label-overflow` | Reports the required size |
+| `text-conflict` | `label`/`sublabel` combined with stacked (no `at`) block items (§6) |
 | `not-ortho` | A segment is diagonal on a line marked `ortho` |
 | `degenerate-curve` | A zero-length curve, a negative curve amount, or a non-finite or out-of-range value (a coordinate more than 1,000,000 from the origin, §1) |
 | `zero-length` | A line whose segments all have zero length |

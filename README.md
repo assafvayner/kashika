@@ -14,6 +14,7 @@ cargo install --path crates/kashika-cli
 kashika check hello.kash                 # diagnostics, exit 0/1/2
 kashika check hello.kash --format json   # machine-readable
 kashika render hello.kash -o hello.svg
+kashika measure "Payments API"           # exact label size with the bundled fonts
 ```
 
 The language is specified in [`docs/spec/language.md`](docs/spec/language.md). Agents should start from [`skills/kashika/SKILL.md`](skills/kashika/SKILL.md).

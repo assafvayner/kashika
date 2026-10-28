@@ -7,6 +7,7 @@ license.workspace = true
 [dependencies]
 kashika-geom.workspace = true
 kashika-model.workspace = true
+kashika-text.workspace = true
 
 [dev-dependencies]
 insta.workspace = true

@@ -298,6 +298,7 @@ dependencies = [
  "kashika-model",
  "kashika-render",
  "kashika-syntax",
+ "kashika-text",
  "predicates",
  "serde_json",
  "sha2",
@@ -325,6 +326,7 @@ dependencies = [
  "kashika-diag",
  "kashika-geom",
  "kashika-syntax",
+ "kashika-text",
  "serde",
 ]
 
@@ -335,6 +337,7 @@ dependencies = [
  "insta",
  "kashika-geom",
  "kashika-model",
+ "kashika-text",
 ]
 
 [[package]]
@@ -342,6 +345,15 @@ name = "kashika-syntax"
 version = "0.1.0"
 dependencies = [
  "kashika-diag",
+]
+
+[[package]]
+name = "kashika-text"
+version = "0.1.0"
+dependencies = [
+ "kashika-geom",
+ "serde",
+ "ttf-parser",
 ]
 
 [[package]]
@@ -580,6 +592,12 @@ name = "termtree"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
+
+[[package]]
+name = "ttf-parser"
+version = "0.25.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2df906b07856748fa3f6e0ad0cbaa047052d4a7dd609e231c4f72cee8c36f31"
 
 [[package]]
 name = "typenum"

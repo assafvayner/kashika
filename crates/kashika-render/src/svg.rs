@@ -1,8 +1,8 @@
-use kashika_geom::{point_at, PathSeg, Pt};
-use kashika_model::{Align, FontWeight, Line, Marker, Scene, Shape, ShapeKind, StrokeStyle, Style};
+use kashika_geom::{PathSeg, Pt};
+use kashika_model::{Line, Marker, Scene, Shape, ShapeKind, StrokeStyle, Style};
 
-/// Labels render as SVG text until M2 replaces them with outlined glyphs from the bundled fonts.
-const FONT: &str = "Inter, Helvetica, Arial, sans-serif";
+use crate::text;
+
 const ARROW_LEN: f64 = 10.0;
 const DIAMOND_LEN: f64 = 12.0;
 const MARKER_HALF_WIDTH: f64 = 4.0;
@@ -39,30 +39,17 @@ pub fn render_svg(scene: &Scene) -> String {
     }
     for l in &scene.lines {
         for lab in &l.labels {
-            let p = point_at(&l.path, lab.t);
-            text(
+            text::lines(
                 &mut out,
-                &lab.text,
-                p,
-                Align::Center,
+                &lab.lines,
                 l.style.font_size,
-                l.style.font_weight,
                 &l.style.color,
                 true,
             );
         }
     }
     for t in &scene.texts {
-        text(
-            &mut out,
-            &t.content,
-            t.at,
-            t.align,
-            t.size,
-            FontWeight::Normal,
-            &t.color,
-            false,
-        );
+        text::lines(&mut out, &t.lines, t.size, &t.color, false);
     }
     out.push_str("</svg>\n");
     out
@@ -78,7 +65,7 @@ fn n(v: f64) -> String {
     }
 }
 
-fn esc(s: &str) -> String {
+pub(crate) fn esc(s: &str) -> String {
     s.replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
@@ -112,75 +99,8 @@ fn shape(out: &mut String, s: &Shape) {
         st.fill,
         stroke_attrs(st)
     ));
-    let Some(label) = &s.label else { return };
-    match s.kind {
-        ShapeKind::Group => {
-            let at = Pt::new(
-                r.x + st.padding,
-                r.y + st.padding + st.font_size * 1.25 / 2.0,
-            );
-            text(
-                out,
-                label,
-                at,
-                Align::Left,
-                st.font_size,
-                st.font_weight,
-                &st.color,
-                false,
-            );
-        }
-        ShapeKind::Box => text(
-            out,
-            label,
-            r.center(),
-            Align::Center,
-            st.font_size,
-            st.font_weight,
-            &st.color,
-            false,
-        ),
-    }
-}
-
-/// Draws `content` with its block of lines vertically centered on `at.y`.
-#[allow(clippy::too_many_arguments)]
-fn text(
-    out: &mut String,
-    content: &str,
-    at: Pt,
-    align: Align,
-    size: f64,
-    weight: FontWeight,
-    color: &str,
-    halo: bool,
-) {
-    let lines: Vec<&str> = content.split('\n').collect();
-    let lh = size * 1.25;
-    let first = at.y - lh * lines.len() as f64 / 2.0 + lh / 2.0;
-    let anchor = match align {
-        Align::Left => "start",
-        Align::Center => "middle",
-        Align::Right => "end",
-    };
-    let weight = match weight {
-        FontWeight::Normal => "normal",
-        FontWeight::Bold => "bold",
-    };
-    let halo = if halo {
-        " stroke=\"#ffffff\" stroke-width=\"4\" stroke-linejoin=\"round\" paint-order=\"stroke\""
-    } else {
-        ""
-    };
-    for (i, l) in lines.iter().enumerate() {
-        out.push_str(&format!(
-            "<text x=\"{}\" y=\"{}\" font-family=\"{FONT}\" font-size=\"{}\" font-weight=\"{weight}\" fill=\"{color}\" \
-             text-anchor=\"{anchor}\" dominant-baseline=\"central\"{halo}>{}</text>\n",
-            n(at.x),
-            n(first + lh * i as f64),
-            n(size),
-            esc(l)
-        ));
+    for item in &s.text {
+        text::lines(out, &item.lines, item.size, &item.color, false);
     }
 }
 

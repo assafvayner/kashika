@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use kashika_diag::{did_you_mean, Diagnostic, Span, LINT_CODES};
-use kashika_geom::{round_corners, PathSeg, Pt, Rect, TOLERANCE};
+use kashika_geom::{point_at, round_corners, PathSeg, Pt, Rect, TOLERANCE};
 use kashika_syntax::ast::{self, Axis, Coord, Point, SegKind, Side, Stmt, Target};
 
 use crate::anchor;
@@ -9,6 +9,7 @@ use crate::attrs::{self, Attrs, Min, LIMIT};
 use crate::markup;
 use crate::scene::*;
 use crate::style::{self, Style, StyleProps, STYLE_KEYS};
+use crate::textlayout::{self, ShapeInput, ShapeTextProps, SHAPE_TEXT_KEYS};
 
 const NODE_KEYS: &[&str] = &["shape", "style", "pin"];
 const LINE_KEYS: &[&str] = &[
@@ -24,19 +25,11 @@ const LINE_KEYS: &[&str] = &[
     "allow",
     "reason",
 ];
-const TEXT_KEYS: &[&str] = &["size", "color", "align"];
+const TEXT_KEYS: &[&str] = &["size", "color", "align", "muted"];
 const DIAGRAM_KEYS: &[&str] = &["kashika", "grid", "clearance", "icons", "allow"];
 const MARKERS: &[&str] = &["none", "arrow", "open", "diamond", "dot"];
 const SHAPES: &[&str] = &["rect", "rounded"];
-const UNSUPPORTED_KEYS: &[&str] = &[
-    "sublabel",
-    "text-align",
-    "text-valign",
-    "gap",
-    "icon",
-    "icon-pos",
-    "icon-size",
-];
+const UNSUPPORTED_KEYS: &[&str] = &["icon", "icon-pos", "icon-size"];
 /// Deepest chain of placement references followed before giving up.
 const MAX_PLACEMENT_DEPTH: usize = 256;
 const UNSUPPORTED_SHAPES: &[&str] = &[
@@ -84,8 +77,8 @@ struct NodeProps {
     outline: Outline,
     style: Style,
     pin: &'static str,
-    label: Option<String>,
     size_ok: bool,
+    text: ShapeTextProps,
 }
 
 struct LineProps {
@@ -402,21 +395,6 @@ impl<'a> Resolver<'a> {
         self.finite(vals, span)
     }
 
-    /// A label or text string: reports markup (not built yet) and resolves escapes.
-    fn markup(&mut self, s: &str, span: Span) -> String {
-        if markup::has_markup(s) {
-            self.diags.push(
-                Diagnostic::error(
-                    "unsupported",
-                    span,
-                    "inline markup (`**bold**`, `` `code` ``) is not supported in this version yet",
-                )
-                .with_help("write a literal `*` or `` ` `` as `\\*` or `` \\` ``"),
-            );
-        }
-        markup::unescape(s)
-    }
-
     fn unknown_id(&self, name: &str, span: Span) -> Diagnostic {
         let mut d = Diagnostic::error("unknown-id", span, format!("unknown id `{name}`"));
         if let Some(s) = did_you_mean(name, self.ids.keys().map(String::as_str)) {
@@ -461,6 +439,7 @@ impl<'a> Resolver<'a> {
             .iter()
             .filter(|k| !group || **k != "shape")
             .chain(STYLE_KEYS)
+            .chain(SHAPE_TEXT_KEYS)
             .chain(UNSUPPORTED_KEYS)
             .copied()
             .collect();
@@ -472,7 +451,6 @@ impl<'a> Resolver<'a> {
         }
 
         let size_ok = self.size_ok(n.size, n.span, &format!("`{}`", n.id.name));
-        let label = n.label.as_deref().map(|l| self.markup(l, n.span));
         let mut shape = None;
         if let Some(x) = a.get("shape") {
             match &x.value {
@@ -511,12 +489,13 @@ impl<'a> Resolver<'a> {
             .get("pin")
             .and_then(|x| attrs::word(x, anchor::ANCHORS, &mut self.diags))
             .unwrap_or("tl");
+        let text = textlayout::shape_text_props(&a, group, &mut self.diags);
         NodeProps {
             outline,
             style: props.resolve(),
             pin,
-            label,
             size_ok,
+            text,
         }
     }
 
@@ -560,31 +539,22 @@ impl<'a> Resolver<'a> {
         let a = Attrs::new(&t.attrs, "text", TEXT_KEYS, &mut self.diags);
         let size = a
             .get("size")
-            .and_then(|x| {
-                let v = attrs::num(x, &mut self.diags)?;
-                if v <= 0.0 || v > LIMIT {
-                    self.diags.push(Diagnostic::error(
-                        "size",
-                        x.span,
-                        format!("text size must be greater than 0 and at most {LIMIT}"),
-                    ));
-                    return None;
-                }
-                Some(v)
-            })
+            .and_then(|x| textlayout::text_size(x, &mut self.diags))
             .unwrap_or(14.0);
+        let muted = a
+            .get("muted")
+            .is_some_and(|x| attrs::flag(x, &mut self.diags));
         let color = a
             .get("color")
-            .and_then(|x| {
-                let c = attrs::color(x, &mut self.diags)?;
-                if c == "none" {
-                    self.diags
-                        .push(attrs::type_err(x, "a color like `#1a73e8`"));
-                    return None;
+            .and_then(|x| textlayout::text_color(x, &mut self.diags))
+            .unwrap_or_else(|| {
+                let d = Style::default();
+                if muted {
+                    d.muted
+                } else {
+                    d.color
                 }
-                Some(c)
-            })
-            .unwrap_or_else(|| Style::default().color);
+            });
         let align = match a
             .get("align")
             .and_then(|x| attrs::word(x, &["left", "center", "right"], &mut self.diags))
@@ -593,7 +563,7 @@ impl<'a> Resolver<'a> {
             Some("right") => Align::Right,
             _ => Align::Center,
         };
-        let content = self.markup(&t.content, t.span);
+        let content = t.content.clone();
         TextProps {
             content,
             size,
@@ -649,8 +619,14 @@ impl<'a> Resolver<'a> {
                 continue;
             }
             if let Some(text) = attrs::text(x, &mut self.diags) {
-                let text = self.markup(&text, x.span);
-                labels.push(Label { t, text });
+                labels.push(Label {
+                    t,
+                    text,
+                    at: Pt::default(),
+                    rect: Rect::default(),
+                    lines: Vec::new(),
+                    span: x.span,
+                });
             }
         }
         let ortho = a
@@ -717,6 +693,12 @@ impl<'a> Resolver<'a> {
                         continue;
                     };
                     let p = &self.texts[&idx];
+                    let Some(block) =
+                        textlayout::measure_at(&t.content, p.size, false, t.span, &mut self.diags)
+                    else {
+                        continue;
+                    };
+                    let (lines, rect) = block.place_at(at.x, at.y, textlayout::halign(p.align));
                     scene.texts.push(Text {
                         id: t.id.as_ref().map(|i| i.name.clone()),
                         content: p.content.clone(),
@@ -724,6 +706,8 @@ impl<'a> Resolver<'a> {
                         size: p.size,
                         color: p.color.clone(),
                         align: p.align,
+                        rect,
+                        lines,
                         parent,
                         span: t.span,
                     });
@@ -741,22 +725,48 @@ impl<'a> Resolver<'a> {
         &mut self,
         scene: &mut Scene,
         idx: usize,
-        n: &ast::Node,
+        n: &'a ast::Node,
         kind: ShapeKind,
         parent: Option<String>,
         depth: usize,
     ) {
         let Some(rect) = self.place(idx) else { return };
+        let block_at: Vec<Option<Pt>> = n
+            .block
+            .iter()
+            .flatten()
+            .map(|item| {
+                item.at
+                    .as_ref()
+                    .and_then(|at| self.eval_point(at, rect.origin()))
+            })
+            .collect();
         let p = &self.nodes[&idx];
+        let text = textlayout::layout_shape(
+            &ShapeInput {
+                id: &n.id.name,
+                node: n,
+                kind,
+                outline: p.outline,
+                rect,
+                style: &p.style,
+                props: &p.text,
+                block_at: &block_at,
+            },
+            &mut self.diags,
+        );
         scene.shapes.push(Shape {
             id: n.id.name.clone(),
             kind,
             outline: p.outline,
-            label: p.label.clone(),
+            label: n.label.clone(),
             rect,
             parent,
             depth,
             style: p.style.clone(),
+            text_area: text.area,
+            text: text.items,
+            title_band: text.title_band,
             span: n.span,
         });
     }
@@ -1011,6 +1021,23 @@ impl<'a> Resolver<'a> {
         } else {
             segs
         };
+        let mut labels = p.labels;
+        let bold = p.style.font_weight == crate::style::FontWeight::Bold;
+        labels.retain_mut(|lab| {
+            let Some(block) = textlayout::measure_at(
+                &lab.text,
+                p.style.font_size,
+                bold,
+                lab.span,
+                &mut self.diags,
+            ) else {
+                return false;
+            };
+            lab.at = point_at(&path, lab.t);
+            (lab.lines, lab.rect) =
+                block.place_at(lab.at.x, lab.at.y, kashika_text::HAlign::Center);
+            true
+        });
         let (id, named) = match &l.id {
             Some(i) => (i.name.clone(), true),
             None => (format!("line@L{}", l.span.line), false),
@@ -1022,7 +1049,7 @@ impl<'a> Resolver<'a> {
             start: p.start,
             end: p.end,
             style: p.style,
-            labels: p.labels,
+            labels,
             ortho: p.ortho,
             allow: p.allow,
             reason: p.reason,

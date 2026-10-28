@@ -302,11 +302,11 @@ fn unbuilt_statements_report_unsupported_and_recover() {
          shape lb_icon {\n  path \"M 0 0 L 1 1\"\n  nested { a=1 { b=2 } }\n  text-area (0.2,0.3,0.6,0.4)\n}\n\
          shape s3 from \"icons/s3.svg\" outline=hull\n\
          image logo \"hf.png\" at (20,20) size (80,80) fit=contain\n\
-         box api at (100,80) size (200,120) {\n  text \"**API**\"\n  text \"{ braces }\" size=11\n  inner { x=1 }\n}\n\
+         box api at (100,80) size (200,120)\n\
          box b at (0,0) size (1,1)\n",
     );
     let codes: Vec<_> = diags.iter().map(|d| d.code).collect();
-    assert_eq!(codes, vec!["unsupported"; 5], "{diags:#?}");
+    assert_eq!(codes, vec!["unsupported"; 4], "{diags:#?}");
     for d in &diags {
         assert!(d.help.iter().any(|h| h.contains("later version")), "{d:#?}");
     }
@@ -321,7 +321,7 @@ fn unbuilt_statements_inside_groups_recover() {
         "group g at (0,0) size (9,9) {\n  image i \"x.png\" at (0,0) size (1,1)\n  box a at (0,0) size (1,1) { text \"x\" }\n  box b at (0,0) size (1,1)\n}\nbox c at (0,0) size (1,1)\n",
     );
     let codes: Vec<_> = diags.iter().map(|d| d.code).collect();
-    assert_eq!(codes, vec!["unsupported"; 2], "{diags:#?}");
+    assert_eq!(codes, vec!["unsupported"; 1], "{diags:#?}");
     let Stmt::Group(g) = &f.stmts[0] else {
         panic!("expected group")
     };
@@ -442,4 +442,63 @@ fn segment_keywords_are_reserved_ids() {
         }
     }
     parse_ok("box hx at (0,0) size (1,1)\njunction curves at (0,0)\n");
+}
+
+fn block(f: &File, i: usize) -> &Vec<BlockText> {
+    let Stmt::Box(b) = &f.stmts[i] else {
+        panic!("expected box")
+    };
+    b.block.as_ref().expect("text block")
+}
+
+#[test]
+fn box_text_block_parses_stacked_and_absolute_items() {
+    let f = parse_ok(
+        "box api at (100,80) size (200,120) text-align=left {\n  text \"**Payments API**\"\n  text \"v2.4.1\" size=11 muted\n\n  text \"note\" at (10,90) align=right\n}\nbox b at (0,0) size (1,1)\n",
+    );
+    assert_eq!(f.stmts.len(), 2);
+    let items = block(&f, 0);
+    assert_eq!(items.len(), 3);
+    assert_eq!(items[0].content, "**Payments API**");
+    assert!(items[0].at.is_none());
+    assert_eq!(items[1].attrs.len(), 2);
+    assert_eq!(items[1].attrs[1].value, Value::Flag);
+    assert!(items[2].at.is_some());
+    assert_eq!(items[2].span.line, 5);
+}
+
+#[test]
+fn one_line_and_empty_text_blocks() {
+    let f = parse_ok("box a at (0,0) size (9,9) { text \"x\" }\nbox b at (0,0) size (9,9) {\n}\nbox c at (0,0) size (9,9)\n");
+    assert_eq!(block(&f, 0).len(), 1);
+    assert!(block(&f, 1).is_empty());
+    let Stmt::Box(c) = &f.stmts[2] else {
+        panic!("expected box")
+    };
+    assert!(c.block.is_none());
+}
+
+#[test]
+fn text_block_rejects_ids_and_other_statements() {
+    let (f, diags) = parse(
+        "box a at (0,0) size (9,9) {\n  text t \"x\"\n  box b at (0,0) size (1,1)\n  text \"ok\"\n}\nbox c at (0,0) size (1,1)\n",
+    );
+    let msgs: Vec<_> = diags.iter().map(|d| d.message.as_str()).collect();
+    assert_eq!(
+        msgs,
+        vec![
+            "text block items take no id",
+            "expected `text` or `}` in a text block, found `box`"
+        ],
+        "{diags:#?}"
+    );
+    assert_eq!(block(&f, 0).len(), 1);
+    assert_eq!(f.stmts.len(), 2);
+}
+
+#[test]
+fn unclosed_text_block_is_reported() {
+    let (_, diags) = parse("box a at (0,0) size (9,9) {\n  text \"x\"\n");
+    assert_eq!(diags.len(), 1, "{diags:#?}");
+    assert_eq!(diags[0].message, "expected `}`, found end of file");
 }

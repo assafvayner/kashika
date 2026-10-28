@@ -26,8 +26,9 @@ fn renders_boxes_lines_markers_and_labels() {
         "arrow end should trim the stroke"
     );
     assert!(s.contains(r#"<polygon points="320,70 310,74 310,66""#));
-    assert!(s.contains(">SQL</text>"));
-    assert!(s.contains(">Postgres</text>"));
+    assert!(s.contains(r#"<path aria-label="SQL" d="M"#));
+    assert!(s.contains(r#"<path aria-label="Postgres" d="M"#));
+    assert!(!s.contains("<text"), "text is drawn as glyph outlines");
 }
 
 #[test]
@@ -36,19 +37,21 @@ fn groups_are_dashed_and_drawn_first() {
     let group = s.find(r#"stroke-dasharray="6 4""#).expect("dashed group");
     let child = s.find(r#"<rect x="20" y="40""#).expect("child box");
     assert!(group < child);
-    assert!(s.contains(">VPC</text>"));
+    assert!(s.contains(r#"aria-label="VPC""#));
 }
 
 #[test]
 fn escapes_text() {
     let s = svg("diagram \"e\" size (100,100)\nbox a \"a < b & c\" at (0,0) size (90,40)\n");
-    assert!(s.contains(">a &lt; b &amp; c</text>"));
+    assert!(s.contains(r#"aria-label="a &lt; b &amp; c""#));
 }
 
 #[test]
 fn multi_line_labels_stack() {
     let s = svg("diagram \"m\" size (100,100)\nbox a \"one\\ntwo\" at (0,0) size (100,100)\n");
-    assert!(s.contains(r#"y="41.25""#) && s.contains(r#"y="58.75""#));
+    let one = s.find(r#"aria-label="one""#).expect("first line");
+    let two = s.find(r#"aria-label="two""#).expect("second line");
+    assert!(one < two);
 }
 
 #[test]
@@ -68,8 +71,8 @@ fn paint_order_is_groups_boxes_lines_then_labels_and_texts() {
     let inner = pos(r#"<rect x="20" y="20""#);
     let bx = pos(r#"<rect x="100" y="100""#);
     let line = pos(r#"d="M 0 150 L 300 150""#);
-    let label = pos(">L</text>");
-    let text = pos(">T</text>");
+    let label = pos(r#"aria-label="L""#);
+    let text = pos(r#"aria-label="T""#);
     assert!(outer < inner && inner < bx && bx < line && line < label && label < text);
 }
 
@@ -78,15 +81,6 @@ fn junction_dot_is_six_pixels() {
     let s = svg("diagram \"j\" size (100,100)\njunction a at (10,20) dot\njunction b at (30,40)\n");
     assert!(s.contains(r#"<circle cx="10" cy="20" r="3""#));
     assert!(!s.contains(r#"cx="30""#));
-}
-
-#[test]
-fn text_at_is_the_vertical_center() {
-    let s = svg("diagram \"t\" size (100,100)\ntext \"hi\" at (50,40) align=left\n");
-    assert!(s.contains(
-        r#"x="50" y="40" font-family="Inter, Helvetica, Arial, sans-serif" font-size="14""#
-    ));
-    assert!(s.contains(r#"text-anchor="start" dominant-baseline="central""#));
 }
 
 fn path_d(s: &str) -> &str {
@@ -106,4 +100,33 @@ fn markers_trim_a_final_curve() {
 fn markers_at_both_ends_of_a_short_line_share_it() {
     let s = svg("diagram \"c\" size (200,200)\nline l: (0,50) -> h 15 start=arrow end=arrow\n");
     assert_eq!(path_d(&s), "M 7.5 50 L 7.5 50");
+}
+
+#[test]
+fn line_labels_get_a_halo_and_texts_do_not() {
+    let s = svg("diagram \"h\" size (200,100)\nline l: (0,50) -> h 200 label=\"L\"\ntext \"T\" at (100,90)\n");
+    let label = &s[s.find(r#"aria-label="L""#).unwrap()..];
+    assert!(label.lines().next().unwrap().ends_with(
+        r##"fill="#0f172a" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" paint-order="stroke"/>"##
+    ));
+    let text = &s[s.find(r#"aria-label="T""#).unwrap()..];
+    assert!(text
+        .lines()
+        .next()
+        .unwrap()
+        .ends_with(r##"fill="#0f172a"/>"##));
+}
+
+#[test]
+fn markup_switches_fonts_in_one_path() {
+    let plain = svg("diagram \"m\" size (200,100)\ntext \"ab\" at (100,50)\n");
+    let bold = svg("diagram \"m\" size (200,100)\ntext \"**ab**\" at (100,50)\n");
+    assert!(bold.contains(r#"aria-label="ab""#));
+    assert_ne!(plain, bold);
+}
+
+#[test]
+fn spaces_only_lines_draw_nothing() {
+    let s = svg("diagram \"s\" size (100,100)\ntext \"  \" at (50,50)\n");
+    assert!(!s.contains("aria-label"));
 }

@@ -376,12 +376,9 @@ fn negative_curve_amount() {
 
 #[test]
 fn unsupported_features_fail_clearly() {
-    let d = errors("box a at (0,0) size (10,10) sublabel=\"x\"\n");
+    let d = errors("box a at (0,0) size (10,10) icon=\"x.svg\"\n");
     assert_eq!(d[0].code, "unsupported");
-    assert_eq!(
-        d[0].message,
-        "`sublabel` is not supported in this version yet"
-    );
+    assert_eq!(d[0].message, "`icon` is not supported in this version yet");
     let d = errors("box a at (0,0) size (10,10) shape=cylinder\n");
     assert_eq!(d[0].code, "unsupported");
     assert_eq!(
@@ -403,7 +400,7 @@ fn duplicate_label_attribute_reports_once() {
 
 #[test]
 fn duplicate_unsupported_attribute_reports_once() {
-    let d = errors("box a at (0,0) size (1,1) sublabel=\"x\" sublabel=\"y\"\n");
+    let d = errors("box a at (0,0) size (1,1) icon-size=4 icon-size=5\n");
     let codes: Vec<_> = d.iter().map(|x| x.code).collect();
     assert_eq!(codes.iter().filter(|c| **c == "attr").count(), 1, "{d:#?}");
     assert_eq!(
@@ -668,10 +665,10 @@ fn diagram_icons_is_unsupported() {
 fn statements_after_unbuilt_ones_still_resolve() {
     let (s, d) = kashika_model::compile(&format!(
         "{HEAD}import \"lib.kash\"\nshape s {{\n  path \"M 0 0\"\n}}\nimage i \"x.png\" at (0,0) size (1,1)\n\
-         box a at (10,10) size (20,20) {{\n  text \"x\"\n}}\nbox b at a.right+(10,0) size (20,20) pin=left\nline l: a.right -> b.left\n"
+         box a at (10,10) size (20,20) padding=0 {{\n  text \"x\"\n}}\nbox b at a.right+(10,0) size (20,20) pin=left\nline l: a.right -> b.left\n"
     ));
     let codes: Vec<_> = d.iter().map(|x| x.code).collect();
-    assert_eq!(codes, vec!["unsupported"; 4], "{d:#?}");
+    assert_eq!(codes, vec!["unsupported"; 3], "{d:#?}");
     assert_eq!(rect(&s, "b"), Rect::new(40.0, 10.0, 20.0, 20.0));
     assert_eq!(pts(&s, "l"), vec![Pt::new(30.0, 20.0), Pt::new(40.0, 20.0)]);
 }
@@ -866,7 +863,7 @@ fn shapes_need_positive_sizes() {
 
 #[test]
 fn box_shapes() {
-    let s = ok("box a \"A\" at (0,0) size (10,10) shape=rect\n");
+    let s = ok("box a \"A\" at (0,0) size (40,40) shape=rect\n");
     assert_eq!(s.shapes[0].outline, kashika_model::Outline::Rect);
     assert_eq!(s.shapes[0].label.as_deref(), Some("A"));
     let s = ok("box a at (0,0) size (10,10) shape=rounded\n");
@@ -887,16 +884,8 @@ fn every_unimplemented_shape_is_unsupported() {
 }
 
 #[test]
-fn every_text_feature_attribute_is_unsupported() {
-    for attr in [
-        "sublabel=\"x\"",
-        "text-align=left",
-        "text-valign=top",
-        "gap=2",
-        "icon=\"x.svg\"",
-        "icon-pos=left",
-        "icon-size=16",
-    ] {
+fn every_icon_attribute_is_unsupported() {
+    for attr in ["icon=\"x.svg\"", "icon-pos=left", "icon-size=16"] {
         let d = errors(&format!("box a at (0,0) size (10,10) {attr}\n"));
         assert_eq!(d.len(), 1, "{attr}: {d:#?}");
         assert_eq!(d[0].code, "unsupported", "{attr}");
@@ -1020,24 +1009,11 @@ fn long_placement_chains_are_reported_not_crashed() {
 }
 
 #[test]
-fn markup_is_unsupported_and_escapes_are_literal() {
-    for body in [
-        "box a \"**API**\" at (0,0) size (10,10)\n",
-        "box a \"run `x`\" at (0,0) size (10,10)\n",
-        "group g \"**G**\" at (0,0) size (10,10) {\n}\n",
-        "text \"**t**\" at (0,0)\n",
-        "line l: (0,0) -> h 5 label=\"`q`\"\n",
-        "line l: (0,0) -> h 5 label@0.2=\"\\***x**\"\n",
-    ] {
-        let d = errors(body);
-        assert_eq!(codes_of(&d), vec!["unsupported"], "{body}: {d:#?}");
-        assert!(d[0].message.contains("markup"), "{}", d[0].message);
-        assert!(!d[0].help.is_empty());
-    }
-    let s = ok("box a \"a \\*\\* b * c \\` d\" at (0,0) size (10,10)\ntext \"\\*\\*x\\*\\*\" at (0,0)\nline l: (0,0) -> h 5 label=\"\\`\"\n");
-    assert_eq!(s.shapes[0].label.as_deref(), Some("a ** b * c ` d"));
-    assert_eq!(s.texts[0].content, "**x**");
-    assert_eq!(s.lines[0].labels[0].text, "`");
+fn markup_and_escapes_are_accepted_in_texts_and_labels() {
+    let s = ok("box a \"a \\*\\* b\" at (0,0) size (60,40)\ntext \"**t** \\*\" at (0,0)\nline l: (0,0) -> h 5 label=\"`q`\"\n");
+    assert_eq!(s.shapes[0].label.as_deref(), Some("a \\*\\* b"));
+    assert_eq!(s.texts[0].content, "**t** \\*");
+    assert_eq!(s.lines[0].labels[0].text, "`q`");
     let (s, _) = compile("diagram \"a \\* b\" size (10,10)\n");
     assert_eq!(s.title, "a * b");
 }

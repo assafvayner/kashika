@@ -1,4 +1,5 @@
 mod fmt_cmd;
+mod measure;
 mod report;
 
 use std::io::Read;
@@ -34,6 +35,8 @@ enum Cmd {
         #[arg(long)]
         force: bool,
     },
+    /// Print the exact width and height of a label, with markup applied
+    Measure(measure::MeasureArgs),
     /// Rewrite a .kash file in canonical layout (whitespace only)
     Fmt {
         /// The .kash file to format
@@ -90,6 +93,7 @@ fn main() -> ExitCode {
             output,
             force,
         } => run(&common, Some((output, force))),
+        Cmd::Measure(args) => measure::run(&args),
     }
 }
 

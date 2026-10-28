@@ -184,3 +184,91 @@ fn huge_coordinates_fail_cleanly_even_when_forced() {
     let svg = std::fs::read_to_string(&out).unwrap();
     assert!(!svg.contains("inf") && !svg.contains("NaN"), "{svg}");
 }
+
+#[test]
+fn measure_prints_width_and_height() {
+    kashika()
+        .args(["measure", "API"])
+        .assert()
+        .code(0)
+        .stdout("width=22.36 height=17.5 lines=1\n");
+    kashika()
+        .args(["measure", "API", "--size", "28", "--weight", "bold"])
+        .assert()
+        .code(0)
+        .stdout("width=46.91 height=35 lines=1\n");
+}
+
+#[test]
+fn measure_applies_markup_and_newlines() {
+    kashika()
+        .args(["measure", r"`API`\nPostgres"])
+        .assert()
+        .code(0)
+        .stdout("width=58.71 height=35 lines=2\n");
+}
+
+#[test]
+fn measure_json() {
+    let out = kashika()
+        .args(["measure", "SQL", "--size", "12", "--format", "json"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(0));
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(v["schema"], "kashika.measure/1");
+    assert_eq!(v["width"], 23.66);
+    assert_eq!(v["height"], 15.0);
+    assert_eq!(v["lines"], 1);
+}
+
+#[test]
+fn measure_reports_unclosed_markup_and_bad_sizes() {
+    kashika()
+        .args(["measure", "**API"])
+        .assert()
+        .code(2)
+        .stdout("error[parse]: unclosed `**` in text\n");
+    kashika()
+        .args(["measure", "API", "--size", "0"])
+        .assert()
+        .code(3);
+}
+
+#[test]
+fn check_reports_label_overflow() {
+    kashika()
+        .args(["check", &fixture("overflow.kash")])
+        .assert()
+        .code(2)
+        .stdout(
+            predicate::str::contains(
+                "overflow.kash:2:1: error[label-overflow]: its text needs 91.64x17.5px but the text area of `api` is 64x14px",
+            )
+            .and(predicate::str::contains(
+                "= help: make `api` at least size (108,34), or shorten the text",
+            )),
+        );
+}
+
+#[test]
+fn text_fixture_checks_clean_and_renders_deterministically() {
+    kashika()
+        .args(["check", &fixture("text.kash")])
+        .assert()
+        .code(0);
+    let dir = tempfile::tempdir().unwrap();
+    let a = dir.path().join("a.svg");
+    let b = dir.path().join("b.svg");
+    for out in [&a, &b] {
+        kashika()
+            .args(["render", &fixture("text.kash"), "-o", out.to_str().unwrap()])
+            .assert()
+            .code(0);
+    }
+    let svg = std::fs::read_to_string(&a).unwrap();
+    assert_eq!(svg, std::fs::read_to_string(&b).unwrap());
+    assert!(svg.contains(r#"aria-label="Worker""#));
+    assert!(svg.contains(r#"aria-label="• retries charge()""#));
+    assert!(!svg.contains("<text"));
+}

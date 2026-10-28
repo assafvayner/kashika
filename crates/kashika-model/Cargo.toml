@@ -8,4 +8,5 @@ license.workspace = true
 kashika-diag.workspace = true
 kashika-geom.workspace = true
 kashika-syntax.workspace = true
+kashika-text.workspace = true
 serde.workspace = true
