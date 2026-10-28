@@ -84,10 +84,35 @@ fn reroutes_with_line_flag() {
 #[test]
 fn no_path_exits_one() {
     kashika()
-        .args(["route", &fixture("route.kash"), "a.right", "b.left"])
+        .args(["route", "-", "a.right", "b.left"])
+        .write_stdin(
+            "diagram \"b\" size (300,200)\n\
+box a at (20,80) size (100,40)\n\
+box c at (122,20) size (40,160)\n\
+box b at (220,80) size (60,40)\n",
+        )
         .assert()
         .code(1)
-        .stdout(predicate::str::contains("no candidate path"));
+        .stdout(predicate::str::contains(
+            "no candidate path avoids every box with at most 4 elbows",
+        ));
+}
+
+#[test]
+fn detours_when_no_simple_path_is_clear() {
+    kashika()
+        .args([
+            "route",
+            &fixture("route.kash"),
+            "a.right",
+            "b.left",
+            "--max",
+            "1",
+        ])
+        .assert()
+        .code(0)
+        .stdout(predicate::str::contains("segments=5"))
+        .stdout(predicate::str::contains("line a_b: a.right -> x "));
 }
 
 #[test]

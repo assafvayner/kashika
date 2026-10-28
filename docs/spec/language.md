@@ -401,7 +401,13 @@ Each candidate lists these numbers, which line it crosses and where, and the cor
     line app1_db: app1.right -> hv pg.left@0.25 end=arrow
 ```
 
-Suggestions use anchors and axis targets rather than literals wherever possible, so they survive later moves. `--format json` returns the same data structured. The search covers a bounded set of paths with at most 2 elbows (orthogonal styles) or a single curve (`bezier`). It is a suggestion tool, not a layout engine.
+Suggestions use anchors and axis targets rather than literals wherever possible, so they survive later moves. `--format json` returns the same data structured. It is a suggestion tool, not a layout engine; the search is bounded:
+
+- `bezier` tries single curves only.
+- `corner` and `arc` try the straight path, `hv`, `vh`, and one lane (`x <lane> -> vh`, `y <lane> -> hv`) at the midpoint or `2 × clearance` outside any box edge.
+- They also try detours with 3 or 4 elbows through two or three lanes: `x -> y -> hv` and `y -> x -> vh`, which end on the other axis than they start, and `x -> y -> x -> vh` and `y -> x -> y -> hv`, which end on the same one. Detour lanes are the box lanes above plus the middle of each free interval between the endpoints (as `inspect --corridors` reports it), at least `clearance` inside the canvas. Only the 16 lanes per axis nearest either endpoint are used, and of the detours that enter no box and leave and enter side anchors square, only the 32 best by estimated crossings, near-misses, segments and length are scored.
+
+A detour lists its second lane as its corridor. When no candidate is clear of every box, `route` prints `no candidate path avoids every box with at most 4 elbows (or 1 curve)` and exits 1.
 
 ### ref
 

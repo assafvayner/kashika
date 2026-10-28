@@ -129,7 +129,7 @@ fn read(file: &str, stdin_name: Option<&str>) -> Result<(String, String), String
 
 fn text(s: &Suggestion) -> String {
     if s.candidates.is_empty() {
-        return "no candidate path avoids every box with at most 2 elbows (or 1 curve); try other anchors, or move a box\n".into();
+        return "no candidate path avoids every box with at most 4 elbows (or 1 curve); try other anchors, or move a box\n".into();
     }
     let mut out = String::new();
     for (i, c) in s.candidates.iter().enumerate() {

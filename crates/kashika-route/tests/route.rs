@@ -145,9 +145,9 @@ fn req<'a>(src: &'a str, from: &'a str, to: &'a str, style: Style) -> Request<'a
 fn routes_over_the_wall() {
     let s = suggest(&req(WALL, "a.top", "b.top", Style::Corner)).unwrap();
     assert_eq!(
-        s.candidates.len(),
+        s.candidates.iter().filter(|c| c.segments <= 3).count(),
         1,
-        "every other plan enters a box or leaves the wrong way"
+        "every other plan with at most 2 elbows enters a box or leaves the wrong way"
     );
     let c = &s.candidates[0];
     assert_eq!(
@@ -168,9 +168,130 @@ fn routes_over_the_wall() {
 }
 
 #[test]
-fn no_candidate_when_every_path_enters_a_box() {
-    let s = suggest(&req(WALL, "a.right", "b.left", Style::Corner)).unwrap();
-    assert!(s.candidates.is_empty());
+fn detours_around_a_wall_between_facing_sides() {
+    let mut r = req(WALL, "a.right", "b.left", Style::Corner);
+    r.max = 20;
+    let s = suggest(&r).unwrap();
+    let c = &s.candidates[0];
+    assert_eq!((c.crossings, c.near, c.segments), (0, 0, 5), "{c:?}");
+    assert!(
+        c.statement.starts_with("line a_b: a.right -> x ") && c.statement.contains(" -> vh b.left"),
+        "{}",
+        c.statement
+    );
+    assert!(c.corridor.is_some(), "{c:?}");
+    agrees_with_check(WALL, &s);
+}
+
+const QUEUE: &str = "diagram \"q\" size (520,340)\n\
+box orders at (30,100) size (130,60)\n\
+box queue at (230,100) size (170,60)\n\
+box db at (370,200) size (100,100)\n";
+
+#[test]
+fn detours_around_a_box_into_a_top_anchor() {
+    let mut r = req(QUEUE, "orders.right", "db.top", Style::Corner);
+    r.max = 20;
+    let s = suggest(&r).unwrap();
+    let c = &s.candidates[0];
+    assert_eq!((c.crossings, c.near, c.segments), (0, 0, 4), "{c:?}");
+    assert_eq!(
+        c.statement,
+        "line orders_db: orders.right -> x orders.tr+(12,0) -> y db.tl+(0,-12) -> hv db.top end=arrow"
+    );
+    agrees_with_check(QUEUE, &s);
+}
+
+#[test]
+fn detours_in_arc_style_check_clean() {
+    for (src, from, to) in [
+        (WALL, "a.right", "b.left"),
+        (QUEUE, "orders.right", "db.top"),
+        (QUEUE, "db.left", "orders.bottom"),
+    ] {
+        for style in [Style::Corner, Style::Arc] {
+            let mut r = req(src, from, to, style);
+            r.max = 50;
+            let s = suggest(&r).unwrap();
+            assert_eq!(s.candidates[0].crossings, 0, "{from} {to}");
+            agrees_with_check(src, &s);
+        }
+    }
+}
+
+#[test]
+fn no_candidate_when_the_start_faces_a_box() {
+    let src = "diagram \"b\" size (300,200)\n\
+box a at (20,80) size (100,40)\n\
+box c at (122,20) size (40,160)\n\
+box b at (220,80) size (60,40)\n";
+    let s = suggest(&req(src, "a.right", "b.left", Style::Corner)).unwrap();
+    assert!(s.candidates.is_empty(), "{:?}", s.candidates);
+}
+
+#[test]
+fn simple_paths_outrank_clean_detours() {
+    let mut r = req(WALL, "a.top", "b.top", Style::Corner);
+    r.max = 50;
+    let s = suggest(&r).unwrap();
+    assert_eq!(s.candidates[0].segments, 3);
+    for c in s.candidates.iter().filter(|c| c.segments > 3) {
+        assert!(
+            s.candidates.iter().all(|d| d.segments > 3
+                || d.crossings > c.crossings
+                || d.near > c.near
+                || d.length > c.length),
+            "a simpler path is as good as {c:?}"
+        );
+    }
+    let mut r = req(QUEUE, "orders.bottom", "db.left", Style::Corner);
+    r.max = 50;
+    let s = suggest(&r).unwrap();
+    assert_eq!(
+        s.candidates[0].statement,
+        "line orders_db: orders.bottom -> vh db.left end=arrow"
+    );
+}
+
+/// An `n` × `n` grid of boxes with a line between the first two of each row.
+fn grid(n: usize) -> String {
+    let side = 40 + 120 * n;
+    let mut src = format!("diagram \"big\" size ({side},{side})\n");
+    for i in 0..n {
+        for j in 0..n {
+            src.push_str(&format!(
+                "box b{i}_{j} at ({},{}) size (80,60)\n",
+                40 + 120 * j,
+                40 + 120 * i
+            ));
+        }
+        src.push_str(&format!("line r{i}: b{i}_0.right -> b{i}_1.left\n"));
+    }
+    src
+}
+
+#[test]
+fn detour_search_stays_bounded_on_a_large_diagram() {
+    let src = grid(10);
+    let s = scene(&src);
+    let (a, b) = resolve_endpoints(&src, "b0_0.right", "b9_9.left").unwrap();
+    let start = std::time::Instant::now();
+    let plans = generate(&s, &a, &b, Style::Corner);
+    let took = start.elapsed();
+    let detours = plans.iter().filter(|p| p.hops.len() >= 3).count();
+    assert!(detours > 0 && detours <= MAX_DETOURS, "{detours} detours");
+    assert!(plans.len() <= 3 + 2 * (2 * 100 + 1) + MAX_DETOURS);
+    assert!(took.as_secs() < 2, "generating plans took {took:?}");
+
+    let src = grid(5);
+    let mut r = req(&src, "b0_0.right", "b4_4.left", Style::Corner);
+    r.max = 5;
+    let s = suggest(&r).unwrap();
+    assert_eq!(
+        (s.candidates[0].crossings, s.candidates[0].segments),
+        (0, 5)
+    );
+    agrees_with_check(&src, &s);
 }
 
 #[test]
@@ -189,11 +310,13 @@ fn counts_near_misses_along_a_box_edge() {
 box a at (20,20) size (40,40)\n\
 box b at (220,20) size (40,40)\n\
 box c at (100,76) size (40,40)\n";
-    let s = suggest(&req(src, "a.bottom", "b.bottom", Style::Corner)).unwrap();
+    let mut r = req(src, "a.bottom", "b.bottom", Style::Corner);
+    r.max = 50;
+    let s = suggest(&r).unwrap();
     let close = s
         .candidates
         .iter()
-        .find(|c| c.statement.contains("y a.bl+(0,12)"))
+        .find(|c| c.statement.contains("a.bottom -> y a.bl+(0,12) -> hv"))
         .expect("a lane just below a and b");
     assert!(close.near >= 1, "lane at y=72 runs 4px above c: {close:?}");
 }
@@ -238,7 +361,12 @@ box b at (220,20) size (40,40)\n";
     let mut r = req(src, "a.right", "b.left", Style::Corner);
     r.max = 20;
     let s = suggest(&r).unwrap();
-    let statements: Vec<&str> = s.candidates.iter().map(|c| c.statement.as_str()).collect();
+    let statements: Vec<&str> = s
+        .candidates
+        .iter()
+        .filter(|c| c.segments <= 3)
+        .map(|c| c.statement.as_str())
+        .collect();
     assert_eq!(statements, ["line a_b: a.right -> b.left end=arrow"]);
 }
 
@@ -369,7 +497,12 @@ box d at (160,80) size (120,120) shape=diamond\n";
 #[test]
 fn routes_through_the_bounding_box_corner_of_a_diamond() {
     let s = suggest(&req(DIAMOND, "a.right", "b.bottom", Style::Corner)).unwrap();
-    let statements: Vec<&str> = s.candidates.iter().map(|c| c.statement.as_str()).collect();
+    let statements: Vec<&str> = s
+        .candidates
+        .iter()
+        .filter(|c| c.segments <= 3)
+        .map(|c| c.statement.as_str())
+        .collect();
     assert_eq!(statements, ["line a_b: a.right -> hv b.bottom end=arrow"]);
     assert_eq!((s.candidates[0].crossings, s.candidates[0].near), (0, 0));
     agrees_with_check(DIAMOND, &s);
@@ -410,5 +543,49 @@ box c at (100,76) size (40,40)\n";
         let mut r = req(src, from, to, style);
         r.max = 20;
         agrees_with_check(src, &suggest(&r).unwrap());
+    }
+}
+
+#[test]
+fn reroutes_a_line_through_a_wall_with_a_detour_in_its_group() {
+    let line = "  line ab: a.right -> b.left end=arrow";
+    let src = format!(
+        "diagram \"g\" size (560,400)\n\
+group g \"G\" at (60,60) size (480,300) {{\n\
+  box a at (20,120) size (100,40)\n\
+  box wall at (200,40) size (40,220)\n\
+  box b at (320,120) size (100,40)\n\
+{line}\n\
+}}\n"
+    );
+    let r = Request {
+        src: &src,
+        from: None,
+        to: None,
+        style: Style::Corner,
+        line: Some("ab"),
+        radius: 8.0,
+        max: 10,
+        opts: &OPTS,
+    };
+    let s = suggest(&r).unwrap();
+    assert_eq!(
+        (s.candidates[0].crossings, s.candidates[0].segments),
+        (0, 5)
+    );
+    for c in &s.candidates {
+        assert!(
+            c.statement.starts_with("line ab: a.right -> "),
+            "{}",
+            c.statement
+        );
+        let replaced = src.replace(line, &format!("  {}", c.statement));
+        let (scene, diags) = kashika_model::compile(&replaced);
+        assert!(diags.is_empty(), "{}: {diags:#?}", c.statement);
+        let through = kashika_check::check(&scene)
+            .into_iter()
+            .filter(|d| d.code == "through")
+            .count();
+        assert_eq!(through, 0, "{}", c.statement);
     }
 }

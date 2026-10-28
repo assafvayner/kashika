@@ -9,7 +9,9 @@ use kashika_model::{Line, Scene};
 use kashika_syntax::ast::{self, SegKind};
 use serde::Serialize;
 
-pub use candidates::{generate, Ctrl, Hop, Lane, Plan};
+pub use candidates::{
+    corners, generate, generate_skipping, Ctrl, Hop, Lane, Plan, DETOUR_LANES, MAX_DETOURS,
+};
 pub use endpoint::{parse_ref, resolve_endpoints, resolve_endpoints_with, Endpoint, Side, PROBE};
 pub use text::{num, path_text, statement};
 
@@ -256,7 +258,9 @@ fn rank(
     };
     let mut seen: Vec<Vec<(i64, i64)>> = Vec::new();
     let mut candidates = Vec::new();
-    for plan in generate(scene, &from, &to, req.style) {
+    let mut detour = Vec::new();
+    let skip: Vec<&str> = [PROBE].into_iter().chain(req.line).collect();
+    for plan in generate_skipping(scene, &from, &to, req.style, &skip[1..]) {
         let path = path_text(&from, &to, &plan, frame.origin);
         let (text, probe_line) = with_probe(req.src, frame, &statement(PROBE, &path, &probe_attrs));
         let (probed, diags) = kashika_model::compile_with(&text, req.opts);
@@ -280,15 +284,11 @@ fn rank(
             continue;
         }
         seen.push(key);
-        let skip: Vec<&str> = [PROBE].into_iter().chain(req.line).collect();
         let corridor = plan.lane.and_then(|(axis, v)| {
-            let span = if axis == "y" {
-                (from.at.x, to.at.x)
-            } else {
-                (from.at.y, to.at.y)
-            };
+            let span = lane_span(&from, &to, &plan, axis, v)?;
             score::corridor(&probed, axis, v, span, &skip)
         });
+        detour.push(plan.hops.len() >= 3);
         candidates.push(Candidate {
             crossings: s.crossed.len(),
             crossed: s.crossed,
@@ -299,6 +299,18 @@ fn rank(
             statement: statement(id, &path, attrs),
         });
     }
+    let simple: Vec<&Candidate> = candidates
+        .iter()
+        .zip(&detour)
+        .filter_map(|(c, d)| (!d).then_some(c))
+        .collect();
+    let drop: Vec<bool> = candidates
+        .iter()
+        .zip(&detour)
+        .map(|(c, d)| *d && dominated(c, &simple))
+        .collect();
+    let mut drop = drop.into_iter();
+    candidates.retain(|_| !drop.next().unwrap_or(false));
     candidates.sort_by(|a, b| {
         (a.crossings, a.near, a.segments)
             .cmp(&(b.crossings, b.near, b.segments))
@@ -311,6 +323,38 @@ fn rank(
         style: req.style,
         candidates,
     }
+}
+
+/// A detour is dropped when a simpler candidate is at least as good on crossings, near-misses
+/// and length.
+fn dominated(c: &Candidate, simple: &[&Candidate]) -> bool {
+    simple.iter().any(|s| {
+        s.segments < c.segments
+            && s.crossings <= c.crossings
+            && s.near <= c.near
+            && s.length <= c.length
+    })
+}
+
+/// The extent, on the other axis, of the segment that runs along a plan's lane.
+fn lane_span(
+    from: &Endpoint,
+    to: &Endpoint,
+    plan: &Plan,
+    axis: &str,
+    v: f64,
+) -> Option<(f64, f64)> {
+    let pts = candidates::corners(from.at, to.at, plan)?;
+    pts.windows(2).find_map(|w| {
+        let (p, q) = (w[0], w[1]);
+        if axis == "x" && p.x == v && q.x == v {
+            Some((p.y, q.y))
+        } else if axis == "y" && p.y == v && q.y == v {
+            Some((p.x, q.x))
+        } else {
+            None
+        }
+    })
 }
 
 /// Orthogonal styles must stay orthogonal. A path must leave a side anchor along its outward
@@ -336,7 +380,7 @@ fn directions_ok(line: &Line, from: &Endpoint, to: &Endpoint, style: Style) -> b
 }
 
 /// Cosine of the largest angle, about 2.5°, between a path's end and a side's normal.
-const SQUARE: f64 = 0.999;
+pub(crate) const SQUARE: f64 = 0.999;
 
 /// The flattened path at 0.1px, without repeated points or points in the middle of a
 /// straight run, so paths that draw the same shape get the same key.
