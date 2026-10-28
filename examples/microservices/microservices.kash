@@ -21,8 +21,8 @@ group vpc "VPC" at (200,20) size (780,580) {
 junction fan at (450, gw.right.y)
 junction tap at (450, payments.left.y)
 
-line web_lb: web.right -> x 200 -> vh lb.left@0.3 end=arrow label@0.25="HTTPS"
-line mobile_lb: mobile.right -> x 200 -> vh lb.left@0.7 end=arrow label@0.25="HTTPS"
+line web_lb: web.right -> x 170 -> vh lb.left@0.3 end=arrow label@0.25="HTTPS"
+line mobile_lb: mobile.right -> x 170 -> vh lb.left@0.7 end=arrow label@0.25="HTTPS"
 line lb_gw: lb.bottom -> gw.top end=arrow
 line gw_orders: gw.right -> x 450 -> y orders.left -> orders.left end=arrow
 line tap_payments: tap -> payments.left end=arrow

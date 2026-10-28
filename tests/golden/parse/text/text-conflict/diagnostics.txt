@@ -1,2 +1,6 @@
 error[text-conflict] 5:3-5:17: `a` has a label or sublabel and stacked text block items
   = help: move the label into the block as its first `text` item, or give every block item its own `at`
+warn[text-outside-shape] 8:3-8:40: block item "absolute" lies outside the text area of box 'b' (top by 6.75px)
+  = help: keep the item within the text area, local (8,8)..(192,92)
+  elements: [{"bbox":[[20,160],[220,260]],"id":"b","kind":"box","span":{"col":1,"end_col":41,"end_line":7,"line":7}}]
+  facts: {"bbox":[[30,161.25],[86.63,178.75]],"overflow":{"top":6.75},"text_area":[[28,168],[212,252]]}

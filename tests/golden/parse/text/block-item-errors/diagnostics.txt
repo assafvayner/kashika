@@ -1,3 +1,7 @@
 error[parse] 6:8-6:10: text block items take no id
   = help: remove `t1`
+warn[block-reducible] 7:3-7:30: the text block of box 'a' can be written as label/sublabel
+  = help: drop the block and write `box a "bad attr"`
+  elements: [{"bbox":[[20,20],[220,160]],"id":"a","kind":"box","span":{"col":1,"end_col":32,"end_line":5,"line":5}}]
+  facts: {"rewrite":"\"bad attr\""}
 error[attr] 7:19-7:25: unknown attribute `weight` on text block item

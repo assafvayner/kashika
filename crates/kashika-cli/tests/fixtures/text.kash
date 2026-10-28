@@ -8,7 +8,7 @@ group vpc "VPC" at (20,20) size (600,280) sublabel="10.0.0.0/16" {
     text "• retries `charge()`" size=12
   }
   box db "Postgres" at (20,190) size (180,60) style=datastore {
-    text "primary" at (172,52) size=10 align=right muted
+    text "primary" at (172,44) size=10 align=right muted
   }
 }
 

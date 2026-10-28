@@ -1,0 +1,8 @@
+// spec: 7
+// A lane on a group's border and one just inside it are near; a line crossing the border is not.
+diagram "near group border" size (400,300)
+group vpc "VPC" at (150,40) size (200,220) {
+}
+line on: (20,80) -> x 150 -> v 100
+line inside: (20,256) -> h 280 -> v -60
+line across: (20,220) -> h 200

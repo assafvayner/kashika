@@ -25,11 +25,15 @@ fn free_intervals_avoid_boxes_and_lines_with_clearance() {
 }
 
 #[test]
-fn free_intervals_ignore_groups() {
+fn free_intervals_avoid_group_borders_but_not_their_interior() {
     let s = scene("group g at (100,100) size (200,200) {\n}\n");
     let ctx = Ctx::new(&s);
     assert_eq!(
         free_intervals(&ctx, Axis::X, (0.0, 600.0), (0.0, 800.0), &[]),
+        vec![(0.0, 94.0), (106.0, 294.0), (306.0, 800.0)]
+    );
+    assert_eq!(
+        free_intervals(&ctx, Axis::X, (400.0, 600.0), (0.0, 800.0), &[]),
         vec![(0.0, 800.0)]
     );
 }

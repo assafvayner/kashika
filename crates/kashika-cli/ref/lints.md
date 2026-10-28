@@ -25,7 +25,7 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `cross` | warn | two lines intersect away from a shared endpoint | reroute via a free interval |
 | `shared-segment` | warn | two lines overlap collinearly over 1px | move one to the free lane |
 | `through` | warn | a line enters a box or image | route around it |
-| `near` | warn | a line within `clearance` of a box or parallel line | move it `clearance` away |
+| `near` | warn | a line within `clearance` of a box, a parallel line or along a group border | move it `clearance` away |
 | `overlap` | warn | two shapes overlap, unless a group contains the other | move one, or use a group |
 | `spill` | warn | a child leaves its group or enters its title band | grow the group |
 | `diagonal-tail` | warn | only the last straight segment is diagonal | end with `hv`/`vh` |
@@ -33,9 +33,9 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `port-crowding` | warn | two endpoints on a shape within 8px | spread them with `side@t` |
 | `group-transit` | warn | a line crosses a group it doesn't connect to | route around the group |
 | `low-contrast` | warn | text contrast below 3:1 | change the color or fill |
-| `label-collision` | warn | a label or text overlaps another element | move it; the help lists clear `t` |
+| `label-collision` | warn | a label or text overlaps another element, or a label its own line's marker | move it; the help lists clear `t` |
 | `out-of-canvas` | warn | an element extends past `size` | move it or grow `size` |
 | `off-grid` | warn | a literal is not a multiple of `grid` | round it |
-| `block-reducible` | warn | (not reported yet) a block of 1–2 items in one style | use the rewrite in the help line |
-| `text-outside-shape` | warn | (not reported yet) an absolute block item outside the text area | move it inside |
+| `block-reducible` | warn | a block of 1–2 items in one style | use the rewrite in the help line |
+| `text-outside-shape` | warn | an absolute block item outside the text area | move it inside the range in the help line |
 | `image-distort` | warn | `fit=stretch` distorts by over 5% | use `fit=contain` |

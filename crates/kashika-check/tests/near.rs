@@ -71,3 +71,32 @@ fn clearance_comes_from_the_diagram() {
         1
     );
 }
+
+#[test]
+fn running_along_a_group_border() {
+    let g = "group vpc \"VPC\" at (200,20) size (300,300) {\n}\n";
+    let d = lint("near", &format!("{g}line l: (100,100) -> x 200 -> v 100\n"));
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "l runs along the border of group 'vpc' (clearance 6)"
+    );
+    assert_eq!(d[0].elements[0].segment, Some(2));
+    assert_eq!(
+        d[0].help,
+        vec!["segment 2 runs at x=200; free x-intervals across y 100..200: 0..194, 206..494, 506..800".to_string()]
+    );
+    let d = lint("near", &format!("{g}line l: (100,316) -> h 300\n"));
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "l runs 4px from the border of group 'vpc' (clearance 6)"
+    );
+}
+
+#[test]
+fn crossing_a_group_border_is_not_near_it() {
+    let g = "group vpc \"VPC\" at (200,20) size (300,300) {\n}\n";
+    assert!(lint("near", &format!("{g}line l: (100,200) -> h 200 -> v 50\n")).is_empty());
+    assert!(lint("near", &format!("{g}line l: (180,100) -> v 100\n")).is_empty());
+}

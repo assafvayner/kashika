@@ -1,0 +1,10 @@
+// spec: 6, 7
+// An absolute block item past the right edge of its text area, and one inside it.
+diagram "text outside shape" size (400,200)
+box e at (20,40) size (160,60) {
+  text "in" at (40,30)
+  text "out" at (150,30) align=left
+}
+box d at (220,40) size (160,100) shape=diamond {
+  text "x" at (10,50)
+}

@@ -1,0 +1,4 @@
+warn[label-collision] 4:39-4:52: label "hello" of short collides with the end arrowhead of short
+  = help: clear label positions on short: label@0.05..0.4
+  elements: [{"bbox":[[26.45,52.5],[53.55,67.5]],"id":"short","kind":"label","span":{"col":39,"end_col":52,"end_line":4,"line":4}},{"from":[20,60],"id":"short","kind":"line","segment":1,"span":{"col":1,"end_col":52,"end_line":4,"line":4},"to":[60,60]}]
+  facts: {"bbox":[[26.45,52.5],[53.55,67.5]],"clear_t":[0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4]}

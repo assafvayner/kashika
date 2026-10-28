@@ -1,0 +1,8 @@
+warn[near] 6:1-6:35: on runs along the border of group 'vpc' (clearance 6)
+  = help: segment 2 runs at x=150; free x-intervals across y 80..180: 0..144, 156..344, 356..400
+  elements: [{"from":[150,80],"id":"on","kind":"line","segment":2,"span":{"col":1,"end_col":35,"end_line":6,"line":6},"to":[150,180]},{"bbox":[[150,40],[350,260]],"id":"vpc","kind":"group","span":{"col":1,"end_col":43,"end_line":4,"line":4}}]
+  facts: {"clearance":6,"distance":0,"free":{"axis":"x","band":[80,180],"intervals":[[0,144],[156,344],[356,400]]}}
+warn[near] 7:1-7:40: inside runs 4px from the border of group 'vpc' (clearance 6)
+  = help: segment 1 runs at y=256; free y-intervals across x 20..300: 0..34, 46..74, 186..214, 226..254, 266..300
+  elements: [{"from":[20,256],"id":"inside","kind":"line","segment":1,"span":{"col":1,"end_col":40,"end_line":7,"line":7},"to":[300,256]},{"bbox":[[150,40],[350,260]],"id":"vpc","kind":"group","span":{"col":1,"end_col":43,"end_line":4,"line":4}}]
+  facts: {"clearance":6,"distance":4,"free":{"axis":"y","band":[20,300],"intervals":[[0,34],[46,74],[186,214],[226,254],[266,300]]}}

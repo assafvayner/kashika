@@ -1,2 +1,6 @@
 error[label-overflow] 5:3-5:66: a block item needs 214.33x17.5px but the text area of `a` is 84x44px (too narrow by 130.33px)
   = help: make `a` at least size (231,60), or shorten the text
+warn[text-outside-shape] 5:3-5:66: block item "this absolute item is far too wide" lies outside the text area of box 'a' (top by 6.75px, right by 132.33px)
+  = help: keep the item within the text area, local (8,8)..(92,52)
+  elements: [{"bbox":[[20,20],[120,80]],"id":"a","kind":"box","span":{"col":1,"end_col":31,"end_line":4,"line":4}}]
+  facts: {"bbox":[[30,21.25],[244.33,38.75]],"overflow":{"right":132.33,"top":6.75},"text_area":[[28,28],[112,72]]}

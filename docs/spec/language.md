@@ -204,6 +204,7 @@ Unnamed lines are referred to as `line@L<n>`, where n is the source line of the 
   - Block items **without `at` stack** top to bottom, separated by `gap` (box attribute, default 2), and aligned by the box's `text-align`/`text-valign`. No coordinates are needed.
   - Items **with `at`** are absolute, in the **box-local frame** (origin is the box's top-left). They leave the stack. This form is advanced.
   - Block text items take no id.
+  - A block that `label`/`sublabel` would draw the same is the `block-reducible` warning (§7).
   - Using `label`/`sublabel` together with stacked block items is an error (`text-conflict`). It is allowed when every block item has its own `at`.
 - `ref` shows `sublabel` in the main example. The block is documented under "when sublabel is not enough", and absolute `at` comes last.
 
@@ -258,7 +259,7 @@ These block output unless `--force` is given:
 | `cross` | Two lines intersect, including tangency, at a point that is not a shared endpoint or junction |
 | `shared-segment` | Two lines overlap collinearly for more than 1px |
 | `through` | A line enters a box's or image's interior. For a line's own start and end boxes, only the first and last segments are exempt, so leaving and re-entering is flagged. Groups are never obstacles |
-| `near` | A line runs within `clearance` of a box edge it doesn't attach to, or within `clearance` of a parallel line for more than 20px. **This includes a line running along its own box's edge** |
+| `near` | A line runs within `clearance` of a box edge it doesn't attach to, or within `clearance` of a parallel line for more than 20px. **This includes a line running along its own box's edge**, and a line running parallel to a group's border within `clearance` of it, on the border included (crossing the border is fine) |
 | `overlap` | Two shapes have intersecting interiors. A group whose rectangle contains the other shape is not an overlap, and a shape nested inside a group in the source is left to `spill`. A box containing another shape is an overlap |
 | `spill` | A child extends outside its group or into the group's title band. Touching the edge is fine |
 | `diagonal-tail` | A line's final segment is diagonal when all its other straight segments are horizontal or vertical |
@@ -266,14 +267,12 @@ These block output unless `--force` is given:
 | `port-crowding` | Two endpoints on the same shape are within 8px of each other. This includes identical endpoints where both lines draw a marker (stacked arrowheads). Junctions are exempt |
 | `group-transit` | A line passes through a group's interior while neither of its endpoints is inside that group |
 | `low-contrast` | The contrast ratio between text color and its background is below 3:1. The background is the `background=` color with every group and box fill under the text painted on top in paint order; a transparent canvas counts as white. Line labels use the fills under their center, since they hide only their own line |
-| `block-reducible` | A text block holds 1–2 stacked items in a uniform style. The help line shows the `label`/`sublabel` rewrite |
-| `text-outside-shape` | An absolute block item lies outside the shape's text area |
+| `block-reducible` | A text block holds only 1–2 stacked items, in one alignment, that a `label` would draw the same: the first in the box's font size and color, the second either in that style too (a second label line, `\n`) or in the `sublabel` style (`0.8 × font-size`, `muted`, not bold). The help line shows the `label`/`sublabel` rewrite |
+| `text-outside-shape` | An absolute block item lies outside the shape's text area (§6), or outside the band under a `text-area=below` shape. The help line gives the text area in the box-local frame |
 | `image-distort` | `fit=stretch` changes an image's aspect ratio by more than 5% |
-| `label-collision` | A label or text box intersects a box, another label or text, a group title, or a line other than its own |
+| `label-collision` | A label or text box intersects a box, another label or text, a group title, or a line other than its own. A line label also must not cover its own line's markers (arrowheads, diamonds, dots); sitting on its own stroke is fine |
 | `out-of-canvas` | An element extends beyond the diagram size |
 | `off-grid` | An authored literal is not a multiple of `grid` |
-
-`block-reducible` and `text-outside-shape` are not reported yet; `allow=` already accepts their codes.
 
 ### Suppression
 

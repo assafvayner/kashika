@@ -1,1 +1,4 @@
-(no diagnostics)
+warn[text-outside-shape] 6:3-6:46: block item "corner" lies outside the text area of box 'a' (top by 4.25px)
+  = help: keep the item within the text area, local (8,8)..(212,132)
+  elements: [{"bbox":[[20,20],[240,160]],"id":"a","kind":"box","span":{"col":1,"end_col":40,"end_line":5,"line":5}}]
+  facts: {"bbox":[[30,23.75],[60.98,36.25]],"overflow":{"top":4.25},"text_area":[[28,28],[232,152]]}

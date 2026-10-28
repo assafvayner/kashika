@@ -9,5 +9,5 @@ group g "G" size (360,120) style=boundary at (20,140) {
   text "note" muted at (120,60) size=12
 }
 box c at (200,180) size (120,60) {
-  text "x" muted at (10,10)
+  text "x" muted at (20,20)
 }

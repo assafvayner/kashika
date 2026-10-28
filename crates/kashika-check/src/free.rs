@@ -26,7 +26,8 @@ impl Axis {
 }
 
 /// Values on `axis`, within `within`, where a straight run spanning `band` on the other axis
-/// keeps `clearance` from every box and every line piece. Ids in `skip` are ignored.
+/// keeps `clearance` from every box, every line piece and every group border it runs along.
+/// Ids in `skip` are ignored.
 pub fn free_intervals(
     ctx: &Ctx,
     axis: Axis,
@@ -37,6 +38,19 @@ pub fn free_intervals(
     let c = ctx.scene.clearance;
     let (b0, b1) = (band.0.min(band.1), band.0.max(band.1));
     let mut blocked: Vec<Interval> = Vec::new();
+    for g in ctx.groups() {
+        if skip.contains(&g.shape.id.as_str()) {
+            continue;
+        }
+        let r = g.shape.rect;
+        let (across, sides) = match axis {
+            Axis::Y => ((r.x, r.right()), [r.y, r.bottom()]),
+            Axis::X => ((r.y, r.bottom()), [r.x, r.right()]),
+        };
+        if across.0 < b1 - TOLERANCE && across.1 > b0 + TOLERANCE {
+            blocked.extend(sides.map(|v| (v - c, v + c)));
+        }
+    }
     let mut block = |r: Rect| {
         let (across, along) = match axis {
             Axis::Y => ((r.x, r.right()), (r.y, r.bottom())),

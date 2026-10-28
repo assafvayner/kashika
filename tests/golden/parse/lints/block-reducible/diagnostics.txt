@@ -1,0 +1,8 @@
+warn[block-reducible] 5:3-5:22: the text block of box 'api' can be written as label/sublabel
+  = help: drop the block and write `box api "Payments API" sublabel="v2.4.1"`
+  elements: [{"bbox":[[20,20],[180,80]],"id":"api","kind":"box","span":{"col":1,"end_col":33,"end_line":4,"line":4}}]
+  facts: {"rewrite":"\"Payments API\" sublabel=\"v2.4.1\""}
+warn[block-reducible] 9:3-9:13: the text block of box 'left' can be written as label/sublabel
+  = help: drop the block and write `box left "one" text-align=left`
+  elements: [{"bbox":[[220,20],[380,80]],"id":"left","kind":"box","span":{"col":1,"end_col":51,"end_line":8,"line":8}}]
+  facts: {"rewrite":"\"one\" text-align=left"}

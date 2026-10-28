@@ -139,7 +139,7 @@ File {
                     [
                         BlockText {
                             content: "x",
-                            at: Some(Lit { x: Num(10.0), y: Num(10.0), span: 12:21-12:28 }),
+                            at: Some(Lit { x: Num(20.0), y: Num(20.0), span: 12:21-12:28 }),
                             attrs: [
                                 Attr {
                                     key: Ident { name: "muted", span: 12:12-12:17 },

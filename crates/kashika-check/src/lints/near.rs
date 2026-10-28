@@ -9,9 +9,11 @@ const PARALLEL: f64 = 0.05;
 /// Parallel lines must run side by side for longer than this to be `near`.
 const MIN_RUN: f64 = 20.0;
 
-/// `near`: a line runs within `clearance` of a box edge, or of a parallel line for more than 20px.
+/// `near`: a line runs within `clearance` of a box edge, along a group border, or along a
+/// parallel line for more than 20px.
 pub fn near(ctx: &Ctx) -> Vec<Diagnostic> {
     let mut out = near_boxes(ctx);
+    out.extend(near_groups(ctx));
     out.extend(near_lines(ctx));
     out
 }
@@ -92,6 +94,50 @@ fn near_boxes(ctx: &Ctx) -> Vec<Diagnostic> {
             let mut skip = vec![l.line.id.as_str()];
             skip.extend(own.iter().copied().filter(|o| *o != id));
             out.push(with_free(ctx, d, l, k, &skip));
+        }
+    }
+    out
+}
+
+/// Pieces that run parallel to a group's border within `clearance`, on it included. Pieces
+/// that cross the border are not parallel to it, so they don't count.
+fn near_groups(ctx: &Ctx) -> Vec<Diagnostic> {
+    let c = ctx.scene.clearance;
+    let mut out = Vec::new();
+    for l in &ctx.lines {
+        for g in ctx.groups() {
+            let mut best: Option<(f64, usize)> = None;
+            for &(p, q, k) in &l.pieces {
+                for (e0, e1) in edges(&g.poly) {
+                    if let Some((gap, _)) = parallel(p, q, e0, e1).filter(|(g, _)| *g < c) {
+                        if best.is_none_or(|b| gap < b.0) {
+                            best = Some((gap, k));
+                        }
+                    }
+                }
+            }
+            let Some((gap, k)) = best else { continue };
+            let id = g.shape.id.as_str();
+            let message = if gap <= TOLERANCE {
+                format!(
+                    "{} runs along the border of group '{id}' (clearance {})",
+                    l.line.id,
+                    fmt_num(c)
+                )
+            } else {
+                format!(
+                    "{} runs {}px from the border of group '{id}' (clearance {})",
+                    l.line.id,
+                    fmt_num(gap),
+                    fmt_num(c)
+                )
+            };
+            let d = Diagnostic::warn("near", l.line.span, message)
+                .with_element(line_el(l.line, Some(l.segment(k))))
+                .with_element(shape_el(g.shape))
+                .with_fact("distance", round2(gap))
+                .with_fact("clearance", c);
+            out.push(with_free(ctx, d, l, k, &[l.line.id.as_str()]));
         }
     }
     out

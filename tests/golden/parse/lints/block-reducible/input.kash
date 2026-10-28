@@ -1,0 +1,15 @@
+// spec: 6, 7
+// Blocks a label and sublabel would draw the same, and blocks they can't.
+diagram "block reducible" size (400,300)
+box api at (20,20) size (160,60) {
+  text "Payments API"
+  text "v2.4.1" size=11.2 muted
+}
+box left at (220,20) size (160,60) text-align=left {
+  text "one"
+}
+box three at (20,120) size (160,80) {
+  text "one"
+  text "two" size=12
+  text "three" size=12
+}

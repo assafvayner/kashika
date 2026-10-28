@@ -322,6 +322,32 @@ box c at (100,76) size (40,40)\n";
 }
 
 #[test]
+fn avoids_a_lane_on_a_group_border() {
+    let src = "diagram \"g\" size (440,240)\n\
+box a at (20,20) size (100,40)\n\
+group vpc \"VPC\" at (200,110) size (220,120) style=dashed {\n}\n\
+box b at (300,160) size (100,40)\n";
+    let s = suggest(&req(src, "a.bottom", "b.top", Style::Corner)).unwrap();
+    let border = s
+        .candidates
+        .iter()
+        .find(|c| c.statement.contains("-> y 110 ->"))
+        .expect("the midpoint lane on the VPC's top border");
+    assert_eq!(border.near, 1, "{border:?}");
+    assert_eq!(
+        s.candidates[0].statement,
+        "line a_b: a.bottom -> y a.bl+(0,12) -> hv b.top end=arrow"
+    );
+    assert_eq!(
+        s.candidates[0].corridor,
+        Some(Corridor {
+            axis: "y",
+            band: [66.0, 104.0]
+        })
+    );
+}
+
+#[test]
 fn default_id_avoids_existing_ids() {
     let src = format!("{WALL}junction a_b at (10,10)\n");
     let s = suggest(&req(&src, "a.top", "b.top", Style::Corner)).unwrap();

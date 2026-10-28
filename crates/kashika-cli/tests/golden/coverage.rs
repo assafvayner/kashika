@@ -7,13 +7,7 @@ use libtest_mimic::{Failed, Trial};
 use crate::case::{self, Case, Suite};
 
 /// Codes no build reports yet, with what a case can show instead.
-const NOT_REPORTED: &[(&str, &str)] = &[
-    ("block-reducible", "not reported yet; accepted by `allow=`"),
-    (
-        "text-outside-shape",
-        "not reported yet; accepted by `allow=`",
-    ),
-];
+const NOT_REPORTED: &[(&str, &str)] = &[];
 
 struct Corpus {
     cases: Vec<Case>,

@@ -1,1 +1,8 @@
-(no diagnostics)
+warn[text-outside-shape] 11:3-11:46: block item "corner" lies outside the text area of box 'abs' (top by 4.25px)
+  = help: keep the item within the text area, local (8,8)..(232,142)
+  elements: [{"bbox":[[270,10],[510,160]],"id":"abs","kind":"box","span":{"col":1,"end_col":43,"end_line":10,"line":10}}]
+  facts: {"bbox":[[280,13.75],[310.98,26.25]],"overflow":{"top":4.25},"text_area":[[278,18],[502,152]]}
+warn[text-outside-shape] 12:3-12:54: block item "badge" lies outside the text area of box 'abs' (bottom by 4.25px)
+  = help: keep the item within the text area, local (8,8)..(232,142)
+  elements: [{"bbox":[[270,10],[510,160]],"id":"abs","kind":"box","span":{"col":1,"end_col":43,"end_line":10,"line":10}}]
+  facts: {"bbox":[[470.18,143.75],[500,156.25]],"overflow":{"bottom":4.25},"text_area":[[278,18],[502,152]]}

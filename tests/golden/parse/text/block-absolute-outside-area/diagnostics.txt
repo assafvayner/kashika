@@ -1,1 +1,4 @@
-(no diagnostics)
+warn[text-outside-shape] 5:3-5:33: block item "far" lies outside the text area of box 'a' (right by 4.54px, bottom by 9.25px)
+  = help: keep the item within the text area, local (8,8)..(192,92)
+  elements: [{"bbox":[[20,20],[220,120]],"id":"a","kind":"box","span":{"col":1,"end_col":32,"end_line":4,"line":4}}]
+  facts: {"bbox":[[203.46,108.75],[216.54,121.25]],"overflow":{"bottom":9.25,"right":4.54},"text_area":[[28,28],[212,112]]}

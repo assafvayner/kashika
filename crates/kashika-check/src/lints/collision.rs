@@ -1,10 +1,16 @@
 use kashika_diag::{Diagnostic, Element, Span};
-use kashika_geom::{inside_runs, point_at, polygons_overlap, rect_polygon, Rect};
+use kashika_geom::{inside_runs, point_at, polygons_overlap, rect_polygon, Pt, Rect};
+use kashika_model::Marker;
 
 use crate::ctx::{
     bbox, fmt_num, intersection, kind_name, line_el, shape_el, text_el, text_id, Ctx,
 };
 use crate::text_box::{below_box, label_box, label_box_at, text_box, title_box};
+
+const ARROW_LEN: f64 = 10.0;
+const DIAMOND_LEN: f64 = 12.0;
+const MARKER_HALF_WIDTH: f64 = 4.0;
+const DOT_RADIUS: f64 = 3.0;
 
 struct Subject<'c> {
     el: Element,
@@ -18,8 +24,8 @@ struct Subject<'c> {
 }
 
 /// `label-collision`: a line label, text or the label under a `text-area=below` shape
-/// intersects a box, an image, a group title, another label or text, or a line other than
-/// its own.
+/// intersects a box, an image, a group title, another label or text, a line other than
+/// its own, or (for a line label) its own line's markers.
 pub fn label_collision(ctx: &Ctx) -> Vec<Diagnostic> {
     let subjects = subjects(ctx);
     let mut out = Vec::new();
@@ -96,8 +102,8 @@ fn subjects<'c>(ctx: &'c Ctx) -> Vec<Subject<'c>> {
     out
 }
 
-/// Boxes, images, group titles and lines (except line `own` and shape `own_shape`) that
-/// `rect` intersects.
+/// Boxes, images, group titles, lines (except line `own` and shape `own_shape`) and the
+/// markers of line `own` that `rect` intersects.
 fn obstacles(
     ctx: &Ctx,
     rect: Rect,
@@ -131,7 +137,60 @@ fn obstacles(
             out.push((format!("line {}", l.line.id), line_el(l.line, None)));
         }
     }
+    if let Some(l) = own.map(|i| &ctx.lines[i]) {
+        for (end, name, marker) in markers(l.line) {
+            if polygons_overlap(&poly, &marker) {
+                let seg = if end == "start" { 0 } else { l.last_segment() };
+                out.push((
+                    format!("the {end} {name} of {}", l.line.id),
+                    line_el(l.line, Some(seg)),
+                ));
+            }
+        }
+    }
     out
+}
+
+/// The outlines of a line's start and end markers, as `kashika-render` draws them:
+/// (end, marker name, polygon).
+fn markers(l: &kashika_model::Line) -> Vec<(&'static str, &'static str, Vec<Pt>)> {
+    let (Some(first), Some(last)) = (l.path.first(), l.path.last()) else {
+        return Vec::new();
+    };
+    [
+        ("start", l.start, first.from(), first.start_dir() * -1.0),
+        ("end", l.end, last.to(), last.end_dir()),
+    ]
+    .into_iter()
+    .filter_map(|(end, m, tip, dir)| {
+        let u = dir.norm();
+        let perp = Pt::new(-u.y, u.x) * MARKER_HALF_WIDTH;
+        let (name, poly) = match m {
+            Marker::None => return None,
+            Marker::Arrow | Marker::Open => {
+                let base = tip - u * ARROW_LEN;
+                ("arrowhead", vec![tip, base + perp, base - perp])
+            }
+            Marker::Diamond => {
+                let mid = tip - u * (DIAMOND_LEN / 2.0);
+                (
+                    "diamond",
+                    vec![tip, mid + perp, tip - u * DIAMOND_LEN, mid - perp],
+                )
+            }
+            Marker::Dot => (
+                "dot",
+                rect_polygon(Rect::new(
+                    tip.x - DOT_RADIUS,
+                    tip.y - DOT_RADIUS,
+                    2.0 * DOT_RADIUS,
+                    2.0 * DOT_RADIUS,
+                )),
+            ),
+        };
+        Some((end, name, poly))
+    })
+    .collect()
 }
 
 /// `t` values (steps of 0.05) where label `i` on line `li` would collide with nothing.

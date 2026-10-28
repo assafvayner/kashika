@@ -4,5 +4,4 @@ A clean check covers only the geometry in the diagnostics table. It doesn't prov
 
 ## Not supported in this build
 
-- The `block-reducible` and `text-outside-shape` warnings; `allow=` accepts them.
 - Never in v1: auto-layout, `fix`, arithmetic in literals, named guides, remote URLs, themes, text wrapping (use `\n`).

@@ -1,3 +1,4 @@
+mod block;
 mod canvas;
 mod collision;
 mod contrast;
@@ -16,6 +17,7 @@ mod near;
 mod overlap;
 mod shared;
 mod spill;
+mod textarea;
 mod through;
 mod transit;
 
@@ -23,6 +25,7 @@ pub type Lint = fn(&Ctx) -> Vec<Diagnostic>;
 
 /// Every warning lint. Each lint task adds its `mod` line above and an entry here.
 pub const ALL: &[Lint] = &[
+    block::block_reducible,
     canvas::out_of_canvas,
     collision::label_collision,
     contrast::low_contrast,
@@ -36,6 +39,7 @@ pub const ALL: &[Lint] = &[
     overlap::overlap,
     shared::shared_segment,
     spill::spill,
+    textarea::text_outside_shape,
     through::through,
     transit::group_transit,
 ];
