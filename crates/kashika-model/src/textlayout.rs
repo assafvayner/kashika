@@ -178,7 +178,10 @@ pub(crate) fn text_size(x: &ast::Attr, diags: &mut Vec<Diagnostic>) -> Option<f6
 pub(crate) fn text_color(x: &ast::Attr, diags: &mut Vec<Diagnostic>) -> Option<String> {
     let c = attrs::color(x, diags)?;
     if c == "none" {
-        diags.push(attrs::type_err(x, "a color like `#1a73e8`"));
+        diags.push(attrs::type_err(
+            x,
+            "a color like `#1a73e8` or a CSS color name",
+        ));
         return None;
     }
     Some(c)

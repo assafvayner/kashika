@@ -129,3 +129,20 @@ fn pin_with_position_round_trips() {
         .code(0);
     assert_eq!(std::fs::read_to_string(&f).unwrap(), src);
 }
+
+#[test]
+fn color_names_round_trip() {
+    let dir = tempfile::tempdir().unwrap();
+    let f = dir.path().join("d.kash");
+    let src = "diagram \"d\" size (200,100) background=Ivory\nbox a at (10,10) size (40,20) fill=SteelBlue color=white\n";
+    std::fs::write(&f, src).unwrap();
+    kashika()
+        .args(["fmt", f.to_str().unwrap(), "--check"])
+        .assert()
+        .code(0);
+    kashika()
+        .args(["fmt", f.to_str().unwrap()])
+        .assert()
+        .code(0);
+    assert_eq!(std::fs::read_to_string(&f).unwrap(), src);
+}

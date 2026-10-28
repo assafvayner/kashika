@@ -33,7 +33,7 @@ diagram "Title" size (900,500) kashika="0.1.0"  // optional: grid=10 clearance=6
 import "lib/aws.kash" as aws  // library shapes and styles: shape=aws.s3 style=aws.service
 shape tri { path "M 0.5 0 L 1 1 L 0 1 Z" }  // unit coordinates 0..1, stretched to the box; M L H V C Q A Z
 shape s3 from "icons/s3.svg" text-area=below  // an SVG file as a shape; outline=bbox|hull
-style svc { fill=#e8f0fe stroke=#1a73e8 }  // built-ins: service datastore external queue boundary note
+style svc { fill=#e8f0fe stroke=#1a73e8 }  // built-ins: service datastore external queue boundary note; colors are hex or CSS names (steelblue), case-insensitive
 box api "API" at (40,40) size (140,60) style=service  // shape=rect|rounded|cylinder|diamond|ellipse|hexagon|doc|cloud|person
 box db "DB" at api.right+(120,0) size (140,60) pin=left  // pin: any anchor, `side@t` included (`pin=left@0.25`); default `tl`
 box badge at db.tr size (16,16) pin=center allow=overlap:db reason="corner badge"

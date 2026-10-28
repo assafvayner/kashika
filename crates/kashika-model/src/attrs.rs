@@ -1,6 +1,7 @@
 use kashika_diag::{did_you_mean, Diagnostic};
 use kashika_syntax::ast::{Attr, Value};
 
+use crate::colors;
 use crate::style::{FontWeight, StrokeStyle, StyleProps};
 
 /// Validated view over a statement's attributes: reports unknown keys (with suggestions),
@@ -123,8 +124,22 @@ pub fn color(a: &Attr, diags: &mut Vec<Diagnostic>) -> Option<String> {
     match &a.value {
         Value::Color(c) => Some(c.clone()),
         Value::Word(w) if w == "none" => Some(w.clone()),
+        Value::Word(w) => {
+            if let Some(hex) = colors::hex(w) {
+                return Some(hex.to_string());
+            }
+            let mut d = type_err(a, "a color like `#1a73e8`, a CSS color name or `none`");
+            if let Some(s) = colors::suggest(w) {
+                d = d.with_help(format!("did you mean `{s}`?"));
+            }
+            diags.push(d);
+            None
+        }
         _ => {
-            diags.push(type_err(a, "a color like `#1a73e8` or `none`"));
+            diags.push(type_err(
+                a,
+                "a color like `#1a73e8`, a CSS color name or `none`",
+            ));
             None
         }
     }

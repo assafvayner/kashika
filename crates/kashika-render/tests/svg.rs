@@ -183,3 +183,14 @@ fn line_labels_mask_their_own_line_without_painting() {
         svg("diagram \"t\" size (300,100)\nline l: (20,50) -> (280,50) label=\"open\"\n")
     );
 }
+
+#[test]
+fn named_colors_render_as_hex() {
+    let s = svg("diagram \"t\" size (100,100) background=ivory\nbox a \"x\" at (10,10) size (40,40) fill=Tomato color=white\n");
+    for hex in ["#fffff0", "#ff6347", "#ffffff"] {
+        assert!(s.contains(hex), "{hex} missing in {s}");
+    }
+    for name in ["ivory", "tomato", "Tomato", "white"] {
+        assert!(!s.contains(name), "{name} leaked into {s}");
+    }
+}

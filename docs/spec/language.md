@@ -24,7 +24,7 @@ The CLI renders `.kash` files to SVG, PNG, JPEG or WebP and runs geometric check
 - Strings: `"..."` with escapes `\"`, `\\`, `\n`, and the markup escapes `\*` and `` \` `` (§6). Any other escape, such as `\q`, is a `parse` error.
 - Identifiers: `[a-zA-Z_][a-zA-Z0-9_-]*`. **Ids are unique across the whole file** (boxes, groups, images, junctions, lines, texts) and are always referenced by bare id. There are no dotted paths. Only the names of imported shapes and styles are dotted (`shape=aws.s3`, §3a); shape and style names are separate from ids.
 - The segment keywords `h`, `v`, `x`, `y`, `hv`, `vh` and `curve` are reserved: declaring an id with one of these names is a `parse` error, since it could not be used as a bare segment target.
-- Numbers: integers or decimals, optionally negative. Colors: `#rgb`, `#rrggbb` or `#rrggbbaa`.
+- Numbers: integers or decimals, optionally negative. Colors: `#rgb`, `#rrggbb` or `#rrggbbaa`, one of the 148 CSS Color Module Level 4 names (`steelblue`, `rebeccapurple`; case-insensitive, no `transparent`), or `none` where a style allows it. A name resolves to lowercase `#rrggbb` hex, so the scene, the SVG and `low-contrast` only ever see hex. An unknown word where a color is expected is an `attr` error with a did-you-mean over the names.
 - **Statements** end at a newline, except in three cases:
   - inside `{ }` blocks;
   - when the next non-blank line starts with `->`. A long path can then be written one segment per line:
@@ -56,7 +56,7 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
 `diagram` comes first, then any `import` statements, then everything else. "First" means first in the source: a statement before `diagram` makes it misplaced even when that statement failed to parse. Boxes accept `sublabel=`, `text-align=`, `text-valign=`, `gap=`, `icon=` and a `{ }` text block (§6). Groups accept `sublabel=`, `text-align=`, `gap=` and `icon=`; a group's `{ }` holds its children, and `text-valign` on a group is an `attr` error because the title always sits at the top.
 
 - `grid=N` makes `off-grid` check authored literals only, never resolved anchors. `clearance=N` (default `6`) is the minimum gap used by the `near` lint.
-- `background=C` paints the whole canvas in color `C` (the same `#rgb`, `#rrggbb` or `#rrggbbaa` syntax as styles) under everything else. Without it, or with `background=none`, the canvas is transparent in SVG, PNG and WebP output; JPEG has no alpha, so it composites onto white (§8). Any other value is an `attr` error.
+- `background=C` paints the whole canvas in color `C` (the same color values as styles) under everything else. Without it, or with `background=none`, the canvas is transparent in SVG, PNG and WebP output; JPEG has no alpha, so it composites onto white (§8). Any other value is an `attr` error.
 - Numeric attributes must be in range, or they are `attr` errors: `font-size`, `stroke-width` and `grid` must be greater than 0; `radius`, `padding` and `clearance` must be at least 0. All of them must be at most 1,000,000. A `text` `size=` outside that range is a `size` error.
 - `style` keys:
   - `fill`, `stroke`, `stroke-width`, `stroke-style=solid|dashed|dotted`
@@ -241,7 +241,7 @@ These block output unless `--force` is given:
 | `not-ortho` | A segment is diagonal on a line marked `ortho` |
 | `degenerate-curve` | A zero-length curve, a negative curve amount, or a non-finite or out-of-range value (a coordinate more than 1,000,000 from the origin, §1) |
 | `zero-length` | A line whose segments all have zero length |
-| `attr` | Unknown, duplicate, mistyped or out-of-range attribute (§3), or a duplicate label position |
+| `attr` | Unknown, duplicate, mistyped (including an unknown color name) or out-of-range attribute (§3), or a duplicate label position |
 | `unknown-style` | `style=` names no built-in or user style |
 | `size` | A non-positive size, or one larger than 1,000,000 |
 | `diagram` | Missing, misplaced or repeated `diagram` statement |

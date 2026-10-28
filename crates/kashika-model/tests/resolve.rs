@@ -892,7 +892,7 @@ fn diagram_background() {
     let (s, d) = bg("none");
     assert!(d.is_empty(), "{d:#?}");
     assert_eq!(s.background, None);
-    for v in ["red", "\"#ffffff\"", "3"] {
+    for v in ["reddish", "\"#ffffff\"", "3"] {
         let (s, d) = bg(v);
         assert_eq!(codes_of(&d), vec!["attr"], "{v}: {d:#?}");
         assert_eq!(s.background, None);

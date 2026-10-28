@@ -104,3 +104,17 @@ fn line_labels_take_the_fill_beneath_them() {
         .iter()
         .all(|d| d.code != "low-contrast"));
 }
+
+#[test]
+fn named_colors_are_checked_like_hex() {
+    let d = lint(
+        "low-contrast",
+        "text \"note\" at (100,50) color=lightgray\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    let src = "diagram \"t\" size (400,200) background=white\ntext \"note\" at (100,50) color=lightgray\n";
+    let d = kashika_check::check(&scene_src(src));
+    let d: Vec<_> = d.iter().filter(|d| d.code == "low-contrast").collect();
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].facts["background"], "#ffffff");
+}

@@ -1,6 +1,7 @@
 mod anchor;
 mod assets;
 mod attrs;
+mod colors;
 mod form;
 mod icons;
 mod library;

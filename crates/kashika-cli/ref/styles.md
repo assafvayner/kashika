@@ -7,7 +7,7 @@ box api "API" at (40,40) size (140,60) style=service fill=#ffffff
 
 | key | default | values |
 |---|---|---|
-| `fill` | `#ffffff` | color |
+| `fill` | `#ffffff` | color: hex or a CSS name like `steelblue` |
 | `stroke` | `#334155` | color |
 | `stroke-width` | `1.5` | number |
 | `stroke-style` | `solid` | `solid`, `dashed`, `dotted` |
