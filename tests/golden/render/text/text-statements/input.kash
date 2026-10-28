@@ -1,0 +1,8 @@
+// spec: 3, 6
+// Free text with every alignment, size, color and muted.
+diagram "texts" size (300,200)
+junction guide at (150,20) dot
+text "center" at (150,40)
+text "left" at (150,80) align=left
+text "right" at (150,120) align=right size=18 color=#d93025
+text "muted" at (150,160) muted

@@ -1,0 +1,4 @@
+// spec: 3a, 7
+// Imports nest at most 32 deep (generated: lib/d1.kash ... lib/d33.kash).
+diagram "deep imports" size (300,120)
+import "lib/d1.kash"

@@ -1,0 +1,4 @@
+// spec: 3a, 7
+// Libraries may contain only shape, style and import; errors carry an `in file at L:C` prefix.
+diagram "lib errors" size (300,120)
+import "lib/bad.kash"

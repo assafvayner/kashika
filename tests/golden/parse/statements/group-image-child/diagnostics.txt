@@ -1,0 +1,1 @@
+error[parse] 6:3-6:44: `image` is only allowed at the top level

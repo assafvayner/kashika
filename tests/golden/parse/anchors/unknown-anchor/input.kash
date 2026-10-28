@@ -1,0 +1,9 @@
+// spec: 4, 7
+// Unknown anchors and bad `@t`.
+diagram "bad anchors" size (300,200)
+box a at (20,20) size (60,40)
+junction j1 at a.rigth
+junction j2 at a.right@1.5
+junction j3 at a.tl@0.5
+junction j4 at a.center@0.2
+junction j5 at a.top@-0.1

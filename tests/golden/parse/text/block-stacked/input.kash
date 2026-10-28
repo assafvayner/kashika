@@ -1,0 +1,10 @@
+// spec: 6
+// dump: ast, scene
+// Stacked block items with sizes, muted and the box's alignment and gap.
+diagram "block" size (300,200)
+box api at (20,20) size (220,140) style=service text-align=left gap=4 {
+  text "**Payments API**"
+  text "v2.4.1" size=11 muted
+  text "• validates cards" size=12
+  text "• retries charges" size=12 color=#d93025
+}

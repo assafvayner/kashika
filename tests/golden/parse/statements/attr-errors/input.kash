@@ -1,0 +1,7 @@
+// spec: 3, 7
+// Unknown (did-you-mean), duplicate, mistyped and `@t` attributes.
+diagram "attrs" size (300,200)
+box a at (10,10) size (40,30) shpe=rounded
+box b at (100,10) size (40,30) style=service style=queue
+box c at (10,100) size (40,30) radius="big"
+line l: a.right -> b.left end@0.5=arrow

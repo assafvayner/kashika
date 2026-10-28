@@ -1,0 +1,7 @@
+// spec: 1, 5
+// dump: scene
+// Literal points, `x`/`y` numbers and `curve via` controls are group-local; `h`/`v` are deltas.
+diagram "local segments" size (400,300)
+group g at (100,100) size (280,180) {
+  line l: (10,20) -> h 40 -> x 100 -> y 60 -> curve via (120,60) (140,80) (140,100)
+}

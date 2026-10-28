@@ -1,0 +1,9 @@
+// spec: 3
+// dump: scene
+// Groups start from the boundary style, including a user override of it.
+diagram "boundary" size (300,200)
+style boundary { stroke=#d93025 }
+group g "VPC" at (10,10) size (200,150) {
+}
+group styled "Styled" at (220,10) size (70,150) style=queue stroke-width=3 {
+}

@@ -1,0 +1,4 @@
+// spec: 5, 7
+// Two labels at the same `t` are an `attr` error.
+diagram "dup labels" size (300,100)
+line l: (20,40) -> h 200 label="a" label@0.5="b"

@@ -1,0 +1,6 @@
+// spec: 3a, 7
+// Unknown namespaced shapes and styles.
+diagram "ns errors" size (300,120)
+import "lib/aws.kash" as aws
+box a at (20,20) size (80,60) shape=aws.nope style=aws.nostyle
+box b at (120,20) size (80,60) shape=bucket

@@ -1,0 +1,7 @@
+// spec: 3
+// dump: scene
+// `at` may reference a shape declared later; placement forms a DAG.
+diagram "dag" size (400,200)
+box c at b.right+(20,0) size (40,40) pin=left
+box b at a.right+(20,0) size (40,40) pin=left
+box a at (20,80) size (40,40)

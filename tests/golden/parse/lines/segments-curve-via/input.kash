@@ -1,0 +1,6 @@
+// spec: 5
+// dump: scene
+// `curve via` is a cubic with explicit control points.
+diagram "via" size (300,200)
+box a at (100,100) size (80,40)
+line loop: a.top@0.8 -> curve via (180,40) (100,40) a.top@0.2 end=arrow

@@ -1,0 +1,5 @@
+// spec: 8
+// raster: jpg
+// JPEG composites the transparent canvas onto white.
+diagram "jpeg" size (120,80)
+box a "A" at (20,20) size (80,40) style=service

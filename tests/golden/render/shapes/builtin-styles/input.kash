@@ -1,0 +1,9 @@
+// spec: 3
+// Every built-in style.
+diagram "styles" size (660,100)
+box s1 "service" at (10,20) size (95,60) style=service
+box s2 "datastore" at (115,20) size (95,60) style=datastore
+box s3 "external" at (220,20) size (95,60) style=external
+box s4 "queue" at (325,20) size (95,60) style=queue
+box s5 "boundary" at (430,20) size (95,60) style=boundary
+box s6 "note" at (535,20) size (95,60) style=note

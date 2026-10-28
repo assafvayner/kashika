@@ -1,0 +1,5 @@
+// spec: 3a, 7
+// A file that isn't a decodable SVG, PNG or JPEG.
+diagram "wrong type" size (300,200)
+image a "fake.png" at (20,20) size (40,40)
+image b "notes.txt" at (80,20) size (40,40)

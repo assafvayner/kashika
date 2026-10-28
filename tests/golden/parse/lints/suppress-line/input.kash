@@ -1,0 +1,7 @@
+// spec: 7
+// `allow=code` and `allow=code:id` on lines, with `reason=`.
+diagram "suppress" size (300,300)
+line h1: (20,100) -> h 260 allow=cross reason="bus"
+line v1: (100,20) -> v 260
+line h2: (20,200) -> h 260 allow=cross:v2
+line v2: (200,20) -> v 260

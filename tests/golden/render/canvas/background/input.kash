@@ -1,0 +1,6 @@
+// spec: 3, 8
+// `background=` paints the canvas; label masks use it.
+diagram "background" size (300,120) background=#f1f3f4
+box a "A" at (20,30) size (60,60)
+box b "B" at (220,30) size (60,60)
+line l: a.right -> b.left end=arrow label="call"

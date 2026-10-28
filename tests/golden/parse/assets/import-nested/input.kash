@@ -1,0 +1,6 @@
+// spec: 3a
+// dump: scene
+// Libraries may import libraries; paths are relative to the importing file.
+diagram "nested" size (300,120)
+import "lib/outer.kash"
+box a "x" at (20,20) size (80,60) style=inner_style shape=icon

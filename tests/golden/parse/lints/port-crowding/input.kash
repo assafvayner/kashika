@@ -1,0 +1,12 @@
+// spec: 7
+// Endpoints within 8px on one shape, and stacked arrowheads; junctions are exempt.
+diagram "crowding" size (400,300)
+box a at (20,100) size (80,60)
+box b at (300,100) size (80,60)
+line l1: a.right@0.45 -> b.left@0.45
+line l2: a.right@0.55 -> h 60 -> v 60
+line s1: (200,40) -> b.top end=arrow
+line s2: (340,20) -> b.top end=arrow
+junction j at (200,250)
+line j1: (20,250) -> j
+line j2: (380,250) -> j

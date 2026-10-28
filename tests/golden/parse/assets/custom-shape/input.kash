@@ -1,0 +1,16 @@
+// spec: 3a
+// dump: ast, scene
+// A custom unit-path shape with `outline` and `text-area`.
+diagram "custom" size (320,200)
+shape lb_icon {
+  path "M 0 0.5 L 0.5 0 L 1 0.5 L 0.5 1 Z  M 0.2 0.5 L 0.8 0.5"
+  outline 1
+  text-area (0.2,0.3,0.6,0.4)
+}
+shape curvy {
+  path "M 0 1 Q 0.5 0 1 1 C 0.8 1 0.2 1 0 1 Z M 0.1 0.9 H 0.9 V 0.95 A 0.4 0.05 0 0 1 0.1 0.95 Z"
+  outline 2
+}
+box lb "LB" at (20,40) size (160,120) shape=lb_icon
+box c at (200,40) size (90,120) shape=curvy
+line l: lb.right -> c.left

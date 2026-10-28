@@ -27,3 +27,10 @@ assert_cmd.workspace = true
 predicates.workspace = true
 tempfile.workspace = true
 serde_json.workspace = true
+libtest-mimic.workspace = true
+similar.workspace = true
+
+[[test]]
+name = "golden"
+path = "tests/golden/main.rs"
+harness = false

@@ -1,0 +1,5 @@
+// spec: 2
+// dump: ast
+// Colors have 3, 6 or 8 hex digits.
+diagram "bad color" size (300,100)
+box a at (10,10) size (60,40) fill=#12345

@@ -1,0 +1,6 @@
+// spec: 3a
+// dump: scene
+// `import ... as ns` namespaces shape and style names.
+diagram "namespaced" size (300,120)
+import "lib/aws.kash" as aws
+box a "S3" at (20,20) size (80,60) shape=aws.bucket style=aws.svc

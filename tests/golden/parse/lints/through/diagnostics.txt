@@ -1,0 +1,8 @@
+warn[through] 8:1-8:26: l passes through box 'obstacle'
+  = help: segment 1 runs at y=90; free y-intervals across x 100..300: 0..54, 126..144, 156..164, 256..280
+  elements: [{"from":[100,90],"id":"l","kind":"line","segment":1,"span":{"col":1,"end_col":26,"end_line":8,"line":8},"to":[300,90]},{"bbox":[[160,60],[240,120]],"id":"obstacle","kind":"box","span":{"col":1,"end_col":38,"end_line":5,"line":5}}]
+  facts: {"entry":[160,90],"exit":[240,90],"free":{"axis":"y","band":[100,300],"intervals":[[0,54],[126,144],[156,164],[256,280]]}}
+warn[through] 9:1-9:67: back passes through box 'c'
+  = help: segment 4 runs at x=60; free x-intervals across y 150..250: 0..400
+  elements: [{"from":[60,250],"id":"back","kind":"line","segment":4,"span":{"col":1,"end_col":67,"end_line":9,"line":9},"to":[60,150]},{"bbox":[[20,170],[100,230]],"id":"c","kind":"box","span":{"col":1,"end_col":31,"end_line":7,"line":7}}]
+  facts: {"entry":[60,230],"exit":[60,170],"free":{"axis":"x","band":[150,250],"intervals":[[0,400]]}}

@@ -1,0 +1,2 @@
+error[parse] 5:9-5:11: unknown escape `\q`
+  = help: strings support `\"`, `\\`, `\n`, `\*` and `\``; write `\\` for a backslash

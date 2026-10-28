@@ -1,0 +1,4 @@
+error[parse] 4:1-4:40: unclosed `**` in text
+  = help: close the marker, or write `\*` or `\`` for a literal one
+error[parse] 5:1-5:27: unclosed ``` in text
+  = help: close the marker, or write `\*` or `\`` for a literal one

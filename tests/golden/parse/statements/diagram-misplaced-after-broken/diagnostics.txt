@@ -1,0 +1,2 @@
+error[parse] 3:9-3:10: expected a point: `(x,y)` or a reference like `db.left`, found end of line
+error[diagram] 4:1-4:30: `diagram` must be the first statement

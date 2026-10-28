@@ -1,0 +1,8 @@
+warn[out-of-canvas] 4:1-4:34: junction 'ok' extends beyond the 300x200 canvas (top by 1000000px, right by 999700px)
+  = help: move it inside (0,0)-(300,200) or enlarge `size` on the `diagram` line
+  elements: [{"bbox":[[1000000,-1000000],[1000000,-1000000]],"id":"ok","kind":"junction","span":{"col":1,"end_col":34,"end_line":4,"line":4}}]
+  facts: {"overflow":{"right":999700,"top":1000000}}
+error[degenerate-curve] 5:22-5:34: value is out of range (more than 1000000 from the origin)
+  = help: keep coordinates within -1000000..1000000
+error[degenerate-curve] 6:10-6:18: value is out of range (more than 1000000 from the origin)
+  = help: keep coordinates within -1000000..1000000

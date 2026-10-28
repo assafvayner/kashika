@@ -1,0 +1,1 @@
+error[parse] 4:1-4:22: in `lib/bad.kash` at 2:1: library files may contain only `shape`, `style` and `import`

@@ -1,0 +1,7 @@
+// spec: 2
+// dump: ast
+// An unclosed /* is a parse error and swallows the rest of the file.
+diagram "unclosed" size (200,100)
+box a at (10,10) size (40,30)
+/* never closed
+box b at (100,10) size (40,30)

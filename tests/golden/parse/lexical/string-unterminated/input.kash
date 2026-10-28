@@ -1,0 +1,6 @@
+// spec: 2
+// dump: ast
+// A string must close on its own line.
+diagram "unterminated" size (300,100)
+box a "never closed at (10,10) size (120,40)
+box b at (150,10) size (40,40)

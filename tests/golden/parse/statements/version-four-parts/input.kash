@@ -1,0 +1,3 @@
+// spec: 8
+// Versions must have exactly three parts.
+diagram "v" size (100,100) kashika="0.1.0.0"

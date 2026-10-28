@@ -1,0 +1,57 @@
+{
+  "allow": [],
+  "assets": [],
+  "background": null,
+  "clearance": 6,
+  "grid": null,
+  "junctions": [
+    {"at":{"x":100,"y":50},"dot":false,"id":"t0","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":23,"end_line":6,"line":6}},
+    {"at":{"x":125,"y":50},"dot":false,"id":"t25","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":27,"end_line":7,"line":7}},
+    {"at":{"x":150,"y":50},"dot":false,"id":"t50","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":26,"end_line":8,"line":8}},
+    {"at":{"x":200,"y":110},"dot":false,"id":"b1","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":26,"end_line":9,"line":9}},
+    {"at":{"x":100,"y":65},"dot":false,"id":"l25","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":28,"end_line":10,"line":10}},
+    {"at":{"x":200,"y":95},"dot":false,"id":"r75","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":29,"end_line":11,"line":11}}
+  ],
+  "lines": [],
+  "literals": [
+    {"owner":"a","span":{"col":10,"end_col":18,"end_line":5,"line":5},"value":100,"what":"x"},
+    {"owner":"a","span":{"col":10,"end_col":18,"end_line":5,"line":5},"value":50,"what":"y"},
+    {"owner":"a","span":{"col":1,"end_col":32,"end_line":5,"line":5},"value":100,"what":"width"},
+    {"owner":"a","span":{"col":1,"end_col":32,"end_line":5,"line":5},"value":60,"what":"height"}
+  ],
+  "placement": [
+    {"from":"t0","kind":"at","to":"a"},
+    {"from":"t25","kind":"at","to":"a"},
+    {"from":"t50","kind":"at","to":"a"},
+    {"from":"b1","kind":"at","to":"a"},
+    {"from":"l25","kind":"at","to":"a"},
+    {"from":"r75","kind":"at","to":"a"}
+  ],
+  "shapes": [
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "a",
+      "image": null,
+      "kind": "box",
+      "label": null,
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":60,"w":100,"x":100,"y":50},
+      "shape": "rect",
+      "span": {"col":1,"end_col":32,"end_line":5,"line":5},
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [],
+      "text_area": {"h":44,"w":84,"x":108,"y":58},
+      "text_below": false,
+      "title_band": 0
+    }
+  ],
+  "size": [300,200],
+  "texts": [],
+  "title": "at t"
+}

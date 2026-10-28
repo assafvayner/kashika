@@ -1,0 +1,12 @@
+// spec: 3a
+// Every bundled icon, icon positions and sizes, and a group icon.
+diagram "icons" size (560,260)
+box i1 "server" at (10,10) size (130,50) icon="server"
+box i2 "browser" at (150,10) size (130,50) icon="browser"
+box i3 "queue" at (290,10) size (130,50) icon="queue"
+box i4 "lock" at (10,70) size (130,50) icon="lock"
+box i5 "cloud" at (150,70) size (130,50) icon="cloud"
+box i6 "person" at (290,70) size (130,50) icon="person"
+box top "Top" at (430,10) size (120,110) icon="pic.svg" icon-pos=top icon-size=40
+group g "Group icon" at (10,140) size (300,110) icon="server" {
+}

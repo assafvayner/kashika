@@ -1,0 +1,8 @@
+error[duplicate-id] 5:10-5:11: `a` is already defined on line 4
+  = help: ids are unique across the whole file
+error[duplicate-id] 6:6-6:7: `a` is already defined on line 4
+  = help: ids are unique across the whole file
+error[duplicate-id] 7:6-7:7: `a` is already defined on line 4
+  = help: ids are unique across the whole file
+error[duplicate-id] 8:7-8:8: `a` is already defined on line 4
+  = help: ids are unique across the whole file

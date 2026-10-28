@@ -1,0 +1,2 @@
+error[placement-cycle] 4:10-4:17: placement cycle: a -> b -> c -> a
+  = help: place one of these with literal coordinates

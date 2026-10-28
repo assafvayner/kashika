@@ -1,0 +1,58 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "absolute", size: (300.0, 200.0), attrs: [], span: 4:1-4:34 }),
+        Box(
+            Node {
+                id: Ident { name: "a", span: 5:5-5:6 },
+                label: Some("Title"),
+                at: Lit { x: Num(20.0), y: Num(20.0), span: 5:18-5:25 },
+                size: (220.0, 140.0),
+                attrs: [],
+                block: Some(
+                    [
+                        BlockText {
+                            content: "corner",
+                            at: Some(Lit { x: Num(10.0), y: Num(10.0), span: 6:20-6:27 }),
+                            attrs: [
+                                Attr {
+                                    key: Ident { name: "align", span: 6:28-6:33 },
+                                    at_t: None,
+                                    value: Word("left"),
+                                    span: 6:28-6:38,
+                                },
+                                Attr {
+                                    key: Ident { name: "size", span: 6:39-6:43 },
+                                    at_t: None,
+                                    value: Num(10.0),
+                                    span: 6:39-6:46,
+                                },
+                            ],
+                            span: 6:3-6:46,
+                        },
+                        BlockText {
+                            content: "badge",
+                            at: Some(Lit { x: Num(200.0), y: Num(120.0), span: 7:19-7:28 }),
+                            attrs: [
+                                Attr {
+                                    key: Ident { name: "align", span: 7:29-7:34 },
+                                    at_t: None,
+                                    value: Word("right"),
+                                    span: 7:29-7:40,
+                                },
+                                Attr {
+                                    key: Ident { name: "size", span: 7:41-7:45 },
+                                    at_t: None,
+                                    value: Num(10.0),
+                                    span: 7:41-7:48,
+                                },
+                            ],
+                            span: 7:3-7:48,
+                        },
+                    ],
+                ),
+                span: 5:1-5:40,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}

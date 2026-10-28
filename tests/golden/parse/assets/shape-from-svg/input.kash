@@ -1,0 +1,14 @@
+// spec: 3a
+// dump: scene
+// `shape from` an SVG with bbox/hull outlines and inside/below text areas.
+diagram "svg shapes" size (500,200)
+shape tri from "tri.svg"
+shape tri_hull from "tri.svg" outline=hull
+shape tri_below from "tri.svg" text-area=below
+shape tri_inside from "tri.svg" outline=bbox text-area=inside
+box a "bbox" at (20,40) size (80,40) shape=tri
+box b "hull" at (140,40) size (80,40) shape=tri_hull
+box c "below" at (260,40) size (80,40) shape=tri_below
+box d "in" at (380,40) size (80,40) shape=tri_inside
+junction ja at a.top@0.25
+junction jb at b.top@0.25

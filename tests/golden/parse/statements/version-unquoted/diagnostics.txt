@@ -1,0 +1,2 @@
+error[version] 3:28-3:39: `kashika=` must be a quoted version string
+  = help: write kashika="0.1.0"

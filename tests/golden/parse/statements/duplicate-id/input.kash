@@ -1,0 +1,9 @@
+// spec: 2, 7
+// Ids are unique across boxes, groups, junctions, texts and lines.
+diagram "dup" size (300,200)
+box a at (10,10) size (40,30)
+junction a at (100,100)
+text a "x" at (150,150)
+line a: (10,180) -> h 50
+group a at (200,10) size (50,50) {
+}

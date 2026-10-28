@@ -1,0 +1,8 @@
+// spec: 3
+// Stroke styles, widths, radius, bold, colors with alpha, padding.
+diagram "style keys" size (520,120)
+style card { fill=#1a73e833 stroke=#1a73e8 stroke-width=3 radius=12 }
+box a "dashed" at (10,20) size (120,70) stroke-style=dashed
+box b "dotted" at (140,20) size (120,70) stroke-style=dotted stroke-width=2
+box c "card" at (270,20) size (120,70) style=card shape=rounded
+box d "bold" at (400,20) size (110,70) font-weight=bold font-size=18 color=#d93025 padding=2

@@ -1,0 +1,56 @@
+{
+  "allow": [],
+  "assets": [],
+  "background": null,
+  "clearance": 6,
+  "grid": null,
+  "junctions": [
+    {"at":{"x":140,"y":50},"dot":false,"id":"o1","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":29,"end_line":6,"line":6}},
+    {"at":{"x":100,"y":69},"dot":false,"id":"o2","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":33,"end_line":7,"line":7}},
+    {"at":{"x":210,"y":100},"dot":false,"id":"o3","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":29,"end_line":8,"line":8}},
+    {"at":{"x":145,"y":55},"dot":false,"id":"o4","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":24,"end_line":9,"line":9}}
+  ],
+  "lines": [],
+  "literals": [
+    {"owner":"a","span":{"col":10,"end_col":18,"end_line":5,"line":5},"value":100,"what":"x"},
+    {"owner":"a","span":{"col":10,"end_col":18,"end_line":5,"line":5},"value":50,"what":"y"},
+    {"owner":"a","span":{"col":1,"end_col":32,"end_line":5,"line":5},"value":100,"what":"width"},
+    {"owner":"a","span":{"col":1,"end_col":32,"end_line":5,"line":5},"value":60,"what":"height"},
+    {"owner":"o1","span":{"col":16,"end_col":29,"end_line":6,"line":6},"value":-10,"what":"dx"},
+    {"owner":"o1","span":{"col":16,"end_col":29,"end_line":6,"line":6},"value":0,"what":"dy"},
+    {"owner":"o2","span":{"col":16,"end_col":33,"end_line":7,"line":7},"value":0,"what":"dx"},
+    {"owner":"o2","span":{"col":16,"end_col":33,"end_line":7,"line":7},"value":4,"what":"dy"},
+    {"owner":"o3","span":{"col":16,"end_col":29,"end_line":8,"line":8},"value":10,"what":"dx"},
+    {"owner":"o3","span":{"col":16,"end_col":29,"end_line":8,"line":8},"value":-10,"what":"dy"},
+    {"owner":"o4","span":{"col":16,"end_col":24,"end_line":9,"line":9},"value":5,"what":"dx"},
+    {"owner":"o4","span":{"col":16,"end_col":24,"end_line":9,"line":9},"value":5,"what":"dy"}
+  ],
+  "placement": [{"from":"o1","kind":"at","to":"a"},{"from":"o2","kind":"at","to":"a"},{"from":"o3","kind":"at","to":"a"},{"from":"o4","kind":"at","to":"o1"}],
+  "shapes": [
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "a",
+      "image": null,
+      "kind": "box",
+      "label": null,
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":60,"w":100,"x":100,"y":50},
+      "shape": "rect",
+      "span": {"col":1,"end_col":32,"end_line":5,"line":5},
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [],
+      "text_area": {"h":44,"w":84,"x":108,"y":58},
+      "text_below": false,
+      "title_band": 0
+    }
+  ],
+  "size": [300,200],
+  "texts": [],
+  "title": "offsets"
+}

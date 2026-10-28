@@ -1,0 +1,4 @@
+// spec: 3, 7
+// A statement before `diagram` makes it misplaced.
+box a at (10,10) size (40,30)
+diagram "late" size (200,100)

@@ -1,0 +1,4 @@
+// spec: 7
+// Warnings are still reported alongside errors.
+diagram "both" size (300,200)
+box a at (250,20) size (100,40) shape=nosuch

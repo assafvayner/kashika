@@ -1,0 +1,104 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "custom", size: (320.0, 200.0), attrs: [], span: 4:1-4:32 }),
+        Shape(
+            ShapeDef {
+                name: Ident { name: "lb_icon", span: 5:7-5:14 },
+                body: Paths {
+                    path: ("M 0 0.5 L 0.5 0 L 1 0.5 L 0.5 1 Z  M 0.2 0.5 L 0.8 0.5", 6:8-6:64),
+                    outline: Some((1.0, 7:11-7:12)),
+                    text_area: Some(([0.2, 0.3, 0.6, 0.4], 8:13-8:30)),
+                },
+                span: 5:1-9:2,
+            },
+        ),
+        Shape(
+            ShapeDef {
+                name: Ident { name: "curvy", span: 10:7-10:12 },
+                body: Paths {
+                    path: (
+                        "M 0 1 Q 0.5 0 1 1 C 0.8 1 0.2 1 0 1 Z M 0.1 0.9 H 0.9 V 0.95 A 0.4 0.05 0 0 1 0.1 0.95 Z",
+                        11:8-11:98,
+                    ),
+                    outline: Some((2.0, 12:11-12:12)),
+                    text_area: None,
+                },
+                span: 10:1-13:2,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "lb", span: 14:5-14:7 },
+                label: Some("LB"),
+                at: Lit { x: Num(20.0), y: Num(40.0), span: 14:16-14:23 },
+                size: (160.0, 120.0),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "shape", span: 14:39-14:44 },
+                        at_t: None,
+                        value: Word("lb_icon"),
+                        span: 14:39-14:52,
+                    },
+                ],
+                block: None,
+                span: 14:1-14:52,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "c", span: 15:5-15:6 },
+                label: None,
+                at: Lit { x: Num(200.0), y: Num(40.0), span: 15:10-15:18 },
+                size: (90.0, 120.0),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "shape", span: 15:33-15:38 },
+                        at_t: None,
+                        value: Word("curvy"),
+                        span: 15:33-15:44,
+                    },
+                ],
+                block: None,
+                span: 15:1-15:44,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "l", span: 16:6-16:7 }),
+                start: Ref {
+                    r: Ref {
+                        id: Ident { name: "lb", span: 16:9-16:11 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "right", span: 16:12-16:17 }, t: None },
+                        ),
+                    },
+                    offset: None,
+                    span: 16:9-16:17,
+                },
+                segs: [
+                    Seg {
+                        kind: To(
+                            Ref {
+                                r: Ref {
+                                    id: Ident { name: "c", span: 16:21-16:22 },
+                                    anchor: Some(
+                                        Anchor {
+                                            name: Ident { name: "left", span: 16:23-16:27 },
+                                            t: None,
+                                        },
+                                    ),
+                                },
+                                offset: None,
+                                span: 16:21-16:27,
+                            },
+                        ),
+                        span: 16:21-16:27,
+                    },
+                ],
+                attrs: [],
+                span: 16:1-16:27,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}

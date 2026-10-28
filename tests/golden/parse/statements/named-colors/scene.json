@@ -1,0 +1,149 @@
+{
+  "allow": [],
+  "assets": [],
+  "background": null,
+  "clearance": 6,
+  "grid": null,
+  "junctions": [],
+  "lines": [],
+  "literals": [
+    {"owner":"a","span":{"col":14,"end_col":21,"end_line":6,"line":6},"value":20,"what":"x"},
+    {"owner":"a","span":{"col":14,"end_col":21,"end_line":6,"line":6},"value":20,"what":"y"},
+    {"owner":"a","span":{"col":1,"end_col":47,"end_line":6,"line":6},"value":100,"what":"width"},
+    {"owner":"a","span":{"col":1,"end_col":47,"end_line":6,"line":6},"value":60,"what":"height"},
+    {"owner":"b","span":{"col":14,"end_col":22,"end_line":7,"line":7},"value":140,"what":"x"},
+    {"owner":"b","span":{"col":14,"end_col":22,"end_line":7,"line":7},"value":20,"what":"y"},
+    {"owner":"b","span":{"col":1,"end_col":48,"end_line":7,"line":7},"value":100,"what":"width"},
+    {"owner":"b","span":{"col":1,"end_col":48,"end_line":7,"line":7},"value":60,"what":"height"},
+    {"owner":"c","span":{"col":14,"end_col":22,"end_line":8,"line":8},"value":260,"what":"x"},
+    {"owner":"c","span":{"col":14,"end_col":22,"end_line":8,"line":8},"value":20,"what":"y"},
+    {"owner":"c","span":{"col":1,"end_col":50,"end_line":8,"line":8},"value":100,"what":"width"},
+    {"owner":"c","span":{"col":1,"end_col":50,"end_line":8,"line":8},"value":60,"what":"height"}
+  ],
+  "placement": [],
+  "shapes": [
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "a",
+      "image": null,
+      "kind": "box",
+      "label": "A",
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":60,"w":100,"x":20,"y":20},
+      "shape": "rect",
+      "span": {"col":1,"end_col":47,"end_line":6,"line":6},
+      "style": {"color":"#ffffff","fill":"#4682b4","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#2f4f4f","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#ffffff",
+          "content": "A",
+          "lines": [
+            {
+              "baseline": 55.09,
+              "runs": [{"font":"regular","text":"A"}],
+              "width": 9.66,
+              "x": 65.17
+            }
+          ],
+          "rect": {"h":17.5,"w":9.66,"x":65.17,"y":41.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":47,"end_line":6,"line":6}
+        }
+      ],
+      "text_area": {"h":44,"w":84,"x":28,"y":28},
+      "text_below": false,
+      "title_band": 0
+    },
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "b",
+      "image": null,
+      "kind": "box",
+      "label": "B",
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":60,"w":100,"x":140,"y":20},
+      "shape": "rect",
+      "span": {"col":1,"end_col":48,"end_line":7,"line":7},
+      "style": {"color":"#0f172a","fill":"#ff6347","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "B",
+          "lines": [
+            {
+              "baseline": 55.09,
+              "runs": [{"font":"regular","text":"B"}],
+              "width": 9.16,
+              "x": 185.42
+            }
+          ],
+          "rect": {"h":17.5,"w":9.16,"x":185.42,"y":41.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":48,"end_line":7,"line":7}
+        }
+      ],
+      "text_area": {"h":44,"w":84,"x":148,"y":28},
+      "text_below": false,
+      "title_band": 0
+    },
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "c",
+      "image": null,
+      "kind": "box",
+      "label": "C",
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":60,"w":100,"x":260,"y":20},
+      "shape": "rect",
+      "span": {"col":1,"end_col":50,"end_line":8,"line":8},
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "C",
+          "lines": [
+            {
+              "baseline": 55.09,
+              "runs": [{"font":"regular","text":"C"}],
+              "width": 10.23,
+              "x": 304.89
+            }
+          ],
+          "rect": {"h":17.5,"w":10.23,"x":304.89,"y":41.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":50,"end_line":8,"line":8}
+        }
+      ],
+      "text_area": {"h":44,"w":84,"x":268,"y":28},
+      "text_below": false,
+      "title_band": 0
+    }
+  ],
+  "size": [400,120],
+  "texts": [],
+  "title": "named colors"
+}

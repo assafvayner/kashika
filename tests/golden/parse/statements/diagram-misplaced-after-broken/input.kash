@@ -1,0 +1,4 @@
+// spec: 3, 7
+// A statement that failed to parse still counts as first.
+box a at
+diagram "late" size (200,100)

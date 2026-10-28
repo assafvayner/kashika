@@ -1,0 +1,5 @@
+// spec: 6
+// dump: scene
+// Label is the name; sublabel is one muted line at 0.8 × font-size.
+diagram "sublabel" size (300,120)
+box api "Payments API" at (20,20) size (200,70) sublabel="v2.4.1" style=service

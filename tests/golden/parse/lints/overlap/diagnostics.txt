@@ -1,0 +1,7 @@
+warn[overlap] 5:1-5:31: box 'b' overlaps box 'a'
+  elements: [{"bbox":[[80,50],[180,110]],"id":"b","kind":"box","span":{"col":1,"end_col":31,"end_line":5,"line":5}},{"bbox":[[20,20],[120,80]],"id":"a","kind":"box","span":{"col":1,"end_col":31,"end_line":4,"line":4}}]
+  facts: {"intersection":[[80,50],[120,80]]}
+warn[overlap] 7:1-7:35: box 'inner' overlaps box 'outer'
+  = help: only a group may contain another shape; make the outer one a `group` or move the inner one out
+  elements: [{"bbox":[[240,40],[280,80]],"id":"inner","kind":"box","span":{"col":1,"end_col":35,"end_line":7,"line":7}},{"bbox":[[220,20],[380,140]],"id":"outer","kind":"box","span":{"col":1,"end_col":37,"end_line":6,"line":6}}]
+  facts: {"intersection":[[240,40],[280,80]]}

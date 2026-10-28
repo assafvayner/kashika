@@ -1,0 +1,53 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "junctions", size: (300.0, 120.0), attrs: [], span: 4:1-4:35 }),
+        Junction(
+            Junction {
+                id: Ident { name: "j", span: 5:10-5:11 },
+                at: Lit { x: Num(50.0), y: Num(50.0), span: 5:15-5:22 },
+                attrs: [],
+                span: 5:1-5:22,
+            },
+        ),
+        Junction(
+            Junction {
+                id: Ident { name: "k", span: 6:10-6:11 },
+                at: Lit { x: Num(150.0), y: Num(50.0), span: 6:15-6:23 },
+                attrs: [
+                    Attr {
+                        key: Ident { name: "dot", span: 6:24-6:27 },
+                        at_t: None,
+                        value: Flag,
+                        span: 6:24-6:27,
+                    },
+                ],
+                span: 6:1-6:27,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "l", span: 7:6-7:7 }),
+                start: Ref {
+                    r: Ref { id: Ident { name: "j", span: 7:9-7:10 }, anchor: None },
+                    offset: None,
+                    span: 7:9-7:10,
+                },
+                segs: [
+                    Seg {
+                        kind: To(
+                            Ref {
+                                r: Ref { id: Ident { name: "k", span: 7:14-7:15 }, anchor: None },
+                                offset: None,
+                                span: 7:14-7:15,
+                            },
+                        ),
+                        span: 7:14-7:15,
+                    },
+                ],
+                attrs: [],
+                span: 7:1-7:15,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}

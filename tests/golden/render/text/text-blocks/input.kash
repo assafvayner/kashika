@@ -1,0 +1,13 @@
+// spec: 6
+// Stacked, absolute and mixed text blocks.
+diagram "blocks" size (520,200)
+box api at (10,10) size (240,150) style=service text-align=left gap=4 {
+  text "**Payments API**"
+  text "v2.4.1" size=11 muted
+  text "• validates cards" size=12
+  text "• retries charges" size=12 color=#d93025
+}
+box abs "Title" at (270,10) size (240,150) {
+  text "corner" at (10,10) align=left size=10
+  text "badge" at (230,140) align=right size=10 muted
+}

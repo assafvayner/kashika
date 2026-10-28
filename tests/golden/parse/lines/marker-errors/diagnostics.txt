@@ -1,0 +1,6 @@
+error[attr] 4:26-4:36: `start` expects one of: none, arrow, open, diamond, dot
+  = help: did you mean `arrow`?
+error[attr] 4:37-4:47: `end` expects one of: none, arrow, open, diamond, dot
+error[attr] 4:48-4:62: `stroke-width` must be greater than 0
+error[attr] 4:63-4:72: `radius` must be at least 0
+error[attr] 4:73-4:77: unknown attribute `fill` on line

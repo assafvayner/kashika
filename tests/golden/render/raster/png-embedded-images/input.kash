@@ -1,0 +1,7 @@
+// spec: 8, 3a
+// raster: png
+// Embedded PNG/JPEG/SVG images rasterize into PNG output.
+diagram "png images" size (240,100)
+image p "photo.png" at (10,10) size (64,32)
+image j "photo.jpg" at (90,10) size (64,32)
+image s "pic.svg" at (170,10) size (40,40)

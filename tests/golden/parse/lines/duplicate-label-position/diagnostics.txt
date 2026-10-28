@@ -1,0 +1,1 @@
+error[attr] 4:36-4:49: duplicate label at t=0.5

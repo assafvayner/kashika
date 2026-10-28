@@ -1,0 +1,9 @@
+// spec: 2, 7
+// dump: ast
+// One bad statement doesn't hide errors in later ones.
+diagram "recover" size (300,200)
+box a at (10,10) size (40,30
+box b at (60,10) size (40,30)
+}
+line l: b.right -> -> (200,20)
+box c at (10,100) size (40,30) stroke-style=wavy

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="240" viewBox="0 0 300 240">
+<path d="M 20 20 L 270 20" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
+<polygon points="280,20 270,24 270,16" fill="#334155"/>
+<path d="M 30 60 L 280 60" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
+<polyline points="270,64 280,60 270,56" fill="none" stroke="#334155" stroke-width="1.5" stroke-linejoin="round"/>
+<polygon points="20,60 30,56 30,64" fill="#334155"/>
+<path d="M 20 100 L 268 100" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
+<polygon points="280,100 274,104 268,100 274,96" fill="#334155"/>
+<polyline points="30,96 20,100 30,104" fill="none" stroke="#334155" stroke-width="1.5" stroke-linejoin="round"/>
+<path d="M 32 140 L 280 140" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
+<circle cx="280" cy="140" r="3" fill="#334155"/>
+<polygon points="20,140 26,136 32,140 26,144" fill="#334155"/>
+<path d="M 20 180 L 280 180" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
+<circle cx="20" cy="180" r="3" fill="#334155"/>
+<path d="M 20 220 L 20 210 L 270 210" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
+<polygon points="280,210 270,214 270,206" fill="#334155"/>
+</svg>

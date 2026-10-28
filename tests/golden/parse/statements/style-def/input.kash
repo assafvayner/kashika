@@ -1,0 +1,6 @@
+// spec: 3
+// dump: ast, scene
+// A user style, applied with `style=`.
+diagram "style" size (300,120)
+style warm { fill=#fff7e0 stroke=#e37400 stroke-width=2 stroke-style=dashed font-size=12 font-weight=bold color=#5f3700 radius=6 padding=4 muted=#9a6a00 }
+box a "Warm" at (20,20) size (120,60) style=warm sublabel="muted"

@@ -1,0 +1,4 @@
+// spec: 3
+// The smallest valid file, rendered.
+diagram "minimal" size (100,100)
+box a "A" at (10,10) size (80,40)

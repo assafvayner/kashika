@@ -1,0 +1,132 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "box", size: (400.0, 200.0), attrs: [], span: 4:1-4:29 }),
+        Box(
+            Node {
+                id: Ident { name: "a", span: 5:5-5:6 },
+                label: Some("Payments"),
+                at: Lit { x: Num(200.0), y: Num(100.0), span: 5:21-5:30 },
+                size: (160.0, 80.0),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "pin", span: 5:45-5:48 },
+                        at_t: None,
+                        value: Word("center"),
+                        span: 5:45-5:55,
+                    },
+                    Attr {
+                        key: Ident { name: "shape", span: 5:56-5:61 },
+                        at_t: None,
+                        value: Word("rounded"),
+                        span: 5:56-5:69,
+                    },
+                    Attr {
+                        key: Ident { name: "style", span: 5:70-5:75 },
+                        at_t: None,
+                        value: Word("service"),
+                        span: 5:70-5:83,
+                    },
+                    Attr {
+                        key: Ident { name: "allow", span: 5:84-5:89 },
+                        at_t: None,
+                        value: Word("overlap"),
+                        span: 5:84-5:97,
+                    },
+                    Attr {
+                        key: Ident { name: "reason", span: 5:98-5:104 },
+                        at_t: None,
+                        value: Str("demo"),
+                        span: 5:98-5:111,
+                    },
+                    Attr {
+                        key: Ident { name: "fill", span: 5:112-5:116 },
+                        at_t: None,
+                        value: Color("#ffffff"),
+                        span: 5:112-5:124,
+                    },
+                    Attr {
+                        key: Ident { name: "stroke", span: 5:125-5:131 },
+                        at_t: None,
+                        value: Color("#1a73e8"),
+                        span: 5:125-5:139,
+                    },
+                    Attr {
+                        key: Ident { name: "stroke-width", span: 5:140-5:152 },
+                        at_t: None,
+                        value: Num(2.0),
+                        span: 5:140-5:154,
+                    },
+                    Attr {
+                        key: Ident { name: "stroke-style", span: 5:155-5:167 },
+                        at_t: None,
+                        value: Word("dotted"),
+                        span: 5:155-5:174,
+                    },
+                    Attr {
+                        key: Ident { name: "font-size", span: 5:175-5:184 },
+                        at_t: None,
+                        value: Num(13.0),
+                        span: 5:175-5:187,
+                    },
+                    Attr {
+                        key: Ident { name: "font-weight", span: 5:188-5:199 },
+                        at_t: None,
+                        value: Word("bold"),
+                        span: 5:188-5:204,
+                    },
+                    Attr {
+                        key: Ident { name: "color", span: 5:205-5:210 },
+                        at_t: None,
+                        value: Color("#202124"),
+                        span: 5:205-5:218,
+                    },
+                    Attr {
+                        key: Ident { name: "radius", span: 5:219-5:225 },
+                        at_t: None,
+                        value: Num(12.0),
+                        span: 5:219-5:228,
+                    },
+                    Attr {
+                        key: Ident { name: "padding", span: 5:229-5:236 },
+                        at_t: None,
+                        value: Num(10.0),
+                        span: 5:229-5:239,
+                    },
+                    Attr {
+                        key: Ident { name: "muted", span: 5:240-5:245 },
+                        at_t: None,
+                        value: Color("#5f6368"),
+                        span: 5:240-5:253,
+                    },
+                    Attr {
+                        key: Ident { name: "sublabel", span: 5:254-5:262 },
+                        at_t: None,
+                        value: Str("v2"),
+                        span: 5:254-5:267,
+                    },
+                    Attr {
+                        key: Ident { name: "text-align", span: 5:268-5:278 },
+                        at_t: None,
+                        value: Word("left"),
+                        span: 5:268-5:283,
+                    },
+                    Attr {
+                        key: Ident { name: "text-valign", span: 5:284-5:295 },
+                        at_t: None,
+                        value: Word("top"),
+                        span: 5:284-5:299,
+                    },
+                    Attr {
+                        key: Ident { name: "gap", span: 5:300-5:303 },
+                        at_t: None,
+                        value: Num(4.0),
+                        span: 5:300-5:305,
+                    },
+                ],
+                block: None,
+                span: 5:1-5:305,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}

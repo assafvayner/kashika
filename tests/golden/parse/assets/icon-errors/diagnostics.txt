@@ -1,0 +1,5 @@
+error[attr] 4:32-4:44: `icon-pos` needs `icon=`
+error[attr] 5:32-5:44: `icon-size` needs `icon=`
+error[file] 6:33-6:45: file `servr` not found
+  = help: did you mean `server`?
+error[attr] 7:47-7:61: `icon-pos` expects one of: left, top

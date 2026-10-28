@@ -1,0 +1,8 @@
+// spec: 3, 6
+// dump: ast, scene
+// `text` with and without id, every attribute.
+diagram "text" size (400,200)
+text "plain" at (200,20)
+text t_left "left" at (20,60) align=left
+text t_right "right" at (380,60) align=right size=18 color=#d93025
+text t_muted "muted" at (200,100) align=center muted

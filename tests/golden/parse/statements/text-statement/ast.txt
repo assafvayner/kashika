@@ -1,0 +1,81 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "text", size: (400.0, 200.0), attrs: [], span: 4:1-4:30 }),
+        Text(
+            Text {
+                id: None,
+                content: "plain",
+                at: Lit { x: Num(200.0), y: Num(20.0), span: 5:17-5:25 },
+                attrs: [],
+                span: 5:1-5:25,
+            },
+        ),
+        Text(
+            Text {
+                id: Some(Ident { name: "t_left", span: 6:6-6:12 }),
+                content: "left",
+                at: Lit { x: Num(20.0), y: Num(60.0), span: 6:23-6:30 },
+                attrs: [
+                    Attr {
+                        key: Ident { name: "align", span: 6:31-6:36 },
+                        at_t: None,
+                        value: Word("left"),
+                        span: 6:31-6:41,
+                    },
+                ],
+                span: 6:1-6:41,
+            },
+        ),
+        Text(
+            Text {
+                id: Some(Ident { name: "t_right", span: 7:6-7:13 }),
+                content: "right",
+                at: Lit { x: Num(380.0), y: Num(60.0), span: 7:25-7:33 },
+                attrs: [
+                    Attr {
+                        key: Ident { name: "align", span: 7:34-7:39 },
+                        at_t: None,
+                        value: Word("right"),
+                        span: 7:34-7:45,
+                    },
+                    Attr {
+                        key: Ident { name: "size", span: 7:46-7:50 },
+                        at_t: None,
+                        value: Num(18.0),
+                        span: 7:46-7:53,
+                    },
+                    Attr {
+                        key: Ident { name: "color", span: 7:54-7:59 },
+                        at_t: None,
+                        value: Color("#d93025"),
+                        span: 7:54-7:67,
+                    },
+                ],
+                span: 7:1-7:67,
+            },
+        ),
+        Text(
+            Text {
+                id: Some(Ident { name: "t_muted", span: 8:6-8:13 }),
+                content: "muted",
+                at: Lit { x: Num(200.0), y: Num(100.0), span: 8:25-8:34 },
+                attrs: [
+                    Attr {
+                        key: Ident { name: "align", span: 8:35-8:40 },
+                        at_t: None,
+                        value: Word("center"),
+                        span: 8:35-8:47,
+                    },
+                    Attr {
+                        key: Ident { name: "muted", span: 8:48-8:53 },
+                        at_t: None,
+                        value: Flag,
+                        span: 8:48-8:53,
+                    },
+                ],
+                span: 8:1-8:53,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}

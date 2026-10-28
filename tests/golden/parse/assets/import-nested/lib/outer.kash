@@ -1,0 +1,2 @@
+import "parts/inner.kash"
+shape icon from "../icons/tri.svg"

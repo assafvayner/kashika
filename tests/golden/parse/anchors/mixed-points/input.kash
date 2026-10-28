@@ -1,0 +1,9 @@
+// spec: 4
+// dump: scene
+// Mixed points take each axis from a different reference.
+diagram "mixed" size (400,300)
+box a at (40,20) size (80,40)
+junction lane at (0,150)
+junction j at (a.bottom.x, lane.y)
+junction k at (a.right.x, 200)
+line l: a.bottom -> (a.bottom.x, lane.y) -> h 100

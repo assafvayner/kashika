@@ -1,0 +1,96 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "block", size: (300.0, 200.0), attrs: [], span: 4:1-4:31 }),
+        Box(
+            Node {
+                id: Ident { name: "api", span: 5:5-5:8 },
+                label: None,
+                at: Lit { x: Num(20.0), y: Num(20.0), span: 5:12-5:19 },
+                size: (220.0, 140.0),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "style", span: 5:35-5:40 },
+                        at_t: None,
+                        value: Word("service"),
+                        span: 5:35-5:48,
+                    },
+                    Attr {
+                        key: Ident { name: "text-align", span: 5:49-5:59 },
+                        at_t: None,
+                        value: Word("left"),
+                        span: 5:49-5:64,
+                    },
+                    Attr {
+                        key: Ident { name: "gap", span: 5:65-5:68 },
+                        at_t: None,
+                        value: Num(4.0),
+                        span: 5:65-5:70,
+                    },
+                ],
+                block: Some(
+                    [
+                        BlockText {
+                            content: "**Payments API**",
+                            at: None,
+                            attrs: [],
+                            span: 6:3-6:26,
+                        },
+                        BlockText {
+                            content: "v2.4.1",
+                            at: None,
+                            attrs: [
+                                Attr {
+                                    key: Ident { name: "size", span: 7:17-7:21 },
+                                    at_t: None,
+                                    value: Num(11.0),
+                                    span: 7:17-7:24,
+                                },
+                                Attr {
+                                    key: Ident { name: "muted", span: 7:25-7:30 },
+                                    at_t: None,
+                                    value: Flag,
+                                    span: 7:25-7:30,
+                                },
+                            ],
+                            span: 7:3-7:30,
+                        },
+                        BlockText {
+                            content: "• validates cards",
+                            at: None,
+                            attrs: [
+                                Attr {
+                                    key: Ident { name: "size", span: 8:28-8:32 },
+                                    at_t: None,
+                                    value: Num(12.0),
+                                    span: 8:28-8:35,
+                                },
+                            ],
+                            span: 8:3-8:35,
+                        },
+                        BlockText {
+                            content: "• retries charges",
+                            at: None,
+                            attrs: [
+                                Attr {
+                                    key: Ident { name: "size", span: 9:28-9:32 },
+                                    at_t: None,
+                                    value: Num(12.0),
+                                    span: 9:28-9:35,
+                                },
+                                Attr {
+                                    key: Ident { name: "color", span: 9:36-9:41 },
+                                    at_t: None,
+                                    value: Color("#d93025"),
+                                    span: 9:36-9:49,
+                                },
+                            ],
+                            span: 9:3-9:49,
+                        },
+                    ],
+                ),
+                span: 5:1-5:70,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}

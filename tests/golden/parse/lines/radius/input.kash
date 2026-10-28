@@ -1,0 +1,6 @@
+// spec: 5
+// dump: scene
+// `radius` rounds corners, clamped to half the shorter adjacent segment.
+diagram "radius" size (300,200)
+line big: (20,20) -> h 100 -> v 100 -> h 100 radius=12
+line clamp: (20,170) -> h 10 -> v -20 -> h 100 radius=50

@@ -1,0 +1,8 @@
+// spec: 7
+// A child outside its group and one in the title band; touching the edge is fine.
+diagram "spill" size (400,300)
+group g "VPC" at (20,20) size (200,120) {
+  box out at (150,40) size (80,40)
+  box band at (10,5) size (40,30)
+  box edge at (160,80) size (40,40)
+}

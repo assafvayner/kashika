@@ -1,0 +1,33 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "block errors", size: (300.0, 200.0), attrs: [], span: 4:1-4:38 }),
+        Box(
+            Node {
+                id: Ident { name: "a", span: 5:5-5:6 },
+                label: None,
+                at: Lit { x: Num(20.0), y: Num(20.0), span: 5:10-5:17 },
+                size: (200.0, 140.0),
+                attrs: [],
+                block: Some(
+                    [
+                        BlockText {
+                            content: "bad attr",
+                            at: None,
+                            attrs: [
+                                Attr {
+                                    key: Ident { name: "weight", span: 7:19-7:25 },
+                                    at_t: None,
+                                    value: Word("bold"),
+                                    span: 7:19-7:30,
+                                },
+                            ],
+                            span: 7:3-7:30,
+                        },
+                    ],
+                ),
+                span: 5:1-5:32,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}

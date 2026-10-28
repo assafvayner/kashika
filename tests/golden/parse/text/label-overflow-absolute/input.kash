@@ -1,0 +1,6 @@
+// spec: 6, 7
+// An absolute item only overflows when it is larger than the text area.
+diagram "abs overflow" size (300,200)
+box a at (20,20) size (100,60) {
+  text "this absolute item is far too wide" at (10,10) align=left
+}

@@ -1,0 +1,7 @@
+// spec: 3
+// dump: ast, scene
+// Junctions with and without `dot`.
+diagram "junctions" size (300,120)
+junction j at (50,50)
+junction k at (150,50) dot
+line l: j -> k

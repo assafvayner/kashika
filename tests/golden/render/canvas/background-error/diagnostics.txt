@@ -1,0 +1,1 @@
+error[attr] 4:41-4:61: `background` expects a color like `#1a73e8`, a CSS color name or `none`

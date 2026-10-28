@@ -1,0 +1,7 @@
+// spec: 3, 3a
+// dump: ast
+// `image` is top-level only.
+diagram "image in group" size (300,200)
+group g at (10,10) size (200,150) {
+  image i "pic.svg" at (10,30) size (40,40)
+}

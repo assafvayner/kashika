@@ -1,0 +1,9 @@
+// spec: 3, 4
+// dump: scene
+// `pin` picks the anchor that lands on `at`, including `side@t`.
+diagram "pin" size (500,300)
+box db at (40,100) size (120,60)
+box cache at db.right+(60,0) size (120,60) pin=left
+box mid at (300,250) size (60,40) pin=center
+box corner at (480,280) size (60,40) pin=br
+box quarter at db.bottom+(0,40) size (80,40) pin=left@0.25

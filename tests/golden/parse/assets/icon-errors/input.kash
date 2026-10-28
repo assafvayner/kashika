@@ -1,0 +1,7 @@
+// spec: 3a, 7
+// `icon-pos`/`icon-size` need `icon=`; unknown bundled icons get did-you-mean.
+diagram "icon errors" size (300,200)
+box a at (20,20) size (100,40) icon-pos=top
+box b at (20,80) size (100,40) icon-size=10
+box c at (150,20) size (100,40) icon="servr"
+box d at (150,80) size (100,40) icon="server" icon-pos=right

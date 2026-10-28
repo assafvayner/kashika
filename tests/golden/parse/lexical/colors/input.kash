@@ -1,0 +1,6 @@
+// spec: 2
+// dump: ast
+// #rgb, #rrggbb and #rrggbbaa colors.
+diagram "colors" size (300,100)
+box a at (10,10) size (60,40) fill=#abc stroke=#1a73e8
+box b at (100,10) size (60,40) fill=#1a73e880 stroke=#000

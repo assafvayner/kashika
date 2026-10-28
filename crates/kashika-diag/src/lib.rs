@@ -1,5 +1,27 @@
 use serde::Serialize;
 
+/// Every error code, in the order of the spec's §7 Errors table.
+pub const ERROR_CODES: &[&str] = &[
+    "parse",
+    "unknown-id",
+    "unknown-anchor",
+    "duplicate-id",
+    "duplicate-style",
+    "placement-cycle",
+    "label-overflow",
+    "text-conflict",
+    "not-ortho",
+    "degenerate-curve",
+    "zero-length",
+    "attr",
+    "unknown-style",
+    "size",
+    "diagram",
+    "version",
+    "file",
+    "unsupported",
+];
+
 pub const LINT_CODES: &[&str] = &[
     "cross",
     "shared-segment",

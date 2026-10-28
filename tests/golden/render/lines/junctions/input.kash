@@ -1,0 +1,11 @@
+// spec: 3, 5
+// Junction dots, a fan-out and lines meeting at a junction.
+diagram "junctions" size (400,240)
+box src "src" at (20,90) size (80,60)
+junction j at (160,120) dot
+junction guide at (300,40)
+box a "a" at (300,20) size (80,40)
+box b "b" at (300,180) size (80,40)
+line trunk: src.right -> j
+line ja: j -> vh a.left end=arrow
+line jb: j -> vh b.left end=arrow

@@ -1,0 +1,8 @@
+// spec: 6, 3a
+// Text inside non-rect shapes and below an SVG shape.
+diagram "areas" size (520,200)
+shape tri from "tri.svg" text-area=below
+box d "Valid?" at (10,20) size (120,80) shape=diamond
+box e "Ellipse" at (140,20) size (120,80) shape=ellipse
+box c "Orders" at (270,20) size (120,80) shape=cylinder style=datastore
+box t "Under" at (420,20) size (80,40) shape=tri

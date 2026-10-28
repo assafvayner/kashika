@@ -1,0 +1,8 @@
+// spec: 7
+// `allow=` on boxes and groups.
+diagram "suppress shapes" size (400,300)
+box card at (20,20) size (120,80)
+box badge at (110,10) size (40,30) allow=overlap:card reason="badge"
+group g at (200,20) size (150,100) allow=spill {
+  box out at (100,20) size (80,40)
+}

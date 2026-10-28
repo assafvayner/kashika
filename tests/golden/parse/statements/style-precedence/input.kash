@@ -1,0 +1,8 @@
+// spec: 3
+// dump: scene
+// Inline attribute > style= > built-in default.
+diagram "precedence" size (400,120)
+style s { fill=#eeeeee stroke=#333333 }
+box plain at (20,20) size (100,60)
+box styled at (140,20) size (100,60) style=s
+box inline at (260,20) size (100,60) style=s fill=#ffffff

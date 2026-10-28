@@ -1,0 +1,12 @@
+// spec: 2, 5
+// dump: ast
+// A line continues while the next non-blank line starts with `->`.
+diagram "continued" size (300,200)
+box a at (20,20) size (60,40)
+box b at (200,120) size (60,40)
+line l: a.bottom
+  -> y 100
+
+  -> vh b.left
+  end=arrow label="ok"
+  ortho

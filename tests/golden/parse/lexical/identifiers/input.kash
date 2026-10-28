@@ -1,0 +1,7 @@
+// spec: 2
+// dump: ast
+// Ids may use letters, digits, `_` and `-`, and start with a letter or `_`.
+diagram "ids" size (300,100)
+box _private at (10,10) size (40,30)
+box api-v2_1 at (100,10) size (40,30)
+line _private-to-api: _private.right -> api-v2_1.left

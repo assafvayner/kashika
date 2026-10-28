@@ -1,0 +1,2 @@
+error[parse] 6:1-8:1: unterminated block comment
+  = help: close it with `*/`

@@ -1,0 +1,6 @@
+// spec: 4, 7
+// Unknown ids with did-you-mean, in `at` and in lines.
+diagram "unknown" size (300,200)
+box api at (20,20) size (60,40)
+box db at apu.right+(40,0) size (60,40)
+line l: api.right -> dbb.left

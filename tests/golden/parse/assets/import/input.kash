@@ -1,0 +1,6 @@
+// spec: 3a
+// dump: ast, scene
+// A plain import brings in shapes and styles.
+diagram "import" size (300,120)
+import "lib/aws.kash"
+box a "S3" at (20,20) size (80,60) shape=bucket style=svc

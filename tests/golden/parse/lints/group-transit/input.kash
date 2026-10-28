@@ -1,0 +1,6 @@
+// spec: 7
+// A line crossing a group neither of its endpoints is in.
+diagram "transit" size (400,200)
+group g at (150,40) size (100,120) {
+}
+line l: (20,100) -> h 360

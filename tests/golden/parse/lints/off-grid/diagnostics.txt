@@ -1,0 +1,8 @@
+warn[off-grid] 4:1-4:30: width=61 on 'a' is not a multiple of grid 10
+  = help: use 60 or 70
+  elements: [{"bbox":[[20,20],[81,60]],"id":"a","kind":"box","span":{"col":1,"end_col":30,"end_line":4,"line":4}}]
+  facts: {"grid":10,"value":61}
+warn[off-grid] 5:10-5:24: dx=33 on 'b' is not a multiple of grid 10
+  = help: use 30 or 40
+  elements: [{"bbox":[[114,20],[174,60]],"id":"b","kind":"box","span":{"col":1,"end_col":46,"end_line":5,"line":5}}]
+  facts: {"grid":10,"value":33}

@@ -1,0 +1,5 @@
+// spec: 2
+// dump: ast
+// Any other escape is a parse error.
+diagram "bad escape" size (300,100)
+box a "x\qy" at (10,10) size (120,40)

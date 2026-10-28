@@ -1,0 +1,13 @@
+// spec: 3
+// Groups → boxes/images → lines → labels/texts; groups in file order; texts and labels interleave by file order.
+diagram "paint order" size (400,300) allow=overlap,through,label-collision
+text t1 "text first" at (200,20)
+group outer "Outer" at (10,40) size (250,200) {
+  group inner "Inner" at (10,30) size (120,100) {
+  }
+}
+group sibling "Sibling" at (200,60) size (180,200) {
+}
+line l: (20,150) -> h 360 label="label"
+box a "box" at (150,120) size (100,60)
+text t2 "text last" at (200,280)

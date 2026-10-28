@@ -1,0 +1,5 @@
+// spec: 3, 7
+// flags: force
+// Any background other than a color or `none` is an `attr` error (forced render).
+diagram "bad background" size (200,100) background=notacolor
+box a "A" at (20,20) size (60,60)

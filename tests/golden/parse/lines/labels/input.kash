@@ -1,0 +1,6 @@
+// spec: 5, 6
+// dump: scene
+// `label=` is `label@0.5=`; `label@t=` repeats; `t` is a fraction of arc length.
+diagram "labels" size (400,200)
+line l: (20,40) -> h 200 -> v 100 label="mid" label@0.1="start" label@0.9="end"
+line c: (20,180) -> curve left:40 (380,180) label@0.25="**q**"

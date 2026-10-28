@@ -1,0 +1,9 @@
+// spec: 3, 6
+// Group title band, sublabel, nested children.
+diagram "groups" size (400,260)
+group vpc "VPC" at (10,10) size (380,240) sublabel="10.0.0.0/16" {
+  group sub "Subnet A" at (20,50) size (200,160) style=external {
+    box app "App" at (20,50) size (120,60) style=service
+  }
+  box db "DB" at (260,100) size (100,80) shape=cylinder style=datastore
+}

@@ -1,0 +1,4 @@
+// spec: 3, 7
+// Only one `diagram` statement.
+diagram "one" size (200,100)
+diagram "two" size (300,100)

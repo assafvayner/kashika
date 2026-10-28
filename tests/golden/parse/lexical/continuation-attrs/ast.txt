@@ -1,0 +1,47 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "attrs", size: (300.0, 200.0), attrs: [], span: 4:1-4:31 }),
+        Box(
+            Node {
+                id: Ident { name: "a", span: 5:5-5:6 },
+                label: None,
+                at: Lit { x: Num(20.0), y: Num(20.0), span: 5:10-5:17 },
+                size: (100.0, 60.0),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "style", span: 6:3-6:8 },
+                        at_t: None,
+                        value: Word("service"),
+                        span: 6:3-6:16,
+                    },
+                    Attr {
+                        key: Ident { name: "shape", span: 7:3-7:8 },
+                        at_t: None,
+                        value: Word("rounded"),
+                        span: 7:3-7:16,
+                    },
+                    Attr {
+                        key: Ident { name: "sublabel", span: 8:3-8:11 },
+                        at_t: None,
+                        value: Str("v2"),
+                        span: 8:3-8:16,
+                    },
+                ],
+                block: None,
+                span: 5:1-8:16,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "b", span: 9:5-9:6 },
+                label: None,
+                at: Lit { x: Num(180.0), y: Num(20.0), span: 9:10-9:18 },
+                size: (100.0, 60.0),
+                attrs: [],
+                block: None,
+                span: 9:1-9:32,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}

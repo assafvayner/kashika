@@ -1,0 +1,6 @@
+// spec: 7
+// A line label over a box, suggesting clear `t` values.
+diagram "collision" size (400,200)
+box a at (150,70) size (100,60)
+line l: (200,10) -> a.top end=arrow label@0.9="over"
+text t "on box" at (200,100)

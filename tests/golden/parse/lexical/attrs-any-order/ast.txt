@@ -1,0 +1,122 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "order", size: (300.0, 200.0), attrs: [], span: 4:1-4:31 }),
+        Box(
+            Node {
+                id: Ident { name: "a", span: 5:5-5:6 },
+                label: Some("A"),
+                at: Lit { x: Num(20.0), y: Num(20.0), span: 5:14-5:21 },
+                size: (60.0, 40.0),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "shape", span: 5:35-5:40 },
+                        at_t: None,
+                        value: Word("rounded"),
+                        span: 5:35-5:48,
+                    },
+                    Attr {
+                        key: Ident { name: "style", span: 5:49-5:54 },
+                        at_t: None,
+                        value: Word("service"),
+                        span: 5:49-5:62,
+                    },
+                    Attr {
+                        key: Ident { name: "pin", span: 5:63-5:66 },
+                        at_t: None,
+                        value: Word("tl"),
+                        span: 5:63-5:69,
+                    },
+                ],
+                block: None,
+                span: 5:1-5:69,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "b", span: 6:5-6:6 },
+                label: Some("B"),
+                at: Lit { x: Num(200.0), y: Num(20.0), span: 6:14-6:22 },
+                size: (60.0, 40.0),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "pin", span: 6:36-6:39 },
+                        at_t: None,
+                        value: Word("tl"),
+                        span: 6:36-6:42,
+                    },
+                    Attr {
+                        key: Ident { name: "style", span: 6:43-6:48 },
+                        at_t: None,
+                        value: Word("service"),
+                        span: 6:43-6:56,
+                    },
+                    Attr {
+                        key: Ident { name: "shape", span: 6:57-6:62 },
+                        at_t: None,
+                        value: Word("rounded"),
+                        span: 6:57-6:70,
+                    },
+                ],
+                block: None,
+                span: 6:1-6:70,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "l", span: 7:6-7:7 }),
+                start: Ref {
+                    r: Ref {
+                        id: Ident { name: "a", span: 7:9-7:10 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "right", span: 7:11-7:16 }, t: None },
+                        ),
+                    },
+                    offset: None,
+                    span: 7:9-7:16,
+                },
+                segs: [
+                    Seg {
+                        kind: To(
+                            Ref {
+                                r: Ref {
+                                    id: Ident { name: "b", span: 7:20-7:21 },
+                                    anchor: Some(
+                                        Anchor {
+                                            name: Ident { name: "left", span: 7:22-7:26 },
+                                            t: None,
+                                        },
+                                    ),
+                                },
+                                offset: None,
+                                span: 7:20-7:26,
+                            },
+                        ),
+                        span: 7:20-7:26,
+                    },
+                ],
+                attrs: [
+                    Attr {
+                        key: Ident { name: "label", span: 7:27-7:32 },
+                        at_t: None,
+                        value: Str("x"),
+                        span: 7:27-7:36,
+                    },
+                    Attr {
+                        key: Ident { name: "end", span: 7:37-7:40 },
+                        at_t: None,
+                        value: Word("arrow"),
+                        span: 7:37-7:46,
+                    },
+                    Attr {
+                        key: Ident { name: "start", span: 7:47-7:52 },
+                        at_t: None,
+                        value: Word("dot"),
+                        span: 7:47-7:56,
+                    },
+                ],
+                span: 7:1-7:56,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}

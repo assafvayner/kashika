@@ -1,0 +1,78 @@
+{
+  "allow": [],
+  "assets": [],
+  "background": null,
+  "clearance": 6,
+  "grid": null,
+  "junctions": [],
+  "lines": [],
+  "literals": [
+    {"owner":"a","span":{"col":17,"end_col":24,"end_line":6,"line":6},"value":20,"what":"x"},
+    {"owner":"a","span":{"col":17,"end_col":24,"end_line":6,"line":6},"value":20,"what":"y"},
+    {"owner":"a","span":{"col":1,"end_col":66,"end_line":6,"line":6},"value":120,"what":"width"},
+    {"owner":"a","span":{"col":1,"end_col":66,"end_line":6,"line":6},"value":60,"what":"height"}
+  ],
+  "placement": [],
+  "shapes": [
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "a",
+      "image": null,
+      "kind": "box",
+      "label": "Warm",
+      "origin": {"x":0,"y":0},
+      "outline": "rounded",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":60,"w":120,"x":20,"y":20},
+      "shape": "rounded",
+      "span": {"col":1,"end_col":66,"end_line":6,"line":6},
+      "style": {"color":"#5f3700","fill":"#fff7e0","font_size":12,"font_weight":"bold","muted":"#9a6a00","padding":4,"radius":6,"stroke":"#e37400","stroke_style":"dashed","stroke_width":2},
+      "text": [
+        {
+          "bold": true,
+          "color": "#5f3700",
+          "content": "Warm",
+          "lines": [
+            {
+              "baseline": 47.37,
+              "runs": [{"font":"bold","text":"Warm"}],
+              "width": 35.26,
+              "x": 62.37
+            }
+          ],
+          "rect": {"h":15,"w":35.26,"x":62.37,"y":35.5},
+          "role": "label",
+          "size": 12,
+          "span": {"col":1,"end_col":66,"end_line":6,"line":6}
+        },
+        {
+          "bold": false,
+          "color": "#9a6a00",
+          "content": "muted",
+          "lines": [
+            {
+              "baseline": 61.99,
+              "runs": [{"font":"regular","text":"muted"}],
+              "width": 28.7,
+              "x": 65.65
+            }
+          ],
+          "rect": {"h":12,"w":28.7,"x":65.65,"y":52.5},
+          "role": "sublabel",
+          "size": 9.6,
+          "span": {"col":50,"end_col":66,"end_line":6,"line":6}
+        }
+      ],
+      "text_area": {"h":52,"w":112,"x":24,"y":24},
+      "text_below": false,
+      "title_band": 0
+    }
+  ],
+  "size": [300,120],
+  "texts": [],
+  "title": "style"
+}

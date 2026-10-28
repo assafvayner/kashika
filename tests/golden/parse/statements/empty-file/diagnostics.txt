@@ -1,0 +1,2 @@
+error[diagram] 1:1-1:1: missing `diagram` statement
+  = help: start the file with `diagram "<title>" size (w,h)`

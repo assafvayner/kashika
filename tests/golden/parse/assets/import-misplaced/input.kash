@@ -1,0 +1,5 @@
+// spec: 3a, 7
+// Imports must come right after `diagram`.
+diagram "late import" size (300,120)
+box a at (20,20) size (40,40)
+import "lib/ok.kash"

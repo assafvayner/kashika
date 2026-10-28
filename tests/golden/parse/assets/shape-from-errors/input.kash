@@ -1,0 +1,6 @@
+// spec: 3a, 7
+// Bad `shape from` attribute values and a missing file.
+diagram "svg shape errors" size (300,200)
+shape a from "tri.svg" outline=circle
+shape b from "tri.svg" text-area=above
+shape c from "missing.svg"

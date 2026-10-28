@@ -1,0 +1,117 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "group", size: (400.0, 300.0), attrs: [], span: 4:1-4:31 }),
+        Group(
+            Group {
+                node: Node {
+                    id: Ident { name: "outer", span: 5:7-5:12 },
+                    label: Some("Outer"),
+                    at: Lit { x: Num(20.0), y: Num(20.0), span: 5:24-5:31 },
+                    size: (360.0, 260.0),
+                    attrs: [],
+                    block: None,
+                    span: 5:1-5:46,
+                },
+                children: [
+                    Box(
+                        Node {
+                            id: Ident { name: "a", span: 6:7-6:8 },
+                            label: Some("A"),
+                            at: Lit { x: Num(20.0), y: Num(40.0), span: 6:16-6:23 },
+                            size: (80.0, 40.0),
+                            attrs: [],
+                            block: None,
+                            span: 6:3-6:36,
+                        },
+                    ),
+                    Junction(
+                        Junction {
+                            id: Ident { name: "j", span: 7:12-7:13 },
+                            at: Lit { x: Num(200.0), y: Num(60.0), span: 7:17-7:25 },
+                            attrs: [
+                                Attr {
+                                    key: Ident { name: "dot", span: 7:26-7:29 },
+                                    at_t: None,
+                                    value: Flag,
+                                    span: 7:26-7:29,
+                                },
+                            ],
+                            span: 7:3-7:29,
+                        },
+                    ),
+                    Text(
+                        Text {
+                            id: Some(Ident { name: "t", span: 8:8-8:9 }),
+                            content: "note",
+                            at: Lit { x: Num(300.0), y: Num(60.0), span: 8:20-8:28 },
+                            attrs: [],
+                            span: 8:3-8:28,
+                        },
+                    ),
+                    Line(
+                        Line {
+                            id: Some(Ident { name: "l", span: 9:8-9:9 }),
+                            start: Ref {
+                                r: Ref {
+                                    id: Ident { name: "a", span: 9:11-9:12 },
+                                    anchor: Some(
+                                        Anchor {
+                                            name: Ident { name: "right", span: 9:13-9:18 },
+                                            t: None,
+                                        },
+                                    ),
+                                },
+                                offset: None,
+                                span: 9:11-9:18,
+                            },
+                            segs: [
+                                Seg {
+                                    kind: To(
+                                        Ref {
+                                            r: Ref {
+                                                id: Ident { name: "j", span: 9:22-9:23 },
+                                                anchor: None,
+                                            },
+                                            offset: None,
+                                            span: 9:22-9:23,
+                                        },
+                                    ),
+                                    span: 9:22-9:23,
+                                },
+                            ],
+                            attrs: [],
+                            span: 9:3-9:23,
+                        },
+                    ),
+                    Group(
+                        Group {
+                            node: Node {
+                                id: Ident { name: "inner", span: 10:9-10:14 },
+                                label: Some("Inner"),
+                                at: Lit { x: Num(20.0), y: Num(120.0), span: 10:26-10:34 },
+                                size: (300.0, 120.0),
+                                attrs: [],
+                                block: None,
+                                span: 10:3-10:49,
+                            },
+                            children: [
+                                Box(
+                                    Node {
+                                        id: Ident { name: "b", span: 11:9-11:10 },
+                                        label: Some("B"),
+                                        at: Lit { x: Num(20.0), y: Num(40.0), span: 11:18-11:25 },
+                                        size: (80.0, 40.0),
+                                        attrs: [],
+                                        block: None,
+                                        span: 11:5-11:38,
+                                    },
+                                ),
+                            ],
+                        },
+                    ),
+                ],
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}

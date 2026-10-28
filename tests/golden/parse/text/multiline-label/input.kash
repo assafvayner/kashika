@@ -1,0 +1,5 @@
+// spec: 6, 2
+// dump: scene
+// `\n` breaks a label; there is no wrapping.
+diagram "multi" size (300,160)
+box a "one\ntwo\nthree" at (20,20) size (120,100) gap=6

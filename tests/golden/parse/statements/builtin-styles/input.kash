@@ -1,0 +1,10 @@
+// spec: 3
+// dump: scene
+// Every built-in style.
+diagram "builtins" size (640,100)
+box s1 at (10,20) size (90,60) style=service
+box s2 at (115,20) size (90,60) style=datastore
+box s3 at (220,20) size (90,60) style=external
+box s4 at (325,20) size (90,60) style=queue
+box s5 at (430,20) size (90,60) style=boundary
+box s6 at (535,20) size (90,60) style=note

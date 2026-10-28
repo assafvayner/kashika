@@ -1,0 +1,12 @@
+// spec: 2
+// dump: ast
+// The segment keywords can't be ids, whatever the statement.
+diagram "reserved" size (400,200)
+box h at (10,10) size (20,20)
+box v at (40,10) size (20,20)
+junction x at (70,10)
+text y "y" at (100,20)
+group hv at (130,10) size (40,40) {
+}
+box vh at (180,10) size (20,20)
+line curve: (10,100) -> h 50

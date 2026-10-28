@@ -1,0 +1,18 @@
+// spec: 4
+// dump: scene
+// Every anchor name and alias on a rect.
+diagram "anchors" size (300,200)
+box a at (100,50) size (100,60)
+junction j_top at a.top
+junction j_bottom at a.bottom
+junction j_left at a.left
+junction j_right at a.right
+junction j_center at a.center
+junction j_tl at a.tl
+junction j_tr at a.tr
+junction j_bl at a.bl
+junction j_br at a.br
+junction j_top_left at a.top-left
+junction j_top_right at a.top-right
+junction j_bottom_left at a.bottom-left
+junction j_bottom_right at a.bottom-right

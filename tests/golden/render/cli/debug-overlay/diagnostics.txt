@@ -1,0 +1,5 @@
+warn[cross] 8:1-8:35: cross_line crosses l at (150,70)
+  = help: segment 1 runs at x=150; free x-intervals across y 20..180: 0..14, 286..300
+  = help: if intentional: allow=cross:l on cross_line
+  elements: [{"from":[150,20],"id":"cross_line","kind":"line","segment":1,"span":{"col":1,"end_col":35,"end_line":8,"line":8},"to":[150,180]},{"from":[100,70],"id":"l","kind":"line","segment":1,"span":{"col":1,"end_col":38,"end_line":7,"line":7},"to":[240,120]}]
+  facts: {"at":[150,70],"free":{"axis":"x","band":[20,180],"intervals":[[0,14],[286,300]]}}

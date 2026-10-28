@@ -1,0 +1,66 @@
+{
+  "allow": [],
+  "assets": [
+    {"mime":"image/svg+xml","natural":[40,20],"path":"../icons/tri.svg"}
+  ],
+  "background": null,
+  "clearance": 6,
+  "grid": null,
+  "junctions": [],
+  "lines": [],
+  "literals": [
+    {"owner":"a","span":{"col":14,"end_col":21,"end_line":6,"line":6},"value":20,"what":"x"},
+    {"owner":"a","span":{"col":14,"end_col":21,"end_line":6,"line":6},"value":20,"what":"y"},
+    {"owner":"a","span":{"col":1,"end_col":63,"end_line":6,"line":6},"value":80,"what":"width"},
+    {"owner":"a","span":{"col":1,"end_col":63,"end_line":6,"line":6},"value":60,"what":"height"}
+  ],
+  "placement": [],
+  "shapes": [
+    {
+      "allow": [],
+      "depth": 0,
+      "form": {
+        "draw": [],
+        "outline": [{"x":20,"y":20},{"x":100,"y":20},{"x":100,"y":80},{"x":20,"y":80}]
+      },
+      "icon": null,
+      "id": "a",
+      "image": {"asset":0,"fit":"stretch","rect":{"h":60,"w":80,"x":20,"y":20}},
+      "kind": "box",
+      "label": "x",
+      "origin": {"x":0,"y":0},
+      "outline": "path",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":60,"w":80,"x":20,"y":20},
+      "shape": "icon",
+      "span": {"col":1,"end_col":63,"end_line":6,"line":6},
+      "style": {"color":"#0f172a","fill":"#e6f4ea","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "x",
+          "lines": [
+            {
+              "baseline": 55.09,
+              "runs": [{"font":"regular","text":"x"}],
+              "width": 7.64,
+              "x": 56.18
+            }
+          ],
+          "rect": {"h":17.5,"w":7.64,"x":56.18,"y":41.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":63,"end_line":6,"line":6}
+        }
+      ],
+      "text_area": {"h":44,"w":64,"x":28,"y":28},
+      "text_below": false,
+      "title_band": 0
+    }
+  ],
+  "size": [300,120],
+  "texts": [],
+  "title": "nested"
+}

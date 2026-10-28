@@ -1,0 +1,4 @@
+// spec: 3a, 7
+// Paths may not escape the project root (the case directory) without --allow-path.
+diagram "outside" size (300,200)
+import "../shared/outside.kash"

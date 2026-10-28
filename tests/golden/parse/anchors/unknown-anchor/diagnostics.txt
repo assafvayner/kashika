@@ -1,0 +1,10 @@
+error[unknown-anchor] 5:18-5:23: unknown anchor `rigth` on `a`
+  = help: did you mean `right`?
+error[unknown-anchor] 6:18-6:23: `t` must be between 0 and 1
+  = help: `a.right@0` is the start of the edge and `a.right@1` the end
+error[unknown-anchor] 7:18-7:20: `@t` only applies to `top`/`bottom`/`left`/`right`
+  = help: use `a.tl` without `@t`, or an edge such as `a.top@0.25`
+error[unknown-anchor] 8:18-8:24: `@t` only applies to `top`/`bottom`/`left`/`right`
+  = help: use `a.center` without `@t`, or an edge such as `a.top@0.25`
+error[unknown-anchor] 9:18-9:21: `t` must be between 0 and 1
+  = help: `a.top@0` is the start of the edge and `a.top@1` the end

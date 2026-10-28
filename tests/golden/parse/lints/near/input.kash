@@ -1,0 +1,8 @@
+// spec: 7
+// Near a box edge, along its own box edge, and parallel to another line.
+diagram "near" size (400,300)
+box a at (100,40) size (100,60)
+line edge: (20,104) -> h 300
+line own: a.tl+(10,0) -> h 80 -> v -30
+line p1: (20,200) -> h 300
+line p2: (20,204) -> h 300

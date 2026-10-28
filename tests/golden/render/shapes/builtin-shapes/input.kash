@@ -1,0 +1,12 @@
+// spec: 3a
+// Every built-in shape, labeled.
+diagram "shapes" size (640,260)
+box s1 "rect" at (20,20) size (120,90) shape=rect
+box s2 "rounded" at (160,20) size (120,90) shape=rounded
+box s3 "cylinder" at (300,20) size (120,90) shape=cylinder
+box s4 "diamond" at (440,20) size (160,90) shape=diamond
+box s5 "ellipse" at (20,140) size (120,90) shape=ellipse
+box s6 "hexagon" at (160,140) size (120,90) shape=hexagon
+box s7 "doc" at (300,140) size (90,90) shape=doc
+box s8 "cloud" at (410,140) size (100,90) shape=cloud
+box s9 "person" at (530,140) size (80,90) shape=person

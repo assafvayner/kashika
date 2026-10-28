@@ -1,0 +1,8 @@
+warn[spill] 5:3-5:35: box 'out' extends outside group 'g' (right by 30px)
+  = help: enlarge 'g' or move the child inside it
+  elements: [{"bbox":[[170,60],[250,100]],"frame":"g","id":"out","kind":"box","local_bbox":[[150,40],[230,80]],"span":{"col":3,"end_col":35,"end_line":5,"line":5}},{"bbox":[[20,20],[220,140]],"id":"g","kind":"group","span":{"col":1,"end_col":40,"end_line":4,"line":4}}]
+  facts: {"overflow":{"right":30}}
+warn[spill] 6:3-6:34: box 'band' intrudes on the title band of group 'g'
+  = help: keep children below local y=25.5
+  elements: [{"bbox":[[30,25],[70,55]],"frame":"g","id":"band","kind":"box","local_bbox":[[10,5],[50,35]],"span":{"col":3,"end_col":34,"end_line":6,"line":6}},{"bbox":[[20,20],[220,140]],"id":"g","kind":"group","span":{"col":1,"end_col":40,"end_line":4,"line":4}}]
+  facts: {"band":[[20,20],[220,45.5]]}

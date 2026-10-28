@@ -1,0 +1,4 @@
+warn[cross] 5:1-5:46: arc crosses flat at (150,100.16)
+  = help: if intentional: allow=cross:flat on arc
+  elements: [{"from":[40,140],"id":"arc","kind":"line","segment":1,"span":{"col":1,"end_col":46,"end_line":5,"line":5},"to":[260,140]},{"from":[20,100],"id":"flat","kind":"line","segment":1,"span":{"col":1,"end_col":29,"end_line":4,"line":4},"to":[280,100]}]
+  facts: {"at":[150,100.16]}

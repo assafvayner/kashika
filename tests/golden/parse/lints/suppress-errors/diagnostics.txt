@@ -1,0 +1,8 @@
+error[attr] 4:28-4:38: unknown lint `cros`
+  = help: did you mean `cross`?
+warn[cross] 5:1-5:46: v1 crosses h1 at (150,100)
+  = help: segment 1 runs at x=150; free x-intervals across y 20..180: 0..14, 286..300
+  = help: if intentional: allow=cross:h1 on v1
+  elements: [{"from":[150,20],"id":"v1","kind":"line","segment":1,"span":{"col":1,"end_col":46,"end_line":5,"line":5},"to":[150,180]},{"from":[20,100],"id":"h1","kind":"line","segment":1,"span":{"col":1,"end_col":38,"end_line":4,"line":4},"to":[280,100]}]
+  facts: {"at":[150,100],"free":{"axis":"x","band":[20,180],"intervals":[[0,14],[286,300]]}}
+error[unknown-id] 5:28-5:46: unknown id `nobody`

@@ -1,0 +1,5 @@
+// spec: 6, 7
+// Unclosed `**` and `` ` `` are parse errors.
+diagram "unclosed" size (400,200)
+box a "**open" at (20,20) size (200,40)
+text t "`code" at (20,120)

@@ -1,0 +1,7 @@
+// spec: 3a
+// dump: scene
+// flags: allow-path
+// With --allow-path the same import works.
+diagram "outside allowed" size (300,200)
+import "../shared/outside.kash"
+box a at (20,20) size (40,40) style=outside

@@ -1,0 +1,6 @@
+// spec: 6, 2
+// Bold, code, literal single star and escaped markers.
+diagram "markup" size (420,160)
+box a "**Bold** and `code`" at (10,10) size (260,50)
+text t "2 * 3 = \*6\* and \`x\`" at (10,100) align=left
+text q "say \"hi\"\\ok" at (410,100) align=right

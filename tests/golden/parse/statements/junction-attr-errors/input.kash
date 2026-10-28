@@ -1,0 +1,5 @@
+// spec: 3, 7
+// Duplicate and unknown junction attributes.
+diagram "junction attrs" size (300,120)
+junction j at (50,50) dot dot
+junction k at (150,50) big

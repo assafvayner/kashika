@@ -1,0 +1,3 @@
+error[parse] 6:8-6:10: text block items take no id
+  = help: remove `t1`
+error[attr] 7:19-7:25: unknown attribute `weight` on text block item

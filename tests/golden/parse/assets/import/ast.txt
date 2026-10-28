@@ -1,0 +1,31 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "import", size: (300.0, 120.0), attrs: [], span: 4:1-4:32 }),
+        Import(Import { path: "lib/aws.kash", path_span: 5:8-5:22, ns: None, span: 5:1-5:22 }),
+        Box(
+            Node {
+                id: Ident { name: "a", span: 6:5-6:6 },
+                label: Some("S3"),
+                at: Lit { x: Num(20.0), y: Num(20.0), span: 6:15-6:22 },
+                size: (80.0, 60.0),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "shape", span: 6:36-6:41 },
+                        at_t: None,
+                        value: Word("bucket"),
+                        span: 6:36-6:48,
+                    },
+                    Attr {
+                        key: Ident { name: "style", span: 6:49-6:54 },
+                        at_t: None,
+                        value: Word("svc"),
+                        span: 6:49-6:58,
+                    },
+                ],
+                block: None,
+                span: 6:1-6:58,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}

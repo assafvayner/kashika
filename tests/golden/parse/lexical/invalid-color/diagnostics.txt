@@ -1,0 +1,2 @@
+error[parse] 5:36-5:42: invalid color `#12345`
+  = help: colors are `#rgb`, `#rrggbb` or `#rrggbbaa`; comments start with `//`

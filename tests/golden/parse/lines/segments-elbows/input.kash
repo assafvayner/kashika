@@ -1,0 +1,8 @@
+// spec: 5
+// dump: scene
+// `hv` and `vh` make one elbow each.
+diagram "elbows" size (300,200)
+box a at (20,20) size (60,40)
+box b at (200,120) size (60,40)
+line l1: a.right -> hv b.top
+line l2: a.bottom -> vh b.left

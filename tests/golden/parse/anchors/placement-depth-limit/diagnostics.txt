@@ -1,0 +1,2 @@
+error[placement-cycle] 260:1-260:31: placement chain from `b1` to `b257` is deeper than 256 references
+  = help: place some shapes in this chain with literal coordinates

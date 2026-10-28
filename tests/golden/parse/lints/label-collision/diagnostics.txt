@@ -1,0 +1,7 @@
+warn[label-collision] 5:37-5:53: label "over" of l collides with box 'a'
+  = help: clear label positions on l: label@0.05..0.85
+  elements: [{"bbox":[[187.27,56.5],[212.73,71.5]],"id":"l","kind":"label","span":{"col":37,"end_col":53,"end_line":5,"line":5}},{"bbox":[[150,70],[250,130]],"id":"a","kind":"box","span":{"col":1,"end_col":32,"end_line":4,"line":4}}]
+  facts: {"bbox":[[187.27,56.5],[212.73,71.5]],"clear_t":[0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85]}
+warn[label-collision] 6:1-6:29: text 't' collides with box 'a'
+  elements: [{"bbox":[[177.39,91.25],[222.61,108.75]],"id":"t","kind":"text","span":{"col":1,"end_col":29,"end_line":6,"line":6}},{"bbox":[[150,70],[250,130]],"id":"a","kind":"box","span":{"col":1,"end_col":32,"end_line":4,"line":4}}]
+  facts: {"bbox":[[177.39,91.25],[222.61,108.75]]}

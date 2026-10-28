@@ -1,0 +1,5 @@
+warn[cross] 6:1-6:23: line@L6 crosses line@L5 at (100,100)
+  = help: segment 1 runs at x=100; free x-intervals across y 20..180: 0..14, 226..300
+  = help: if intentional: name line@L5 and add allow=cross:<its id> on line@L6, or allow=cross on line@L6
+  elements: [{"from":[100,20],"id":"line@L6","kind":"line","segment":1,"span":{"col":1,"end_col":23,"end_line":6,"line":6},"to":[100,180]},{"from":[20,100],"id":"line@L5","kind":"line","segment":1,"span":{"col":1,"end_col":23,"end_line":5,"line":5},"to":[220,100]}]
+  facts: {"at":[100,100],"free":{"axis":"x","band":[20,180],"intervals":[[0,14],[226,300]]}}

@@ -1,0 +1,24 @@
+// spec: 3a, 7
+// Shape bodies need a path; outline and text-area must be valid; names are unique and not built-in.
+diagram "shape errors" size (300,200)
+shape nopath {
+  outline 1
+}
+shape badoutline {
+  path "M 0 0 L 1 0 L 1 1 Z"
+  outline 3
+}
+shape badarea {
+  path "M 0 0 L 1 0 L 1 1 Z"
+  text-area (0.5,0.5,0.8,0.8)
+}
+shape badpath { path "M 0 0 X 1 1" }
+shape twice {
+  path "M 0 0 L 1 1"
+  path "M 0 0 L 1 0"
+}
+shape oneline { path "M 0 0 L 1 0 L 1 1 Z" outline 1 }
+shape cloud { path "M 0 0 L 1 1" }
+shape dup { path "M 0 0 L 1 1" }
+shape dup { path "M 0 0 L 1 0" }
+box b at (20,20) size (40,40) shape=nosuch

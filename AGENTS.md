@@ -22,6 +22,8 @@ In dependency order (`crates/`):
 cargo fmt --all        # stable rustfmt, never +nightly
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
+cargo test -p kashika-cli --test golden -- parse/lexical   # golden cases, filtered by path
+KASHIKA_BLESS=1 cargo test -p kashika-cli --test golden -- <case path>   # write expected files
 cargo run -p kashika-cli -- check examples/upload/upload.kash
 cargo run -p kashika-cli -- render examples/upload/upload.kash -o target/upload.svg
 cargo run -p kashika-cli -- measure "**Payments** API" --size 14
@@ -33,14 +35,40 @@ cargo run -p kashika-cli -- ref
 ```
 
 
+## Adding a golden case
+
+`tests/golden/` holds data-driven cases, run by `cargo test -p kashika-cli --test golden` (harness in `crates/kashika-cli/tests/golden/`). Every directory with an `input.kash` is one test, named by its path:
+
+- `parse/<area>/<case>/` compiles and checks the input like `kashika check` and keeps `diagnostics.txt`, plus `ast.txt` and/or `scene.json` when the header says `// dump: ast, scene`. Use `ast` when the parse tree is under test, `scene` when resolution is, and neither for diagnostic-only cases.
+- `render/<area>/<case>/` runs `kashika render` in the case directory and keeps `out.svg` and `diagnostics.txt`, plus `out.png`/`out.jpg`/`out.webp` for `// raster: png jpg webp`.
+
+`input.kash` starts with directive comments, then a one-line description:
+
+```kash
+// spec: 5, 7
+// A diagonal segment on an `ortho` line is an error.
+diagram "not ortho" size (300,200)
+```
+
+`spec` (required) names the spec sections covered. `flags` takes `force`, `debug` (render only) and `allow-path`; `icon-path: <dir>` sets the icon search path to a directory in the case. Imports, images and icons go next to `input.kash`, because the case directory is the project root.
+
+To add a case, create the directory and `input.kash`, then bless it and the coverage map:
+
+```sh
+KASHIKA_BLESS=1 cargo test -p kashika-cli --test golden -- parse/lines/not-ortho
+KASHIKA_BLESS=1 cargo test -p kashika-cli --test golden -- coverage/map
+```
+
+Review the new files (open `out.svg` in a browser) and commit them with `tests/golden/COVERAGE.md`. After an intended behavior change, bless the affected cases with a path filter and review `git diff tests/golden`. A mismatch prints a unified diff and saves the actual file under the cargo target directory's `tmp/golden-actual/`. The `coverage/*` tests fail when a diagnostic code, spec section, built-in shape or bundled icon has no case, and when a code in `NOT_REPORTED` (`coverage.rs`) starts being reported.
+
 ## Invariants
 
 - SVG output is deterministic: the same input always yields the same bytes.
-- Every diagnostic carries a code listed in section 7 of the spec and a source span.
+- Every diagnostic carries a code listed in section 7 of the spec (`ERROR_CODES`/`LINT_CODES` in `kashika-diag`) and a source span, and every code has a golden case.
 - The parser and resolver recover and report diagnostics; they never panic on bad input.
 - Spec features not yet implemented report the `unsupported` diagnostic.
 - Every lint has a positive and a negative test in `crates/kashika-check/tests/`.
-- A language or CLI change updates the spec, the tests, the `ref` pages and `skills/kashika/SKILL.md` together. Every ```` ```kash ```` block in `ref` is a fixture that must check clean and be in `fmt` form.
+- A language or CLI change updates the spec, the tests (including golden cases under `tests/golden/`), the `ref` pages and `skills/kashika/SKILL.md` together. Every ```` ```kash ```` block in `ref` is a fixture that must check clean and be in `fmt` form.
 - `fmt` changes only whitespace; it never changes tokens.
 - `route` never edits files.
 - All file access in the model goes through `loader.rs`, which enforces local-only paths, the project root and the search path. The model never reads the environment; the CLI passes `KASHIKA_ICON_PATH` in `Options`.
@@ -53,5 +81,5 @@ cargo run -p kashika-cli -- ref
 - American spelling.
 - No comments that restate the code.
 - Lints take `&Ctx` and never mutate the scene. Outlines come from `kashika_check::outline::polygon` (which uses `Shape::form` for non-rect shapes) and text extents from `kashika_check::text_box` (including `below_box` for `text-area=below`), so new shapes plug in there.
-- Put new tests next to similar ones: integration tests in `crates/*/tests/`, CLI fixtures in `crates/kashika-cli/tests/fixtures/`.
+- Put new tests next to similar ones: integration tests in `crates/*/tests/`, CLI fixtures in `crates/kashika-cli/tests/fixtures/`, golden cases in `tests/golden/<suite>/<area>/`.
 - Planning docs under `docs/superpowers/` and `.superpowers/` are local-only; do not commit them.

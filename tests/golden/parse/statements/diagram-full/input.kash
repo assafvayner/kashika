@@ -1,0 +1,5 @@
+// spec: 3
+// dump: ast, scene
+// Every diagram attribute.
+diagram "Full" size (400,300) kashika="0.1.0" grid=10 clearance=4 icons="vendor" allow=near
+box a at (20,20) size (100,60) icon="mark.svg"

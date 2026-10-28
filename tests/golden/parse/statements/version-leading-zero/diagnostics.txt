@@ -1,0 +1,2 @@
+error[version] 3:28-3:44: `00.1.0` is not a valid kashika version
+  = help: write kashika="0.1.0"

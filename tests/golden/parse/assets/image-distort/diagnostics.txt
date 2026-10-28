@@ -1,0 +1,4 @@
+warn[image-distort] 5:1-5:59: image 'bad' is stretched 50% away from its 64x32 aspect ratio
+  = help: use fit=contain or fit=cover, or size (64, 32) to keep the ratio
+  elements: [{"bbox":[[120,20],[184,84]],"id":"bad","kind":"image","span":{"col":1,"end_col":59,"end_line":5,"line":5}}]
+  facts: {"distortion":0.5,"natural":[64,32],"size":[64,64]}

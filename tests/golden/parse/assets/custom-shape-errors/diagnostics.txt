@@ -1,0 +1,11 @@
+error[parse] 4:1-6:2: shape `nopath` needs a `path`
+  = help: e.g. `path "M 0 0 L 1 0 L 1 1 L 0 1 Z"`
+error[parse] 9:11-9:12: `outline 3` names no subpath; the path has 1
+error[parse] 13:13-13:30: `text-area` must be a unit rect (x,y,w,h) inside 0..1 with a positive size
+error[parse] 15:22-15:35: unknown path command `X`; use M L H V C Q A Z
+error[parse] 18:3-18:7: duplicate `path` in shape body
+error[parse] 20:44-20:51: expected end of line, found `outline`
+error[duplicate-style] 21:7-21:12: `cloud` is a built-in shape
+  = help: pick another name
+error[duplicate-style] 23:7-23:10: shape `dup` is defined twice
+error[attr] 24:31-24:43: unknown shape `nosuch`

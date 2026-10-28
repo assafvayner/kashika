@@ -1,0 +1,78 @@
+{
+  "allow": [],
+  "assets": [],
+  "background": null,
+  "clearance": 6,
+  "grid": null,
+  "junctions": [],
+  "lines": [],
+  "literals": [
+    {"owner":"a","span":{"col":21,"end_col":30,"end_line":5,"line":5},"value":200,"what":"x"},
+    {"owner":"a","span":{"col":21,"end_col":30,"end_line":5,"line":5},"value":100,"what":"y"},
+    {"owner":"a","span":{"col":1,"end_col":305,"end_line":5,"line":5},"value":160,"what":"width"},
+    {"owner":"a","span":{"col":1,"end_col":305,"end_line":5,"line":5},"value":80,"what":"height"}
+  ],
+  "placement": [],
+  "shapes": [
+    {
+      "allow": [{"code":"overlap","other":null}],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "a",
+      "image": null,
+      "kind": "box",
+      "label": "Payments",
+      "origin": {"x":0,"y":0},
+      "outline": "rounded",
+      "parent": null,
+      "reason": "demo",
+      "rect": {"h":80,"w":160,"x":120,"y":60},
+      "shape": "rounded",
+      "span": {"col":1,"end_col":305,"end_line":5,"line":5},
+      "style": {"color":"#202124","fill":"#ffffff","font_size":13,"font_weight":"bold","muted":"#5f6368","padding":10,"radius":12,"stroke":"#1a73e8","stroke_style":"dotted","stroke_width":2},
+      "text": [
+        {
+          "bold": true,
+          "color": "#202124",
+          "content": "Payments",
+          "lines": [
+            {
+              "baseline": 82.85,
+              "runs": [{"font":"bold","text":"Payments"}],
+              "width": 63.54,
+              "x": 130
+            }
+          ],
+          "rect": {"h":16.25,"w":63.54,"x":130,"y":70},
+          "role": "label",
+          "size": 13,
+          "span": {"col":1,"end_col":305,"end_line":5,"line":5}
+        },
+        {
+          "bold": false,
+          "color": "#5f6368",
+          "content": "v2",
+          "lines": [
+            {
+              "baseline": 100.53,
+              "runs": [{"font":"regular","text":"v2"}],
+              "width": 12.19,
+              "x": 130
+            }
+          ],
+          "rect": {"h":13,"w":12.19,"x":130,"y":90.25},
+          "role": "sublabel",
+          "size": 10.4,
+          "span": {"col":254,"end_col":267,"end_line":5,"line":5}
+        }
+      ],
+      "text_area": {"h":60,"w":140,"x":130,"y":70},
+      "text_below": false,
+      "title_band": 0
+    }
+  ],
+  "size": [400,200],
+  "texts": [],
+  "title": "box"
+}

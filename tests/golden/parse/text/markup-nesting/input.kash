@@ -1,0 +1,5 @@
+// spec: 6
+// dump: scene
+// Markup does not nest: a backtick inside bold is literal text, or an error.
+diagram "nesting" size (400,120)
+box a "**bold `code` bold**" at (20,20) size (300,60)

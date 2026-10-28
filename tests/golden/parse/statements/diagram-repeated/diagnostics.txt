@@ -1,0 +1,1 @@
+error[diagram] 4:1-4:29: only one `diagram` statement is allowed

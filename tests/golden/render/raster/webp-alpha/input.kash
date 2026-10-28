@@ -1,0 +1,5 @@
+// spec: 8
+// raster: webp
+// Lossless WebP keeps alpha.
+diagram "webp" size (120,80)
+box a "A" at (20,20) size (80,40) style=queue

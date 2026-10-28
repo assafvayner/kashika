@@ -1,0 +1,8 @@
+error[label-overflow] 4:1-4:69: its text needs 207.74x17.5px but the text area of `r` is 84x14px
+  = help: make `r` at least size (224,34), or shorten the text
+error[label-overflow] 5:1-5:63: its text needs 94.25x17.5px but the text area of `d` is 34x14px
+  = help: make `d` at least size (221,67), or shorten the text
+error[label-overflow] 6:1-6:62: its text needs 117.97x17.5px but the text area of `i` is 52x24px
+  = help: make `i` at least size (134,40), or shorten the text
+error[label-overflow] 7:1-7:73: its text needs 123.35x33.5px but the text area of `s` is 84x24px
+  = help: make `s` at least size (140,50), or shorten the text

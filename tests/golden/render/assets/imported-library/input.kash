@@ -1,0 +1,5 @@
+// spec: 3a
+// Namespaced imported shape and style.
+diagram "imported" size (300,140)
+import "lib/aws.kash" as aws
+box a "Bucket" at (20,20) size (120,90) shape=aws.bucket style=aws.svc

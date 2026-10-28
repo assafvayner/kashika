@@ -1,0 +1,63 @@
+{
+  "allow": [],
+  "assets": [
+    {"mime":"image/svg+xml","natural":[24,24],"path":"mark.svg"}
+  ],
+  "background": null,
+  "clearance": 6,
+  "grid": null,
+  "junctions": [],
+  "lines": [],
+  "literals": [
+    {"owner":"a","span":{"col":17,"end_col":24,"end_line":5,"line":5},"value":20,"what":"x"},
+    {"owner":"a","span":{"col":17,"end_col":24,"end_line":5,"line":5},"value":20,"what":"y"},
+    {"owner":"a","span":{"col":1,"end_col":54,"end_line":5,"line":5},"value":140,"what":"width"},
+    {"owner":"a","span":{"col":1,"end_col":54,"end_line":5,"line":5},"value":50,"what":"height"}
+  ],
+  "placement": [],
+  "shapes": [
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": {"asset":0,"fit":"contain","rect":{"h":24,"w":24,"x":28,"y":33}},
+      "id": "a",
+      "image": null,
+      "kind": "box",
+      "label": "Mark",
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":50,"w":140,"x":20,"y":20},
+      "shape": "rect",
+      "span": {"col":1,"end_col":54,"end_line":5,"line":5},
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "Mark",
+          "lines": [
+            {
+              "baseline": 50.09,
+              "runs": [{"font":"regular","text":"Mark"}],
+              "width": 33.46,
+              "x": 89.27
+            }
+          ],
+          "rect": {"h":17.5,"w":33.46,"x":89.27,"y":36.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":54,"end_line":5,"line":5}
+        }
+      ],
+      "text_area": {"h":34,"w":92,"x":60,"y":28},
+      "text_below": false,
+      "title_band": 0
+    }
+  ],
+  "size": [300,120],
+  "texts": [],
+  "title": "search"
+}

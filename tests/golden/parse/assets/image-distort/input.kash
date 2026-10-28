@@ -1,0 +1,5 @@
+// spec: 3a, 7
+// `fit=stretch` changing the aspect ratio by more than 5% warns.
+diagram "distort" size (300,200)
+image ok "photo.png" at (20,20) size (64,33) fit=stretch
+image bad "photo.png" at (120,20) size (64,64) fit=stretch

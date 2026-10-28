@@ -1,0 +1,5 @@
+// spec: 2, 6
+// dump: ast
+// Every allowed escape: \" \\ \n \* \`.
+diagram "escapes" size (300,160)
+box a "say \"hi\"\\ok\nline two \* \`" at (10,10) size (280,80)

@@ -1,0 +1,7 @@
+// spec: 3a
+// SVG, PNG and JPEG images with every `fit`.
+diagram "images" size (420,120)
+image s "pic.svg" at (10,20) size (60,60)
+image p "photo.png" at (90,20) size (80,80) fit=contain
+image c "photo.jpg" at (190,20) size (80,80) fit=cover
+image t "photo.png" at (290,20) size (120,40) fit=stretch allow=image-distort

@@ -1,0 +1,4 @@
+// spec: 3, 7
+// Unknown, mistyped and out-of-range style keys.
+diagram "style errors" size (300,120)
+style s { fil=#fff stroke-style=wavy font-weight=heavy font-size=0 stroke-width=-1 radius=-1 padding=2000000 color=red }

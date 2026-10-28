@@ -1,0 +1,8 @@
+// spec: 6, 7
+// dump: ast
+// Block items take no id and only size/color/align/muted.
+diagram "block errors" size (300,200)
+box a at (20,20) size (200,140) {
+  text t1 "with id"
+  text "bad attr" weight=bold
+}

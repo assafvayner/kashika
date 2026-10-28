@@ -1,0 +1,9 @@
+// spec: 5
+// dump: scene
+// Markers, stroke attributes and a line style (only stroke and font keys apply).
+diagram "markers" size (300,300)
+style thick { stroke=#d93025 stroke-width=3 fill=#000000 font-size=10 }
+line a: (20,20) -> h 200 start=arrow end=open
+line b: (20,60) -> h 200 start=diamond end=dot stroke-style=dashed
+line c: (20,100) -> h 200 start=none end=arrow stroke=#1a73e8 stroke-width=2 stroke-style=dotted
+line d: (20,140) -> h 200 style=thick label="styled"

@@ -1,0 +1,3 @@
+// spec: 8
+// A different major version is rejected.
+diagram "v" size (100,100) kashika="1.0.0"

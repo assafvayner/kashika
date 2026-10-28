@@ -1,0 +1,6 @@
+// spec: 3, 8
+// No `background=`: the SVG canvas is transparent; line labels still mask the line.
+diagram "transparent" size (300,120)
+box a "A" at (20,30) size (60,60)
+box b "B" at (220,30) size (60,60)
+line l: a.right -> b.left end=arrow label="call"

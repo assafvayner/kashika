@@ -1,0 +1,6 @@
+// spec: 2
+// dump: ast
+// `#` starts a color, never a comment.
+diagram "hash" size (200,100)
+# not a comment
+box a at (10,10) size (40,30)

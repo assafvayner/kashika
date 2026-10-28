@@ -1,0 +1,7 @@
+// spec: 3, 7
+// `color=none`, a bad `align` and an out-of-range `size`.
+diagram "text errors" size (400,200)
+text "a" at (20,20) color=none
+text "b" at (20,60) align=middle
+text "c" at (20,100) size=0
+text "d" at (20,140) size=2000000

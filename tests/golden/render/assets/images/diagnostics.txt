@@ -1,0 +1,5 @@
+warn[image-distort] 7:1-7:78: image 't' is stretched 50% away from its 64x32 aspect ratio
+  = help: use fit=contain or fit=cover, or size (120, 60) to keep the ratio
+  = suppressed
+  elements: [{"bbox":[[290,20],[410,60]],"id":"t","kind":"image","span":{"col":1,"end_col":78,"end_line":7,"line":7}}]
+  facts: {"distortion":0.5,"natural":[64,32],"size":[120,40]}

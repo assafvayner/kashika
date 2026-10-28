@@ -1,0 +1,7 @@
+// spec: 6, 7
+// Overflow reports the required size, accounting for shape and icon.
+diagram "overflow" size (600,300)
+box r "A very long label that will not fit" at (10,10) size (100,30)
+box d "Decision point" at (150,10) size (100,60) shape=diamond
+box i "Icon and text" at (300,10) size (100,40) icon="server"
+box s "Name" at (450,10) size (100,40) sublabel="a much longer sublabel"

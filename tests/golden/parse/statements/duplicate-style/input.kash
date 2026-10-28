@@ -1,0 +1,5 @@
+// spec: 3, 7
+// A style name defined twice.
+diagram "dup style" size (300,120)
+style s { fill=#fff }
+style s { fill=#000 }

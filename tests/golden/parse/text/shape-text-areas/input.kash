@@ -1,0 +1,9 @@
+// spec: 6, 3a
+// dump: scene
+// Text areas: diamond central 50%, ellipse inscribed, hexagon inset h/4, cylinder below the cap.
+diagram "areas" size (600,140)
+box r "r" at (10,20) size (100,80)
+box d "d" at (130,20) size (100,80) shape=diamond
+box e "e" at (250,20) size (100,80) shape=ellipse
+box hx "h" at (370,20) size (100,80) shape=hexagon
+box c "c" at (490,20) size (100,80) shape=cylinder

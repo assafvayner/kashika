@@ -1,0 +1,5 @@
+// spec: 3a, 7
+// Missing files are errors with did-you-mean.
+diagram "missing" size (300,200)
+import "lib/aws.kas"
+image i "pic.sv" at (20,20) size (40,40)

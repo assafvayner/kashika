@@ -1,0 +1,2 @@
+error[parse] 5:1-5:21: `import` must come right after `diagram`
+  = help: move every import to the top of the file, below the `diagram` line

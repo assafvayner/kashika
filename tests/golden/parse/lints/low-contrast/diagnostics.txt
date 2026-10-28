@@ -1,0 +1,8 @@
+warn[low-contrast] 4:1-4:65: label "pale" of 'a' has contrast 1.4:1 against its background (minimum 3:1)
+  = help: darken the text `color` or lighten the `fill` behind it
+  elements: [{"bbox":[[20,20],[140,80]],"id":"a","kind":"box","span":{"col":1,"end_col":65,"end_line":4,"line":4}}]
+  facts: {"background":"#ffffff","color":"#dddddd","ratio":1.36}
+warn[low-contrast] 5:1-5:41: text 't' has contrast 1.2:1 against its background (minimum 3:1)
+  = help: darken the text `color` or lighten the `fill` behind it
+  elements: [{"bbox":[[205.36,41.25],[234.64,58.75]],"id":"t","kind":"text","span":{"col":1,"end_col":41,"end_line":5,"line":5}}]
+  facts: {"background":"#ffffff","color":"#eeeeee","ratio":1.16}

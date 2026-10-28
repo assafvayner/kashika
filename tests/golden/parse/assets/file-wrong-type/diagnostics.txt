@@ -1,0 +1,2 @@
+error[file] 4:9-4:19: cannot use `fake.png`: only SVG, PNG and JPEG images are supported
+error[file] 5:9-5:20: cannot use `notes.txt`: only SVG, PNG and JPEG images are supported

@@ -1,0 +1,54 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "colors", size: (300.0, 100.0), attrs: [], span: 4:1-4:32 }),
+        Box(
+            Node {
+                id: Ident { name: "a", span: 5:5-5:6 },
+                label: None,
+                at: Lit { x: Num(10.0), y: Num(10.0), span: 5:10-5:17 },
+                size: (60.0, 40.0),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "fill", span: 5:31-5:35 },
+                        at_t: None,
+                        value: Color("#abc"),
+                        span: 5:31-5:40,
+                    },
+                    Attr {
+                        key: Ident { name: "stroke", span: 5:41-5:47 },
+                        at_t: None,
+                        value: Color("#1a73e8"),
+                        span: 5:41-5:55,
+                    },
+                ],
+                block: None,
+                span: 5:1-5:55,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "b", span: 6:5-6:6 },
+                label: None,
+                at: Lit { x: Num(100.0), y: Num(10.0), span: 6:10-6:18 },
+                size: (60.0, 40.0),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "fill", span: 6:32-6:36 },
+                        at_t: None,
+                        value: Color("#1a73e880"),
+                        span: 6:32-6:46,
+                    },
+                    Attr {
+                        key: Ident { name: "stroke", span: 6:47-6:53 },
+                        at_t: None,
+                        value: Color("#000"),
+                        span: 6:47-6:58,
+                    },
+                ],
+                block: None,
+                span: 6:1-6:58,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}

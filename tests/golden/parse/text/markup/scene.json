@@ -1,0 +1,135 @@
+{
+  "allow": [],
+  "assets": [],
+  "background": null,
+  "clearance": 6,
+  "grid": null,
+  "junctions": [],
+  "lines": [
+    {
+      "allow": [],
+      "end": "none",
+      "end_literal": true,
+      "id": "l",
+      "labels": [
+        {
+          "at": {"x":170,"y":170},
+          "lines": [
+            {
+              "baseline": 174.37,
+              "runs": [{"font":"mono","text":"GET"},{"font":"regular","text":" "},{"font":"bold","text":"/v1"}],
+              "width": 42,
+              "x": 149
+            }
+          ],
+          "rect": {"h":15,"w":42,"x":149,"y":162.5},
+          "span": {"col":27,"end_col":48,"end_line":7,"line":7},
+          "t": 0.5,
+          "text": "`GET` **/v1**"
+        }
+      ],
+      "named": true,
+      "origin": {"x":0,"y":0},
+      "ortho": false,
+      "parent": null,
+      "path": [
+        {"from":{"x":20,"y":170},"kind":"line","to":{"x":320,"y":170}}
+      ],
+      "path_seg": [0],
+      "reason": null,
+      "segments": [
+        {
+          "from": {"x":20,"y":170},
+          "kind": "h",
+          "pieces": [
+            {"from":{"x":20,"y":170},"kind":"line","to":{"x":320,"y":170}}
+          ],
+          "span": {"col":21,"end_col":26,"end_line":7,"line":7},
+          "to": {"x":320,"y":170}
+        }
+      ],
+      "span": {"col":1,"end_col":48,"end_line":7,"line":7},
+      "start": "none",
+      "start_literal": true,
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":12,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5}
+    }
+  ],
+  "literals": [
+    {"owner":"a","span":{"col":32,"end_col":39,"end_line":5,"line":5},"value":20,"what":"x"},
+    {"owner":"a","span":{"col":32,"end_col":39,"end_line":5,"line":5},"value":20,"what":"y"},
+    {"owner":"a","span":{"col":1,"end_col":53,"end_line":5,"line":5},"value":240,"what":"width"},
+    {"owner":"a","span":{"col":1,"end_col":53,"end_line":5,"line":5},"value":40,"what":"height"},
+    {"owner":"t","span":{"col":37,"end_col":45,"end_line":6,"line":6},"value":20,"what":"x"},
+    {"owner":"t","span":{"col":37,"end_col":45,"end_line":6,"line":6},"value":120,"what":"y"},
+    {"owner":"l","span":{"col":9,"end_col":17,"end_line":7,"line":7},"value":20,"what":"x"},
+    {"owner":"l","span":{"col":9,"end_col":17,"end_line":7,"line":7},"value":170,"what":"y"},
+    {"owner":"l","span":{"col":21,"end_col":26,"end_line":7,"line":7},"value":300,"what":"h"}
+  ],
+  "placement": [],
+  "shapes": [
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "a",
+      "image": null,
+      "kind": "box",
+      "label": "**Bold** and `code`",
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":40,"w":240,"x":20,"y":20},
+      "shape": "rect",
+      "span": {"col":1,"end_col":53,"end_line":5,"line":5},
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "**Bold** and `code`",
+          "lines": [
+            {
+              "baseline": 45.09,
+              "runs": [{"font":"bold","text":"Bold"},{"font":"regular","text":" and "},{"font":"mono","text":"code"}],
+              "width": 96.65,
+              "x": 91.68
+            }
+          ],
+          "rect": {"h":17.5,"w":96.65,"x":91.68,"y":31.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":53,"end_line":5,"line":5}
+        }
+      ],
+      "text_area": {"h":24,"w":224,"x":28,"y":28},
+      "text_below": false,
+      "title_band": 0
+    }
+  ],
+  "size": [400,200],
+  "texts": [
+    {
+      "align": "left",
+      "at": {"x":20,"y":120},
+      "color": "#0f172a",
+      "content": "2 * 3 = \\*6\\* and \\`x\\`",
+      "id": "t",
+      "lines": [
+        {
+          "baseline": 125.09,
+          "runs": [{"font":"regular","text":"2 * 3 = *6* and `x`"}],
+          "width": 121.18,
+          "x": 20
+        }
+      ],
+      "origin": {"x":0,"y":0},
+      "parent": null,
+      "rect": {"h":17.5,"w":121.18,"x":20,"y":111.25},
+      "size": 14,
+      "span": {"col":1,"end_col":56,"end_line":6,"line":6}
+    }
+  ],
+  "title": "markup"
+}

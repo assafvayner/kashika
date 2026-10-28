@@ -1,0 +1,13 @@
+// spec: 3a
+// dump: scene
+// Every built-in shape: outline, drawing and text area.
+diagram "shapes" size (1000,120)
+box s1 at (10,20) size (100,80) shape=rect
+box s2 at (120,20) size (100,80) shape=rounded
+box s3 at (230,20) size (100,80) shape=cylinder
+box s4 at (340,20) size (100,80) shape=diamond
+box s5 at (450,20) size (100,80) shape=ellipse
+box s6 at (560,20) size (100,80) shape=hexagon
+box s7 at (670,20) size (100,80) shape=doc
+box s8 at (780,20) size (100,80) shape=cloud
+box s9 at (890,20) size (100,80) shape=person

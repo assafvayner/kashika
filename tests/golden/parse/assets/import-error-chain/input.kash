@@ -1,0 +1,4 @@
+// spec: 3a, 7
+// Errors in nested imports chain the prefix.
+diagram "chain" size (300,120)
+import "lib/outer.kash"

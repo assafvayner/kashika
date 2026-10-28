@@ -1,0 +1,9 @@
+warn[overlap] 5:1-5:69: box 'badge' overlaps box 'card'
+  = suppressed: badge
+  elements: [{"bbox":[[110,10],[150,40]],"id":"badge","kind":"box","span":{"col":1,"end_col":69,"end_line":5,"line":5}},{"bbox":[[20,20],[140,100]],"id":"card","kind":"box","span":{"col":1,"end_col":34,"end_line":4,"line":4}}]
+  facts: {"intersection":[[110,20],[140,40]]}
+warn[spill] 7:3-7:35: box 'out' extends outside group 'g' (right by 30px)
+  = help: enlarge 'g' or move the child inside it
+  = suppressed
+  elements: [{"bbox":[[300,40],[380,80]],"frame":"g","id":"out","kind":"box","local_bbox":[[100,20],[180,60]],"span":{"col":3,"end_col":35,"end_line":7,"line":7}},{"bbox":[[200,20],[350,120]],"id":"g","kind":"group","span":{"col":1,"end_col":47,"end_line":6,"line":6}}]
+  facts: {"overflow":{"right":30}}

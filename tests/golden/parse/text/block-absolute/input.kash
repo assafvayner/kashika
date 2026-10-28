@@ -1,0 +1,8 @@
+// spec: 6
+// dump: ast, scene
+// Items with `at` are absolute in the box-local frame and leave the stack.
+diagram "absolute" size (300,200)
+box a "Title" at (20,20) size (220,140) {
+  text "corner" at (10,10) align=left size=10
+  text "badge" at (200,120) align=right size=10
+}

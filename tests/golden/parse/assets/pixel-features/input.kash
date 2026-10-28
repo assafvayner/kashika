@@ -1,0 +1,8 @@
+// spec: 3a
+// dump: scene
+// Cylinder caps are min(20, h/4); hexagon insets min(h/4, w/2).
+diagram "pixels" size (400,300)
+box short at (10,10) size (100,40) shape=cylinder
+box tall at (130,10) size (100,200) shape=cylinder
+box flat at (250,10) size (100,40) shape=hexagon
+box narrow at (250,100) size (20,100) shape=hexagon

@@ -1,0 +1,8 @@
+// spec: 4
+// dump: scene
+// Groups have anchors like boxes.
+diagram "group anchors" size (300,200)
+group g "G" at (20,20) size (200,150) {
+}
+box a at g.right+(20,0) size (40,40) pin=left
+line l: g.bottom -> v 20

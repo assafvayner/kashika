@@ -1,0 +1,9 @@
+// spec: 4
+// dump: scene
+// Offsets use `+` with signed parts and compose with `@t`.
+diagram "offsets" size (300,200)
+box a at (100,50) size (100,60)
+junction o1 at a.top+(-10,0)
+junction o2 at a.left@0.25+(0,4)
+junction o3 at a.br+(10,-10)
+junction o4 at o1+(5,5)

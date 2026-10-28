@@ -1,0 +1,9 @@
+// spec: 6
+// dump: scene
+// Stacked and absolute items in one block.
+diagram "mixed" size (300,200)
+box a at (20,20) size (220,140) {
+  text "stacked one"
+  text "corner" at (10,10) align=left size=10
+  text "stacked two"
+}

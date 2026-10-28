@@ -1,0 +1,5 @@
+// spec: 5, 7
+// A line whose segments all have zero length; a zero segment in a longer line is fine.
+diagram "zero" size (300,200)
+line z: (20,20) -> h 0 -> v 0
+line ok: (20,100) -> h 0 -> h 100

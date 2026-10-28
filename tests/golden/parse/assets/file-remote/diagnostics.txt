@@ -1,0 +1,4 @@
+error[file] 4:8-4:38: `https://example.com/aws.kash` is not a local file; only local files are supported
+  = help: download it and refer to it by a relative path
+error[file] 5:9-5:36: `https://example.com/x.png` is not a local file; only local files are supported
+  = help: download it and refer to it by a relative path

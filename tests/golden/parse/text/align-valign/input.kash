@@ -1,0 +1,12 @@
+// spec: 6
+// dump: scene
+// Every text-align × text-valign combination.
+diagram "align" size (400,300)
+box tl "x" at (10,10) size (120,80) text-align=left text-valign=top
+box tc "x" at (140,10) size (120,80) text-align=center text-valign=top
+box tr "x" at (270,10) size (120,80) text-align=right text-valign=top
+box ml "x" at (10,110) size (120,80) text-align=left text-valign=middle
+box mr "x" at (270,110) size (120,80) text-align=right
+box bl "x" at (10,210) size (120,80) text-align=left text-valign=bottom
+box bc "x" at (140,210) size (120,80) text-valign=bottom
+box br "x" at (270,210) size (120,80) text-align=right text-valign=bottom

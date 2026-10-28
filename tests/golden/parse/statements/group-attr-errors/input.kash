@@ -1,0 +1,5 @@
+// spec: 3, 7
+// `text-valign` and `icon-pos=top` are box-only.
+diagram "group attrs" size (300,200)
+group g "G" at (10,10) size (200,150) text-valign=top icon="server" icon-pos=top {
+}

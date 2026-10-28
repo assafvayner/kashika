@@ -1,0 +1,133 @@
+// spec: 3, 7
+// Groups nest at most 64 deep (this file is generated: 65 levels).
+diagram "deep" size (400,300)
+group g0 at (0,0) size (10,10) {
+  group g1 at (0,0) size (10,10) {
+    group g2 at (0,0) size (10,10) {
+      group g3 at (0,0) size (10,10) {
+        group g4 at (0,0) size (10,10) {
+          group g5 at (0,0) size (10,10) {
+            group g6 at (0,0) size (10,10) {
+              group g7 at (0,0) size (10,10) {
+                group g8 at (0,0) size (10,10) {
+                  group g9 at (0,0) size (10,10) {
+                    group g10 at (0,0) size (10,10) {
+                      group g11 at (0,0) size (10,10) {
+                        group g12 at (0,0) size (10,10) {
+                          group g13 at (0,0) size (10,10) {
+                            group g14 at (0,0) size (10,10) {
+                              group g15 at (0,0) size (10,10) {
+                                group g16 at (0,0) size (10,10) {
+                                  group g17 at (0,0) size (10,10) {
+                                    group g18 at (0,0) size (10,10) {
+                                      group g19 at (0,0) size (10,10) {
+                                        group g20 at (0,0) size (10,10) {
+                                          group g21 at (0,0) size (10,10) {
+                                            group g22 at (0,0) size (10,10) {
+                                              group g23 at (0,0) size (10,10) {
+                                                group g24 at (0,0) size (10,10) {
+                                                  group g25 at (0,0) size (10,10) {
+                                                    group g26 at (0,0) size (10,10) {
+                                                      group g27 at (0,0) size (10,10) {
+                                                        group g28 at (0,0) size (10,10) {
+                                                          group g29 at (0,0) size (10,10) {
+                                                            group g30 at (0,0) size (10,10) {
+                                                              group g31 at (0,0) size (10,10) {
+                                                                group g32 at (0,0) size (10,10) {
+                                                                  group g33 at (0,0) size (10,10) {
+                                                                    group g34 at (0,0) size (10,10) {
+                                                                      group g35 at (0,0) size (10,10) {
+                                                                        group g36 at (0,0) size (10,10) {
+                                                                          group g37 at (0,0) size (10,10) {
+                                                                            group g38 at (0,0) size (10,10) {
+                                                                              group g39 at (0,0) size (10,10) {
+                                                                                group g40 at (0,0) size (10,10) {
+                                                                                  group g41 at (0,0) size (10,10) {
+                                                                                    group g42 at (0,0) size (10,10) {
+                                                                                      group g43 at (0,0) size (10,10) {
+                                                                                        group g44 at (0,0) size (10,10) {
+                                                                                          group g45 at (0,0) size (10,10) {
+                                                                                            group g46 at (0,0) size (10,10) {
+                                                                                              group g47 at (0,0) size (10,10) {
+                                                                                                group g48 at (0,0) size (10,10) {
+                                                                                                  group g49 at (0,0) size (10,10) {
+                                                                                                    group g50 at (0,0) size (10,10) {
+                                                                                                      group g51 at (0,0) size (10,10) {
+                                                                                                        group g52 at (0,0) size (10,10) {
+                                                                                                          group g53 at (0,0) size (10,10) {
+                                                                                                            group g54 at (0,0) size (10,10) {
+                                                                                                              group g55 at (0,0) size (10,10) {
+                                                                                                                group g56 at (0,0) size (10,10) {
+                                                                                                                  group g57 at (0,0) size (10,10) {
+                                                                                                                    group g58 at (0,0) size (10,10) {
+                                                                                                                      group g59 at (0,0) size (10,10) {
+                                                                                                                        group g60 at (0,0) size (10,10) {
+                                                                                                                          group g61 at (0,0) size (10,10) {
+                                                                                                                            group g62 at (0,0) size (10,10) {
+                                                                                                                              group g63 at (0,0) size (10,10) {
+                                                                                                                                group g64 at (0,0) size (10,10) {
+                                                                                                                                }
+                                                                                                                              }
+                                                                                                                            }
+                                                                                                                          }
+                                                                                                                        }
+                                                                                                                      }
+                                                                                                                    }
+                                                                                                                  }
+                                                                                                                }
+                                                                                                              }
+                                                                                                            }
+                                                                                                          }
+                                                                                                        }
+                                                                                                      }
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              }
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

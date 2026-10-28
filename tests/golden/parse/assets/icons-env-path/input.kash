@@ -1,0 +1,6 @@
+// spec: 3a
+// dump: scene
+// icon-path: env-icons
+// KASHIKA_ICON_PATH is searched too (the harness sets it from `icon-path`).
+diagram "env" size (300,120)
+box a "Mark" at (20,20) size (140,50) icon="mark.svg"

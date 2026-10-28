@@ -1,0 +1,5 @@
+// spec: 3
+// dump: ast, scene
+// A box with every box attribute.
+diagram "box" size (400,200)
+box a "Payments" at (200,100) size (160,80) pin=center shape=rounded style=service allow=overlap reason="demo" fill=#ffffff stroke=#1a73e8 stroke-width=2 stroke-style=dotted font-size=13 font-weight=bold color=#202124 radius=12 padding=10 muted=#5f6368 sublabel="v2" text-align=left text-valign=top gap=4

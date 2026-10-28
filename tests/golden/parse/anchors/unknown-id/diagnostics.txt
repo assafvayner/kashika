@@ -1,0 +1,4 @@
+error[unknown-id] 5:11-5:14: unknown id `apu`
+  = help: did you mean `api`?
+error[unknown-id] 6:22-6:25: unknown id `dbb`
+  = help: did you mean `db`?

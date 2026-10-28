@@ -1,0 +1,6 @@
+// spec: 6, 7
+// An absolute item outside the text area should be `text-outside-shape`, which is not reported yet.
+diagram "outside" size (300,200)
+box a at (20,20) size (200,100) {
+  text "far" at (190,95) size=10
+}

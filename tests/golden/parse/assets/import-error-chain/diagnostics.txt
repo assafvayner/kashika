@@ -1,0 +1,1 @@
+error[parse] 4:1-4:24: in `lib/outer.kash` at 1:1: in `broken.kash` at 2:1: expected an attribute, found end of file

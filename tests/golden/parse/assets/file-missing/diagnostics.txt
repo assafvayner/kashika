@@ -1,0 +1,4 @@
+error[file] 4:8-4:21: file `lib/aws.kas` not found
+  = help: did you mean `lib/aws.kash`?
+error[file] 5:9-5:17: file `pic.sv` not found
+  = help: did you mean `pic.svg`?

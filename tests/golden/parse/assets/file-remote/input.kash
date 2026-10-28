@@ -1,0 +1,5 @@
+// spec: 3a, 7
+// Remote URLs are not supported.
+diagram "remote" size (300,200)
+import "https://example.com/aws.kash"
+image i "https://example.com/x.png" at (20,20) size (40,40)

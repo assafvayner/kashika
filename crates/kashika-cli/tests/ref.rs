@@ -5,28 +5,6 @@ const TOPICS: &[&str] = &[
     "syntax", "anchors", "paths", "shapes", "styles", "metrics", "lints", "examples", "cli",
 ];
 
-/// Error codes from spec §7, plus `text-conflict` from §6.
-const ERROR_CODES: &[&str] = &[
-    "parse",
-    "unknown-id",
-    "unknown-anchor",
-    "duplicate-id",
-    "duplicate-style",
-    "placement-cycle",
-    "label-overflow",
-    "text-conflict",
-    "not-ortho",
-    "degenerate-curve",
-    "zero-length",
-    "attr",
-    "unknown-style",
-    "size",
-    "diagram",
-    "version",
-    "file",
-    "unsupported",
-];
-
 fn kashika() -> Command {
     Command::cargo_bin("kashika").unwrap()
 }
@@ -90,7 +68,10 @@ fn every_topic_has_a_page() {
 
 #[test]
 fn every_diagnostic_code_has_a_page() {
-    for (codes, severity) in [(ERROR_CODES, "error"), (kashika_diag::LINT_CODES, "warn")] {
+    for (codes, severity) in [
+        (kashika_diag::ERROR_CODES, "error"),
+        (kashika_diag::LINT_CODES, "warn"),
+    ] {
         for code in codes {
             let p = page(&[*code]);
             assert!(

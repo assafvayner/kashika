@@ -1,0 +1,8 @@
+// spec: 2
+// dump: ast
+// Line and block comments between and after statements.
+diagram "comments" size (200,100)  // trailing comment
+/* a block comment on its own line */
+box a at (10,10) size (40,30) /* inline block */ style=service
+// a whole-line comment
+box b at (100,10) size (40,30)

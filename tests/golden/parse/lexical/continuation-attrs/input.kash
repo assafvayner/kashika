@@ -1,0 +1,9 @@
+// spec: 2
+// dump: ast
+// Attribute lines continue a box; the next keyword starts a new statement.
+diagram "attrs" size (300,200)
+box a at (20,20) size (100,60)
+  style=service
+  shape=rounded
+  sublabel="v2"
+box b at (180,20) size (100,60)

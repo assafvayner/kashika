@@ -1,0 +1,6 @@
+// spec: 3
+// dump: scene
+// A user style named like a built-in overrides it key by key.
+diagram "override" size (300,120)
+style service { fill=#fde8e8 }
+box a "API" at (20,20) size (120,60) style=service

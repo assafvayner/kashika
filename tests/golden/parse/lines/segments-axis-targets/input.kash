@@ -1,0 +1,6 @@
+// spec: 5
+// dump: scene
+// `x`/`y` move to a number or to a point's x/y.
+diagram "axis" size (300,200)
+box a at (200,120) size (60,40)
+line l: (20,20) -> x 100 -> y 60 -> x a.left -> y a.top

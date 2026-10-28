@@ -1,0 +1,8 @@
+// spec: 2, 3, 7
+// dump: scene
+// CSS named colors: exact, case-insensitive, and an unknown name with did-you-mean.
+diagram "named colors" size (400,120)
+style steel { fill=steelblue stroke=DarkSlateGray color=White }
+box a "A" at (20,20) size (100,60) style=steel
+box b "B" at (140,20) size (100,60) fill=Tomato
+box c "C" at (260,20) size (100,60) fill=steelblu

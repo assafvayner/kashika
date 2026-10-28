@@ -1,0 +1,6 @@
+// spec: 5
+// dump: scene
+// Unnamed lines are `line@L<n>` (n is the source line).
+diagram "unnamed" size (300,200)
+line (20,100) -> h 200
+line (100,20) -> v 160

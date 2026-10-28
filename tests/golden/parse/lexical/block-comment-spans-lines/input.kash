@@ -1,0 +1,6 @@
+// spec: 2
+// dump: ast
+// A block comment spanning lines is one line break, so it ends the statement.
+diagram "spans" size (200,100)
+box a at (10,10) size (40,30) /* starts here
+and ends here */ box b at (100,10) size (40,30)

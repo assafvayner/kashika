@@ -1,0 +1,12 @@
+// spec: 5
+// Every segment kind.
+diagram "segments" size (500,300) allow=cross
+box a at (20,20) size (60,40)
+box b at (400,220) size (60,40)
+line pts: (20,100) -> (120,100) -> h 40 -> v 40 -> h -40
+line axis: (200,20) -> x 260 -> y 80 -> x b.left -> y b.top
+line l_hv: a.right -> hv b.top
+line l_vh: a.bottom -> vh b.left
+line cl: (20,280) -> curve left:30 (200,280)
+line cr: (220,180) -> curve right:30 (380,180)
+line via: (220,280) -> curve via (260,220) (340,220) (380,280)

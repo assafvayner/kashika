@@ -1,0 +1,6 @@
+// spec: 3, 7
+// A cycle of `at` references is an error that prints the cycle.
+diagram "cycle" size (300,200)
+box a at b.right size (40,40)
+box b at c.right size (40,40)
+box c at a.right size (40,40)

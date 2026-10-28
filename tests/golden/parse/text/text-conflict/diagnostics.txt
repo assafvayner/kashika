@@ -1,0 +1,2 @@
+error[text-conflict] 5:3-5:17: `a` has a label or sublabel and stacked text block items
+  = help: move the label into the block as its first `text` item, or give every block item its own `at`

@@ -1,0 +1,16 @@
+// spec: 4, 3a
+// dump: scene
+// On non-rect shapes edge anchors are axis-projected onto the outline; corners stay bbox corners.
+diagram "projection" size (600,200)
+box cyl at (20,40) size (100,80) shape=cylinder
+box dia at (140,40) size (100,80) shape=diamond
+box ell at (260,40) size (100,80) shape=ellipse
+box hex at (380,40) size (100,80) shape=hexagon
+box rnd at (500,40) size (80,80) shape=rounded radius=20
+junction c_top at cyl.top@0.25
+junction c_tl at cyl.tl
+junction d_left at dia.left@0.25
+junction d_top at dia.top@0.25
+junction e_right at ell.right@0.25
+junction h_left at hex.left@0.25
+junction r_top at rnd.top@0.05

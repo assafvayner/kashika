@@ -1,0 +1,4 @@
+// spec: 5, 7
+// Bad marker names, out-of-range stroke widths, box-only attributes on lines.
+diagram "marker errors" size (300,100)
+line l: (20,40) -> h 200 start=arow end=circle stroke-width=0 radius=-1 fill=#fff

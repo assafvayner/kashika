@@ -1,0 +1,8 @@
+// spec: 6
+// Labels and sublabels in every alignment.
+diagram "align" size (420,300)
+box tl "Top left" at (10,10) size (130,80) sublabel="sub" text-align=left text-valign=top
+box mc "Middle" at (145,10) size (130,80) sublabel="center"
+box br "Bottom right" at (280,10) size (130,80) sublabel="sub" text-align=right text-valign=bottom
+box multi "one\ntwo\nthree" at (10,110) size (130,100) gap=8
+box styled "Styled" at (145,110) size (130,100) style=service sublabel="muted color"

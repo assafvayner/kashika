@@ -1,0 +1,8 @@
+// spec: 3a
+// `shape from` SVGs with labels inside and below.
+diagram "svg shapes" size (360,160)
+shape tri from "tri.svg"
+shape tri_below from "tri.svg" text-area=below outline=hull
+box a "in" at (20,20) size (120,60) shape=tri
+box b "below" at (200,20) size (120,60) shape=tri_below
+line l: a.right -> b.left end=arrow

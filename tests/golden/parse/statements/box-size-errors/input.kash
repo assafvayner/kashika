@@ -1,0 +1,6 @@
+// spec: 3, 7
+// Sizes must be positive and at most 1,000,000.
+diagram "sizes" size (300,200)
+box zero at (10,10) size (0,10)
+box neg at (10,40) size (10,-5)
+box huge at (10,70) size (2000000,10)

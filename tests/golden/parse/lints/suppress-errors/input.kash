@@ -1,0 +1,5 @@
+// spec: 7
+// Unknown lint codes and unknown ids in `allow=`; unreported codes are accepted.
+diagram "allow errors" size (300,200) allow=block-reducible,text-outside-shape
+line h1: (20,100) -> h 260 allow=cros
+line v1: (150,20) -> v 160 allow=cross:nobody

@@ -1,0 +1,5 @@
+﻿// spec: 2
+// dump: ast
+// A UTF-8 byte order mark before the first line is ignored.
+diagram "bom" size (200,100)
+box a at (10,10) size (40,30)

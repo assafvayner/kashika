@@ -1,0 +1,4 @@
+// spec: 3, 8
+// `background=none` is the same as no background: transparent.
+diagram "none" size (200,100) background=none
+box a "A" at (20,20) size (60,60)

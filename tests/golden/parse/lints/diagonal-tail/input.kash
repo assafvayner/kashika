@@ -1,0 +1,4 @@
+// spec: 7
+// A diagonal last segment after orthogonal ones.
+diagram "diagonal tail" size (300,200)
+line l: (20,20) -> h 100 -> v 50 -> (200,150)

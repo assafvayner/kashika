@@ -1,0 +1,5 @@
+// spec: 3
+// dump: ast, scene
+// The smallest valid file.
+diagram "minimal" size (100,100)
+box a "A" at (10,10) size (80,40)

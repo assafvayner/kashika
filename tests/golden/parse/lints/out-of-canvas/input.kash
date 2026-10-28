@@ -1,0 +1,6 @@
+// spec: 7
+// Shapes, lines and labels beyond the canvas, including a curve's true extent.
+diagram "canvas" size (300,200)
+box a at (250,20) size (100,40)
+line l: (20,190) -> curve right:40 (200,190)
+text t "edge" at (295,150)

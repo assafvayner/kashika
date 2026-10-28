@@ -1,0 +1,7 @@
+// spec: 6
+// dump: scene
+// `**bold**` and `` `code` ``; a single `*` is literal; escapes are literal.
+diagram "markup" size (400,200)
+box a "**Bold** and `code`" at (20,20) size (240,40)
+text t "2 * 3 = \*6\* and \`x\`" at (20,120) align=left
+line l: (20,170) -> h 300 label="`GET` **/v1**"

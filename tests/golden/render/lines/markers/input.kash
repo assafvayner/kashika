@@ -1,0 +1,9 @@
+// spec: 5
+// Every marker at both ends.
+diagram "markers" size (300,240)
+line m1: (20,20) -> h 260 start=none end=arrow
+line m2: (20,60) -> h 260 start=arrow end=open
+line m3: (20,100) -> h 260 start=open end=diamond
+line m4: (20,140) -> h 260 start=diamond end=dot
+line m5: (20,180) -> h 260 start=dot end=none
+line m6: (20,220) -> v -10 -> h 260 end=arrow

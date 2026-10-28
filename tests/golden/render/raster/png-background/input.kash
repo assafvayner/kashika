@@ -1,0 +1,5 @@
+// spec: 8
+// raster: png
+// PNG with an explicit background.
+diagram "png bg" size (120,80) background=#fef7e0
+box a "A" at (20,20) size (80,40) style=service

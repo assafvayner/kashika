@@ -1,0 +1,9 @@
+// spec: 7
+// A line entering a box interior; leaving and re-entering its own box is flagged.
+diagram "through" size (400,280)
+box a at (20,60) size (80,60)
+box obstacle at (160,60) size (80,60)
+box b at (300,60) size (80,60)
+box c at (20,170) size (80,60)
+line l: a.right -> b.left
+line back: c.right -> h 30 -> v 50 -> x 60 -> y 150 -> hv b.bottom

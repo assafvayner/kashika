@@ -1,0 +1,11 @@
+// spec: 4
+// dump: scene
+// `side@t` runs left→right and top→bottom; `top` is `top@0.5`.
+diagram "at t" size (300,200)
+box a at (100,50) size (100,60)
+junction t0 at a.top@0
+junction t25 at a.top@0.25
+junction t50 at a.top@0.5
+junction b1 at a.bottom@1
+junction l25 at a.left@0.25
+junction r75 at a.right@0.75

@@ -1,0 +1,1 @@
+error[duplicate-style] 5:1-5:22: style `s` is defined twice

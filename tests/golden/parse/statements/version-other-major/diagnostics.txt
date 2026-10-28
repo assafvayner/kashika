@@ -1,0 +1,2 @@
+error[version] 3:28-3:43: this file needs kashika 1.0.0 or newer (same major version); this is kashika <tool>
+  = help: use a kashika 1.x release, or set `kashika=` to a 0.x version

@@ -1,0 +1,2 @@
+error[attr] 8:37-8:50: `fill` expects a color like `#1a73e8`, a CSS color name or `none`
+  = help: did you mean `steelblue`?

@@ -1,0 +1,2 @@
+error[parse] 68:129-69:130: groups are nested more than 64 deep
+  = help: flatten the hierarchy; ids are global, so children need no parent
