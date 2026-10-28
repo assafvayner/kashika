@@ -61,9 +61,9 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
 
   Built-in styles: `service`, `datastore`, `external`, `queue`, `boundary`, `note`. A user style with a built-in's name overrides it **key by key**. Precedence: inline attribute > `style=` > built-in default.
 - `box` shapes: built-in `rect` (default), `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`, or any `shape` that is defined or imported (§3a).
-- `pin=<anchor>` picks which anchor of the new shape lands on `at` (default `tl`). For example, `box cache at db.right+(60,0) size (120,60) pin=left` vertically centers `cache` beside `db`.
+- `pin=<anchor>` picks which anchor of the new shape lands on `at` (default `tl`). It takes a plain anchor name, so `@t` is not allowed. For example, `box cache at db.right+(60,0) size (120,60) pin=left` vertically centers `cache` beside `db`.
 - `at` may reference other shapes, so boxes can be placed relative to each other. Placement references form a DAG; a cycle is an error that prints the cycle.
-- `group`: children are `box`, `group`, `junction`, `text`, `line`. The label sits inside the top-left corner, and its title band (`font line-height + padding`) is reserved space. Children that intrude on the title band trigger `spill`.
+- `group`: children are `box`, `group`, `junction`, `text`, `line`. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. The label sits inside the top-left corner, and its title band (`font line-height + padding`) is reserved space. Children that intrude on the title band trigger `spill`.
 - `junction`: a zero-size named point that lines can start or end at. Lines meeting at a junction are connected, not crossing. `dot` draws a 6px dot there. Junctions model buses and fan-in/fan-out.
 - `text`: `at` is the anchor point for the alignment. Vertically, `at` is the **center** of the text block, not the baseline.
 
@@ -224,7 +224,14 @@ These block output unless `--force` is given:
 | `placement-cycle` | Relative placements form a cycle |
 | `label-overflow` | Reports the required size |
 | `not-ortho` | A segment is diagonal on a line marked `ortho` |
-| `degenerate-curve` | A zero-length curve, or non-finite values |
+| `degenerate-curve` | A zero-length curve, a negative curve amount, or a non-finite value |
+| `zero-length` | A line whose segments all have zero length |
+| `attr` | Unknown, duplicate or mistyped attribute, or a duplicate label position |
+| `unknown-style` | `style=` names no built-in or user style |
+| `size` | A non-positive size |
+| `diagram` | Missing, misplaced or repeated `diagram` statement |
+| `version` | `kashika=N` doesn't match the binary |
+| `unsupported` | A spec feature this build doesn't implement yet |
 
 ### Warnings
 
