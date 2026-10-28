@@ -15,6 +15,18 @@ pub fn label_box_at(label: &Label, at: Pt) -> Rect {
     Rect::new(r.x + at.x - label.at.x, r.y + at.y - label.at.y, r.w, r.h)
 }
 
+/// The label of a `text-area=below` shape, which sits under the shape instead of inside it.
+pub fn below_box(s: &Shape) -> Option<Rect> {
+    if !s.text_below {
+        return None;
+    }
+    s.text
+        .iter()
+        .filter(|t| t.role != TextRole::Absolute)
+        .map(|t| t.rect)
+        .reduce(union)
+}
+
 /// The reserved band at the top of a group with a title: padding plus the title's height.
 pub fn title_band(g: &Shape) -> Option<Rect> {
     (g.kind == ShapeKind::Group && g.title_band > 0.0)

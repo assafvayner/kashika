@@ -1,7 +1,7 @@
 use kashika_geom::{boundary_nearest, Pt, TOLERANCE};
 use kashika_model::Marker;
 
-use crate::ctx::{side_anchor, Ctx};
+use crate::ctx::{outline_anchor, Ctx};
 
 /// A line endpoint that sits on a shape's outline.
 #[derive(Debug, Clone, PartialEq)]
@@ -26,7 +26,7 @@ pub fn ports(ctx: &Ctx) -> Vec<Port> {
                 if ctx.is_junction(p) || boundary_nearest(p, &s.poly).0 > TOLERANCE {
                     continue;
                 }
-                let (side, t) = side_anchor(s.shape, p);
+                let (side, t) = outline_anchor(s.shape, p);
                 out.push(Port {
                     shape: s.shape.id.clone(),
                     side,

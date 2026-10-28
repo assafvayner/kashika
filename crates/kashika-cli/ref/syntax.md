@@ -3,7 +3,7 @@
 ```text
 diagram "<title>" size (w,h) [kashika=1] [grid=N] [clearance=N] [allow=<code>,...]
 style <name> { key=value ... }
-box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=rect|rounded] [style=<name>] [sublabel="..."] [text-align=left|center|right] [text-valign=top|middle|bottom] [gap=N] [style keys] [{ text block }]
+box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=<shape>] [style=<name>] [sublabel="..."] [text-align=left|center|right] [text-valign=top|middle|bottom] [gap=N] [style keys] [{ text block }]
 group <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [style=<name>] [sublabel="..."] [text-align=...] [gap=N] { children }
 junction <id> at <point> [dot]
 text  [<id>] "<content>" at <point> [size=N] [color=C] [align=left|center|right] [muted]
@@ -16,6 +16,7 @@ line  [<id>:] <point> -> <segment> [-> <segment> ...] [line attributes] [ortho]
 - `pin=<anchor>` puts that anchor of the new shape on `at` (default `tl`): `at api.right+(80,0) pin=left`. `side@t` works too: `pin=left@0.25`.
 - Text in boxes: `sublabel` is one muted line under the label. Markup works in labels and texts: `**bold**` and `` `code` ``; escape with `\*` and `` \` ``. For three or more lines, use a block, `{ text "..." [size=N] [muted] ... }`. Items without `at` stack `gap` apart. Don't combine `label` with stacked items (`text-conflict`). An item with `at (x,y)` is absolute, in box-local coordinates.
 - Groups hold `box`, `group`, `junction`, `text` and `line`, use the `boundary` style, and reserve a title band at the top. A group's `text-valign` is an error.
+- More shapes, `import`, `image` and `icon=`: `kashika ref shapes`.
 - `text` is centered vertically on `at`. Paint order: groups (file order), boxes, lines, then labels and texts in file order.
 
 ```kash

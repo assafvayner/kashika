@@ -16,4 +16,4 @@ x, y  := number | ref.x | ref.y        // mixed point: (db.left.x, lane.y)
 
 - Offsets use `+` with signed parts, `db.top+(-10,0)`, and combine with `@t`: `db.left@0.25+(0,4)`.
 - Groups have anchors too: `vpc.top`.
-- Edge anchors on rounded shapes move straight onto the outline, so a vertical line into `db.top` stays vertical.
+- Edge anchors on non-rectangular shapes move straight onto the outline, so a vertical line into `db.top` stays vertical.

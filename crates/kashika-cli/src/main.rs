@@ -1,4 +1,5 @@
 mod fmt_cmd;
+mod icons;
 mod inspect;
 mod measure;
 mod output;
@@ -56,6 +57,8 @@ enum Cmd {
         #[arg(long)]
         json: bool,
     },
+    /// List bundled icons and the importable icons and shapes in directories
+    Icons(icons::IconsArgs),
     /// Print the resolved geometry: shapes, anchors, lines, labels and the placement graph
     Inspect {
         #[command(flatten)]
@@ -99,12 +102,29 @@ struct Common {
     /// File name to report for stdin input
     #[arg(long)]
     stdin_name: Option<String>,
+    /// Allow file references outside the input file's directory
+    #[arg(long)]
+    allow_path: bool,
     /// Also list suppressed findings
     #[arg(long)]
     show_suppressed: bool,
     /// Only report warnings that involve these ids (comma-separated); errors are always reported
     #[arg(long, value_delimiter = ',')]
     focus: Vec<String>,
+}
+
+pub(crate) fn icon_path() -> Vec<PathBuf> {
+    std::env::var_os("KASHIKA_ICON_PATH")
+        .map(|v| std::env::split_paths(&v).collect())
+        .unwrap_or_default()
+}
+
+pub(crate) fn options(file: &str, allow_path: bool) -> kashika_model::Options {
+    kashika_model::Options {
+        path: (file != "-").then(|| PathBuf::from(file)),
+        allow_path,
+        icon_path: icon_path(),
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -153,6 +173,7 @@ fn main() -> ExitCode {
         } => run_inspect(&common, &ids, ports, corridors.as_deref()),
         Cmd::Route(args) => route_cmd::run(&args),
         Cmd::Measure(args) => measure::run(&args),
+        Cmd::Icons(args) => icons::run(&args),
         Cmd::Ref { topic, json } => ref_cmd::run(topic.as_deref(), json),
     }
 }
@@ -167,7 +188,7 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
             return tool_error(c.format, "output must end in .svg or .png");
         }
     }
-    let (scene, mut diags) = kashika_model::compile(&src);
+    let (scene, mut diags) = kashika_model::compile_with(&src, &options(&c.file, c.allow_path));
     diags.extend(kashika_check::check(&scene));
     kashika_diag::sort(&mut diags);
     let metrics = kashika_check::metrics(&scene, &diags);
@@ -235,7 +256,7 @@ fn run_inspect(c: &Common, ids: &[String], ports: bool, corridors: Option<&str>)
         Ok(v) => v,
         Err(msg) => return tool_error(c.format, &msg),
     };
-    let (scene, mut diags) = kashika_model::compile(&src);
+    let (scene, mut diags) = kashika_model::compile_with(&src, &options(&c.file, c.allow_path));
     diags.extend(kashika_check::check(&scene));
     diags.retain(|d| !d.suppressed);
     if let Err(msg) = known_ids(&scene, ids, "inspect") {

@@ -78,9 +78,19 @@ pub fn parse_ref(expr: &str) -> (Option<String>, Option<Side>) {
 /// Resolves two points, written as in a `.kash` file, by compiling them as a probe line
 /// appended to `src`. Literal points are in the canvas frame.
 pub fn resolve_endpoints(src: &str, from: &str, to: &str) -> Result<(Endpoint, Endpoint), Error> {
+    resolve_endpoints_with(src, from, to, &kashika_model::Options::default())
+}
+
+/// Like [`resolve_endpoints`], resolving files as `opts` says.
+pub fn resolve_endpoints_with(
+    src: &str,
+    from: &str,
+    to: &str,
+    opts: &kashika_model::Options,
+) -> Result<(Endpoint, Endpoint), Error> {
     let first_probe_line = src.lines().count() as u32 + 1;
     let text = format!("{src}\nline {PROBE}: {from} -> {to}\n");
-    let (scene, diags) = kashika_model::compile(&text);
+    let (scene, diags) = kashika_model::compile_with(&text, opts);
     let errors: Vec<Diagnostic> = diags
         .into_iter()
         .filter(|d| d.severity == Severity::Error && d.span.line >= first_probe_line)

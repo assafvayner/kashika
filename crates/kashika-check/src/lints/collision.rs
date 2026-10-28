@@ -1,8 +1,10 @@
 use kashika_diag::{Diagnostic, Element, Span};
 use kashika_geom::{inside_runs, point_at, polygons_overlap, rect_polygon, Rect};
 
-use crate::ctx::{bbox, fmt_num, intersection, line_el, shape_el, text_el, text_id, Ctx};
-use crate::text_box::{label_box, label_box_at, text_box, title_box};
+use crate::ctx::{
+    bbox, fmt_num, intersection, kind_name, line_el, shape_el, text_el, text_id, Ctx,
+};
+use crate::text_box::{below_box, label_box, label_box_at, text_box, title_box};
 
 struct Subject<'c> {
     el: Element,
@@ -11,15 +13,18 @@ struct Subject<'c> {
     rect: Rect,
     /// For a line label: its line (index into `ctx.lines`) and the label.
     label: Option<(usize, &'c kashika_model::Label)>,
+    /// For the label under a `text-area=below` shape: that shape's id.
+    shape: Option<&'c str>,
 }
 
-/// `label-collision`: a line label or text intersects a box, a group title, another label or
-/// text, or a line other than its own.
+/// `label-collision`: a line label, text or the label under a `text-area=below` shape
+/// intersects a box, an image, a group title, another label or text, or a line other than
+/// its own.
 pub fn label_collision(ctx: &Ctx) -> Vec<Diagnostic> {
     let subjects = subjects(ctx);
     let mut out = Vec::new();
     for (i, s) in subjects.iter().enumerate() {
-        let mut hits = obstacles(ctx, s.rect, s.label.map(|(li, _)| li));
+        let mut hits = obstacles(ctx, s.rect, s.label.map(|(li, _)| li), s.shape);
         for o in &subjects[..i] {
             if intersection(s.rect, o.rect).is_some() {
                 hits.push((o.what.clone(), o.el.clone()));
@@ -59,6 +64,7 @@ fn subjects<'c>(ctx: &'c Ctx) -> Vec<Subject<'c>> {
                 what: format!("label \"{}\" of {}", lab.text, l.line.id),
                 rect,
                 label: Some((li, lab)),
+                shape: None,
             });
         }
     }
@@ -69,18 +75,43 @@ fn subjects<'c>(ctx: &'c Ctx) -> Vec<Subject<'c>> {
             what: format!("text '{}'", text_id(t)),
             rect: text_box(t),
             label: None,
+            shape: None,
+        });
+    }
+    for s in ctx.boxes() {
+        let Some(rect) = below_box(s.shape) else {
+            continue;
+        };
+        let mut el = Element::new(s.shape.id.clone(), "label", s.shape.span);
+        el.bbox = Some(bbox(rect));
+        out.push(Subject {
+            el,
+            span: s.shape.span,
+            what: format!("the label under {} '{}'", kind_name(s.shape), s.shape.id),
+            rect,
+            label: None,
+            shape: Some(s.shape.id.as_str()),
         });
     }
     out
 }
 
-/// Boxes, group titles and lines (except line `own`) that `rect` intersects.
-fn obstacles(ctx: &Ctx, rect: Rect, own: Option<usize>) -> Vec<(String, Element)> {
+/// Boxes, images, group titles and lines (except line `own` and shape `own_shape`) that
+/// `rect` intersects.
+fn obstacles(
+    ctx: &Ctx,
+    rect: Rect,
+    own: Option<usize>,
+    own_shape: Option<&str>,
+) -> Vec<(String, Element)> {
     let poly = rect_polygon(rect);
     let mut out = Vec::new();
     for s in ctx.boxes() {
-        if polygons_overlap(&poly, &s.poly) {
-            out.push((format!("box '{}'", s.shape.id), shape_el(s.shape)));
+        if own_shape != Some(s.shape.id.as_str()) && polygons_overlap(&poly, &s.poly) {
+            out.push((
+                format!("{} '{}'", kind_name(s.shape), s.shape.id),
+                shape_el(s.shape),
+            ));
         }
     }
     for g in ctx.groups() {
@@ -116,7 +147,7 @@ fn clear_positions(
         .map(|k| f64::from(k) / 20.0)
         .filter(|&t| {
             let r = label_box_at(label, point_at(&l.line.path, t));
-            obstacles(ctx, r, Some(li)).is_empty()
+            obstacles(ctx, r, Some(li), None).is_empty()
                 && subjects
                     .iter()
                     .enumerate()

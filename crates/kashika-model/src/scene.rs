@@ -3,6 +3,7 @@ use kashika_geom::{PathSeg, Pt, Rect};
 use kashika_text::PlacedLine;
 use serde::Serialize;
 
+use crate::form::Form;
 use crate::style::Style;
 use crate::textlayout::TextItem;
 
@@ -17,6 +18,8 @@ pub struct Scene {
     pub junctions: Vec<Junction>,
     pub texts: Vec<Text>,
     pub lines: Vec<Line>,
+    /// Embedded files (images, icons, SVG shapes), in first-use order.
+    pub assets: Vec<Asset>,
     /// Who is placed relative to whom: `at` references and group frames.
     pub placement: Vec<PlacementEdge>,
     /// Every number the author wrote as a position, distance or size.
@@ -28,6 +31,7 @@ pub struct Scene {
 pub enum ShapeKind {
     Box,
     Group,
+    Image,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -35,6 +39,8 @@ pub enum ShapeKind {
 pub enum Outline {
     Rect,
     Rounded,
+    /// A built-in, custom or SVG shape; `Shape::form` holds the geometry.
+    Path,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -42,6 +48,13 @@ pub struct Shape {
     pub id: String,
     pub kind: ShapeKind,
     pub outline: Outline,
+    /// `rect`, `rounded`, a built-in shape, a defined or imported shape (`aws.s3`), or `image`.
+    pub shape: String,
+    /// Outline and drawing for `Outline::Path` shapes.
+    pub form: Option<Form>,
+    /// The drawing of an `image` or a `shape from` SVG.
+    pub image: Option<ImageRef>,
+    pub icon: Option<ImageRef>,
     pub label: Option<String>,
     pub rect: Rect,
     pub parent: Option<String>,
@@ -49,6 +62,8 @@ pub struct Shape {
     pub style: Style,
     /// The bounding box inset by `padding` (and by the shape's own reduction).
     pub text_area: Rect,
+    /// `text-area=below`: the text sits in a band under the box instead of inside it.
+    pub text_below: bool,
     /// Label, sublabel and text block items, laid out.
     pub text: Vec<TextItem>,
     /// Height of a group's reserved title band from its top edge; 0 for boxes and
@@ -78,7 +93,15 @@ impl Shape {
 
     /// Canvas position of an anchor, or `None` when the name or `t` is invalid.
     pub fn anchor(&self, name: &str, t: Option<f64>) -> Option<Pt> {
-        crate::anchor::resolve(self.rect, self.corner_radius(), &self.id, name, t).ok()
+        crate::form::resolve_anchor(
+            self.form.as_ref(),
+            self.rect,
+            self.style.radius,
+            &self.id,
+            name,
+            t,
+        )
+        .ok()
     }
 }
 
@@ -207,6 +230,38 @@ pub struct Line {
     pub parent: Option<String>,
     pub origin: Pt,
     pub span: Span,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Fit {
+    Contain,
+    Cover,
+    Stretch,
+}
+
+/// A placed asset: which file, where, and how it fills its rect.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct ImageRef {
+    /// Index into `Scene::assets`.
+    pub asset: usize,
+    pub rect: Rect,
+    pub fit: Fit,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Asset {
+    /// The path as written in the source, or `builtin:<name>` for a bundled icon.
+    pub path: String,
+    pub mime: &'static str,
+    /// Natural size in px (SVG: its width/height; raster: pixels).
+    pub natural: (f64, f64),
+    /// The bytes embedded in output: sanitized SVG, or the raster file unchanged.
+    #[serde(skip)]
+    pub bytes: Vec<u8>,
+    /// Convex hull of the drawing in unit coordinates (the unit square for rasters).
+    #[serde(skip)]
+    pub unit_hull: Vec<Pt>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]

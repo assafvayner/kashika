@@ -75,10 +75,11 @@ impl<'a> Ctx<'a> {
         }
     }
 
+    /// Boxes and images: the opaque shapes that lines and labels must stay clear of.
     pub fn boxes(&self) -> impl Iterator<Item = &ShapeGeom<'a>> + '_ {
         self.shapes
             .iter()
-            .filter(|s| s.shape.kind == ShapeKind::Box)
+            .filter(|s| s.shape.kind != ShapeKind::Group)
     }
 
     pub fn groups(&self) -> impl Iterator<Item = &ShapeGeom<'a>> + '_ {
@@ -170,6 +171,7 @@ pub fn kind_name(s: &Shape) -> &'static str {
     match s.kind {
         ShapeKind::Box => "box",
         ShapeKind::Group => "group",
+        ShapeKind::Image => "image",
     }
 }
 
@@ -301,9 +303,44 @@ pub fn side_anchor(s: &Shape, p: Pt) -> (&'static str, f64) {
     )
 }
 
+/// The bounding-box side nearest to `p`, and `p`'s position along it (0..1). On shapes
+/// with a form, edge anchors project onto the outline, so the nearest side whose anchor
+/// lands back on `p` wins.
+pub fn outline_anchor(s: &Shape, p: Pt) -> (&'static str, f64) {
+    let nearest = side_anchor(s, p);
+    if s.form.is_none() {
+        return nearest;
+    }
+    let r = s.rect;
+    let mut sides = [
+        ("top", (p.y - r.y).abs()),
+        ("bottom", (p.y - r.bottom()).abs()),
+        ("left", (p.x - r.x).abs()),
+        ("right", (p.x - r.right()).abs()),
+    ];
+    sides.sort_by(|a, b| a.1.total_cmp(&b.1));
+    sides
+        .iter()
+        .find_map(|&(side, _)| {
+            let t = match side {
+                "top" | "bottom" => (p.x - r.x) / r.w,
+                _ => (p.y - r.y) / r.h,
+            };
+            let t = if t.is_finite() {
+                t.clamp(0.0, 1.0)
+            } else {
+                0.5
+            };
+            s.anchor(side, Some(t))
+                .filter(|q| q.dist(p) <= 0.5)
+                .map(|_| (side, t))
+        })
+        .unwrap_or(nearest)
+}
+
 /// `id.side` or `id.side@t` for the anchor of `s` at outline point `p`.
 pub fn anchor_text(s: &Shape, p: Pt) -> String {
-    let (side, t) = side_anchor(s, p);
+    let (side, t) = outline_anchor(s, p);
     let t = round2(t);
     if t == 0.5 {
         format!("{}.{side}", s.id)

@@ -1,0 +1,159 @@
+use std::path::{Path, PathBuf};
+
+use clap::Args;
+use kashika_syntax::ast::Stmt;
+use serde::Serialize;
+
+use crate::Format;
+
+#[derive(Args)]
+pub struct IconsArgs {
+    /// Directories to scan (default: the KASHIKA_ICON_PATH entries)
+    dirs: Vec<PathBuf>,
+    /// Only list entries whose name or path contains this term
+    #[arg(long)]
+    search: Option<String>,
+    #[arg(long, value_enum, default_value_t = Format::Text)]
+    format: Format,
+}
+
+pub fn run(a: &IconsArgs) -> std::process::ExitCode {
+    let dirs = if a.dirs.is_empty() {
+        crate::icon_path()
+    } else {
+        a.dirs.clone()
+    };
+    let entries = list(&dirs, a.search.as_deref());
+    print!(
+        "{}",
+        match a.format {
+            Format::Text => text(&entries),
+            Format::Json => json(&entries),
+        }
+    );
+    std::process::ExitCode::SUCCESS
+}
+
+#[derive(Debug, Serialize)]
+pub struct Entry {
+    pub name: String,
+    pub path: String,
+    pub size: Option<[f64; 2]>,
+    pub library: String,
+}
+
+/// Bundled icons first, then every image and `.kash` shape under `dirs`, in sorted order.
+pub fn list(dirs: &[PathBuf], search: Option<&str>) -> Vec<Entry> {
+    let mut out: Vec<Entry> = kashika_model::BUNDLED_ICONS
+        .iter()
+        .map(|(name, src)| Entry {
+            name: name.to_string(),
+            path: format!("builtin:{name}"),
+            size: kashika_model::probe(src.as_bytes(), true)
+                .ok()
+                .map(|(w, h)| [w, h]),
+            library: "kashika".into(),
+        })
+        .collect();
+    for dir in dirs {
+        let mut files = Vec::new();
+        walk(dir, &mut files);
+        files.sort();
+        for f in files {
+            entries(dir, &f, &mut out);
+        }
+    }
+    if let Some(term) = search {
+        let term = term.to_lowercase();
+        out.retain(|e| {
+            e.name.to_lowercase().contains(&term) || e.path.to_lowercase().contains(&term)
+        });
+    }
+    out
+}
+
+fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for e in rd.flatten() {
+        let p = e.path();
+        if e.file_name().to_string_lossy().starts_with('.') {
+            continue;
+        }
+        if p.is_dir() {
+            walk(&p, out);
+        } else {
+            out.push(p);
+        }
+    }
+}
+
+fn entries(dir: &Path, f: &Path, out: &mut Vec<Entry>) {
+    let rel = f
+        .strip_prefix(dir)
+        .unwrap_or(f)
+        .to_string_lossy()
+        .replace('\\', "/");
+    let library = dir.display().to_string();
+    let ext = f
+        .extension()
+        .map(|e| e.to_string_lossy().to_lowercase())
+        .unwrap_or_default();
+    let stem = f
+        .file_stem()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    match ext.as_str() {
+        "svg" | "png" | "jpg" | "jpeg" => {
+            let size = std::fs::read(f)
+                .ok()
+                .and_then(|b| kashika_model::probe(&b, ext == "svg").ok())
+                .map(|(w, h)| [w, h]);
+            out.push(Entry {
+                name: stem,
+                path: rel,
+                size,
+                library,
+            });
+        }
+        "kash" => {
+            let Ok(src) = std::fs::read_to_string(f) else {
+                return;
+            };
+            let (file, _) = kashika_syntax::parse(&src);
+            for stmt in file.stmts {
+                if let Stmt::Shape(s) = stmt {
+                    out.push(Entry {
+                        name: s.name.name,
+                        path: rel.clone(),
+                        size: None,
+                        library: library.clone(),
+                    });
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+pub fn text(entries: &[Entry]) -> String {
+    let mut out = String::new();
+    for e in entries {
+        let size = e
+            .size
+            .map_or_else(|| "-".to_string(), |[w, h]| format!("{w}x{h}"));
+        out.push_str(&format!(
+            "{:<16} {:<32} {:<9} {}\n",
+            e.name, e.path, size, e.library
+        ));
+    }
+    out
+}
+
+pub fn json(entries: &[Entry]) -> String {
+    format!(
+        "{}\n",
+        serde_json::json!({ "schema": "kashika.icons/1", "icons": entries })
+    )
+}

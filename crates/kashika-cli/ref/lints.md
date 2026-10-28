@@ -8,22 +8,23 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `unknown-id` | error | reference to an id that doesn't exist | apply the did-you-mean suggestion |
 | `unknown-anchor` | error | bad anchor name or `@t` | use a listed anchor; `@t` only on edges, `0 <= t <= 1` |
 | `duplicate-id` | error | two statements share an id | rename one; ids are global |
-| `duplicate-style` | error | two `style` statements share a name | merge or rename one |
+| `duplicate-style` | error | two `style` or `shape` definitions share a name | merge or rename one |
 | `placement-cycle` | error | `at` references form a cycle | give one shape literal coordinates |
-| `label-overflow` | error | text doesn't fit the text area | grow the box to the help line's size, shorten the text or break it with `\n` |
+| `label-overflow` | error | text doesn't fit the text area | use the size in the help line or shorten the text |
 | `text-conflict` | error | `label` or `sublabel` plus stacked block items | move them into the block, or give every item an `at` |
 | `not-ortho` | error | diagonal segment on an `ortho` line | use `hv`/`vh` or `x`/`y` |
-| `degenerate-curve` | error | zero-size or negative curve, or a value beyond 1,000,000 | check the curve's endpoints and amount |
-| `zero-length` | error | every segment has zero length | the endpoints coincide; fix them |
+| `degenerate-curve` | error | zero-size, negative or huge curve | fix its points or amount |
+| `zero-length` | error | every segment has zero length | fix the endpoints |
 | `attr` | error | unknown, duplicate, mistyped or out-of-range attribute | apply the did-you-mean suggestion |
 | `unknown-style` | error | `style=` names no style | define it or use a built-in |
 | `size` | error | non-positive or oversized size | use a positive width and height |
 | `diagram` | error | missing, misplaced or repeated `diagram` | start with one `diagram "<title>" size (w,h)` |
 | `version` | error | `kashika=N` doesn't match the binary | update the file or the binary |
+| `file` | error | missing or unusable file, or an import cycle | fix the path or pass `--allow-path` |
 | `unsupported` | error | feature not built yet | remove it; see "Not supported" |
 | `cross` | warn | two lines intersect away from a shared endpoint | reroute via a free interval |
 | `shared-segment` | warn | two lines overlap collinearly over 1px | move one to the free lane |
-| `through` | warn | a line enters a box | route around it |
+| `through` | warn | a line enters a box or image | route around it |
 | `near` | warn | a line within `clearance` of a box or parallel line | move it `clearance` away |
 | `overlap` | warn | two shapes overlap, unless a group contains the other | move one, or use a group |
 | `spill` | warn | a child leaves its group or enters its title band | grow the group |

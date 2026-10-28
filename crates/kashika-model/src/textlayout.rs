@@ -5,7 +5,8 @@ use kashika_text::{measure, stack, stack_size, Block, HAlign, MarkupError, Place
 use serde::Serialize;
 
 use crate::attrs::{self, Attrs, LIMIT};
-use crate::scene::{Align, Outline, ShapeKind};
+use crate::scene::{Align, ShapeKind};
+use crate::shapes;
 use crate::style::{FontWeight, Style};
 
 /// Attributes a box or group accepts for its text, besides the style keys.
@@ -103,19 +104,34 @@ pub(crate) fn shape_text_props(
     }
 }
 
-/// A shape's text area: its bounding box inset by `padding`.
-pub(crate) fn text_area(_outline: Outline, rect: Rect, padding: f64) -> Rect {
+/// A shape's text area (§6): the shape's own text area (the whole box for `rect` and
+/// `rounded`) inset by `padding`.
+pub(crate) fn text_area(shape: &str, custom: Option<Rect>, rect: Rect, padding: f64) -> Rect {
+    let unit = custom.or_else(|| shapes::unit_text_area(shape, rect.w, rect.h));
+    let r = unit.map_or(rect, |u| rect.map_rect(u));
     Rect::new(
-        rect.x + padding,
-        rect.y + padding,
-        (rect.w - 2.0 * padding).max(0.0),
-        (rect.h - 2.0 * padding).max(0.0),
+        r.x + padding,
+        r.y + padding,
+        (r.w - 2.0 * padding).max(0.0),
+        (r.h - 2.0 * padding).max(0.0),
     )
 }
 
-/// The smallest box size whose text area holds `need` (width, height).
-fn required_size(_outline: Outline, need: (f64, f64), padding: f64) -> (f64, f64) {
-    (need.0 + 2.0 * padding, need.1 + 2.0 * padding)
+/// The smallest box size, at least `rect`'s, whose text area holds `need` (width, height).
+fn required_size(
+    shape: &str,
+    custom: Option<Rect>,
+    need: (f64, f64),
+    padding: f64,
+    rect: Rect,
+) -> (f64, f64) {
+    let (w, h) = shapes::required_size(
+        shape,
+        custom,
+        (need.0 + 2.0 * padding, need.1 + 2.0 * padding),
+        rect,
+    );
+    (w.max(rect.w), h.max(rect.h))
 }
 
 pub(crate) fn halign(a: Align) -> HAlign {
@@ -188,7 +204,14 @@ pub(crate) struct ShapeInput<'x> {
     pub id: &'x str,
     pub node: &'x ast::Node,
     pub kind: ShapeKind,
-    pub outline: Outline,
+    /// The `shape` name, `rect` or `rounded` for groups.
+    pub shape: &'x str,
+    /// Unit text area of a custom shape; `None` for built-in shapes.
+    pub custom_text_area: Option<Rect>,
+    /// `text-area=below`: the text sits in a band `padding` under the box.
+    pub text_below: bool,
+    /// How far an icon pushes the text area from the left and from the top edge.
+    pub icon_inset: (f64, f64),
     pub rect: Rect,
     pub style: &'x Style,
     pub props: &'x ShapeTextProps,
@@ -212,7 +235,7 @@ struct Pending {
 pub(crate) fn layout_shape(s: &ShapeInput, diags: &mut Vec<Diagnostic>) -> ShapeText {
     let st = s.style;
     let p = s.props;
-    let area = text_area(s.outline, s.rect, st.padding);
+    let mut area = text_area(s.shape, s.custom_text_area, s.rect, st.padding);
     let bold = st.font_weight == FontWeight::Bold;
     let mut head: Vec<Pending> = Vec::new();
     if let Some(label) = &s.node.label {
@@ -269,6 +292,17 @@ pub(crate) fn layout_shape(s: &ShapeInput, diags: &mut Vec<Diagnostic>) -> Shape
         );
     }
     let flow = if has_head { head } else { stacked };
+    if s.text_below {
+        area = below_area(s.rect, &flow, st, p.gap);
+    } else {
+        let (dx, dy) = s.icon_inset;
+        area = Rect::new(
+            area.x + dx,
+            area.y + dy,
+            (area.w - dx).max(0.0),
+            (area.h - dy).max(0.0),
+        );
+    }
 
     let mut items = Vec::new();
     let mut title_band = 0.0;
@@ -300,6 +334,25 @@ pub(crate) fn layout_shape(s: &ShapeInput, diags: &mut Vec<Diagnostic>) -> Shape
         items,
         title_band,
     }
+}
+
+/// The band under a `text-area=below` shape: `padding` below the bottom edge, as tall as
+/// the stacked text (one line when there is none) and as wide as the box or the text,
+/// whichever is wider, centered on the box.
+fn below_area(rect: Rect, flow: &[Pending], st: &Style, gap: f64) -> Rect {
+    let blocks: Vec<&Block> = flow.iter().map(|x| &x.block).collect();
+    let (w, h) = if blocks.is_empty() {
+        (0.0, st.font_size * 1.25)
+    } else {
+        stack_size(&blocks, gap)
+    };
+    let w = w.max(rect.w);
+    Rect::new(
+        rect.x + (rect.w - w) / 2.0,
+        rect.bottom() + st.padding,
+        w,
+        h,
+    )
 }
 
 fn item(x: &Pending, rect: Rect, lines: Vec<PlacedLine>) -> TextItem {
@@ -364,8 +417,14 @@ fn block_item(
 }
 
 fn overflow(s: &ShapeInput, what: &str, need: (f64, f64), area: Rect, span: Span) -> Diagnostic {
-    let (w, h) = required_size(s.outline, need, s.style.padding);
-    let size = (w.max(s.rect.w).ceil(), h.max(s.rect.h).ceil());
+    let inset = if s.text_below {
+        (0.0, 0.0)
+    } else {
+        s.icon_inset
+    };
+    let need = (need.0 + inset.0, need.1 + inset.1);
+    let (w, h) = required_size(s.shape, s.custom_text_area, need, s.style.padding, s.rect);
+    let size = (w.ceil(), h.ceil());
     Diagnostic::error(
         "label-overflow",
         span,

@@ -122,6 +122,12 @@ fn statements_and_numbers() {
     );
 }
 
+static OPTS: kashika_model::Options = kashika_model::Options {
+    path: None,
+    allow_path: false,
+    icon_path: Vec::new(),
+};
+
 fn req<'a>(src: &'a str, from: &'a str, to: &'a str, style: Style) -> Request<'a> {
     Request {
         src,
@@ -131,6 +137,7 @@ fn req<'a>(src: &'a str, from: &'a str, to: &'a str, style: Style) -> Request<'a
         line: None,
         radius: 8.0,
         max: 3,
+        opts: &OPTS,
     }
 }
 
@@ -270,6 +277,7 @@ fn reroute(src: &str, id: &str, style: Style) -> Result<Suggestion, Error> {
         line: Some(id),
         radius: 8.0,
         max: 3,
+        opts: &OPTS,
     })
 }
 

@@ -55,10 +55,6 @@ impl<'a> Attrs<'a> {
         Self { list: kept }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &'a Attr> + '_ {
-        self.list.iter().copied()
-    }
-
     pub fn get(&self, key: &str) -> Option<&'a Attr> {
         self.list
             .iter()

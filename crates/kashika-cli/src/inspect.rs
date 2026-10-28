@@ -5,7 +5,7 @@ use kashika_check::free::corridors as free_corridors;
 use kashika_check::ports::ports as find_ports;
 use kashika_diag::{Diagnostic, Severity};
 use kashika_geom::{length, point_at, Pt, Rect};
-use kashika_model::{EdgeKind, Scene, SegmentKind};
+use kashika_model::{EdgeKind, Fit, Scene, SegmentKind};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
@@ -68,6 +68,17 @@ struct ShapeInfo {
     local_bbox: [P; 2],
     anchors: BTreeMap<&'static str, P>,
     local_anchors: BTreeMap<&'static str, P>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    image: Option<ImageInfo>,
+}
+
+/// The file an image or `shape from` SVG draws.
+#[derive(Serialize)]
+struct ImageInfo {
+    path: String,
+    natural: P,
+    aspect: f64,
+    fit: Fit,
 }
 
 #[derive(Serialize)]
@@ -169,6 +180,16 @@ pub fn build(name: &str, src: &str, scene: &Scene, diags: &[Diagnostic], req: &R
                 local_bbox: bbox(s.local_rect()),
                 anchors: pts.iter().map(|&(a, q)| (a, p(q))).collect(),
                 local_anchors: pts.iter().map(|&(a, q)| (a, p(q - s.origin))).collect(),
+                image: s.image.as_ref().and_then(|img| {
+                    let a = scene.assets.get(img.asset)?;
+                    let (w, h) = a.natural;
+                    Some(ImageInfo {
+                        path: a.path.clone(),
+                        natural: [round2(w), round2(h)],
+                        aspect: if h > 0.0 { round2(w / h) } else { 0.0 },
+                        fit: img.fit,
+                    })
+                }),
             }
         })
         .collect();
@@ -292,6 +313,14 @@ pub fn build(name: &str, src: &str, scene: &Scene, diags: &[Diagnostic], req: &R
     }
 }
 
+fn fit_name(f: Fit) -> &'static str {
+    match f {
+        Fit::Contain => "contain",
+        Fit::Cover => "cover",
+        Fit::Stretch => "stretch",
+    }
+}
+
 fn pt(q: &P) -> String {
     format!("({},{})", q[0], q[1])
 }
@@ -346,6 +375,16 @@ pub fn text(i: &Inspect) -> String {
         ));
         out.push_str(&format!("  bbox {}\n", rect(&s.bbox)));
         out.push_str(&format!("  anchors {}\n", anchors(&s.anchors)));
+        if let Some(img) = &s.image {
+            out.push_str(&format!(
+                "  image {:?} natural {}x{} aspect {} fit={}\n",
+                img.path,
+                img.natural[0],
+                img.natural[1],
+                img.aspect,
+                fit_name(img.fit)
+            ));
+        }
         if s.parent.is_some() {
             out.push_str(&format!("  local bbox {}\n", rect(&s.local_bbox)));
             out.push_str(&format!("  local anchors {}\n", anchors(&s.local_anchors)));

@@ -1,5 +1,6 @@
 mod overlay;
 mod png;
+mod shapes;
 mod svg;
 mod text;
 

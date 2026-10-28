@@ -5,7 +5,7 @@ use crate::ctx::{
     bbox, describe_overflow, fmt_num, intersection, junction_el, kind_name, line_bbox, line_el,
     overflow, overflow_fact, shape_el, text_el, text_id, Ctx,
 };
-use crate::text_box::{text_box, title_band};
+use crate::text_box::{below_box, text_box, title_band};
 
 struct Child {
     el: Element,
@@ -84,6 +84,16 @@ fn children(ctx: &Ctx, gid: &str) -> Vec<Child> {
             pieces: Vec::new(),
             point: false,
         });
+        if let Some(b) = below_box(s) {
+            out.push(Child {
+                el: shape_el(s),
+                span: s.span,
+                what: format!("the label under {} '{}'", kind_name(s), s.id),
+                extent: b,
+                pieces: Vec::new(),
+                point: false,
+            });
+        }
     }
     for j in ctx.scene.junctions.iter().filter(|j| mine(&j.parent)) {
         out.push(Child {

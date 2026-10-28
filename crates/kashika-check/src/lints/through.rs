@@ -1,7 +1,7 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::{inside_runs, Pt};
 
-use crate::ctx::{arr, line_el, shape_el, Ctx};
+use crate::ctx::{arr, kind_name, line_el, shape_el, Ctx};
 use crate::free::with_free;
 
 /// `through`: a line enters a box's interior. The boxes a line starts and ends at are exempt
@@ -33,7 +33,7 @@ pub fn through(ctx: &Ctx) -> Vec<Diagnostic> {
             let d = Diagnostic::warn(
                 "through",
                 l.line.span,
-                format!("{} passes through box '{id}'", l.line.id),
+                format!("{} passes through {} '{id}'", l.line.id, kind_name(s.shape)),
             )
             .with_element(line_el(l.line, Some(l.segment(k))))
             .with_element(shape_el(s.shape))

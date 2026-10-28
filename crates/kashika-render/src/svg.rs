@@ -1,7 +1,9 @@
 use kashika_geom::{PathSeg, Pt};
-use kashika_model::{Label, Line, Marker, Scene, Shape, ShapeKind, StrokeStyle, Style, Text};
+use kashika_model::{
+    Asset, Label, Line, Marker, Scene, Shape, ShapeKind, StrokeStyle, Style, Text,
+};
 
-use crate::text;
+use crate::{shapes, text};
 
 const ARROW_LEN: f64 = 10.0;
 const DIAMOND_LEN: f64 = 12.0;
@@ -21,10 +23,10 @@ pub fn render_svg(scene: &Scene) -> String {
     );
     out.push_str("<rect width=\"100%\" height=\"100%\" fill=\"#ffffff\"/>\n");
     for g in scene.shapes.iter().filter(|s| s.kind == ShapeKind::Group) {
-        shape(&mut out, g);
+        shape(&mut out, g, &scene.assets);
     }
-    for b in scene.shapes.iter().filter(|s| s.kind == ShapeKind::Box) {
-        shape(&mut out, b);
+    for b in scene.shapes.iter().filter(|s| s.kind != ShapeKind::Group) {
+        shape(&mut out, b, &scene.assets);
     }
     for j in scene.junctions.iter().filter(|j| j.dot) {
         out.push_str(&format!(
@@ -79,7 +81,7 @@ pub(crate) fn esc(s: &str) -> String {
         .replace('"', "&quot;")
 }
 
-fn stroke_attrs(style: &Style) -> String {
+pub(crate) fn stroke_attrs(style: &Style) -> String {
     let mut s = format!(
         "stroke=\"{}\" stroke-width=\"{}\"",
         style.stroke,
@@ -93,19 +95,8 @@ fn stroke_attrs(style: &Style) -> String {
     s
 }
 
-fn shape(out: &mut String, s: &Shape) {
-    let r = s.rect;
-    let st = &s.style;
-    out.push_str(&format!(
-        "<rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" rx=\"{}\" fill=\"{}\" {}/>\n",
-        n(r.x),
-        n(r.y),
-        n(r.w),
-        n(r.h),
-        n(s.corner_radius()),
-        st.fill,
-        stroke_attrs(st)
-    ));
+fn shape(out: &mut String, s: &Shape, assets: &[Asset]) {
+    shapes::body(out, s, assets);
     for item in &s.text {
         text::lines(out, &item.lines, item.size, &item.color, false);
     }

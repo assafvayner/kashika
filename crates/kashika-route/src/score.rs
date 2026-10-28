@@ -37,7 +37,7 @@ pub fn score(scene: &Scene, probe: &Line, ctx: &Ctx) -> Option<Score> {
         (i == 0 && ctx.start_owner == Some(id)) || (i == last && ctx.end_owner == Some(id))
     };
     let mut near = 0;
-    for s in scene.shapes.iter().filter(|s| s.kind == ShapeKind::Box) {
+    for s in scene.shapes.iter().filter(|s| s.kind != ShapeKind::Group) {
         let inner = inset(s.rect, TOLERANCE);
         let outer = inset(s.rect, -(scene.clearance - TOLERANCE));
         let mut close = false;
@@ -98,7 +98,7 @@ pub fn corridor(scene: &Scene, axis: &'static str, value: f64, span: (f64, f64))
     } else {
         scene.size.1
     };
-    for s in scene.shapes.iter().filter(|s| s.kind == ShapeKind::Box) {
+    for s in scene.shapes.iter().filter(|s| s.kind != ShapeKind::Group) {
         let r = s.rect;
         let (a0, a1, b0, b1) = if axis == "y" {
             (r.y, r.bottom(), r.x, r.right())

@@ -3,9 +3,12 @@ use std::f64::consts::{FRAC_PI_2, PI};
 use kashika_geom::{rect_polygon, Pt, Rect};
 use kashika_model::{Outline, Shape};
 
-/// The outline the checks use, as a closed polygon in canvas coordinates. Outline kinds
-/// without a case here are checked as their bounding box.
+/// The outline the checks use, as a closed polygon in canvas coordinates: the flattened
+/// form outline for built-in, custom and SVG shapes (box or hull), the box for images.
 pub fn polygon(s: &Shape) -> Vec<Pt> {
+    if let Some(f) = s.form.as_ref().filter(|f| f.outline.len() >= 3) {
+        return f.outline.clone();
+    }
     let r = s.corner_radius();
     match s.outline {
         Outline::Rounded if r > 0.0 => rounded(s.rect, r),

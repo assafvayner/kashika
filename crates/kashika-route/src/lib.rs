@@ -10,7 +10,7 @@ use kashika_syntax::ast::{self, SegKind};
 use serde::Serialize;
 
 pub use candidates::{generate, Ctrl, Hop, Lane, Plan};
-pub use endpoint::{parse_ref, resolve_endpoints, Endpoint, Side, PROBE};
+pub use endpoint::{parse_ref, resolve_endpoints, resolve_endpoints_with, Endpoint, Side, PROBE};
 pub use text::{num, path_text, statement};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -71,12 +71,17 @@ pub struct Request<'a> {
     pub line: Option<&'a str>,
     pub radius: f64,
     pub max: usize,
+    /// How the input's files resolve.
+    pub opts: &'a kashika_model::Options,
 }
 
 pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
-    let target = req.line.map(|id| existing(req.src, id)).transpose()?;
+    let target = req
+        .line
+        .map(|id| existing(req.src, id, req.opts))
+        .transpose()?;
     let (from, to) = match (req.from, req.to, &target) {
-        (Some(f), Some(t), _) => resolve_endpoints(req.src, f, t)?,
+        (Some(f), Some(t), _) => endpoint::resolve_endpoints_with(req.src, f, t, req.opts)?,
         (None, None, Some(t)) => (t.from.clone(), t.to.clone()),
         _ => {
             return Err(Error::Usage(
@@ -84,7 +89,7 @@ pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
             ))
         }
     };
-    let (scene, _) = kashika_model::compile(req.src);
+    let (scene, _) = kashika_model::compile_with(req.src, req.opts);
     let (id, attrs, frame) = match &target {
         Some(t) => (
             t.id.clone(),
@@ -123,11 +128,11 @@ struct Target {
     end: (u32, u32),
 }
 
-fn existing(src: &str, id: &str) -> Result<Target, Error> {
+fn existing(src: &str, id: &str, opts: &kashika_model::Options) -> Result<Target, Error> {
     let (file, _) = kashika_syntax::parse(src);
     let ast_line = find_line(&file.stmts, id)
         .ok_or_else(|| Error::Usage(format!("no line `{id}` in the file")))?;
-    let (scene, _) = kashika_model::compile(src);
+    let (scene, _) = kashika_model::compile_with(src, opts);
     let line = scene.lines.iter().find(|l| l.id == id).ok_or_else(|| {
         Error::Usage(format!(
             "line `{id}` doesn't resolve; fix it with `kashika check` first"
@@ -259,7 +264,7 @@ fn rank(
     for plan in generate(scene, &from, &to, req.style) {
         let path = path_text(&from, &to, &plan, frame.origin);
         let (text, probe_line) = with_probe(req.src, frame, &statement(PROBE, &path, &probe_attrs));
-        let (probed, diags) = kashika_model::compile(&text);
+        let (probed, diags) = kashika_model::compile_with(&text, req.opts);
         if diags
             .iter()
             .any(|d| d.severity == Severity::Error && d.span.line == probe_line)

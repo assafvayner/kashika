@@ -5,15 +5,30 @@ use kashika_geom::{point_at, round_corners_tagged, PathSeg, Pt, Rect, TOLERANCE}
 use kashika_syntax::ast::{self, Axis, Coord, Point, SegKind, Side, Stmt, Target};
 
 use crate::anchor;
+use crate::assets::Store;
 use crate::attrs::{self, Attrs, Min, LIMIT};
+use crate::form::{self, Form};
+use crate::library::{self, Ctx, LibShape, Library, SvgShape};
+use crate::loader::{FileError, Loader, Options};
 use crate::markup;
 use crate::scene::*;
+use crate::shapes::{self, BUILTIN_SHAPES};
 use crate::style::{self, Style, StyleProps, STYLE_KEYS};
 use crate::textlayout::{self, ShapeInput, ShapeTextProps, SHAPE_TEXT_KEYS};
 
 mod record;
 
-const NODE_KEYS: &[&str] = &["shape", "style", "pin", "allow", "reason"];
+const NODE_KEYS: &[&str] = &[
+    "shape",
+    "style",
+    "pin",
+    "allow",
+    "reason",
+    "icon",
+    "icon-pos",
+    "icon-size",
+];
+const IMAGE_KEYS: &[&str] = &["pin", "fit", "allow", "reason"];
 const LINE_KEYS: &[&str] = &[
     "start",
     "end",
@@ -30,18 +45,14 @@ const LINE_KEYS: &[&str] = &[
 const TEXT_KEYS: &[&str] = &["size", "color", "align", "muted"];
 const DIAGRAM_KEYS: &[&str] = &["kashika", "grid", "clearance", "icons", "allow"];
 const MARKERS: &[&str] = &["none", "arrow", "open", "diamond", "dot"];
-const SHAPES: &[&str] = &["rect", "rounded"];
-const UNSUPPORTED_KEYS: &[&str] = &["icon", "icon-pos", "icon-size"];
 /// Deepest chain of placement references followed before giving up.
 const MAX_PLACEMENT_DEPTH: usize = 256;
-const UNSUPPORTED_SHAPES: &[&str] = &[
-    "cylinder", "diamond", "ellipse", "hexagon", "doc", "cloud", "person",
-];
 
 #[derive(Clone, Copy)]
 enum Item<'a> {
     Box(&'a ast::Node),
     Group(&'a ast::Group),
+    Image(&'a ast::Image),
     Junction(&'a ast::Junction),
     Text(&'a ast::Text),
     Line(&'a ast::Line),
@@ -52,6 +63,7 @@ impl<'a> Item<'a> {
         match self {
             Item::Box(n) => Some(&n.id),
             Item::Group(g) => Some(&g.node.id),
+            Item::Image(i) => Some(&i.id),
             Item::Junction(j) => Some(&j.id),
             Item::Text(t) => t.id.as_ref(),
             Item::Line(l) => l.id.as_ref(),
@@ -62,6 +74,7 @@ impl<'a> Item<'a> {
         match self {
             Item::Box(n) => n.span,
             Item::Group(g) => g.node.span,
+            Item::Image(i) => i.span,
             Item::Junction(j) => j.span,
             Item::Text(t) => t.span,
             Item::Line(l) => l.span,
@@ -72,6 +85,7 @@ impl<'a> Item<'a> {
         match self {
             Item::Box(n) => n.at.span(),
             Item::Group(g) => g.node.at.span(),
+            Item::Image(i) => i.at.span(),
             Item::Junction(j) => j.at.span(),
             Item::Text(t) => t.at.span(),
             Item::Line(l) => l.span,
@@ -87,12 +101,35 @@ struct Entry<'a> {
 
 struct NodeProps {
     outline: Outline,
+    /// The `shape=` name; `None` for groups and boxes without one.
+    shape: Option<String>,
     style: Style,
     pin: (&'static str, Option<f64>),
     size_ok: bool,
     text: ShapeTextProps,
     allow: Vec<Allow>,
     reason: Option<String>,
+    icon: Option<IconProps>,
+    image: Option<ImageProps>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum IconPos {
+    Left,
+    Top,
+}
+
+#[derive(Clone, Copy)]
+struct ImageProps {
+    asset: Option<usize>,
+    fit: Fit,
+}
+
+#[derive(Clone, Copy)]
+struct IconProps {
+    asset: usize,
+    pos: IconPos,
+    size: f64,
 }
 
 struct LineProps {
@@ -114,7 +151,14 @@ struct TextProps {
 }
 
 pub fn resolve(file: &ast::File) -> (Scene, Vec<Diagnostic>) {
+    resolve_with(file, &Options::default())
+}
+
+pub fn resolve_with(file: &ast::File, opts: &Options) -> (Scene, Vec<Diagnostic>) {
     let mut r = Resolver {
+        loader: Loader::new(opts),
+        store: Store::default(),
+        lib: Library::default(),
         entries: Vec::new(),
         ids: HashMap::new(),
         user_styles: HashMap::new(),
@@ -132,15 +176,27 @@ pub fn resolve(file: &ast::File) -> (Scene, Vec<Diagnostic>) {
         literals: Vec::new(),
         diags: Vec::new(),
     };
+    r.icons_dir(file);
+    let mut ctx = Ctx {
+        loader: &r.loader,
+        store: &mut r.store,
+        diags: Vec::new(),
+    };
+    r.lib = Library::load(file, &mut ctx);
+    r.diags.append(&mut ctx.diags);
     r.styles(file);
     r.collect(&file.stmts, None, 0);
     let mut scene = r.diagram(file);
     r.validate();
     r.build(&mut scene);
+    scene.assets = std::mem::take(&mut r.store).into_vec();
     (scene, r.diags)
 }
 
 struct Resolver<'a> {
+    loader: Loader,
+    store: Store,
+    lib: Library,
     entries: Vec<Entry<'a>>,
     ids: HashMap<String, usize>,
     user_styles: HashMap<String, StyleProps>,
@@ -163,6 +219,29 @@ struct Resolver<'a> {
 }
 
 impl<'a> Resolver<'a> {
+    /// Adds the first `diagram` statement's `icons=` directory to the search path.
+    fn icons_dir(&mut self, file: &ast::File) {
+        let Some(Stmt::Diagram(d)) = file.stmts.iter().find(|s| matches!(s, Stmt::Diagram(_)))
+        else {
+            return;
+        };
+        let Some(x) = d.attrs.iter().find(|a| a.key.name == "icons") else {
+            return;
+        };
+        let ast::Value::Str(dir) = &x.value else {
+            self.diags
+                .push(attrs::type_err(x, "a directory path string"));
+            return;
+        };
+        if let Err(e) = self.loader.add_icons_dir(dir) {
+            self.file_error(x.span, e);
+        }
+    }
+
+    fn file_error(&mut self, span: Span, e: FileError) {
+        library::push_file_error(&mut self.diags, span, e);
+    }
+
     fn diagram(&mut self, file: &ast::File) -> Scene {
         let mut scene = Scene {
             title: String::new(),
@@ -174,6 +253,7 @@ impl<'a> Resolver<'a> {
             junctions: Vec::new(),
             texts: Vec::new(),
             lines: Vec::new(),
+            assets: Vec::new(),
             placement: Vec::new(),
             literals: Vec::new(),
         };
@@ -222,9 +302,6 @@ impl<'a> Resolver<'a> {
                     scene.clearance = v;
                 }
             }
-            if let Some(x) = a.get("icons") {
-                self.unsupported(&x.key.name, x.key.span);
-            }
             if let Some(x) = a.get("allow") {
                 scene.allow = self.allow_list(x, false);
             }
@@ -240,6 +317,9 @@ impl<'a> Resolver<'a> {
     }
 
     fn styles(&mut self, file: &ast::File) {
+        for (name, props) in &self.lib.styles {
+            self.user_styles.insert(name.clone(), props.clone());
+        }
         for stmt in &file.stmts {
             let Stmt::Style(s) = stmt else { continue };
             let a = Attrs::new(&s.attrs, "style", STYLE_KEYS, &mut self.diags);
@@ -272,14 +352,27 @@ impl<'a> Resolver<'a> {
                     }
                     continue;
                 }
-                Stmt::Style(_) => {
+                Stmt::Image(i) => {
                     if parent.is_some() {
                         self.diags.push(Diagnostic::error(
                             "parse",
                             stmt.span(),
-                            "`style` is only allowed at the top level",
+                            "`image` is only allowed at the top level",
                         ));
+                        continue;
                     }
+                    Item::Image(i)
+                }
+                Stmt::Import(_) => {
+                    self.top_level_only("import", stmt.span(), parent);
+                    continue;
+                }
+                Stmt::Shape(_) => {
+                    self.top_level_only("shape", stmt.span(), parent);
+                    continue;
+                }
+                Stmt::Style(_) => {
+                    self.top_level_only("style", stmt.span(), parent);
                     continue;
                 }
             };
@@ -300,6 +393,16 @@ impl<'a> Resolver<'a> {
             if let Stmt::Group(g) = stmt {
                 self.collect(&g.children, Some(idx), depth + 1);
             }
+        }
+    }
+
+    fn top_level_only(&mut self, kw: &str, span: Span, parent: Option<usize>) {
+        if parent.is_some() {
+            self.diags.push(Diagnostic::error(
+                "parse",
+                span,
+                format!("`{kw}` is only allowed at the top level"),
+            ));
         }
     }
 
@@ -434,6 +537,10 @@ impl<'a> Resolver<'a> {
                     let p = self.node_props(&g.node, true);
                     self.nodes.insert(idx, p);
                 }
+                Item::Image(i) => {
+                    let p = self.image_props(i);
+                    self.nodes.insert(idx, p);
+                }
                 Item::Junction(j) => {
                     let a = Attrs::new(&j.attrs, "junction", &["dot"], &mut self.diags);
                     let dot = a
@@ -460,26 +567,12 @@ impl<'a> Resolver<'a> {
             .filter(|k| !group || **k != "shape")
             .chain(STYLE_KEYS)
             .chain(SHAPE_TEXT_KEYS)
-            .chain(UNSUPPORTED_KEYS)
             .copied()
             .collect();
         let a = Attrs::new(&n.attrs, what, &keys, &mut self.diags);
-        for x in a.iter() {
-            if UNSUPPORTED_KEYS.contains(&x.key.name.as_str()) {
-                self.unsupported(&x.key.name, x.key.span);
-            }
-        }
 
         let size_ok = self.size_ok(n.size, n.span, &format!("`{}`", n.id.name));
-        let mut shape = None;
-        if let Some(x) = a.get("shape") {
-            match &x.value {
-                ast::Value::Word(w) if UNSUPPORTED_SHAPES.contains(&w.as_str()) => {
-                    self.unsupported(w, x.span)
-                }
-                _ => shape = attrs::word(x, SHAPES, &mut self.diags),
-            }
-        }
+        let shape = a.get("shape").and_then(|x| self.shape_name(x));
         let mut props = StyleProps::default();
         if group {
             let user = self
@@ -497,13 +590,14 @@ impl<'a> Resolver<'a> {
             }
         }
         props = props.overlay(&attrs::style_props(&a, &mut self.diags));
-        if shape == Some("rounded") && props.radius.is_none() {
+        let rounded = shape.as_deref() == Some("rounded");
+        if rounded && props.radius.is_none() {
             props.radius = Some(8.0);
         }
-        let outline = if shape == Some("rounded") || props.radius.unwrap_or(0.0) > 0.0 {
-            Outline::Rounded
-        } else {
-            Outline::Rect
+        let outline = match shape.as_deref() {
+            Some(s) if s != "rect" && s != "rounded" => Outline::Path,
+            _ if rounded || props.radius.unwrap_or(0.0) > 0.0 => Outline::Rounded,
+            _ => Outline::Rect,
         };
         let pin = a
             .get("pin")
@@ -518,23 +612,156 @@ impl<'a> Resolver<'a> {
             .get("reason")
             .and_then(|x| attrs::text(x, &mut self.diags))
             .map(|r| markup::unescape(&r));
+        let style = props.resolve();
+        let icon = self.icon_props(&a, group, style.font_size);
         NodeProps {
             outline,
-            style: props.resolve(),
+            shape,
+            style,
             pin,
             size_ok,
             text,
             allow,
             reason,
+            icon,
+            image: None,
         }
     }
 
-    fn unsupported(&mut self, name: &str, span: Span) {
-        self.diags.push(Diagnostic::error(
-            "unsupported",
-            span,
-            format!("`{name}` is not supported in this version yet"),
-        ));
+    fn icon_props(&mut self, a: &Attrs<'_>, group: bool, font_size: f64) -> Option<IconProps> {
+        let pos = match a.get("icon-pos") {
+            Some(x) => match attrs::word(x, &["left", "top"], &mut self.diags) {
+                Some("top") if group => {
+                    self.diags.push(Diagnostic::error(
+                        "attr",
+                        x.span,
+                        "groups only support `icon-pos=left`",
+                    ));
+                    IconPos::Left
+                }
+                Some("top") => IconPos::Top,
+                _ => IconPos::Left,
+            },
+            None => IconPos::Left,
+        };
+        let size = a.get("icon-size").and_then(|x| {
+            let v = attrs::num(x, &mut self.diags)?;
+            if v <= 0.0 {
+                self.diags.push(Diagnostic::error(
+                    "size",
+                    x.span,
+                    "`icon-size` must be positive",
+                ));
+                return None;
+            }
+            Some(v)
+        });
+        let size = size.unwrap_or(if group { font_size * 1.25 } else { 24.0 });
+        let Some(x) = a.get("icon") else {
+            for k in ["icon-pos", "icon-size"] {
+                if let Some(x) = a.get(k) {
+                    self.diags.push(Diagnostic::error(
+                        "attr",
+                        x.span,
+                        format!("`{k}` needs `icon=`"),
+                    ));
+                }
+            }
+            return None;
+        };
+        let name = attrs::text(x, &mut self.diags)?;
+        let asset = self.load_asset(&name, x.span)?;
+        Some(IconProps { asset, pos, size })
+    }
+
+    fn image_props(&mut self, i: &ast::Image) -> NodeProps {
+        let a = Attrs::new(&i.attrs, "image", IMAGE_KEYS, &mut self.diags);
+        let size_ok = self.size_ok(i.size, i.span, &format!("`{}`", i.id.name));
+        let pin = a
+            .get("pin")
+            .and_then(|x| self.pin(x))
+            .unwrap_or(("tl", None));
+        let fit = match a
+            .get("fit")
+            .and_then(|x| attrs::word(x, &["contain", "cover", "stretch"], &mut self.diags))
+        {
+            Some("cover") => Fit::Cover,
+            Some("stretch") => Fit::Stretch,
+            _ => Fit::Contain,
+        };
+        let allow = a
+            .get("allow")
+            .map(|x| self.allow_list(x, true))
+            .unwrap_or_default();
+        let reason = a
+            .get("reason")
+            .and_then(|x| attrs::text(x, &mut self.diags))
+            .map(|r| markup::unescape(&r));
+        let asset = self.load_asset(&i.file, i.file_span);
+        NodeProps {
+            outline: Outline::Rect,
+            shape: None,
+            style: Style::default(),
+            pin,
+            size_ok,
+            text: textlayout::shape_text_props(
+                &Attrs::new(&[], "image", &[], &mut Vec::new()),
+                false,
+                &mut Vec::new(),
+            ),
+            allow,
+            reason,
+            icon: None,
+            image: Some(ImageProps { asset, fit }),
+        }
+    }
+
+    fn load_asset(&mut self, name: &str, span: Span) -> Option<usize> {
+        let root = self.loader.root().to_path_buf();
+        match self.store.load(&self.loader, &root, name) {
+            Ok(i) => Some(i),
+            Err(e) => {
+                self.file_error(span, e);
+                None
+            }
+        }
+    }
+
+    fn shape_name(&mut self, a: &ast::Attr) -> Option<String> {
+        let ast::Value::Word(w) = &a.value else {
+            self.diags.push(attrs::type_err(a, "a shape name"));
+            return None;
+        };
+        if BUILTIN_SHAPES.contains(&w.as_str()) || self.lib.shapes.contains_key(w) {
+            return Some(w.clone());
+        }
+        let names = BUILTIN_SHAPES
+            .iter()
+            .copied()
+            .chain(self.lib.shapes.keys().map(String::as_str));
+        let mut d = Diagnostic::error("attr", a.span, format!("unknown shape `{w}`"));
+        if let Some(s) = did_you_mean(w, names) {
+            d = d.with_help(format!("did you mean `{s}`?"));
+        }
+        self.diags.push(d);
+        None
+    }
+
+    /// The outline and drawing of a shape name on `rect`: a custom definition, else a
+    /// built-in sized for `rect`. `None` for `rect` and `rounded`.
+    fn form(&self, name: &str, rect: Rect) -> Option<Form> {
+        match self.lib.shapes.get(name) {
+            Some(LibShape::Unit(u)) => Some(Form::from_unit(u, rect)),
+            Some(LibShape::Svg(s)) => Some(Form::from_svg(self.store.get(s.asset), s.hull, rect)),
+            None => shapes::builtin(name, rect.w, rect.h).map(|u| Form::from_unit(&u, rect)),
+        }
+    }
+
+    fn svg_shape(&self, name: &str) -> Option<SvgShape> {
+        match self.lib.shapes.get(name) {
+            Some(LibShape::Svg(s)) => Some(*s),
+            _ => None,
+        }
     }
 
     fn named_style(&mut self, a: &ast::Attr) -> Option<StyleProps> {
@@ -707,6 +934,10 @@ impl<'a> Resolver<'a> {
                     self.record_edges(idx, &g.node.at);
                     self.push_shape(scene, idx, &g.node, ShapeKind::Group, parent, depth)
                 }
+                Item::Image(i) => {
+                    self.record_edges(idx, &i.at);
+                    self.push_image(scene, idx, i)
+                }
                 Item::Junction(j) => {
                     self.record_edges(idx, &j.at);
                     if let Some(r) = self.place(idx) {
@@ -788,12 +1019,27 @@ impl<'a> Resolver<'a> {
             })
             .collect();
         let p = &self.nodes[&idx];
+        let shape = shape_name(p);
+        let form = self.form(&shape, rect);
+        let svg = self.svg_shape(&shape);
+        let icon = p.icon;
+        let icon_inset = icon.map_or((0.0, 0.0), |ic| {
+            let d = ic.size + p.style.padding;
+            if kind == ShapeKind::Group || ic.pos == IconPos::Left {
+                (d, 0.0)
+            } else {
+                (0.0, d)
+            }
+        });
         let text = textlayout::layout_shape(
             &ShapeInput {
                 id: &n.id.name,
                 node: n,
                 kind,
-                outline: p.outline,
+                shape: &shape,
+                custom_text_area: self.lib.shapes.get(&shape).and_then(LibShape::text_area),
+                text_below: svg.is_some_and(|s| s.below),
+                icon_inset,
                 rect,
                 style: &p.style,
                 props: &p.text,
@@ -805,12 +1051,37 @@ impl<'a> Resolver<'a> {
             id: n.id.name.clone(),
             kind,
             outline: p.outline,
+            form,
+            shape,
+            image: svg.map(|s| ImageRef {
+                asset: s.asset,
+                rect,
+                fit: Fit::Stretch,
+            }),
+            icon: icon.map(|ic| {
+                let pad = p.style.padding;
+                let s = ic.size;
+                let lh = p.style.font_size * 1.25;
+                let r = match (kind, ic.pos) {
+                    (ShapeKind::Group, _) => {
+                        Rect::new(rect.x + pad, rect.y + pad + (lh - s) / 2.0, s, s)
+                    }
+                    (_, IconPos::Left) => Rect::new(rect.x + pad, rect.center().y - s / 2.0, s, s),
+                    (_, IconPos::Top) => Rect::new(rect.center().x - s / 2.0, rect.y + pad, s, s),
+                };
+                ImageRef {
+                    asset: ic.asset,
+                    rect: r,
+                    fit: Fit::Contain,
+                }
+            }),
             label: n.label.clone(),
             rect,
             parent,
             depth,
             style: p.style.clone(),
             text_area: text.area,
+            text_below: svg.is_some_and(|s| s.below),
             text: text.items,
             title_band: text.title_band,
             allow: p.allow.clone(),
@@ -819,6 +1090,42 @@ impl<'a> Resolver<'a> {
             span: n.span,
         });
         self.record_node(n);
+    }
+
+    fn push_image(&mut self, scene: &mut Scene, idx: usize, i: &ast::Image) {
+        let Some(rect) = self.place(idx) else { return };
+        let origin = self.frame_origin(idx).unwrap_or_default();
+        let p = &self.nodes[&idx];
+        let props = p.image.expect("image props");
+        scene.shapes.push(Shape {
+            id: i.id.name.clone(),
+            kind: ShapeKind::Image,
+            outline: Outline::Rect,
+            form: None,
+            shape: "image".into(),
+            image: props.asset.map(|asset| ImageRef {
+                asset,
+                rect,
+                fit: props.fit,
+            }),
+            icon: None,
+            label: None,
+            rect,
+            parent: None,
+            depth: 0,
+            style: p.style.clone(),
+            text_area: rect,
+            text_below: false,
+            text: Vec::new(),
+            title_band: 0.0,
+            allow: p.allow.clone(),
+            reason: p.reason.clone(),
+            origin,
+            span: i.span,
+        });
+        self.record_point(&i.id.name, &i.at);
+        self.literal(&i.id.name, "width", i.size.0, i.span);
+        self.literal(&i.id.name, "height", i.size.1, i.span);
     }
 
     /// Places an entry (box, group or junction), resolving dependencies depth-first.
@@ -916,8 +1223,9 @@ impl<'a> Resolver<'a> {
     fn compute_place(&mut self, idx: usize) -> Option<Rect> {
         let origin = self.frame_origin(idx)?;
         match self.entries[idx].item {
-            Item::Box(n) => self.place_node(idx, n, origin),
-            Item::Group(g) => self.place_node(idx, &g.node, origin),
+            Item::Box(n) => self.place_node(idx, &n.at, n.size, origin),
+            Item::Group(g) => self.place_node(idx, &g.node.at, g.node.size, origin),
+            Item::Image(i) => self.place_node(idx, &i.at, i.size, origin),
             Item::Junction(j) => self
                 .eval_point(&j.at, origin)
                 .map(|p| Rect::new(p.x, p.y, 0.0, 0.0)),
@@ -925,18 +1233,27 @@ impl<'a> Resolver<'a> {
         }
     }
 
-    fn place_node(&mut self, idx: usize, n: &'a ast::Node, origin: Pt) -> Option<Rect> {
+    fn place_node(
+        &mut self,
+        idx: usize,
+        at: &'a Point,
+        size: (f64, f64),
+        origin: Pt,
+    ) -> Option<Rect> {
         if !self.nodes[&idx].size_ok {
             return None;
         }
-        let at = self.eval_point(&n.at, origin)?;
-        let (w, h) = n.size;
+        let at = self.eval_point(at, origin)?;
+        let (w, h) = size;
 
         let p = &self.nodes[&idx];
         let local = Rect::new(0.0, 0.0, w, h);
         let (name, t) = p.pin;
-        let off = anchor::resolve(local, corner_radius(p.style.radius, local), "pin", name, t)
-            .unwrap_or_default();
+        let radius = p.style.radius;
+        let shape = shape_name(p);
+        let form = self.form(&shape, local);
+        let off =
+            form::resolve_anchor(form.as_ref(), local, radius, "pin", name, t).unwrap_or_default();
         Some(Rect::new(at.x - off.x, at.y - off.y, w, h))
     }
 
@@ -1011,7 +1328,7 @@ impl<'a> Resolver<'a> {
                 }
                 self.place(idx).map(Rect::origin)
             }
-            Item::Box(_) | Item::Group(_) => {
+            Item::Box(_) | Item::Group(_) | Item::Image(_) => {
                 let Some(a) = &r.anchor else {
                     self.diags.push(
                         Diagnostic::error(
@@ -1026,8 +1343,16 @@ impl<'a> Resolver<'a> {
                     return None;
                 };
                 let rect = self.place(idx)?;
-                let radius = corner_radius(self.nodes[&idx].style.radius, rect);
-                match anchor::resolve(rect, radius, name, &a.name.name, a.t) {
+                let p = &self.nodes[&idx];
+                let form = p.shape.as_deref().and_then(|s| self.form(s, rect));
+                match form::resolve_anchor(
+                    form.as_ref(),
+                    rect,
+                    p.style.radius,
+                    name,
+                    &a.name.name,
+                    a.t,
+                ) {
                     Ok(p) => Some(p),
                     Err((msg, help)) => {
                         let mut d = Diagnostic::error("unknown-anchor", a.name.span, msg);
@@ -1244,4 +1569,14 @@ impl<'a> Resolver<'a> {
             }
         })
     }
+}
+
+fn shape_name(p: &NodeProps) -> String {
+    p.shape.clone().unwrap_or_else(|| {
+        if p.outline == Outline::Rounded {
+            "rounded".into()
+        } else {
+            "rect".into()
+        }
+    })
 }

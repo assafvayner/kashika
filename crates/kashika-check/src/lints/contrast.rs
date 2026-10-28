@@ -1,6 +1,6 @@
 use kashika_diag::{Diagnostic, Element, Span};
 use kashika_geom::{point_in_polygon, Pt};
-use kashika_model::TextRole;
+use kashika_model::{Shape, ShapeKind, TextRole};
 
 use crate::ctx::{line_el, round2, shape_el, text_el, text_id, Ctx};
 
@@ -84,11 +84,12 @@ fn check(
 }
 
 /// The white canvas with every fill containing `p` painted on top in paint order
-/// (groups, then boxes), including the shape `last` when given and none after it.
+/// (groups, then boxes), including the shape `last` when given and none after it. Images
+/// and SVG-file shapes draw their file instead of a fill, so they add nothing.
 fn backdrop(ctx: &Ctx, p: Pt, last: Option<&str>) -> [f64; 3] {
     let mut c = WHITE;
     for s in ctx.groups().chain(ctx.boxes()) {
-        if point_in_polygon(p, &s.poly) {
+        if paints_fill(s.shape) && point_in_polygon(p, &s.poly) {
             if let Some(fill) = rgba(&s.shape.style.fill) {
                 c = over(fill, c);
             }
@@ -98,6 +99,12 @@ fn backdrop(ctx: &Ctx, p: Pt, last: Option<&str>) -> [f64; 3] {
         }
     }
     c
+}
+
+fn paints_fill(s: &Shape) -> bool {
+    s.kind != ShapeKind::Image
+        && s.image.is_none()
+        && s.form.as_ref().is_none_or(|f| !f.draw.is_empty())
 }
 
 /// `#rgb`, `#rrggbb` or `#rrggbbaa` as 0..1 channels; `None` for `none` or anything else.

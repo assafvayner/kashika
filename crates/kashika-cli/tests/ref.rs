@@ -23,6 +23,7 @@ const ERROR_CODES: &[&str] = &[
     "size",
     "diagram",
     "version",
+    "file",
     "unsupported",
 ];
 

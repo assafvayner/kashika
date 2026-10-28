@@ -10,3 +10,6 @@ kashika-geom.workspace = true
 kashika-model.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

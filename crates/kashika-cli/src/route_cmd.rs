@@ -25,6 +25,9 @@ pub struct RouteArgs {
     max: usize,
     #[arg(long, value_enum, default_value_t = Format::Text)]
     format: Format,
+    /// Allow file references outside the input file's directory
+    #[arg(long)]
+    allow_path: bool,
     /// File name to report for stdin input
     #[arg(long)]
     stdin_name: Option<String>,
@@ -64,6 +67,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
         line: a.line.as_deref(),
         radius: a.radius,
         max: a.max,
+        opts: &crate::options(&a.file, a.allow_path),
     };
     match kashika_route::suggest(&req) {
         Err(Error::Usage(msg)) => crate::tool_error(a.format, &msg),

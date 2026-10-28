@@ -3,6 +3,7 @@ mod collision;
 mod contrast;
 mod crowding;
 mod grid;
+mod image;
 
 use kashika_diag::Diagnostic;
 
@@ -30,6 +31,7 @@ pub const ALL: &[Lint] = &[
     diagonal::diagonal_tail,
     endpoint::endpoint_off_edge,
     grid::off_grid,
+    image::image_distort,
     near::near,
     overlap::overlap,
     shared::shared_segment,

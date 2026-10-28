@@ -31,6 +31,27 @@ impl PathSeg {
         }
     }
 
+    /// Applies `f` to every point of the segment, control points included.
+    pub fn map(&self, f: impl Fn(Pt) -> Pt) -> PathSeg {
+        match *self {
+            PathSeg::Line { from, to } => PathSeg::Line {
+                from: f(from),
+                to: f(to),
+            },
+            PathSeg::Quad { from, ctrl, to } => PathSeg::Quad {
+                from: f(from),
+                ctrl: f(ctrl),
+                to: f(to),
+            },
+            PathSeg::Cubic { from, c1, c2, to } => PathSeg::Cubic {
+                from: f(from),
+                c1: f(c1),
+                c2: f(c2),
+                to: f(to),
+            },
+        }
+    }
+
     pub fn eval(&self, t: f64) -> Pt {
         let s = 1.0 - t;
         match *self {

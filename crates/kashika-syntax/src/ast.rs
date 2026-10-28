@@ -16,6 +16,9 @@ pub enum Stmt {
     Junction(Junction),
     Text(Text),
     Line(Line),
+    Import(Import),
+    Shape(ShapeDef),
+    Image(Image),
 }
 
 impl Stmt {
@@ -28,6 +31,9 @@ impl Stmt {
             Stmt::Junction(j) => j.span,
             Stmt::Text(t) => t.span,
             Stmt::Line(l) => l.span,
+            Stmt::Import(i) => i.span,
+            Stmt::Shape(s) => s.span,
+            Stmt::Image(i) => i.span,
         }
     }
 }
@@ -102,6 +108,49 @@ pub struct Line {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct Import {
+    pub path: String,
+    pub path_span: Span,
+    /// The `as <ns>` namespace.
+    pub ns: Option<Ident>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ShapeDef {
+    pub name: Ident,
+    pub body: ShapeBody,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ShapeBody {
+    /// `shape <name> { path "..." [outline N] [text-area (x,y,w,h)] }`; each value keeps its span.
+    Paths {
+        path: (String, Span),
+        outline: Option<(f64, Span)>,
+        text_area: Option<([f64; 4], Span)>,
+    },
+    /// `shape <name> from "<file.svg>" [attrs]`.
+    From {
+        file: String,
+        file_span: Span,
+        attrs: Vec<Attr>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Image {
+    pub id: Ident,
+    pub file: String,
+    pub file_span: Span,
+    pub at: Point,
+    pub size: (f64, f64),
+    pub attrs: Vec<Attr>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Ident {
     pub name: String,
     pub span: Span,
@@ -122,7 +171,7 @@ pub enum Value {
     Num(f64),
     Str(String),
     Color(String),
-    /// An identifier, or a `:`/`,`-joined list of them, e.g. `cross:l2,near`.
+    /// An identifier, or a `:`/`,`/`.`-joined list of them, e.g. `cross:l2,near` or `aws.s3`.
     Word(String),
     Pair(f64, f64),
     /// `side@t`, accepted only as the value of `pin`.

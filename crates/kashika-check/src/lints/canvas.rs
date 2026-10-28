@@ -5,7 +5,7 @@ use crate::ctx::{
     describe_overflow, fmt_num, junction_el, kind_name, line_bbox, line_el, overflow,
     overflow_fact, shape_el, text_el, text_id, Ctx,
 };
-use crate::text_box::{label_box, text_box};
+use crate::text_box::{below_box, label_box, text_box};
 
 /// `out-of-canvas`: an element extends beyond the diagram size. Strokes and markers are ignored.
 pub fn out_of_canvas(ctx: &Ctx) -> Vec<Diagnostic> {
@@ -47,6 +47,14 @@ pub fn out_of_canvas(ctx: &Ctx) -> Vec<Diagnostic> {
             s.span,
             s.rect,
         );
+        if let Some(b) = below_box(s) {
+            check(
+                format!("the label under {} '{}'", kind_name(s), s.id),
+                shape_el(s),
+                s.span,
+                b,
+            );
+        }
     }
     for j in &ctx.scene.junctions {
         check(

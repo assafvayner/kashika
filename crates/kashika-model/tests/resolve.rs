@@ -375,18 +375,7 @@ fn negative_curve_amount() {
 }
 
 #[test]
-fn unsupported_features_fail_clearly() {
-    let d = errors("box a at (0,0) size (10,10) icon=\"x.svg\"\n");
-    assert_eq!(d[0].code, "unsupported");
-    assert_eq!(d[0].message, "`icon` is not supported in this version yet");
-    let d = errors("box a at (0,0) size (10,10) shape=cylinder\n");
-    assert_eq!(d[0].code, "unsupported");
-    assert_eq!(
-        d[0].message,
-        "`cylinder` is not supported in this version yet"
-    );
-    let d = errors("group g at (0,0) size (10,10) icon=\"x\" {\n}\n");
-    assert_eq!(d[0].code, "unsupported");
+fn unknown_attributes_fail_clearly() {
     let d = errors("box a at (0,0) size (10,10) fil=#fff\n");
     assert_eq!(d[0].code, "attr");
 }
@@ -399,16 +388,10 @@ fn duplicate_label_attribute_reports_once() {
 }
 
 #[test]
-fn duplicate_unsupported_attribute_reports_once() {
+fn duplicate_icon_attribute_reports_once() {
     let d = errors("box a at (0,0) size (1,1) icon-size=4 icon-size=5\n");
     let codes: Vec<_> = d.iter().map(|x| x.code).collect();
-    assert_eq!(codes.iter().filter(|c| **c == "attr").count(), 1, "{d:#?}");
-    assert_eq!(
-        codes.iter().filter(|c| **c == "unsupported").count(),
-        1,
-        "{d:#?}"
-    );
-    assert_eq!(d.len(), 2, "{d:#?}");
+    assert_eq!(codes.iter().filter(|c| **c == "attr").count(), 2, "{d:#?}");
 }
 
 #[test]
@@ -683,20 +666,13 @@ fn duplicate_style_has_its_own_code() {
 }
 
 #[test]
-fn diagram_icons_is_unsupported() {
-    let (_, d) = kashika_model::compile("diagram \"t\" size (800,600) icons=\"icons\"\n");
-    assert_eq!(d.len(), 1, "{d:#?}");
-    assert_eq!(d[0].code, "unsupported");
-}
-
-#[test]
 fn statements_after_unbuilt_ones_still_resolve() {
     let (s, d) = kashika_model::compile(&format!(
         "{HEAD}import \"lib.kash\"\nshape s {{\n  path \"M 0 0\"\n}}\nimage i \"x.png\" at (0,0) size (1,1)\n\
          box a at (10,10) size (20,20) padding=0 {{\n  text \"x\"\n}}\nbox b at a.right+(10,0) size (20,20) pin=left\nline l: a.right -> b.left\n"
     ));
     let codes: Vec<_> = d.iter().map(|x| x.code).collect();
-    assert_eq!(codes, vec!["unsupported"; 3], "{d:#?}");
+    assert_eq!(codes, vec!["file", "parse", "file"], "{d:#?}");
     assert_eq!(rect(&s, "b"), Rect::new(40.0, 10.0, 20.0, 20.0));
     assert_eq!(pts(&s, "l"), vec![Pt::new(30.0, 20.0), Pt::new(40.0, 20.0)]);
 }
@@ -877,6 +853,14 @@ fn diagram_inside_a_group_is_misplaced() {
 }
 
 #[test]
+fn pin_at_t_on_a_diamond_follows_the_outline() {
+    let s = ok("box d at (200,100) size (100,80) shape=diamond pin=top@0.25\n");
+    let d = &s.shapes[0];
+    assert_eq!(d.rect, Rect::new(175.0, 80.0, 100.0, 80.0));
+    assert_eq!(d.anchor("top", Some(0.25)), Some(Pt::new(200.0, 100.0)));
+}
+
+#[test]
 fn shapes_need_positive_sizes() {
     for body in [
         "box a at (0,0) size (0,10)\n",
@@ -898,28 +882,6 @@ fn box_shapes() {
     assert_eq!(s.shapes[0].outline, kashika_model::Outline::Rounded);
     let d = errors("box a at (0,0) size (10,10) shape=rectt\n");
     assert_eq!(d[0].code, "attr");
-}
-
-#[test]
-fn every_unimplemented_shape_is_unsupported() {
-    for shape in [
-        "cylinder", "diamond", "ellipse", "hexagon", "doc", "cloud", "person",
-    ] {
-        let d = errors(&format!("box a at (0,0) size (10,10) shape={shape}\n"));
-        assert_eq!(d.len(), 1, "{shape}: {d:#?}");
-        assert_eq!(d[0].code, "unsupported", "{shape}");
-    }
-}
-
-#[test]
-fn every_icon_attribute_is_unsupported() {
-    for attr in ["icon=\"x.svg\"", "icon-pos=left", "icon-size=16"] {
-        let d = errors(&format!("box a at (0,0) size (10,10) {attr}\n"));
-        assert_eq!(d.len(), 1, "{attr}: {d:#?}");
-        assert_eq!(d[0].code, "unsupported", "{attr}");
-        let d = errors(&format!("group g at (0,0) size (10,10) {attr} {{\n}}\n"));
-        assert_eq!(d[0].code, "unsupported", "group {attr}");
-    }
 }
 
 #[test]

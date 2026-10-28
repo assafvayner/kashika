@@ -26,6 +26,30 @@ fn examples() -> String {
     format!("{RECIPES}\n{EXAMPLE}\n```kash\n{UPLOAD}```\n")
 }
 
+fn shapes() -> String {
+    let mut t = String::from(
+        "| shape | unit path (120x80 box) | outline | text area |\n|---|---|---|---|\n",
+    );
+    for name in kashika_model::BUILTIN_SHAPES {
+        if let Some((d, outline, a)) = kashika_model::builtin_source(name, 120.0, 80.0) {
+            let n = |v: f64| format!("{}", (v * 1000.0).round() / 1000.0);
+            let d: Vec<String> = d
+                .split_whitespace()
+                .map(|w| w.parse().map_or(w.to_string(), n))
+                .collect();
+            t.push_str(&format!(
+                "| `{name}` | `{}` | {outline} | ({},{},{},{}) |\n",
+                d.join(" "),
+                n(a.x),
+                n(a.y),
+                n(a.w),
+                n(a.h)
+            ));
+        }
+    }
+    SHAPES.replace("{builtins}", t.trim_end())
+}
+
 fn metrics() -> String {
     const SAMPLE: &str = "The quick brown fox jumps over the lazy dog 0123456789";
     let n = SAMPLE.chars().count() as f64;
@@ -54,7 +78,7 @@ pub fn page(topic: Option<&str>) -> Result<String, String> {
         "syntax" => SYNTAX.into(),
         "anchors" => ANCHORS.into(),
         "paths" => PATHS.into(),
-        "shapes" => SHAPES.into(),
+        "shapes" => shapes(),
         "styles" => STYLES.into(),
         "metrics" => metrics(),
         "lints" => LINTS.into(),

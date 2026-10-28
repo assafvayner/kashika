@@ -3,10 +3,11 @@ use kashika_diag::{did_you_mean, Diagnostic, Span};
 use crate::ast::*;
 use crate::lexer::{lex, Tok, Token};
 
+mod defs;
+
 const STATEMENTS: &[&str] = &[
     "diagram", "style", "box", "group", "junction", "text", "line", "import", "shape", "image",
 ];
-const UNBUILT_STATEMENTS: &[&str] = &["import", "shape", "image"];
 const LINE_FLAGS: &[&str] = &["ortho"];
 /// Segment keywords; an id with one of these names could not be a bare segment target.
 pub const RESERVED_IDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve"];
@@ -137,19 +138,6 @@ impl Parser {
         let Tok::Ident(kw) = self.tok().clone() else {
             return self.error("a statement");
         };
-        if UNBUILT_STATEMENTS.contains(&kw.as_str()) {
-            let closed = self.skip_unbuilt();
-            self.unsupported(
-                start.to(self.prev_span()),
-                format!("`{kw}` is not supported in this version yet"),
-                format!("`{kw}` arrives in a later version of Kashika; remove it for now"),
-            );
-            if !closed {
-                return self.error("`}`");
-            }
-            self.end_of_stmt()?;
-            return Ok(None);
-        }
         let stmt = match kw.as_str() {
             "diagram" => {
                 self.bump();
@@ -204,6 +192,18 @@ impl Parser {
                 self.bump();
                 Stmt::Line(self.line(start)?)
             }
+            "import" => {
+                self.bump();
+                Stmt::Import(self.import(start)?)
+            }
+            "shape" => {
+                self.bump();
+                Stmt::Shape(self.shape_def(start)?)
+            }
+            "image" => {
+                self.bump();
+                Stmt::Image(self.image(start)?)
+            }
             _ => {
                 let mut d = Diagnostic::error(
                     "parse",
@@ -224,13 +224,8 @@ impl Parser {
         Ok(Some(stmt))
     }
 
-    fn unsupported(&mut self, span: Span, message: impl Into<String>, help: impl Into<String>) {
-        self.diags
-            .push(Diagnostic::error("unsupported", span, message).with_help(help));
-    }
-
-    /// Skips a statement the parser recognizes but doesn't build yet: up to the end of
-    /// the line, or past the `}` that matches any `{` it opens, across lines.
+    /// Skips a statement the parser won't build: up to the end of the line, or past the
+    /// `}` that matches any `{` it opens, across lines.
     /// Returns `false` if the input ends inside an open `{`.
     fn skip_unbuilt(&mut self) -> bool {
         let mut depth = 0usize;
@@ -606,8 +601,13 @@ impl Parser {
             Tok::Ident(first) => {
                 self.bump();
                 let mut word = first;
-                while matches!(self.tok(), Tok::Colon | Tok::Comma) {
-                    let sep = if *self.tok() == Tok::Colon { ':' } else { ',' };
+                loop {
+                    let sep = match self.tok() {
+                        Tok::Colon => ':',
+                        Tok::Comma => ',',
+                        Tok::Dot if matches!(self.tok_at(1), Tok::Ident(_)) => '.',
+                        _ => break,
+                    };
                     self.bump();
                     match self.tok().clone() {
                         Tok::Ident(s) => {

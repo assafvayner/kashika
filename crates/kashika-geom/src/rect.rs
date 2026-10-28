@@ -30,4 +30,19 @@ impl Rect {
     pub fn bottom(self) -> f64 {
         self.y + self.h
     }
+
+    /// Maps a point in unit coordinates (0..1 across the rect) to this rect.
+    pub fn map_unit(self, p: Pt) -> Pt {
+        Pt::new(self.x + p.x * self.w, self.y + p.y * self.h)
+    }
+
+    /// Maps a rect in unit coordinates to this rect.
+    pub fn map_rect(self, u: Rect) -> Rect {
+        Rect::new(
+            self.x + u.x * self.w,
+            self.y + u.y * self.h,
+            u.w * self.w,
+            u.h * self.h,
+        )
+    }
 }

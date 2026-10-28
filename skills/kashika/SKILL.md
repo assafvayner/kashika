@@ -32,8 +32,11 @@ Check snippets without a file: `kashika check - --stdin-name draft.kash < draft`
 
 ```
 diagram "Title" size (900,500) kashika=1
+import "lib/aws.kash" as aws                               // shapes and styles from a library: shape=aws.s3 style=aws.service
+shape tri { path "M 0.5 0 L 1 1 L 0 1 Z" }                 // unit coordinates 0..1, stretched to the box; M L H V C Q A Z
+shape s3 from "icons/s3.svg" text-area=below               // an SVG file as a shape; outline=bbox|hull
 style svc { fill=#e8f0fe stroke=#1a73e8 }                 // built-ins: service datastore external queue boundary note
-box api "API" at (40,40) size (140,60) style=service       // shape=rect|rounded
+box api "API" at (40,40) size (140,60) style=service       // shape=rect|rounded|cylinder|diamond|ellipse|hexagon|doc|cloud|person
 box pay "Payments API" at (40,140) size (180,60) sublabel="v2.4.1"   // muted second line, 0.8 × size
 box db "DB" at api.right+(120,0) size (140,60) pin=left    // pin: any anchor, `side@t` included (`pin=left@0.25`); default `tl`
 group vpc "VPC" at (20,140) size (600,300) { ... }         // children use vpc-relative coordinates
@@ -41,9 +44,15 @@ junction fan at (api.bottom.x, 130)                        // shared point for f
 text "note" at (700,480) size=12 align=right muted
 line api_db: api.right -> db.left end=arrow label="SQL"
 box badge at db.tr size (16,16) pin=center allow=overlap:db reason="corner badge"
+image logo "assets/logo.png" at (20,20) size (80,80) fit=contain   // SVG/PNG/JPEG; fit=contain|cover|stretch
+box q "Jobs" at (40,200) size (160,60) icon="queue"        // icon-pos=left|top icon-size=24; bundled: server browser queue lock cloud person
 ```
 
 Anchors: `top bottom left right center tl tr bl br`, plus `side@t` (e.g. `db.left@0.25`) and offsets `+(dx,dy)`. Mixed points: `(db.left.x, lane.y)`.
+
+On non-rectangular shapes, `top`/`bottom`/`left`/`right` (and `@t`) slide along their axis onto the outline, so a vertical line into `db.top` stays vertical. Corners (`tl` …) stay on the bounding box. `kashika ref shapes` lists each shape's outline and text area.
+
+Files (imports, SVG shapes, images, icons) are local only and resolve from the `.kash` file's directory, then `icons="<dir>"` on the `diagram` line, then `KASHIKA_ICON_PATH`, then the bundled icons. Paths outside the file's directory need `--allow-path`. `kashika icons [dir] --search <term>` lists what's available, with natural sizes. A library file holds only `shape`, `style` and `import`; `import` goes right after `diagram`. Images are top-level only.
 
 Segments after `->`:
 
@@ -62,7 +71,7 @@ Line attributes: `start=`/`end=` (`arrow open diamond dot none`), `stroke-style=
 
 - Markup in any label or text (including a line's `label=`): `**bold**`, `` `code` ``. No nesting. `\*` and `` \` `` are literal. An unclosed marker is a `parse` error.
 - `\n` breaks a line. There is no automatic wrapping.
-- Placement in a box: `text-align=left|center|right` (default center), `text-valign=top|middle|bottom` (default middle), `gap=N` between lines (default 2). The text area is the box inset by `padding` (default 8).
+- Placement in a box: `text-align=left|center|right` (default center), `text-valign=top|middle|bottom` (default middle), `gap=N` between lines (default 2). The text area is the box inset by `padding` (default 8); other shapes use a smaller area (`kashika ref shapes`), and an icon takes `icon-size + padding` from its side. `text-area=below` on an SVG shape puts the label under it.
 - Groups: the label (and `sublabel`) sits top-left. `text-align` works, but `text-valign` doesn't.
 - 3+ lines, bullets or mixed sizes: use a text block instead of `label`:
   ```
@@ -90,8 +99,9 @@ Long lines can continue on the next line by starting it with `->`; attributes an
 | `text-conflict` | move `label`/`sublabel` into the text block as its first items, or give every block item an `at` |
 | `degenerate-curve` / `zero-length` | the endpoints coincide; check your coordinates |
 | `diagram` | the file must start with `diagram "<title>" size (w,h)` |
-| `unsupported` | feature is in the spec but not built yet (`icon`, shapes other than `rect`/`rounded`, `import`/`shape`/`image`, `icons=`). Remove it; put the info in the label or a text block |
-| `duplicate-id` / `duplicate-style` / `unknown-style` / `size` / `parse` | fix as the message says; ids are unique across boxes, groups, junctions, lines and texts; style names are unique among styles. Coordinates stay within ±1,000,000, sizes at most 1,000,000 |
+| `file` | a referenced file is missing, outside the project root, a URL, unreadable or the wrong type, or imports form a cycle. Fix the path (see the did-you-mean) or pass `--allow-path`. Errors inside an imported file are reported at the `import`, prefixed ``in `file` at L:C:`` |
+| `unsupported` | feature is in the spec but not built into this binary. Remove it; put the info in the label or a text block |
+| `duplicate-id` / `duplicate-style` / `unknown-style` / `size` / `parse` | fix as the message says; ids are unique across boxes, groups, images, junctions, lines and texts; style names are unique among styles and shape names among shapes (built-in names included). Coordinates stay within ±1,000,000, sizes at most 1,000,000 |
 
 ## Warnings
 
@@ -99,17 +109,18 @@ Long lines can continue on the next line by starting it with `->`; attributes an
 |---|---|
 | `cross` | move one line to a lane from the `free` help, or route around; `allow=cross:<other>` if the graph is non-planar |
 | `shared-segment` | give the later line its own lane (the help names the nearest one) or fan out from a `junction` |
-| `through` / `group-transit` | move the segment to a `free` interval or route around |
+| `through` / `group-transit` | move the segment to a `free` interval or route around; images block lines like boxes |
 | `near` | keep `clearance` (default 6px) from box edges and parallel lines |
 | `overlap` / `spill` | move or resize; only a `group` may contain shapes; keep children below its title band |
 | `diagonal-tail` | finish with `hv`/`vh` or `x`/`y` |
 | `endpoint-off-edge` | use the anchor from the help instead of a literal |
 | `port-crowding` | spread endpoints ≥8px apart (`side@t`) or meet at a `junction` |
 | `label-collision` | move the label to a clear `label@t` from the help |
+| `image-distort` | use `fit=contain`/`cover`, or the size in the help line |
 | `low-contrast` / `out-of-canvas` / `off-grid` | as the message says |
 
 Exit codes: `0` clean, `1` warnings, `2` errors, `3` tool/usage failure. `render` writes nothing on errors unless `--force` is given (it then marks each error in red). `render -o file.png` writes PNG; `--debug` overlays rulers, ids and anchor dots to help you locate problems.
 
 ## Not supported yet
 
-Shapes other than `rect`/`rounded`, `icon=`, custom `shape`s, images, imports, `icons=`, and the `block-reducible`, `text-outside-shape` and `image-distort` warnings. These arrive in later versions.
+The `block-reducible` and `text-outside-shape` warnings. They arrive in a later version.

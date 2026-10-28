@@ -142,9 +142,15 @@ fn missing_file_is_a_tool_error() {
 }
 
 #[test]
-fn bundled_example_checks_clean() {
-    let example = format!("{}/../../examples/upload.kash", env!("CARGO_MANIFEST_DIR"));
-    kashika().args(["check", &example]).assert().code(0);
+fn bundled_examples_check_clean() {
+    for name in ["upload", "shapes"] {
+        let example = format!("{}/../../examples/{name}.kash", env!("CARGO_MANIFEST_DIR"));
+        kashika()
+            .args(["check", &example])
+            .assert()
+            .code(0)
+            .stdout(predicate::str::contains("0 errors, 0 warnings"));
+    }
 }
 
 #[test]

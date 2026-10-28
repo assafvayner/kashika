@@ -296,44 +296,105 @@ fn nested_groups_parse() {
 }
 
 #[test]
-fn unbuilt_statements_report_unsupported_and_recover() {
-    let (f, diags) = parse(
-        "import \"lib/aws.kash\" as aws\n\
-         shape lb_icon {\n  path \"M 0 0 L 1 1\"\n  nested { a=1 { b=2 } }\n  text-area (0.2,0.3,0.6,0.4)\n}\n\
-         shape s3 from \"icons/s3.svg\" outline=hull\n\
+fn parses_imports_shapes_and_images() {
+    let f = parse_ok(
+        "import \"lib/aws.kash\" as aws\nimport \"base.kash\"\n\
+         shape lb {\n  path \"M 0 0 L 1 1\" // diagonal\n  outline 1\n  text-area (0.2,0.3,0.6,0.4)\n}\n\
+         shape s3 from \"icons/s3.svg\" outline=hull text-area=below\n\
          image logo \"hf.png\" at (20,20) size (80,80) fit=contain\n\
-         box api at (100,80) size (200,120)\n\
-         box b at (0,0) size (1,1)\n",
+         box b at (0,0) size (1,1) shape=aws.s3 style=aws.service\n",
     );
-    let codes: Vec<_> = diags.iter().map(|d| d.code).collect();
-    assert_eq!(codes, vec!["unsupported"; 4], "{diags:#?}");
-    for d in &diags {
-        assert!(d.help.iter().any(|h| h.contains("later version")), "{d:#?}");
-    }
-    assert_eq!(f.stmts.len(), 2, "{:#?}", f.stmts);
-    assert!(matches!(&f.stmts[0], Stmt::Box(n) if n.id.name == "api"));
-    assert!(matches!(&f.stmts[1], Stmt::Box(n) if n.id.name == "b"));
+    assert!(
+        matches!(&f.stmts[0], Stmt::Import(i) if i.path == "lib/aws.kash" && i.ns.as_ref().unwrap().name == "aws")
+    );
+    assert!(matches!(&f.stmts[1], Stmt::Import(i) if i.ns.is_none()));
+    let Stmt::Shape(s) = &f.stmts[2] else {
+        panic!("expected shape")
+    };
+    assert_eq!(s.name.name, "lb");
+    let ShapeBody::Paths {
+        path,
+        outline,
+        text_area,
+    } = &s.body
+    else {
+        panic!("expected a path body")
+    };
+    assert_eq!(path.0, "M 0 0 L 1 1");
+    assert_eq!(outline.map(|o| o.0), Some(1.0));
+    assert_eq!(text_area.map(|t| t.0), Some([0.2, 0.3, 0.6, 0.4]));
+    let Stmt::Shape(s) = &f.stmts[3] else {
+        panic!("expected shape")
+    };
+    assert!(
+        matches!(&s.body, ShapeBody::From { file, attrs, .. } if file == "icons/s3.svg" && attrs.len() == 2)
+    );
+    assert!(
+        matches!(&f.stmts[4], Stmt::Image(i) if i.id.name == "logo" && i.file == "hf.png" && i.size == (80.0, 80.0) && i.attrs.len() == 1)
+    );
+    let Stmt::Box(b) = &f.stmts[5] else {
+        panic!("expected box")
+    };
+    assert_eq!(b.attrs[0].value, Value::Word("aws.s3".into()));
+    assert_eq!(b.attrs[1].value, Value::Word("aws.service".into()));
 }
 
 #[test]
-fn unbuilt_statements_inside_groups_recover() {
+fn shape_body_errors_recover() {
+    let (f, d) = parse(
+        "shape a {\n  pth \"M 0 0\"\n}\nshape b {\n  outline 1\n}\nshape c {\n  path \"M 0 0\"\n  path \"M 1 1\"\n}\nbox z at (0,0) size (1,1)\n",
+    );
+    let got: Vec<_> = d.iter().map(|x| (x.code, x.span.line)).collect();
+    assert_eq!(
+        got,
+        vec![("parse", 2), ("parse", 4), ("parse", 9)],
+        "{d:#?}"
+    );
+    assert_eq!(d[0].help, vec!["did you mean `path`?".to_string()]);
+    assert!(d[1].message.contains("needs a `path`"), "{}", d[1].message);
+    assert!(matches!(f.stmts.last(), Some(Stmt::Box(_))));
+    assert!(matches!(&f.stmts[0], Stmt::Shape(s) if s.name.name == "c"));
+}
+
+#[test]
+fn image_needs_a_file_string() {
+    let (_, d) = parse("image logo at (0,0) size (1,1)\n");
+    assert_eq!(d[0].code, "parse");
+    assert!(
+        d[0].message.contains("a file path string"),
+        "{}",
+        d[0].message
+    );
+}
+
+#[test]
+fn image_inside_a_group_parses() {
     let (f, diags) = parse(
         "group g at (0,0) size (9,9) {\n  image i \"x.png\" at (0,0) size (1,1)\n  box a at (0,0) size (1,1) { text \"x\" }\n  box b at (0,0) size (1,1)\n}\nbox c at (0,0) size (1,1)\n",
     );
-    let codes: Vec<_> = diags.iter().map(|d| d.code).collect();
-    assert_eq!(codes, vec!["unsupported"; 1], "{diags:#?}");
+    assert!(diags.is_empty(), "{diags:#?}");
     let Stmt::Group(g) = &f.stmts[0] else {
         panic!("expected group")
     };
-    assert_eq!(g.children.len(), 2);
+    assert_eq!(g.children.len(), 3);
+    assert!(matches!(&g.children[0], Stmt::Image(_)));
     assert_eq!(f.stmts.len(), 2);
 }
 
 #[test]
-fn unclosed_unbuilt_block_is_reported() {
-    let (_, diags) = parse("shape s {\n  path \"M 0 0\"\n");
-    assert_eq!(diags[0].code, "unsupported");
-    assert!(diags.iter().any(|d| d.message.contains("expected `}`")));
+fn unclosed_shape_block_is_reported() {
+    let (f, diags) = parse("shape s {\n  path \"M 0 0\"\n");
+    assert_eq!(diags.len(), 1, "{diags:#?}");
+    assert_eq!(diags[0].code, "parse");
+    assert!(diags[0].message.contains("expected `}`"), "{diags:#?}");
+    assert!(f.stmts.is_empty());
+}
+
+#[test]
+fn dotted_words_need_an_identifier_after_the_dot() {
+    let (_, d) = parse("box b at (0,0) size (1,1) style=aws.\n");
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "parse");
 }
 
 #[test]

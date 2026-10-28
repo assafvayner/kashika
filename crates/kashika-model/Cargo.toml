@@ -10,3 +10,8 @@ kashika-geom.workspace = true
 kashika-syntax.workspace = true
 kashika-text.workspace = true
 serde.workspace = true
+usvg.workspace = true
+imagesize.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

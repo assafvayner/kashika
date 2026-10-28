@@ -1,7 +1,7 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::{cross, dot, edges, inside_runs, seg_seg_dist, Pt, TOLERANCE};
 
-use crate::ctx::{fmt_num, line_el, round2, shape_el, Ctx};
+use crate::ctx::{fmt_num, kind_name, line_el, round2, shape_el, Ctx};
 use crate::free::with_free;
 
 /// Pieces whose directions differ by less than ~3° count as parallel.
@@ -69,16 +69,18 @@ fn near_boxes(ctx: &Ctx) -> Vec<Diagnostic> {
             let Some((gap, k)) = best else { continue };
             let message = if attached {
                 format!(
-                    "{} runs along the edge of its own box '{id}', {}px away (clearance {})",
+                    "{} runs along the edge of its own {} '{id}', {}px away (clearance {})",
                     l.line.id,
+                    kind_name(s.shape),
                     fmt_num(gap),
                     fmt_num(c)
                 )
             } else {
                 format!(
-                    "{} runs {}px from box '{id}' (clearance {})",
+                    "{} runs {}px from {} '{id}' (clearance {})",
                     l.line.id,
                     fmt_num(gap),
+                    kind_name(s.shape),
                     fmt_num(c)
                 )
             };

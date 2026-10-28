@@ -22,7 +22,7 @@ The CLI renders `.kash` files to SVG or PNG and runs geometric checks (crossings
 - Comments: `//` to end of line, and `/* ... */` block comments, both outside strings. Block comments don't nest. A block comment that spans lines counts as one line break, so it never joins two statements. An unclosed `/*` is a `parse` error. `#` is never a comment character.
 - A UTF-8 byte order mark at the start of the file is ignored.
 - Strings: `"..."` with escapes `\"`, `\\`, `\n`, and the markup escapes `\*` and `` \` `` (§6). Any other escape, such as `\q`, is a `parse` error.
-- Identifiers: `[a-zA-Z_][a-zA-Z0-9_-]*`. **Ids are unique across the whole file** (shapes, groups, junctions, lines, texts) and are always referenced by bare id. There are no dotted paths.
+- Identifiers: `[a-zA-Z_][a-zA-Z0-9_-]*`. **Ids are unique across the whole file** (boxes, groups, images, junctions, lines, texts) and are always referenced by bare id. There are no dotted paths. Only the names of imported shapes and styles are dotted (`shape=aws.s3`, §3a); shape and style names are separate from ids.
 - The segment keywords `h`, `v`, `x`, `y`, `hv`, `vh` and `curve` are reserved: declaring an id with one of these names is a `parse` error, since it could not be used as a bare segment target.
 - Numbers: integers or decimals, optionally negative. Colors: `#rgb`, `#rrggbb` or `#rrggbbaa`.
 - **Statements** end at a newline, except in three cases:
@@ -53,7 +53,7 @@ line  [<id>:] <point> (-> <segment>)+ [attrs]
 image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stretch]   // §3a
 ```
 
-`diagram` comes first, then any `import` statements, then everything else. "First" means first in the source: a statement before `diagram` makes it misplaced even when that statement failed to parse. Boxes accept `sublabel=`, `text-align=`, `text-valign=`, `gap=`, `icon=` and a `{ }` text block (§6). Groups accept `sublabel=`, `text-align=` and `gap=`; a group's `{ }` holds its children, and `text-valign` on a group is an `attr` error because the title always sits at the top.
+`diagram` comes first, then any `import` statements, then everything else. "First" means first in the source: a statement before `diagram` makes it misplaced even when that statement failed to parse. Boxes accept `sublabel=`, `text-align=`, `text-valign=`, `gap=`, `icon=` and a `{ }` text block (§6). Groups accept `sublabel=`, `text-align=`, `gap=` and `icon=`; a group's `{ }` holds its children, and `text-valign` on a group is an `attr` error because the title always sits at the top.
 
 - `grid=N` makes `off-grid` check authored literals only, never resolved anchors. `clearance=N` (default `6`) is the minimum gap used by the `near` lint.
 - Numeric attributes must be in range, or they are `attr` errors: `font-size`, `stroke-width` and `grid` must be greater than 0; `radius`, `padding` and `clearance` must be at least 0. All of them must be at most 1,000,000. A `text` `size=` outside that range is a `size` error.
@@ -66,7 +66,7 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
 - `box` shapes: built-in `rect` (default), `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`, or any `shape` that is defined or imported (§3a).
 - `pin=<anchor>` picks which anchor of the new shape lands on `at` (default `tl`). Any anchor works, including `side@t`: `pin=left@0.25`. For example, `box cache at db.right+(60,0) size (120,60) pin=left` vertically centers `cache` beside `db`.
 - `at` may reference other shapes, so boxes can be placed relative to each other. Placement references form a DAG; a cycle is an error that prints the cycle. A chain of placement references deeper than 256 is also a `placement-cycle` error.
-- `group`: children are `box`, `group`, `junction`, `text`, `line`. Groups nest at most 64 deep; a deeper `group` is a `parse` error. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. The label sits inside the top-left corner, and its title band (`font line-height + padding`) is reserved space. Children that intrude on the title band trigger `spill`.
+- `group`: children are `box`, `group`, `junction`, `text`, `line`. `image` is top-level only; inside a group it is a `parse` error. Groups nest at most 64 deep; a deeper `group` is a `parse` error. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. The label sits inside the top-left corner, and its title band (`font line-height + padding`) is reserved space. Children that intrude on the title band trigger `spill`.
 - `junction`: a zero-size named point that lines can start or end at. Lines meeting at a junction are connected, not crossing. `dot` draws a 6px dot there. Junctions model buses and fan-in/fan-out.
 - `text`: `at` is the anchor point for the alignment. `color=none` is an `attr` error. Vertically, `at` is the **center** of the text block, not the baseline.
 
@@ -85,8 +85,10 @@ shape lb_icon {
 }
 box lb "LB" at (100,80) size (120,80) shape=lb_icon
 ```
-- All built-in shapes are defined this way in a standard library. `ref shapes` prints those definitions.
+- All built-in shapes except `rect` and `rounded` are defined this way in a standard library. `ref shapes` prints those definitions. `rect` and `rounded` keep native outlines, because a corner `radius` is in pixels.
+- `cylinder` and `hexagon` have features measured in pixels: the cylinder's cap height is `min(20, h/4)` and the hexagon's side inset is `min(h/4, w/2)`. Their unit paths are therefore computed for each box size; `ref shapes` prints them for one example size.
 - `cloud` and `person` are built-ins.
+- Shape names can't reuse a built-in shape name, and defining a name twice is a `duplicate-style` error.
 - Checks use the outline, flattened into straight segments.
 
 ### SVG files as shapes
@@ -95,7 +97,9 @@ shape s3 from "icons/aws/s3.svg" [outline=bbox|hull] [text-area=below|inside]
 ```
 - The SVG's drawing is scaled to the box.
 - Anchors and checks use the bounding box (default) or the convex hull of the drawing.
-- `text-area=below` puts the label under the icon, the usual style in architecture diagrams.
+- `text-area=below` puts the label under the icon, the usual style in architecture diagrams. The label sits in a band `padding` under the box, as tall as the text and at least as wide as the box.
+- Anchors, `through`, `near` and `overlap` use the shape's outline only, never the label under it. `out-of-canvas`, `spill`, `label-collision` and `low-contrast` check that label where it sits, against the canvas or whatever is drawn behind it.
+- The SVG's drawing replaces the style's fill and stroke, so the shape adds no fill behind text for `low-contrast`.
 
 ### Images
 ```
@@ -103,7 +107,9 @@ box s3 "Uploads" at (600,300) size (120,60) icon="icons/aws/s3.svg" [icon-pos=le
 image logo "assets/hf.png" at (20,20) size (80,80) [fit=contain|cover|stretch]
 ```
 - Formats: SVG, PNG, JPEG.
-- The checker treats an image as an opaque rectangle.
+- `fit` defaults to `contain`. Images take `pin=`, can be anchored to like boxes, and paint with the boxes in file order.
+- `icon-pos` defaults to `left` and `icon-size` to 24. A `left` icon sits `padding` from the left edge, vertically centered; a `top` icon sits `padding` from the top edge, horizontally centered. The text area shrinks by `icon-size + padding` on that side. On a group, the icon sits in the title band before the title, its size defaults to the title's line height (`1.25 × font-size`), and `icon-pos=top` is an `attr` error. `icon-pos` or `icon-size` without `icon=` is an `attr` error.
+- The checker treats an image as an opaque rectangle: lines are checked against it like a box, and it takes part in `overlap`, `spill` and `out-of-canvas`. It adds no fill behind text for `low-contrast`.
 - `inspect` reports each image's natural size and aspect ratio.
 
 ### Imports
@@ -112,6 +118,7 @@ import "lib/aws.kash"          // brings in shape and style definitions
 import "lib/aws.kash" as aws   // namespaced: shape=aws.s3 style=aws.service
 ```
 Library files may contain only `shape`, `style` and `import`. An import cycle is an error.
+- Errors inside an imported file are reported at the `import` statement of the file being checked, and the message starts with ``in `lib/aws.kash` at 3:5: `` (the line and column inside the library). Nested imports chain the prefix.
 
 ### Rules for files
 - **Local files only.** No URLs.
@@ -226,7 +233,7 @@ These block output unless `--force` is given:
 | `parse` | Includes expected tokens and a suggestion. Also: unknown string escapes, reserved ids (§2), groups nested more than 64 deep |
 | `unknown-id` / `unknown-anchor` | Includes did-you-mean. `unknown-anchor` also covers a bad `@t`: out of 0..1, or on a corner or `center` |
 | `duplicate-id` | Two statements use the same id |
-| `duplicate-style` | Two `style` statements define the same name. Style names are separate from element ids |
+| `duplicate-style` | Two `style` statements, or two `shape` definitions, define the same name, or a `shape` reuses a built-in shape name. Style and shape names are separate from element ids |
 | `placement-cycle` | Relative placements form a cycle, or a chain of them is deeper than 256 |
 | `label-overflow` | Reports the required size |
 | `text-conflict` | `label`/`sublabel` combined with stacked (no `at`) block items (§6) |
@@ -238,6 +245,7 @@ These block output unless `--force` is given:
 | `size` | A non-positive size, or one larger than 1,000,000 |
 | `diagram` | Missing, misplaced or repeated `diagram` statement |
 | `version` | `kashika=N` doesn't match the binary |
+| `file` | A referenced file (`import`, `shape ... from`, `image`, `icon=`, `icons=`) is missing, escapes the project root without `--allow-path`, is a remote URL, can't be read or decoded, or has the wrong type; an import cycle; imports nested more than 32 deep. Errors inside an imported file are reported at the `import` with an ``in `file` at L:C:`` prefix |
 | `unsupported` | A spec feature this build doesn't implement yet |
 
 ### Warnings
@@ -246,7 +254,7 @@ These block output unless `--force` is given:
 |---|---|
 | `cross` | Two lines intersect, including tangency, at a point that is not a shared endpoint or junction |
 | `shared-segment` | Two lines overlap collinearly for more than 1px |
-| `through` | A line enters a box's interior. For a line's own start and end boxes, only the first and last segments are exempt, so leaving and re-entering is flagged. Groups are never obstacles |
+| `through` | A line enters a box's or image's interior. For a line's own start and end boxes, only the first and last segments are exempt, so leaving and re-entering is flagged. Groups are never obstacles |
 | `near` | A line runs within `clearance` of a box edge it doesn't attach to, or within `clearance` of a parallel line for more than 20px. **This includes a line running along its own box's edge** |
 | `overlap` | Two shapes have intersecting interiors. A group whose rectangle contains the other shape is not an overlap, and a shape nested inside a group in the source is left to `spill`. A box containing another shape is an overlap |
 | `spill` | A child extends outside its group or into the group's title band. Touching the edge is fine |
@@ -262,7 +270,7 @@ These block output unless `--force` is given:
 | `out-of-canvas` | An element extends beyond the diagram size |
 | `off-grid` | An authored literal is not a multiple of `grid` |
 
-`block-reducible`, `text-outside-shape` and `image-distort` are not reported yet; `allow=` already accepts their codes.
+`block-reducible` and `text-outside-shape` are not reported yet; `allow=` already accepts their codes.
 
 ### Suppression
 
@@ -356,7 +364,7 @@ Prints the resolved geometry: every shape's bounding box and anchors in both can
 
 - `--ports` lists, for each shape side, which anchors are already used and by which lines.
 - `--corridors` lists the free horizontal and vertical intervals within a rectangle.
-- `--format json` writes one object with schema `kashika.inspect/1`: `shapes` (with `bbox`, `local_bbox`, `anchors`, `local_anchors`), `junctions`, `texts`, `lines` (with `vertices`, `segments`, `length`, `labels`), `placement`, and `ports`/`corridors` when requested. Positional ids limit the output to those elements. An unknown id is a usage error.
+- `--format json` writes one object with schema `kashika.inspect/1`: `shapes` (with `bbox`, `local_bbox`, `anchors`, `local_anchors`, and `image` with `path`, `natural`, `aspect` and `fit` for images and SVG-file shapes), `junctions`, `texts`, `lines` (with `vertices`, `segments`, `length`, `labels`), `placement`, and `ports`/`corridors` when requested. Positional ids limit the output to those elements. An unknown id is a usage error.
 - Errors don't stop it, so a file with errors can still be inspected.
 
 ### route
