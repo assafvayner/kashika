@@ -12,6 +12,17 @@ File {
                 span: 6:1-6:30,
             },
         ),
+        Box(
+            Node {
+                id: Ident { name: "b", span: 7:5-7:6 },
+                label: None,
+                at: Lit { x: Num(60.0), y: Num(10.0), span: 7:10-7:17 },
+                size: (40.0, 30.0),
+                attrs: [],
+                block: None,
+                span: 7:1-7:30,
+            },
+        ),
     ],
     first_stmt: Some(4:1-4:8),
 }

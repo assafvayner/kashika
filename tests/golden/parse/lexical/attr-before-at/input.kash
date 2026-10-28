@@ -1,5 +1,5 @@
 // spec: 2, 3
 // dump: ast
-// Attributes can't come before `at`/`size`: "any order" applies to the trailing attributes only.
+// Attributes may come before `at`/`size`: everything after the id and label is in any order.
 diagram "early attr" size (300,100)
 box a "A" sublabel="v2" at (20,20) size (100,60)

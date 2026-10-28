@@ -132,7 +132,7 @@ line res: ls.left@0.6 -> lc.right@0.6 end=arrow stroke-style=dashed label="reply
   ```
   Items stack top to bottom. Each item takes `size`, `color`, `align` and `muted`. An item with `at (x,y)` is absolute, in box-local coordinates (`at` is its alignment point and vertical center), and leaves the stack. This is how to put text inside a shape: `text "x" at (100,60)` in the shape's block (a free `text` over a shape is `label-collision`). Don't combine `label`/`sublabel` with stacked items (`text-conflict`). Absolute items are fine.
 
-Comments: `// to end of line` and `/* block */` (no nesting; an unclosed `/*` is a `parse` error). `#` is not a comment. Long lines can continue on the next line by starting it with `->`; attributes and `ortho` may follow on their own line.
+Comments: `// to end of line` and `/* block */` (no nesting; an unclosed `/*` is a `parse` error). `#` is not a comment. After the id and label, `at`, `size` and attributes may come in any order. Long lines can continue on the next line by starting it with `->`; attributes and `ortho` may follow on their own line.
 
 ## Diagnostics
 

@@ -10,7 +10,7 @@ text  [<id>] "<content>" at <point> [size=N] [color=C] [align=left|center|right]
 line  [<id>:] <point> -> <segment> [-> <segment> ...] [line attributes] [ortho]
 ```
 
-- `diagram` comes first. Units are pixels. The canvas is transparent unless `background=C` (`kashika ref styles`). One statement per line; a line that starts with `->`, `key=` or `ortho` continues the statement above.
+- `diagram` comes first. Units are pixels. The canvas is transparent unless `background=C` (`kashika ref styles`). One statement per line; a line that starts with `->`, `key=` or `ortho` continues the statement above. After the id and label, `at`, `size` and attributes may come in any order.
 - Comments are `//` and `/* */`. `#` starts a color (`#rgb`, `#rrggbb`, `#rrggbbaa`), never a comment. Strings use `\"`, `\\` and `\n`.
 - Style keys: `fill`, `stroke`, `stroke-width`, `stroke-style=solid|dashed|dotted`, `font-size`, `font-weight=normal|bold`, `color`, `radius`, `padding`, `muted`. Precedence: inline > `style=` > built-in. Built-in styles: `service`, `datastore`, `external`, `queue`, `boundary`, `note`.
 - `pin=<anchor>` puts that anchor of the new shape on `at` (default `tl`): `at api.right+(80,0) pin=left`. `side@t` works too: `pin=left@0.25`.

@@ -19,11 +19,11 @@ The CLI renders `.kash` files to SVG, PNG, JPEG or WebP and runs geometric check
 
 ## 2. Lexical rules
 
-- Comments: `//` to end of line, and `/* ... */` block comments, both outside strings. Block comments don't nest. A block comment that spans lines counts as one line break, so it never joins two statements. An unclosed `/*` is a `parse` error. `#` is never a comment character.
+- Comments: `//` to end of line, and `/* ... */` block comments, both outside strings. Block comments don't nest. A block comment that spans lines counts as one line break, so it never joins two statements. An unclosed `/*` is a `parse` error. `#` is never a comment character: a `#` that begins a line, or stands alone outside an attribute value, is one `parse` error suggesting `//`, and the rest of that line is skipped.
 - A UTF-8 byte order mark at the start of the file is ignored.
 - Strings: `"..."` with escapes `\"`, `\\`, `\n`, and the markup escapes `\*` and `` \` `` (§6). Any other escape, such as `\q`, is a `parse` error.
 - Identifiers: `[a-zA-Z_][a-zA-Z0-9_-]*`. **Ids are unique across the whole file** (boxes, groups, images, junctions, lines, texts) and are always referenced by bare id. There are no dotted paths. Only the names of imported shapes and styles are dotted (`shape=aws.s3`, §3a); shape and style names are separate from ids.
-- The segment keywords `h`, `v`, `x`, `y`, `hv`, `vh` and `curve` are reserved: declaring an id with one of these names is a `parse` error, since it could not be used as a bare segment target.
+- The segment keywords `h`, `v`, `x`, `y`, `hv`, `vh` and `curve` are reserved: declaring an id with one of these names is a `parse` error, since it could not be used as a bare segment target. Like any statement that fails to parse, the statement is dropped, so it is never resolved or linted.
 - Numbers: integers or decimals, optionally negative. Colors: `#rgb`, `#rrggbb` or `#rrggbbaa`, one of the 148 CSS Color Module Level 4 names (`steelblue`, `rebeccapurple`; case-insensitive, no `transparent`), or `none` where a style allows it. A name resolves to lowercase `#rrggbb` hex, so the scene, the SVG and `low-contrast` only ever see hex. An unknown word where a color is expected is an `attr` error with a did-you-mean over the names.
 - **Statements** end at a newline, except in three cases:
   - inside `{ }` blocks;
@@ -37,6 +37,7 @@ The CLI renders `.kash` files to SVG, PNG, JPEG or WebP and runs geometric check
     ```
   - when the next non-blank line starts with an attribute (`key=` or `key@t=`) or, on a `line`, with a line flag (`ortho`). Neither can begin a new statement, because no statement keyword is followed by `=` or `@` and no statement keyword is also a flag.
 - Attributes are `key=value` pairs in any order. Unknown or duplicate attributes are errors.
+- After a statement's id and label, `at <point>`, `size (w,h)` and attributes come in any order: `box a "A" style=service size (120,60) at (20,20)` is the same box as the form in §3. A missing `at` or `size`, or a repeated one, is a `parse` error that drops the statement.
 
 ## 3. Statements
 

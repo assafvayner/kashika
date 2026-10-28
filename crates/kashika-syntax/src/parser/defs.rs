@@ -1,6 +1,6 @@
 use kashika_diag::{did_you_mean, Diagnostic, Span};
 
-use super::{PResult, Parser};
+use super::{Clauses, PResult, Parser};
 use crate::ast::*;
 use crate::lexer::Tok;
 
@@ -37,18 +37,14 @@ impl Parser {
             return self.error("a file path string");
         };
         self.bump();
-        self.keyword("at")?;
-        let at = self.point()?;
-        self.keyword("size")?;
-        let size = self.pair()?;
-        let attrs = self.attrs(&[])?;
+        let tail = self.tail(Clauses::AT_SIZE)?;
         Ok(Image {
             id,
             file,
             file_span,
-            at,
-            size,
-            attrs,
+            at: self.required(tail.at, "at")?,
+            size: self.required(tail.size, "size")?,
+            attrs: tail.attrs,
             span: start.to(self.prev_span()),
         })
     }

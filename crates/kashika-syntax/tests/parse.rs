@@ -555,3 +555,88 @@ fn unclosed_text_block_is_reported() {
     assert_eq!(diags.len(), 1, "{diags:#?}");
     assert_eq!(diags[0].message, "expected `}`, found end of file");
 }
+
+#[test]
+fn reserved_id_statements_are_dropped() {
+    let (f, d) = parse(
+        "box h at (0,0) size (1,1)\ngroup v at (0,0) size (9,9) {\n  box inner at (1,1) size (1,1)\n}\njunction x at (0,0)\ntext y \"t\" at (0,0)\nline hv: (0,0) -> h 1\nimage vh \"a.png\" at (0,0) size (1,1)\nbox ok at (0,0) size (1,1)\n",
+    );
+    assert_eq!(d.len(), 6, "{d:#?}");
+    assert_eq!(f.stmts.len(), 1, "{:#?}", f.stmts);
+    let Stmt::Box(b) = &f.stmts[0] else {
+        panic!("expected box")
+    };
+    assert_eq!(b.id.name, "ok");
+}
+
+#[test]
+fn hash_comment_is_one_error_with_help() {
+    for src in [
+        "# a note\nbox a at (0,0) size (1,1)\n",
+        "#note\nbox a at (0,0) size (1,1)\n",
+        "  # indented\nbox a at (0,0) size (1,1)\n",
+    ] {
+        let (f, d) = parse(src);
+        assert_eq!(d.len(), 1, "{src:?}: {d:#?}");
+        assert_eq!(d[0].code, "parse");
+        assert!(d[0].message.contains("comment"), "{}", d[0].message);
+        assert!(d[0].help.iter().any(|h| h.contains("`//`")), "{d:#?}");
+        assert_eq!(f.stmts.len(), 1);
+    }
+    let (_, d) = parse("box a at (0,0) size (1,1) # trailing\n");
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert!(d[0].help.iter().any(|h| h.contains("`//`")), "{d:#?}");
+}
+
+#[test]
+fn at_size_and_attributes_come_in_any_order() {
+    let f = parse_ok(
+        "diagram \"t\" grid=10 size (400,300) clearance=4\n\
+         box a \"A\" sublabel=\"v2\" at (20,20) size (100,60)\n\
+         box b size (10,20) style=service at (1,2) pin=tl\n\
+         group g \"G\" size (90,90) at (0,0) {\n}\n\
+         junction j dot at (5,5)\n\
+         text \"t\" size=12 muted at (3,4)\n\
+         image i \"a.png\" fit=cover size (8,8) at (0,0)\n\
+         box c at (0,0) size (9,9) {\n  text \"x\" muted at (1,1)\n}\n",
+    );
+    assert_eq!(f.stmts.len(), 8);
+    let Stmt::Diagram(d) = &f.stmts[0] else {
+        panic!("expected diagram")
+    };
+    assert_eq!(d.size, (400.0, 300.0));
+    assert_eq!(d.attrs.len(), 2);
+    let Stmt::Box(b) = &f.stmts[2] else {
+        panic!("expected box")
+    };
+    assert_eq!(b.size, (10.0, 20.0));
+    assert_eq!(b.attrs.len(), 2);
+    assert!(matches!(b.at, Point::Lit { x: Coord::Num(x), .. } if x == 1.0));
+    let Stmt::Junction(j) = &f.stmts[4] else {
+        panic!("expected junction")
+    };
+    assert_eq!(j.attrs[0].value, Value::Flag);
+    let Stmt::Text(t) = &f.stmts[5] else {
+        panic!("expected text")
+    };
+    assert_eq!(t.attrs.len(), 2);
+    assert!(block(&f, 7)[0].at.is_some());
+}
+
+#[test]
+fn duplicate_or_missing_at_and_size_are_parse_errors() {
+    for (src, msg) in [
+        ("box a at (0,0) size (1,1) at (2,2)\n", "duplicate `at`"),
+        ("box a size (1,1) at (0,0) size (2,2)\n", "duplicate `size`"),
+        ("diagram \"t\" size (1,1) size (2,2)\n", "duplicate `size`"),
+        ("junction j at (0,0) at (1,1)\n", "duplicate `at`"),
+        ("box a fill=red size (1,1)\n", "expected `at`"),
+        ("box a at (0,0) fill=red\n", "expected `size`"),
+    ] {
+        let (f, d) = parse(src);
+        assert_eq!(d.len(), 1, "{src:?}: {d:#?}");
+        assert_eq!(d[0].code, "parse");
+        assert!(d[0].message.contains(msg), "{src:?}: {}", d[0].message);
+        assert!(f.stmts.is_empty(), "{src:?}");
+    }
+}

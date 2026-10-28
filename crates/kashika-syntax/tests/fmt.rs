@@ -132,3 +132,11 @@ fn version_attribute_round_trips() {
     let src = "diagram \"t\" size (1,1) kashika=\"0.1.0\"\n";
     assert_eq!(fmt(src), src);
 }
+
+#[test]
+fn keeps_at_size_and_attribute_order() {
+    assert_eq!(
+        fmt("box  a \"A\" style=service size ( 9 , 9 )  at (1,2)\njunction j dot  at (0,0)\n"),
+        "box a \"A\" style=service size (9,9) at (1,2)\njunction j dot at (0,0)\n"
+    );
+}

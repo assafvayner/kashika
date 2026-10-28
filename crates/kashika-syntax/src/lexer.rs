@@ -140,6 +140,21 @@ impl Lexer {
                 }
                 '/' if self.peek(1) == Some('*') => self.block_comment(line, col),
                 '"' => self.string(line, col),
+                '#' if self.is_hash_comment() => {
+                    self.diags.push(
+                        Diagnostic::error(
+                            "parse",
+                            Span::new(line, col, line, col + 1),
+                            "`#` does not start a comment",
+                        )
+                        .with_help(
+                            "comments start with `//`; `#` only starts a color like `#rrggbb`",
+                        ),
+                    );
+                    while self.peek(0).is_some_and(|c| c != '\n') {
+                        self.bump();
+                    }
+                }
                 '#' => self.color(line, col),
                 '-' if self.peek(1) == Some('>') => {
                     self.bump();
@@ -318,6 +333,16 @@ impl Lexer {
         }
     }
 
+    /// A `#` that begins a line, or stands alone outside an attribute value, is a
+    /// mistaken comment rather than a color.
+    fn is_hash_comment(&self) -> bool {
+        match self.toks.last().map(|t| &t.tok) {
+            None | Some(Tok::Newline) => true,
+            Some(Tok::Eq) => false,
+            Some(_) => !self.peek(1).is_some_and(|c| c.is_ascii_alphanumeric()),
+        }
+    }
+
     fn color(&mut self, line: u32, col: u32) {
         self.bump();
         let mut s = String::from("#");
@@ -408,11 +433,21 @@ mod tests {
     }
 
     #[test]
-    fn hash_comment_is_an_invalid_color_with_help() {
-        let (_, d) = lex("# note\n");
+    fn hash_comment_is_one_error_with_help() {
+        for src in ["# note\n", "#note\n", "box a # note\n"] {
+            let (t, d) = lex(src);
+            assert_eq!(d.len(), 1, "{src:?}: {d:#?}");
+            assert_eq!(d[0].message, "`#` does not start a comment");
+            assert!(d[0].help[0].contains("`//`"));
+            assert!(!t.iter().any(|t| matches!(t.tok, Tok::Color(_))));
+        }
+    }
+
+    #[test]
+    fn bad_color_after_eq_is_an_invalid_color() {
+        let (_, d) = lex("fill=# fff\n");
         assert_eq!(d.len(), 1);
-        assert!(d[0].message.contains("invalid color `#`"));
-        assert!(d[0].help[0].contains("`//`"));
+        assert_eq!(d[0].message, "invalid color `#`");
     }
 
     #[test]

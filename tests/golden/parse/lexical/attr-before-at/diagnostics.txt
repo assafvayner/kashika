@@ -1,1 +1,1 @@
-error[parse] 5:11-5:19: expected `at`, found `sublabel`
+(no diagnostics)

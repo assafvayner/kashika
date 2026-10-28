@@ -1,0 +1,160 @@
+File {
+    stmts: [
+        Diagram(
+            Diagram {
+                title: "any order",
+                size: (400.0, 300.0),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "grid", span: 4:21-4:25 },
+                        at_t: None,
+                        value: Num(10.0),
+                        span: 4:21-4:28,
+                    },
+                    Attr {
+                        key: Ident { name: "clearance", span: 4:44-4:53 },
+                        at_t: None,
+                        value: Num(4.0),
+                        span: 4:44-4:55,
+                    },
+                ],
+                span: 4:1-4:55,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "a", span: 5:5-5:6 },
+                label: None,
+                at: Lit { x: Num(20.0), y: Num(20.0), span: 5:24-5:31 },
+                size: (100.0, 60.0),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "style", span: 5:32-5:37 },
+                        at_t: None,
+                        value: Word("service"),
+                        span: 5:32-5:45,
+                    },
+                ],
+                block: None,
+                span: 5:1-5:45,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "b", span: 6:5-6:6 },
+                label: Some("B"),
+                at: Lit { x: Num(200.0), y: Num(20.0), span: 6:30-6:38 },
+                size: (100.0, 60.0),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "style", span: 6:11-6:16 },
+                        at_t: None,
+                        value: Word("datastore"),
+                        span: 6:11-6:26,
+                    },
+                    Attr {
+                        key: Ident { name: "pin", span: 6:39-6:42 },
+                        at_t: None,
+                        value: Word("tl"),
+                        span: 6:39-6:45,
+                    },
+                    Attr {
+                        key: Ident { name: "shape", span: 6:60-6:65 },
+                        at_t: None,
+                        value: Word("rounded"),
+                        span: 6:60-6:73,
+                    },
+                ],
+                block: None,
+                span: 6:1-6:73,
+            },
+        ),
+        Group(
+            Group {
+                node: Node {
+                    id: Ident { name: "g", span: 7:7-7:8 },
+                    label: Some("G"),
+                    at: Lit { x: Num(20.0), y: Num(140.0), span: 7:46-7:54 },
+                    size: (360.0, 120.0),
+                    attrs: [
+                        Attr {
+                            key: Ident { name: "style", span: 7:28-7:33 },
+                            at_t: None,
+                            value: Word("boundary"),
+                            span: 7:28-7:42,
+                        },
+                    ],
+                    block: None,
+                    span: 7:1-7:54,
+                },
+                children: [
+                    Junction(
+                        Junction {
+                            id: Ident { name: "j", span: 8:12-8:13 },
+                            at: Lit { x: Num(40.0), y: Num(60.0), span: 8:21-8:28 },
+                            attrs: [
+                                Attr {
+                                    key: Ident { name: "dot", span: 8:14-8:17 },
+                                    at_t: None,
+                                    value: Flag,
+                                    span: 8:14-8:17,
+                                },
+                            ],
+                            span: 8:3-8:28,
+                        },
+                    ),
+                    Text(
+                        Text {
+                            id: None,
+                            content: "note",
+                            at: Lit { x: Num(120.0), y: Num(60.0), span: 9:24-9:32 },
+                            attrs: [
+                                Attr {
+                                    key: Ident { name: "muted", span: 9:15-9:20 },
+                                    at_t: None,
+                                    value: Flag,
+                                    span: 9:15-9:20,
+                                },
+                                Attr {
+                                    key: Ident { name: "size", span: 9:33-9:37 },
+                                    at_t: None,
+                                    value: Num(12.0),
+                                    span: 9:33-9:40,
+                                },
+                            ],
+                            span: 9:3-9:40,
+                        },
+                    ),
+                ],
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "c", span: 11:5-11:6 },
+                label: None,
+                at: Lit { x: Num(200.0), y: Num(180.0), span: 11:10-11:19 },
+                size: (120.0, 60.0),
+                attrs: [],
+                block: Some(
+                    [
+                        BlockText {
+                            content: "x",
+                            at: Some(Lit { x: Num(10.0), y: Num(10.0), span: 12:21-12:28 }),
+                            attrs: [
+                                Attr {
+                                    key: Ident { name: "muted", span: 12:12-12:17 },
+                                    at_t: None,
+                                    value: Flag,
+                                    span: 12:12-12:17,
+                                },
+                            ],
+                            span: 12:3-12:28,
+                        },
+                    ],
+                ),
+                span: 11:1-11:33,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+}

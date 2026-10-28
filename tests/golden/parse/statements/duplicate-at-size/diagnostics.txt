@@ -1,0 +1,10 @@
+error[parse] 4:31-4:33: duplicate `at`
+  = help: a statement takes one `at`; remove the other
+error[parse] 5:31-5:35: duplicate `size`
+  = help: a statement takes one `size`; remove the other
+error[parse] 6:24-6:26: duplicate `at`
+  = help: a statement takes one `at`; remove the other
+error[parse] 7:23-7:25: duplicate `at`
+  = help: a statement takes one `at`; remove the other
+error[parse] 8:28-8:29: expected `at`, found end of line
+error[parse] 9:32-9:33: expected `size`, found end of line

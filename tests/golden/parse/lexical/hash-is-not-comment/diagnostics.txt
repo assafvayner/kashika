@@ -1,3 +1,4 @@
-error[parse] 5:1-5:2: invalid color `#`
-  = help: colors are `#rgb`, `#rrggbb` or `#rrggbbaa`; comments start with `//`
-error[parse] 5:1-5:2: expected a statement, found color `#`
+error[parse] 5:1-5:2: `#` does not start a comment
+  = help: comments start with `//`; `#` only starts a color like `#rrggbb`
+error[parse] 7:31-7:32: `#` does not start a comment
+  = help: comments start with `//`; `#` only starts a color like `#rrggbb`

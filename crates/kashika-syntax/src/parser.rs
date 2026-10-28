@@ -32,6 +32,34 @@ pub fn parse(src: &str) -> (File, Vec<Diagnostic>) {
 
 type PResult<T> = Result<T, ()>;
 
+#[derive(Clone, Copy)]
+struct Clauses {
+    at: bool,
+    size: bool,
+}
+
+impl Clauses {
+    const AT: Self = Self {
+        at: true,
+        size: false,
+    };
+    const SIZE: Self = Self {
+        at: false,
+        size: true,
+    };
+    const AT_SIZE: Self = Self {
+        at: true,
+        size: true,
+    };
+}
+
+#[derive(Default)]
+struct Tail {
+    at: Option<Point>,
+    size: Option<(f64, f64)>,
+    attrs: Vec<Attr>,
+}
+
 struct Parser {
     toks: Vec<Token>,
     pos: usize,
@@ -274,7 +302,8 @@ impl Parser {
         }
     }
 
-    /// An id being declared; segment keywords are reserved.
+    /// An id being declared; segment keywords are reserved, and a statement declaring one
+    /// is dropped.
     fn decl_id(&mut self, what: &str) -> PResult<Ident> {
         let id = self.ident(what)?;
         if RESERVED_IDS.contains(&id.name.as_str()) {
@@ -290,17 +319,9 @@ impl Parser {
                     id.name
                 )),
             );
+            return Err(());
         }
         Ok(id)
-    }
-
-    fn keyword(&mut self, kw: &str) -> PResult<()> {
-        if self.is_kw(kw) {
-            self.bump();
-            Ok(())
-        } else {
-            self.error(&format!("`{kw}`"))
-        }
     }
 
     fn expect(&mut self, tok: Tok) -> PResult<Span> {
@@ -342,13 +363,11 @@ impl Parser {
 
     fn diagram(&mut self, start: Span) -> PResult<Diagram> {
         let title = self.string()?;
-        self.keyword("size")?;
-        let size = self.pair()?;
-        let attrs = self.attrs(&[])?;
+        let tail = self.tail(Clauses::SIZE)?;
         Ok(Diagram {
             title,
-            size,
-            attrs,
+            size: self.required(tail.size, "size")?,
+            attrs: tail.attrs,
             span: start.to(self.prev_span()),
         })
     }
@@ -380,17 +399,13 @@ impl Parser {
         } else {
             None
         };
-        self.keyword("at")?;
-        let at = self.point()?;
-        self.keyword("size")?;
-        let size = self.pair()?;
-        let attrs = self.attrs(&[])?;
+        let tail = self.tail(Clauses::AT_SIZE)?;
         Ok(Node {
             id,
             label,
-            at,
-            size,
-            attrs,
+            at: self.required(tail.at, "at")?,
+            size: self.required(tail.size, "size")?,
+            attrs: tail.attrs,
             block: None,
             span: start.to(self.prev_span()),
         })
@@ -431,19 +446,13 @@ impl Parser {
             return Err(());
         }
         let content = self.string()?;
-        let at = if self.is_kw("at") {
-            self.bump();
-            Some(self.point()?)
-        } else {
-            None
-        };
-        let attrs = self.attrs(&[])?;
+        let tail = self.tail(Clauses::AT)?;
         let span = start.to(self.prev_span());
         match self.tok() {
             Tok::Newline | Tok::RBrace => Ok(BlockText {
                 content,
-                at,
-                attrs,
+                at: tail.at,
+                attrs: tail.attrs,
                 span,
             }),
             _ => self.error("end of statement"),
@@ -452,13 +461,11 @@ impl Parser {
 
     fn junction(&mut self, start: Span) -> PResult<Junction> {
         let id = self.decl_id("an id")?;
-        self.keyword("at")?;
-        let at = self.point()?;
-        let attrs = self.attrs(&[])?;
+        let tail = self.tail(Clauses::AT)?;
         Ok(Junction {
             id,
-            at,
-            attrs,
+            at: self.required(tail.at, "at")?,
+            attrs: tail.attrs,
             span: start.to(self.prev_span()),
         })
     }
@@ -470,14 +477,12 @@ impl Parser {
             None
         };
         let content = self.string()?;
-        self.keyword("at")?;
-        let at = self.point()?;
-        let attrs = self.attrs(&[])?;
+        let tail = self.tail(Clauses::AT)?;
         Ok(Text {
             id,
             content,
-            at,
-            attrs,
+            at: self.required(tail.at, "at")?,
+            attrs: tail.attrs,
             span: start.to(self.prev_span()),
         })
     }
@@ -531,6 +536,48 @@ impl Parser {
             for _ in 0..n {
                 self.bump();
             }
+        }
+    }
+
+    /// Parses `at <point>` and `size (w,h)`, where `clauses` allows them, and attributes,
+    /// in any order. A repeated `at` or `size` is an error.
+    fn tail(&mut self, clauses: Clauses) -> PResult<Tail> {
+        let mut tail = Tail::default();
+        loop {
+            self.continuation(false, &[]);
+            let clause = !matches!(self.tok_at(1), Tok::Eq | Tok::At);
+            if clauses.at && clause && self.is_kw("at") {
+                let kw = self.bump().span;
+                let at = self.point()?;
+                self.once(&mut tail.at, at, "at", kw)?;
+            } else if clauses.size && clause && self.is_kw("size") {
+                let kw = self.bump().span;
+                let size = self.pair()?;
+                self.once(&mut tail.size, size, "size", kw)?;
+            } else if matches!(self.tok(), Tok::Ident(_)) {
+                tail.attrs.push(self.attr()?);
+            } else {
+                return Ok(tail);
+            }
+        }
+    }
+
+    fn once<T>(&mut self, slot: &mut Option<T>, v: T, kw: &str, span: Span) -> PResult<()> {
+        if slot.is_some() {
+            self.diags.push(
+                Diagnostic::error("parse", span, format!("duplicate `{kw}`"))
+                    .with_help(format!("a statement takes one `{kw}`; remove the other")),
+            );
+            return Err(());
+        }
+        *slot = Some(v);
+        Ok(())
+    }
+
+    fn required<T>(&mut self, v: Option<T>, kw: &str) -> PResult<T> {
+        match v {
+            Some(v) => Ok(v),
+            None => self.error(&format!("`{kw}`")),
         }
     }
 
