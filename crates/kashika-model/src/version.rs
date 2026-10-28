@@ -21,10 +21,7 @@ fn parse(s: &str) -> Option<(u64, u64, u64)> {
     let mut it = s.split('.');
     let major = part(it.next()?)?;
     let minor = part(it.next()?)?;
-    let patch = match it.next() {
-        Some(p) => part(p)?,
-        None => 0,
-    };
+    let patch = part(it.next()?)?;
     if it.next().is_some() {
         return None;
     }
@@ -72,12 +69,11 @@ mod tests {
     }
 
     #[test]
-    fn accepts_equal_older_and_shorthand() {
+    fn accepts_equal_and_older() {
         assert!(ok("0.1.0", "0.1.0"));
         assert!(ok("0.0.5", "0.1.0"));
-        assert!(ok("0.1", "0.1.0"));
         assert!(ok("1.2.0", "1.4.3"));
-        assert!(ok("1.4", "1.4.3"));
+        assert!(ok("1.4.0", "1.4.3"));
     }
 
     #[test]
@@ -87,7 +83,7 @@ mod tests {
         assert!(!ok("1.0.0", "0.1.0"));
         assert!(!ok("1.5.0", "1.4.3"));
         assert!(!ok("1.0.0", "2.0.0"));
-        assert!(!ok("0.9", "1.0.0"));
+        assert!(!ok("0.9.0", "1.0.0"));
     }
 
     #[test]
@@ -99,6 +95,8 @@ mod tests {
     fn rejects_malformed() {
         for s in [
             "1",
+            "0.1",
+            "1.4",
             "",
             "0.1.0-beta",
             "0.1.0+b",
@@ -117,7 +115,7 @@ mod tests {
 
     #[test]
     fn message_text() {
-        let p = check("0.4", "0.1.0").err().unwrap();
+        let p = check("0.4.0", "0.1.0").err().unwrap();
         assert_eq!(
             p.message,
             "this file needs kashika 0.4.0 or newer (same major version); this is kashika 0.1.0"

@@ -143,8 +143,8 @@ fn version_diags(attr: &str) -> Vec<Diagnostic> {
 }
 
 #[test]
-fn version_accepts_equal_older_and_shorthand() {
-    for v in ["\"0.1.0\"", "\"0.0.5\"", "\"0.1\""] {
+fn version_accepts_equal_and_older() {
+    for v in ["\"0.1.0\"", "\"0.0.5\""] {
         assert!(version_diags(v).is_empty(), "{v}");
     }
 }
@@ -173,6 +173,7 @@ fn version_rejects_bare_and_malformed() {
         "1",
         "2",
         "\"1\"",
+        "\"0.1\"",
         "\"abc\"",
         "\"0.1.0-beta\"",
         "\"0.1.0+b1\"",
