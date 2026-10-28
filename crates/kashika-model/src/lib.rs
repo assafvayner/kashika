@@ -16,7 +16,7 @@ mod version;
 
 use kashika_diag::Diagnostic;
 
-pub use assets::probe;
+pub use assets::{probe, MAX_RASTER_PIXELS, MAX_RASTER_SIDE};
 pub use form::Form;
 pub use icons::BUNDLED_ICONS;
 pub use kashika_text::{Font, PlacedLine, Run};

@@ -128,6 +128,7 @@ Library files may contain only `shape`, `style` and `import`; any other statemen
 - **Path resolution:** paths are relative to the importing file. A path that escapes the project root is an error unless `--allow-path` is given.
 - **Search path:** besides the importing file's directory, Kashika searches `icons=` on the `diagram` line and `KASHIKA_ICON_PATH`.
 - **SVG sanitizing:** scripts, external references and `foreignObject` are stripped.
+- **Image size limits:** a PNG or JPEG, attached or embedded in an SVG, is judged by its header before any pixel is decoded and is a `file` error beyond 8,192 px per side or 32,000,000 px in total. Raster output has its own, larger canvas cap (§8).
 - **Self-contained output:** images are embedded in SVG output and rasterized into PNG output.
 - **Missing files:** a missing file is an error, with did-you-mean suggestions drawn only from files the sandbox allows. Naming a directory is an error that says so.
 - **Licensing:** no third-party icon sets are bundled. Kashika ships a small neutral set (`server`, `browser`, `queue`, `lock`, `cloud`, `person`). Users point the search path at icon sets they download themselves.
@@ -250,7 +251,7 @@ These block output unless `--force` is given:
 | `size` | A non-positive size, or one larger than 1,000,000 |
 | `diagram` | Missing, misplaced or repeated `diagram` statement |
 | `version` | `kashika=` is not a quoted semver string, or names a newer version or a different major version than the tool |
-| `file` | A referenced file (`import`, `shape ... from`, `image`, `icon=`, `icons=`) is missing, is a directory, escapes the project root without `--allow-path`, is a remote URL, can't be read or decoded, or has the wrong type; an import cycle; imports nested more than 32 deep. Errors inside an imported file are reported at the `import` with an ``in `file` at L:C:`` prefix |
+| `file` | A referenced file (`import`, `shape ... from`, `image`, `icon=`, `icons=`) is missing, is a directory, escapes the project root without `--allow-path`, is a remote URL, can't be read or decoded, has the wrong type, or is an image over the size limits (§3a); an import cycle; imports nested more than 32 deep. Errors inside an imported file are reported at the `import` with an ``in `file` at L:C:`` prefix |
 
 ### Warnings
 
@@ -315,7 +316,7 @@ Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`
 - Writes output when there are no errors. With `--force` it writes even with errors, drawing red markers at each error.
 - Writes are **atomic**. The result always states whether output was written for this run.
 - `--debug` overlays rulers, element ids, anchor dots and diagnostic markers.
-- The format follows the extension: `.svg`, `.png`, `.jpg`/`.jpeg` (quality 90, composited onto white, or onto the `background=` color when set) or `.webp` (lossless, keeps alpha). SVG, PNG and WebP keep the canvas transparent unless `background=` sets a color. Any other extension exits 3.
+- The format follows the extension: `.svg`, `.png`, `.jpg`/`.jpeg` (quality 90, composited onto white, or onto the `background=` color when set) or `.webp` (lossless, keeps alpha). SVG, PNG and WebP keep the canvas transparent unless `background=` sets a color. Any other extension exits 3. Raster output (PNG, JPEG, WebP) is 1 px per diagram unit and is capped at 16,384 px per side and 100,000,000 px in total; a larger canvas exits 3 with a message naming the limits (SVG has no such cap).
 
 ### Exit codes
 

@@ -1,0 +1,4 @@
+// spec: 3a, 7
+// An image whose header claims more than 8192 px per side is refused before it is decoded.
+diagram "big image" size (200,100)
+image p "huge.png" at (10,10) size (80,40)

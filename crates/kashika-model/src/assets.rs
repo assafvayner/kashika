@@ -8,6 +8,23 @@ use crate::scene::Asset;
 
 const MAX_BYTES: u64 = 16 * 1024 * 1024;
 
+/// Raster output (PNG, JPEG, WebP) is 1 px per diagram unit; a canvas beyond either limit is refused.
+pub const MAX_RASTER_SIDE: u32 = 16_384;
+pub const MAX_RASTER_PIXELS: u64 = 100_000_000;
+/// Attached PNG/JPEG images, judged by their header before any pixel is decoded.
+pub const MAX_IMAGE_SIDE: u32 = 8_192;
+pub const MAX_IMAGE_PIXELS: u64 = 32_000_000;
+
+fn check_image_size(width: usize, height: usize) -> Result<(), String> {
+    let (w, h) = (width as u64, height as u64);
+    if w > u64::from(MAX_IMAGE_SIDE) || h > u64::from(MAX_IMAGE_SIDE) || w * h > MAX_IMAGE_PIXELS {
+        return Err(format!(
+            "the {w}x{h} image is too large (at most {MAX_IMAGE_SIDE} px per side and {MAX_IMAGE_PIXELS} px in total)"
+        ));
+    }
+    Ok(())
+}
+
 /// Loaded assets, deduplicated by canonical path, in first-use order.
 #[derive(Default)]
 pub(crate) struct Store {
@@ -115,6 +132,7 @@ fn raster(path: String, bytes: &[u8]) -> Result<Asset, String> {
     };
     let size =
         imagesize::blob_size(bytes).map_err(|e| format!("cannot read the image size: {e}"))?;
+    check_image_size(size.width, size.height)?;
     Ok(Asset {
         path,
         mime,
@@ -136,6 +154,7 @@ fn svg(path: String, bytes: &[u8]) -> Result<Asset, String> {
         ..usvg::Options::default()
     };
     let tree = usvg::Tree::from_data(bytes, &opt).map_err(|e| format!("not a valid SVG: {e}"))?;
+    check_nested_images(tree.root())?;
     let size = tree.size();
     let (w, h) = (f64::from(size.width()), f64::from(size.height()));
     let mut pts = Vec::new();
@@ -149,6 +168,38 @@ fn svg(path: String, bytes: &[u8]) -> Result<Asset, String> {
         bytes: tree.to_string(&usvg::WriteOptions::default()).into_bytes(),
         unit_hull: if hull.len() >= 3 { hull } else { unit_square() },
     })
+}
+
+/// Raster images embedded in an SVG are held to the same limit as attached ones, wherever
+/// they sit: groups, nested SVG images and pattern fills or strokes.
+fn check_nested_images(g: &usvg::Group) -> Result<(), String> {
+    for node in g.children() {
+        match node {
+            usvg::Node::Group(g) => check_nested_images(g)?,
+            usvg::Node::Image(img) => match img.kind() {
+                usvg::ImageKind::SVG(t) => check_nested_images(t.root())?,
+                usvg::ImageKind::JPEG(d)
+                | usvg::ImageKind::PNG(d)
+                | usvg::ImageKind::GIF(d)
+                | usvg::ImageKind::WEBP(d) => {
+                    let size = imagesize::blob_size(d)
+                        .map_err(|e| format!("cannot read an embedded image's size: {e}"))?;
+                    check_image_size(size.width, size.height)
+                        .map_err(|m| format!("an embedded image: {m}"))?;
+                }
+            },
+            usvg::Node::Path(p) => {
+                let paints = [p.fill().map(|f| f.paint()), p.stroke().map(|s| s.paint())];
+                for paint in paints.into_iter().flatten() {
+                    if let usvg::Paint::Pattern(pat) = paint {
+                        check_nested_images(pat.root())?;
+                    }
+                }
+            }
+            usvg::Node::Text(_) => {}
+        }
+    }
+    Ok(())
 }
 
 /// Every path point in canvas coordinates of the SVG, control points included.
@@ -241,6 +292,46 @@ mod tests {
             assert_eq!(a.natural, (24.0, 24.0), "{name}");
             assert!(a.unit_hull.len() >= 3, "{name}");
         }
+    }
+
+    #[test]
+    fn oversized_images_are_refused_from_the_header() {
+        let e = decode("x.png".into(), &png(100_000, 10), false).unwrap_err();
+        assert!(e.contains("100000x10") && e.contains("too large"), "{e}");
+        let e = decode("x.png".into(), &png(8_000, 8_000), false).unwrap_err();
+        assert!(e.contains("too large"), "{e}");
+        assert!(decode("x.png".into(), &png(8_192, 3_906), false).is_ok());
+    }
+
+    #[test]
+    fn oversized_images_nested_in_svg_are_refused() {
+        use std::fmt::Write as _;
+        let b64 = |b: &[u8]| {
+            const T: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+            let mut o = String::new();
+            for c in b.chunks(3) {
+                let n = (u32::from(c[0]) << 16)
+                    | (u32::from(*c.get(1).unwrap_or(&0)) << 8)
+                    | u32::from(*c.get(2).unwrap_or(&0));
+                for i in 0..4 {
+                    if i <= c.len() {
+                        o.push(T[(n >> (18 - 6 * i) & 63) as usize] as char);
+                    } else {
+                        o.push('=');
+                    }
+                }
+            }
+            o
+        };
+        let mut src = String::new();
+        write!(
+            src,
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><image width="10" height="10" href="data:image/png;base64,{}"/></svg>"#,
+            b64(&png(100_000, 10))
+        )
+        .unwrap();
+        let e = decode("n.svg".into(), src.as_bytes(), true).unwrap_err();
+        assert!(e.contains("too large"), "{e}");
     }
 
     #[test]

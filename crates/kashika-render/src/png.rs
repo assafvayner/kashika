@@ -1,8 +1,23 @@
 use resvg::{tiny_skia, usvg};
 
+use kashika_model::{MAX_RASTER_PIXELS, MAX_RASTER_SIDE};
+
+fn check_raster_size(width: u32, height: u32) -> Result<(), String> {
+    if width > MAX_RASTER_SIDE
+        || height > MAX_RASTER_SIDE
+        || u64::from(width) * u64::from(height) > MAX_RASTER_PIXELS
+    {
+        return Err(format!(
+            "the {width}x{height} canvas is too large for raster output (at most {MAX_RASTER_SIDE} px per side and {MAX_RASTER_PIXELS} px in total); use .svg output or a smaller `size`"
+        ));
+    }
+    Ok(())
+}
+
 fn rasterize(svg: &str) -> Result<tiny_skia::Pixmap, String> {
     let tree = usvg::Tree::from_str(svg, &usvg::Options::default()).map_err(|e| e.to_string())?;
     let size = tree.size().to_int_size();
+    check_raster_size(size.width(), size.height())?;
     let mut pixmap =
         tiny_skia::Pixmap::new(size.width(), size.height()).ok_or("the canvas is empty")?;
     resvg::render(&tree, tiny_skia::Transform::default(), &mut pixmap.as_mut());
@@ -21,11 +36,7 @@ const JPEG_QUALITY: u8 = 90;
 pub fn svg_to_jpeg(svg: &str) -> Result<Vec<u8>, String> {
     let pixmap = rasterize(svg)?;
     let (w, h) = (pixmap.width(), pixmap.height());
-    let too_big = || "the canvas is too large for JPEG".to_string();
-    let (jw, jh) = (
-        u16::try_from(w).map_err(|_| too_big())?,
-        u16::try_from(h).map_err(|_| too_big())?,
-    );
+    let (jw, jh) = (w as u16, h as u16);
     let rgb: Vec<u8> = pixmap
         .data()
         .as_chunks::<4>()
@@ -64,4 +75,35 @@ pub fn svg_to_webp(svg: &str) -> Result<Vec<u8>, String> {
         )
         .map_err(|e| e.to_string())?;
     Ok(out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accepts_the_cap() {
+        assert!(check_raster_size(MAX_RASTER_SIDE, 6103).is_ok());
+        assert!(check_raster_size(10_000, 10_000).is_ok());
+        assert!(check_raster_size(1, 1).is_ok());
+    }
+
+    #[test]
+    fn rejects_an_oversized_side() {
+        let e = check_raster_size(MAX_RASTER_SIDE + 1, 10).unwrap_err();
+        assert!(e.contains("16384") && e.contains("svg"), "{e}");
+        assert!(check_raster_size(10, MAX_RASTER_SIDE + 1).is_err());
+    }
+
+    #[test]
+    fn rejects_an_oversized_area() {
+        assert!(check_raster_size(MAX_RASTER_SIDE, MAX_RASTER_SIDE).is_err());
+        assert!(check_raster_size(10_001, 10_000).is_err());
+    }
+
+    #[test]
+    fn rasterize_rejects_before_allocating() {
+        let svg = r#"<svg xmlns="http://www.w3.org/2000/svg" width="1000000" height="1000000"/>"#;
+        assert!(svg_to_png(svg).unwrap_err().contains("too large"));
+    }
 }

@@ -177,3 +177,22 @@ fn unsupported_extension_lists_supported_ones() {
             "output must end in .svg, .png, .jpg, .jpeg or .webp",
         ));
 }
+
+#[test]
+fn oversized_raster_canvas_is_a_tool_error_but_svg_is_fine() {
+    let dir = tempfile::tempdir().unwrap();
+    let src = dir.path().join("big.kash");
+    std::fs::write(&src, "diagram \"big\" size (20000,100)\n").unwrap();
+    let png = dir.path().join("out.png");
+    kashika()
+        .args(["render", src.to_str().unwrap(), "-o", png.to_str().unwrap()])
+        .assert()
+        .code(3)
+        .stderr(predicate::str::contains("too large for raster output"));
+    assert!(!png.exists());
+    let svg = dir.path().join("out.svg");
+    kashika()
+        .args(["render", src.to_str().unwrap(), "-o", svg.to_str().unwrap()])
+        .assert()
+        .code(0);
+}

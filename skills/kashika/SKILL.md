@@ -144,4 +144,4 @@ Comments: `// to end of line` and `/* block */` (no nesting; an unclosed `/*` is
 - `not-ortho` / `diagonal-tail`: finish with `hv`/`vh` or `x`/`y`.
 - `text-conflict`: move `label`/`sublabel` into the block as its first items, or give every block item an `at`.
 
-Exit codes: `0` clean, `1` warnings, `2` errors, `3` tool/usage failure. `render` writes nothing on errors unless `--force` is given (it then marks each error in red). `render -o file.png` writes PNG; `--debug` overlays rulers, ids and anchor dots to help you locate problems.
+Exit codes: `0` clean, `1` warnings, `2` errors, `3` tool/usage failure. `render` writes nothing on errors unless `--force` is given (it then marks each error in red). `render -o file.png` writes PNG; raster output (png/jpg/webp) is capped at 16,384 px per side and 100,000,000 px in total (use `.svg` beyond that); attached PNG/JPEG images are limited to 8,192 px per side and 32,000,000 px in total; `--debug` overlays rulers, ids and anchor dots to help you locate problems.
