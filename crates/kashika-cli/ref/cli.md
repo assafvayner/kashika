@@ -2,7 +2,7 @@
 
 ```text
 kashika check   <file|-> [--allow-path]
-kashika render  <file|-> -o <out.svg|out.png> [--force] [--debug] [--allow-path]
+kashika render  <file|-> -o <out.svg|out.png|out.jpg|out.jpeg|out.webp> [--force] [--debug] [--allow-path]
 kashika inspect <file|-> [id ...] [--ports] [--corridors x1,y1,x2,y2] [--allow-path]
 kashika fmt     <file> [--check]
 kashika measure "<text>" [--size N] [--weight bold]

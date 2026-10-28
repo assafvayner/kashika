@@ -2,7 +2,7 @@
 
 Kashika is a text-to-diagram language for technical design diagrams (architecture, data flow, system boundaries). **There is no automatic layout.** The author states the exact position of every shape and the exact path of every line. Coding agents are the main authors, since they handle that precision well; humans read and review the results.
 
-The CLI renders `.kash` files to SVG or PNG and runs geometric checks (crossings, overlaps, near-misses, text overflow). It also exposes the resolved geometry, so an author who cannot see the image can still verify and repair it.
+The CLI renders `.kash` files to SVG, PNG, JPEG or WebP and runs geometric checks (crossings, overlaps, near-misses, text overflow). It also exposes the resolved geometry, so an author who cannot see the image can still verify and repair it.
 
 ---
 
@@ -287,7 +287,7 @@ A clean check does not prove that arrows point the right way or that the right b
 ## 8. CLI
 
 ```
-kashika render  <file|-> -o <out.svg|out.png> [--force] [--debug]
+kashika render  <file|-> -o <out.svg|out.png|out.jpg|out.jpeg|out.webp> [--force] [--debug]
 kashika check   <file|->
 kashika inspect <file|-> [ids...] [--ports] [--corridors <x1,y1,x2,y2>]
 kashika fmt     <file> [--check]
@@ -312,6 +312,7 @@ Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`
 - Writes output when there are no errors. With `--force` it writes even with errors, drawing red markers at each error.
 - Writes are **atomic**. The result always states whether output was written for this run.
 - `--debug` overlays rulers, element ids, anchor dots and diagnostic markers.
+- The format follows the extension: `.svg`, `.png`, `.jpg`/`.jpeg` (quality 90, composited onto white) or `.webp` (lossless, keeps alpha). Any other extension exits 3.
 
 ### Exit codes
 

@@ -31,11 +31,11 @@ struct Cli {
 enum Cmd {
     /// Check a .kash file and report diagnostics
     Check(Common),
-    /// Check a .kash file and render it to SVG or PNG
+    /// Check a .kash file and render it to SVG, PNG, JPEG or WebP
     Render {
         #[command(flatten)]
         common: Common,
-        /// Output file (.svg or .png)
+        /// Output file (.svg, .png, .jpg, .jpeg or .webp)
         #[arg(short, long)]
         output: PathBuf,
         /// Write output even when there are errors
@@ -185,7 +185,10 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
     };
     if let Some(r) = &render {
         if output::kind(&r.output).is_none() {
-            return tool_error(c.format, "output must end in .svg or .png");
+            return tool_error(
+                c.format,
+                &format!("output must end in {}", output::SUPPORTED),
+            );
         }
     }
     let (scene, mut diags) = kashika_model::compile_with(&src, &options(&c.file, c.allow_path));

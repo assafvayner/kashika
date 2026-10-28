@@ -27,5 +27,7 @@ tempfile = "3"
 ttf-parser = "0.25"
 resvg = { version = "=0.45.1", default-features = false, features = ["raster-images"] }
 usvg = { version = "=0.45.1", default-features = false }
+jpeg-encoder = { version = "=0.7.1", default-features = false, features = ["std"] }
+image-webp = { version = "=0.2.4", default-features = false }
 imagesize = "=0.13.0"
 base64 = "=0.22.1"

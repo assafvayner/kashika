@@ -123,7 +123,9 @@ fn unknown_output_extension_is_a_tool_error() {
         .args(["render", &fixture("basic.kash"), "-o", "x.pdf"])
         .assert()
         .code(3)
-        .stderr(predicate::str::contains("output must end in .svg or .png"));
+        .stderr(predicate::str::contains(
+            "output must end in .svg, .png, .jpg, .jpeg or .webp",
+        ));
 }
 
 #[test]

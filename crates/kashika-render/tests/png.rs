@@ -88,3 +88,27 @@ fn line_label_masks_the_line_between_words() {
         assert!(!is_line(x, 50), "line shows through the label at x={x}");
     }
 }
+
+const TRANSPARENT: &str = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"4\" height=\"2\">\
+<rect width=\"2\" height=\"2\" fill=\"#ff0000\"/></svg>";
+
+#[test]
+fn webp_keeps_alpha() {
+    let webp = kashika_render::svg_to_webp(TRANSPARENT).unwrap();
+    let mut dec = image_webp::WebPDecoder::new(std::io::Cursor::new(webp)).unwrap();
+    assert!(dec.has_alpha());
+    let mut buf = vec![0; dec.output_buffer_size().unwrap()];
+    dec.read_image(&mut buf).unwrap();
+    assert_eq!(&buf[..4], [255, 0, 0, 255]);
+    assert_eq!(&buf[8..12], [0, 0, 0, 0]);
+}
+
+#[test]
+fn jpeg_composites_transparency_onto_white() {
+    let empty = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"4\" height=\"2\"/>";
+    let white = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"4\" height=\"2\">\
+<rect width=\"4\" height=\"2\" fill=\"#ffffff\"/></svg>";
+    let a = kashika_render::svg_to_jpeg(empty).unwrap();
+    assert_eq!(&a[..3], b"\xFF\xD8\xFF");
+    assert_eq!(a, kashika_render::svg_to_jpeg(white).unwrap());
+}
