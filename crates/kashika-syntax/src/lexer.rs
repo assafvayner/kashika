@@ -116,6 +116,7 @@ impl Lexer {
                         self.bump();
                     }
                 }
+                '/' if self.peek(1) == Some('*') => self.block_comment(line, col),
                 '"' => self.string(line, col),
                 '#' => self.color(line, col),
                 '-' if self.peek(1) == Some('>') => {
@@ -244,6 +245,42 @@ impl Lexer {
         self.push(Tok::Str(s), line, col);
     }
 
+    fn block_comment(&mut self, line: u32, col: u32) {
+        self.bump();
+        self.bump();
+        let mut multiline = false;
+        loop {
+            match self.peek(0) {
+                None => {
+                    self.diags.push(
+                        Diagnostic::error(
+                            "parse",
+                            Span::new(line, col, self.line, self.col),
+                            "unterminated block comment",
+                        )
+                        .with_help("close it with `*/`"),
+                    );
+                    break;
+                }
+                Some('*') if self.peek(1) == Some('/') => {
+                    self.bump();
+                    self.bump();
+                    break;
+                }
+                Some(c) => {
+                    multiline |= c == '\n';
+                    self.bump();
+                }
+            }
+        }
+        if multiline {
+            self.toks.push(Token {
+                tok: Tok::Newline,
+                span: Span::new(line, col, line, col + 2),
+            });
+        }
+    }
+
     fn color(&mut self, line: u32, col: u32) {
         self.bump();
         let mut s = String::from("#");
@@ -344,5 +381,57 @@ mod tests {
     fn unterminated_string() {
         let (_, d) = lex("\"abc\nbox");
         assert_eq!(d[0].message, "unterminated string");
+    }
+
+    fn id(s: &str) -> Tok {
+        Tok::Ident(s.into())
+    }
+
+    #[test]
+    fn inline_block_comment_emits_nothing() {
+        assert_eq!(
+            toks("box /* inline */ a"),
+            vec![id("box"), id("a"), Tok::Eof]
+        );
+    }
+
+    #[test]
+    fn multiline_block_comment_is_one_newline() {
+        let (t, d) = lex("box a /* x\ny\nz */ box b");
+        assert!(d.is_empty(), "{d:#?}");
+        let kinds: Vec<_> = t.iter().map(|t| t.tok.clone()).collect();
+        assert_eq!(
+            kinds,
+            vec![
+                id("box"),
+                id("a"),
+                Tok::Newline,
+                id("box"),
+                id("b"),
+                Tok::Eof
+            ]
+        );
+        assert_eq!(t[3].span.line, 3);
+    }
+
+    #[test]
+    fn block_comments_do_not_nest() {
+        let (t, _) = lex("/* a /* b */ c */");
+        assert_eq!(t[0].tok, id("c"));
+    }
+
+    #[test]
+    fn block_comment_marker_in_string_is_text() {
+        assert_eq!(
+            toks("\"/* not a comment */\""),
+            vec![Tok::Str("/* not a comment */".into()), Tok::Eof]
+        );
+    }
+
+    #[test]
+    fn unterminated_block_comment() {
+        let (_, d) = lex("box /* never closed");
+        assert_eq!(d.len(), 1);
+        assert_eq!(d[0].message, "unterminated block comment");
     }
 }

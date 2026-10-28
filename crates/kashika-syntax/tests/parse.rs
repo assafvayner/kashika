@@ -148,3 +148,11 @@ fn unclosed_group_is_reported() {
     let (_, diags) = parse("group g at (0,0) size (1,1) {\n box a at (0,0) size (1,1)\n");
     assert!(diags.iter().any(|d| d.message.contains("expected `}`")));
 }
+
+#[test]
+fn block_comment_between_statements() {
+    let f = parse_ok(
+        "box a \"A\" at (0,0) size (10,10)\n/* spans\nlines */\nbox b \"B\" at (20,0) size (10,10)\n",
+    );
+    assert_eq!(f.stmts.len(), 2);
+}
