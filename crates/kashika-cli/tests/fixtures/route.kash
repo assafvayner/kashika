@@ -1,0 +1,4 @@
+diagram "w" size (460,240)
+box a "A" at (20,100) size (100,40)
+box wall "W" at (200,40) size (40,160)
+box b "B" at (320,100) size (100,40)

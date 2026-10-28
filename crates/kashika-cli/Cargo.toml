@@ -12,6 +12,7 @@ path = "src/main.rs"
 kashika-diag.workspace = true
 kashika-model.workspace = true
 kashika-render.workspace = true
+kashika-route.workspace = true
 kashika-text.workspace = true
 kashika-syntax.workspace = true
 clap.workspace = true

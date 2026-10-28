@@ -297,6 +297,7 @@ dependencies = [
  "kashika-diag",
  "kashika-model",
  "kashika-render",
+ "kashika-route",
  "kashika-syntax",
  "kashika-text",
  "predicates",
@@ -338,6 +339,17 @@ dependencies = [
  "kashika-geom",
  "kashika-model",
  "kashika-text",
+]
+
+[[package]]
+name = "kashika-route"
+version = "0.1.0"
+dependencies = [
+ "kashika-diag",
+ "kashika-geom",
+ "kashika-model",
+ "kashika-syntax",
+ "serde",
 ]
 
 [[package]]

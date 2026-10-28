@@ -1,6 +1,7 @@
 mod fmt_cmd;
 mod measure;
 mod report;
+mod route_cmd;
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -35,6 +36,8 @@ enum Cmd {
         #[arg(long)]
         force: bool,
     },
+    /// Suggest ready-to-paste paths between two points; never edits the file
+    Route(route_cmd::RouteArgs),
     /// Print the exact width and height of a label, with markup applied
     Measure(measure::MeasureArgs),
     /// Rewrite a .kash file in canonical layout (whitespace only)
@@ -93,6 +96,7 @@ fn main() -> ExitCode {
             output,
             force,
         } => run(&common, Some((output, force))),
+        Cmd::Route(args) => route_cmd::run(&args),
         Cmd::Measure(args) => measure::run(&args),
     }
 }
