@@ -337,20 +337,12 @@ fn unclosed_unbuilt_block_is_reported() {
 }
 
 #[test]
-fn pin_with_position_reports_unsupported() {
-    let (f, diags) =
-        parse("box a at (0,0) size (1,1) pin=left@0.5 style=service\nbox b at (0,0) size (1,1)\n");
-    assert_eq!(diags.len(), 1, "{diags:#?}");
-    assert_eq!(diags[0].code, "unsupported");
-    assert_eq!(
-        diags[0].message,
-        "`pin` with `@t` is not supported yet; use a plain anchor name"
-    );
-    assert_eq!(f.stmts.len(), 2);
+fn pin_with_position_parses() {
+    let f = parse_ok("box a at (0,0) size (1,1) pin=left@0.25 style=service\n");
     let Stmt::Box(n) = &f.stmts[0] else {
         panic!("expected box")
     };
-    assert_eq!(n.attrs[0].value, Value::Word("left".into()));
+    assert_eq!(n.attrs[0].value, Value::AnchorAt("left".into(), 0.25));
     assert_eq!(n.attrs.len(), 2);
 }
 

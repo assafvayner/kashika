@@ -1,9 +1,16 @@
+mod isect;
 mod path;
 mod point;
 mod rect;
 
+pub use isect::{
+    boundary_nearest, centroid, closest_on_seg, cross, dist_point_seg, dot, edges, inside_runs,
+    pieces, point_in_polygon, polygons_overlap, rect_polygon, seg_hit, seg_seg_dist,
+    strictly_inside, Hit,
+};
 pub use path::{
-    flatten, length, point_at, round_corners, PathSeg, FLATTEN_TOLERANCE, MAX_FLATTEN_STEPS,
+    flatten, length, point_at, round_corners, round_corners_tagged, PathSeg, FLATTEN_TOLERANCE,
+    MAX_FLATTEN_STEPS,
 };
 pub use point::{Pt, TOLERANCE};
 pub use rect::Rect;

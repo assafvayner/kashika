@@ -562,19 +562,15 @@ impl Parser {
             self.bump();
             let value = self.value()?;
             if key.name == "pin" && *self.tok() == Tok::At {
-                let at = self.bump().span;
-                self.number()?;
-                let help = match &value {
-                    Value::Word(w) => format!("write `pin={w}`"),
-                    _ => "e.g. `pin=left`".into(),
-                };
-                self.unsupported(
-                    at.to(self.prev_span()),
-                    "`pin` with `@t` is not supported yet; use a plain anchor name",
-                    help,
-                );
+                self.bump();
+                let t = self.number()?;
+                match value {
+                    Value::Word(w) => Value::AnchorAt(w, t),
+                    _ => return self.error("an anchor name before `@`"),
+                }
+            } else {
+                value
             }
-            value
         } else if at_t.is_some() {
             return self.error("`=`");
         } else {

@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use kashika_diag::{did_you_mean, Diagnostic, Span, LINT_CODES};
-use kashika_geom::{point_at, round_corners, PathSeg, Pt, Rect, TOLERANCE};
+use kashika_geom::{point_at, round_corners_tagged, PathSeg, Pt, Rect, TOLERANCE};
 use kashika_syntax::ast::{self, Axis, Coord, Point, SegKind, Side, Stmt, Target};
 
 use crate::anchor;
@@ -11,7 +11,9 @@ use crate::scene::*;
 use crate::style::{self, Style, StyleProps, STYLE_KEYS};
 use crate::textlayout::{self, ShapeInput, ShapeTextProps, SHAPE_TEXT_KEYS};
 
-const NODE_KEYS: &[&str] = &["shape", "style", "pin"];
+mod record;
+
+const NODE_KEYS: &[&str] = &["shape", "style", "pin", "allow", "reason"];
 const LINE_KEYS: &[&str] = &[
     "start",
     "end",
@@ -65,6 +67,16 @@ impl<'a> Item<'a> {
             Item::Line(l) => l.span,
         }
     }
+
+    fn at_span(self) -> Span {
+        match self {
+            Item::Box(n) => n.at.span(),
+            Item::Group(g) => g.node.at.span(),
+            Item::Junction(j) => j.at.span(),
+            Item::Text(t) => t.at.span(),
+            Item::Line(l) => l.span,
+        }
+    }
 }
 
 struct Entry<'a> {
@@ -76,9 +88,11 @@ struct Entry<'a> {
 struct NodeProps {
     outline: Outline,
     style: Style,
-    pin: &'static str,
+    pin: (&'static str, Option<f64>),
     size_ok: bool,
     text: ShapeTextProps,
+    allow: Vec<Allow>,
+    reason: Option<String>,
 }
 
 struct LineProps {
@@ -114,6 +128,8 @@ pub fn resolve(file: &ast::File) -> (Scene, Vec<Diagnostic>) {
         depth_reported: false,
         skipped: HashSet::new(),
         skipped_ids: HashSet::new(),
+        edges: Vec::new(),
+        literals: Vec::new(),
         diags: Vec::new(),
     };
     r.styles(file);
@@ -141,6 +157,8 @@ struct Resolver<'a> {
     skipped: HashSet<usize>,
     /// Ids declared inside a skipped duplicate group; references to them stay silent.
     skipped_ids: HashSet<String>,
+    edges: Vec<PlacementEdge>,
+    literals: Vec<Literal>,
     diags: Vec<Diagnostic>,
 }
 
@@ -156,6 +174,8 @@ impl<'a> Resolver<'a> {
             junctions: Vec::new(),
             texts: Vec::new(),
             lines: Vec::new(),
+            placement: Vec::new(),
+            literals: Vec::new(),
         };
         let mut seen = false;
         for stmt in &file.stmts {
@@ -226,7 +246,7 @@ impl<'a> Resolver<'a> {
             let props = attrs::style_props(&a, &mut self.diags);
             if self.user_styles.insert(s.name.clone(), props).is_some() {
                 self.diags.push(Diagnostic::error(
-                    "duplicate-id",
+                    "duplicate-style",
                     s.span,
                     format!("style `{}` is defined twice", s.name),
                 ));
@@ -487,15 +507,25 @@ impl<'a> Resolver<'a> {
         };
         let pin = a
             .get("pin")
-            .and_then(|x| attrs::word(x, anchor::ANCHORS, &mut self.diags))
-            .unwrap_or("tl");
+            .and_then(|x| self.pin(x))
+            .unwrap_or(("tl", None));
         let text = textlayout::shape_text_props(&a, group, &mut self.diags);
+        let allow = a
+            .get("allow")
+            .map(|x| self.allow_list(x, true))
+            .unwrap_or_default();
+        let reason = a
+            .get("reason")
+            .and_then(|x| attrs::text(x, &mut self.diags))
+            .map(|r| markup::unescape(&r));
         NodeProps {
             outline,
             style: props.resolve(),
             pin,
             size_ok,
             text,
+            allow,
+            reason,
         }
     }
 
@@ -669,20 +699,28 @@ impl<'a> Resolver<'a> {
                 .and_then(|p| self.entries[p].item.id())
                 .map(|i| i.name.clone());
             match item {
-                Item::Box(n) => self.push_shape(scene, idx, n, ShapeKind::Box, parent, depth),
+                Item::Box(n) => {
+                    self.record_edges(idx, &n.at);
+                    self.push_shape(scene, idx, n, ShapeKind::Box, parent, depth)
+                }
                 Item::Group(g) => {
+                    self.record_edges(idx, &g.node.at);
                     self.push_shape(scene, idx, &g.node, ShapeKind::Group, parent, depth)
                 }
                 Item::Junction(j) => {
+                    self.record_edges(idx, &j.at);
                     if let Some(r) = self.place(idx) {
                         let dot = self.dots.get(&idx).copied().unwrap_or(false);
+                        let origin = self.frame_origin(idx).unwrap_or_default();
                         scene.junctions.push(Junction {
                             id: j.id.name.clone(),
                             at: r.origin(),
                             dot,
                             parent,
+                            origin,
                             span: j.span,
                         });
+                        self.record_point(&j.id.name, &j.at);
                     }
                 }
                 Item::Text(t) => {
@@ -709,8 +747,13 @@ impl<'a> Resolver<'a> {
                         rect,
                         lines,
                         parent,
+                        origin,
                         span: t.span,
                     });
+                    let owner =
+                        t.id.as_ref()
+                            .map_or_else(|| format!("text@L{}", t.span.line), |i| i.name.clone());
+                    self.record_point(&owner, &t.at);
                 }
                 Item::Line(l) => {
                     if let Some(line) = self.build_line(idx, l, parent) {
@@ -719,6 +762,8 @@ impl<'a> Resolver<'a> {
                 }
             }
         }
+        scene.placement = std::mem::take(&mut self.edges);
+        scene.literals = std::mem::take(&mut self.literals);
     }
 
     fn push_shape(
@@ -731,6 +776,7 @@ impl<'a> Resolver<'a> {
         depth: usize,
     ) {
         let Some(rect) = self.place(idx) else { return };
+        let origin = self.frame_origin(idx).unwrap_or_default();
         let block_at: Vec<Option<Pt>> = n
             .block
             .iter()
@@ -767,8 +813,12 @@ impl<'a> Resolver<'a> {
             text_area: text.area,
             text: text.items,
             title_band: text.title_band,
+            allow: p.allow.clone(),
+            reason: p.reason.clone(),
+            origin,
             span: n.span,
         });
+        self.record_node(n);
     }
 
     /// Places an entry (box, group or junction), resolving dependencies depth-first.
@@ -787,7 +837,7 @@ impl<'a> Resolver<'a> {
                         .map_or("?".to_string(), |id| id.name.clone())
                 })
                 .collect();
-            let span = self.entries[idx].item.span();
+            let span = self.entries[idx].item.at_span();
             self.diags.push(
                 Diagnostic::error(
                     "placement-cycle",
@@ -838,6 +888,31 @@ impl<'a> Resolver<'a> {
         result
     }
 
+    fn pin(&mut self, a: &ast::Attr) -> Option<(&'static str, Option<f64>)> {
+        let ast::Value::AnchorAt(name, t) = &a.value else {
+            return attrs::word(a, anchor::ANCHORS, &mut self.diags).map(|n| (n, None));
+        };
+        let Some(&name) = anchor::ANCHORS.iter().find(|n| **n == name.as_str()) else {
+            let mut d =
+                Diagnostic::error("attr", a.span, format!("unknown anchor `{name}` in `pin`"));
+            if let Some(s) = did_you_mean(name, anchor::ANCHORS.iter().copied()) {
+                d = d.with_help(format!("did you mean `{s}`?"));
+            }
+            self.diags.push(d);
+            return None;
+        };
+        let unit = Rect::new(0.0, 0.0, 1.0, 1.0);
+        if let Err((msg, help)) = anchor::resolve(unit, 0.0, "pin", name, Some(*t)) {
+            let mut d = Diagnostic::error("unknown-anchor", a.span, format!("{msg} in `pin`"));
+            if let Some(h) = help {
+                d = d.with_help(h);
+            }
+            self.diags.push(d);
+            return None;
+        }
+        Some((name, Some(*t)))
+    }
+
     fn compute_place(&mut self, idx: usize) -> Option<Rect> {
         let origin = self.frame_origin(idx)?;
         match self.entries[idx].item {
@@ -857,7 +932,11 @@ impl<'a> Resolver<'a> {
         let at = self.eval_point(&n.at, origin)?;
         let (w, h) = n.size;
 
-        let off = anchor::pin_offset(self.nodes[&idx].pin, w, h);
+        let p = &self.nodes[&idx];
+        let local = Rect::new(0.0, 0.0, w, h);
+        let (name, t) = p.pin;
+        let off = anchor::resolve(local, corner_radius(p.style.radius, local), "pin", name, t)
+            .unwrap_or_default();
         Some(Rect::new(at.x - off.x, at.y - off.y, w, h))
     }
 
@@ -974,20 +1053,31 @@ impl<'a> Resolver<'a> {
     fn build_line(&mut self, idx: usize, l: &'a ast::Line, parent: Option<String>) -> Option<Line> {
         let origin = self.frame_origin(idx)?;
         let mut cur = self.eval_point(&l.start, origin)?;
-        let mut raw: Vec<(PathSeg, Span)> = Vec::new();
+        let mut raw: Vec<(PathSeg, usize)> = Vec::new();
+        let mut segments: Vec<Segment> = Vec::new();
         let mut failed = false;
         for seg in &l.segs {
+            let from = cur;
             let Some(segs) = self.expand(seg, cur, origin) else {
                 failed = true;
                 break;
             };
+            let mut pieces = Vec::new();
             for s in segs {
                 cur = s.to();
                 if matches!(s, PathSeg::Line { .. }) && s.from().dist(s.to()) <= 1e-9 {
                     continue;
                 }
-                raw.push((s, seg.span));
+                raw.push((s, segments.len()));
+                pieces.push(s);
             }
+            segments.push(Segment {
+                kind: record::segment_kind(&seg.kind),
+                span: seg.span,
+                from,
+                to: cur,
+                pieces,
+            });
         }
         if failed {
             return None;
@@ -1002,12 +1092,12 @@ impl<'a> Resolver<'a> {
         }
         let p = self.lines.remove(&idx)?;
         if p.ortho {
-            for (s, span) in &raw {
+            for (s, i) in &raw {
                 if !s.is_axis_aligned() {
                     self.diags.push(
                         Diagnostic::error(
                             "not-ortho",
-                            *span,
+                            segments[*i].span,
                             "segment is not horizontal or vertical on a line marked `ortho`",
                         )
                         .with_help("use `hv`/`vh` elbows or `x`/`y` targets"),
@@ -1015,12 +1105,12 @@ impl<'a> Resolver<'a> {
                 }
             }
         }
-        let segs: Vec<PathSeg> = raw.into_iter().map(|(s, _)| s).collect();
-        let path = if p.radius > 0.0 {
-            round_corners(&segs, p.radius)
+        let rounded = if p.radius > 0.0 {
+            round_corners_tagged(&raw, p.radius)
         } else {
-            segs
+            raw
         };
+        let (path, path_seg): (Vec<PathSeg>, Vec<usize>) = rounded.into_iter().unzip();
         let mut labels = p.labels;
         let bold = p.style.font_weight == crate::style::FontWeight::Bold;
         labels.retain_mut(|lab| {
@@ -1042,10 +1132,15 @@ impl<'a> Resolver<'a> {
             Some(i) => (i.name.clone(), true),
             None => (format!("line@L{}", l.span.line), false),
         };
+        self.record_line(&id, l);
         Some(Line {
             id,
             named,
             path,
+            segments,
+            path_seg,
+            start_literal: record::is_literal(&l.start),
+            end_literal: record::end_is_literal(&l.segs),
             start: p.start,
             end: p.end,
             style: p.style,
@@ -1054,6 +1149,7 @@ impl<'a> Resolver<'a> {
             allow: p.allow,
             reason: p.reason,
             parent,
+            origin,
             span: l.span,
         })
     }

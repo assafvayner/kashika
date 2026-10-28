@@ -47,8 +47,8 @@ diagram "<title>" size (w,h) [kashika=1] [grid=N] [clearance=N] [icons="<dir>"] 
 import "<file.kash>" [as <ns>]                      // §3a
 style <name> { key=value ... }
 shape <name> { ... }  |  shape <name> from "<file.svg>" [...]   // §3a
-box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=<shape>] [style=<name>] [attrs]
-group <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [style=<name>] { ... }
+box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=<shape>] [style=<name>] [allow=<code>[:<id>],...] [reason="..."] [attrs]
+group <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [style=<name>] [allow=<code>[:<id>],...] [reason="..."] { ... }
 junction <id> at <point> [dot]
 text  [<id>] "<content>" at <point> [size=N] [color=C] [align=left|center|right] [muted]
 line  [<id>:] <point> (-> <segment>)+ [attrs]
@@ -66,13 +66,13 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
 
   Built-in styles: `service`, `datastore`, `external`, `queue`, `boundary`, `note`. A user style with a built-in's name overrides it **key by key**. Precedence: inline attribute > `style=` > built-in default.
 - `box` shapes: built-in `rect` (default), `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`, or any `shape` that is defined or imported (§3a).
-- `pin=<anchor>` picks which anchor of the new shape lands on `at` (default `tl`). It takes a plain anchor name, so `@t` is not allowed. For example, `box cache at db.right+(60,0) size (120,60) pin=left` vertically centers `cache` beside `db`.
+- `pin=<anchor>` picks which anchor of the new shape lands on `at` (default `tl`). Any anchor works, including `side@t`: `pin=left@0.25`. For example, `box cache at db.right+(60,0) size (120,60) pin=left` vertically centers `cache` beside `db`.
 - `at` may reference other shapes, so boxes can be placed relative to each other. Placement references form a DAG; a cycle is an error that prints the cycle. A chain of placement references deeper than 256 is also a `placement-cycle` error.
 - `group`: children are `box`, `group`, `junction`, `text`, `line`. Groups nest at most 64 deep; a deeper `group` is a `parse` error. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. The label sits inside the top-left corner, and its title band (`font line-height + padding`) is reserved space. Children that intrude on the title band trigger `spill`.
 - `junction`: a zero-size named point that lines can start or end at. Lines meeting at a junction are connected, not crossing. `dot` draws a 6px dot there. Junctions model buses and fan-in/fan-out.
 - `text`: `at` is the anchor point for the alignment. `color=none` is an `attr` error. Vertically, `at` is the **center** of the text block, not the baseline.
 
-**Paint order is fixed:** groups (outer before inner) → boxes and images → lines → line labels and texts. Within a layer, file order applies. Lines are never hidden by boxes.
+**Paint order is fixed:** groups → boxes and images → lines → line labels and texts. Groups paint in file order, so a group paints right after its parent and before any later sibling. Within every layer, file order applies, so line labels and texts interleave by where their statements appear. Lines are never hidden by boxes.
 
 ## 3a. Shapes, images and imports
 
@@ -228,6 +228,7 @@ These block output unless `--force` is given:
 | `parse` | Includes expected tokens and a suggestion. Also: unknown string escapes, reserved ids (§2), groups nested more than 64 deep |
 | `unknown-id` / `unknown-anchor` | Includes did-you-mean. `unknown-anchor` also covers a bad `@t`: out of 0..1, or on a corner or `center` |
 | `duplicate-id` | Two statements use the same id |
+| `duplicate-style` | Two `style` statements define the same name. Style names are separate from element ids |
 | `placement-cycle` | Relative placements form a cycle, or a chain of them is deeper than 256 |
 | `label-overflow` | Reports the required size |
 | `text-conflict` | `label`/`sublabel` combined with stacked (no `at`) block items (§6) |
@@ -267,6 +268,7 @@ These block output unless `--force` is given:
 
 - `allow=cross` on a line silences all crossings for that line.
 - `allow=cross:other_line` silences only crossings with that one line. This is preferred, so a later edit doesn't introduce hidden crossings.
+- `allow=` and `reason=` work the same on `box` and `group`, e.g. `box badge ... allow=overlap:card`. A diagnostic is suppressed when any element it names allows its code (and, for `code:id`, also names that id). `allow=` on `diagram` silences a code everywhere.
 - `reason="..."` is optional and kept in the JSON output.
 - **Suppressed findings are counted in every summary**, and `--show-suppressed` lists them.
 

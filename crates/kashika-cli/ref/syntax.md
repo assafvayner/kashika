@@ -13,10 +13,10 @@ line  [<id>:] <point> -> <segment> [-> <segment> ...] [line attributes] [ortho]
 - `diagram` comes first. Units are pixels. One statement per line; a line that starts with `->`, `key=` or `ortho` continues the statement above.
 - Comments are `//` and `/* */`. `#` starts a color (`#rgb`, `#rrggbb`, `#rrggbbaa`), never a comment. Strings use `\"`, `\\` and `\n`.
 - Style keys: `fill`, `stroke`, `stroke-width`, `stroke-style=solid|dashed|dotted`, `font-size`, `font-weight=normal|bold`, `color`, `radius`, `padding`, `muted`. Precedence: inline > `style=` > built-in. Built-in styles: `service`, `datastore`, `external`, `queue`, `boundary`, `note`.
-- `pin=<anchor>` puts that anchor of the new shape on `at` (default `tl`): `at api.right+(80,0) pin=left`.
+- `pin=<anchor>` puts that anchor of the new shape on `at` (default `tl`): `at api.right+(80,0) pin=left`. `side@t` works too: `pin=left@0.25`.
 - Text in boxes: `sublabel` is one muted line under the label. Markup works in labels and texts: `**bold**` and `` `code` ``; escape with `\*` and `` \` ``. For three or more lines, use a block, `{ text "..." [size=N] [muted] ... }`. Items without `at` stack `gap` apart. Don't combine `label` with stacked items (`text-conflict`). An item with `at (x,y)` is absolute, in box-local coordinates.
 - Groups hold `box`, `group`, `junction`, `text` and `line`, use the `boundary` style, and reserve a title band at the top. A group's `text-valign` is an error.
-- `text` is centered vertically on `at`. Paint order: groups, boxes, lines, labels and texts.
+- `text` is centered vertically on `at`. Paint order: groups (file order), boxes, lines, then labels and texts in file order.
 
 ```kash
 diagram "Text" size (360,200)

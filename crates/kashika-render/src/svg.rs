@@ -1,11 +1,16 @@
 use kashika_geom::{PathSeg, Pt};
-use kashika_model::{Line, Marker, Scene, Shape, ShapeKind, StrokeStyle, Style};
+use kashika_model::{Label, Line, Marker, Scene, Shape, ShapeKind, StrokeStyle, Style, Text};
 
 use crate::text;
 
 const ARROW_LEN: f64 = 10.0;
 const DIAMOND_LEN: f64 = 12.0;
 const MARKER_HALF_WIDTH: f64 = 4.0;
+
+enum Overlay<'s> {
+    Label(&'s Line, &'s Label),
+    Text(&'s Text),
+}
 
 pub fn render_svg(scene: &Scene) -> String {
     let (w, h) = scene.size;
@@ -15,13 +20,7 @@ pub fn render_svg(scene: &Scene) -> String {
         n(h)
     );
     out.push_str("<rect width=\"100%\" height=\"100%\" fill=\"#ffffff\"/>\n");
-    let mut groups: Vec<&Shape> = scene
-        .shapes
-        .iter()
-        .filter(|s| s.kind == ShapeKind::Group)
-        .collect();
-    groups.sort_by_key(|s| s.depth);
-    for g in groups {
+    for g in scene.shapes.iter().filter(|s| s.kind == ShapeKind::Group) {
         shape(&mut out, g);
     }
     for b in scene.shapes.iter().filter(|s| s.kind == ShapeKind::Box) {
@@ -37,19 +36,27 @@ pub fn render_svg(scene: &Scene) -> String {
     for l in &scene.lines {
         line(&mut out, l);
     }
+    let mut overlays: Vec<((u32, u32), Overlay)> = Vec::new();
     for l in &scene.lines {
         for lab in &l.labels {
-            text::lines(
+            overlays.push(((l.span.line, l.span.col), Overlay::Label(l, lab)));
+        }
+    }
+    for t in &scene.texts {
+        overlays.push(((t.span.line, t.span.col), Overlay::Text(t)));
+    }
+    overlays.sort_by_key(|(k, _)| *k);
+    for (_, o) in overlays {
+        match o {
+            Overlay::Label(l, lab) => text::lines(
                 &mut out,
                 &lab.lines,
                 l.style.font_size,
                 &l.style.color,
                 true,
-            );
+            ),
+            Overlay::Text(t) => text::lines(&mut out, &t.lines, t.size, &t.color, false),
         }
-    }
-    for t in &scene.texts {
-        text::lines(&mut out, &t.lines, t.size, &t.color, false);
     }
     out.push_str("</svg>\n");
     out

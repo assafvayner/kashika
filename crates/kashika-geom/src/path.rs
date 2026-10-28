@@ -232,19 +232,29 @@ pub fn point_at(path: &[PathSeg], t: f64) -> Pt {
 
 /// Rounds the corners between consecutive straight segments; curves pass through unchanged.
 pub fn round_corners(path: &[PathSeg], r: f64) -> Vec<PathSeg> {
+    let tagged: Vec<(PathSeg, ())> = path.iter().map(|s| (*s, ())).collect();
+    round_corners_tagged(&tagged, r)
+        .into_iter()
+        .map(|(s, _)| s)
+        .collect()
+}
+
+/// Like `round_corners`, carrying each input segment's tag to the pieces made from it.
+/// A corner arc takes the tag of the segment that leads into it.
+pub fn round_corners_tagged<T: Copy>(path: &[(PathSeg, T)], r: f64) -> Vec<(PathSeg, T)> {
     let mut out = Vec::new();
-    let mut run: Vec<Pt> = Vec::new();
-    for seg in path {
-        match *seg {
+    let mut run: Vec<(Pt, T)> = Vec::new();
+    for &(seg, tag) in path {
+        match seg {
             PathSeg::Line { from, to } => {
                 if run.is_empty() {
-                    run.push(from);
+                    run.push((from, tag));
                 }
-                run.push(to);
+                run.push((to, tag));
             }
             other => {
                 flush_run(&mut run, r, &mut out);
-                out.push(other);
+                out.push((other, tag));
             }
         }
     }
@@ -252,21 +262,25 @@ pub fn round_corners(path: &[PathSeg], r: f64) -> Vec<PathSeg> {
     out
 }
 
-fn flush_run(run: &mut Vec<Pt>, r: f64, out: &mut Vec<PathSeg>) {
+/// `run[0]` is the start point; `run[k]` is the end of straight segment `k-1` with its tag.
+fn flush_run<T: Copy>(run: &mut Vec<(Pt, T)>, r: f64, out: &mut Vec<(PathSeg, T)>) {
     if run.len() < 2 {
         run.clear();
         return;
     }
-    let mut cursor = run[0];
+    let mut cursor = run[0].0;
     for w in run.windows(3) {
-        let (prev, corner, next) = (w[0], w[1], w[2]);
+        let (prev, (corner, tag), next) = (w[0].0, w[1], w[2].0);
         let re = r.min(prev.dist(corner) / 2.0).min(corner.dist(next) / 2.0);
         if re <= 1e-9 {
             if cursor.dist(corner) > 1e-9 {
-                out.push(PathSeg::Line {
-                    from: cursor,
-                    to: corner,
-                });
+                out.push((
+                    PathSeg::Line {
+                        from: cursor,
+                        to: corner,
+                    },
+                    tag,
+                ));
             }
             cursor = corner;
             continue;
@@ -274,24 +288,33 @@ fn flush_run(run: &mut Vec<Pt>, r: f64, out: &mut Vec<PathSeg>) {
         let a = corner + (prev - corner).norm() * re;
         let b = corner + (next - corner).norm() * re;
         if cursor.dist(a) > 1e-9 {
-            out.push(PathSeg::Line {
-                from: cursor,
-                to: a,
-            });
+            out.push((
+                PathSeg::Line {
+                    from: cursor,
+                    to: a,
+                },
+                tag,
+            ));
         }
-        out.push(PathSeg::Quad {
-            from: a,
-            ctrl: corner,
-            to: b,
-        });
+        out.push((
+            PathSeg::Quad {
+                from: a,
+                ctrl: corner,
+                to: b,
+            },
+            tag,
+        ));
         cursor = b;
     }
-    let last = run[run.len() - 1];
+    let (last, tag) = run[run.len() - 1];
     if cursor.dist(last) > 1e-9 {
-        out.push(PathSeg::Line {
-            from: cursor,
-            to: last,
-        });
+        out.push((
+            PathSeg::Line {
+                from: cursor,
+                to: last,
+            },
+            tag,
+        ));
     }
     run.clear();
 }

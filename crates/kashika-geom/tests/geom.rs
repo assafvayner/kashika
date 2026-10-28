@@ -1,6 +1,6 @@
 use kashika_geom::{
-    flatten, length, point_at, round_corners, PathSeg, Pt, Rect, FLATTEN_TOLERANCE,
-    MAX_FLATTEN_STEPS,
+    flatten, length, point_at, round_corners, round_corners_tagged, PathSeg, Pt, Rect,
+    FLATTEN_TOLERANCE, MAX_FLATTEN_STEPS,
 };
 
 fn line(a: (f64, f64), b: (f64, f64)) -> PathSeg {
@@ -129,4 +129,19 @@ fn trim_splits_overlapping_ends_in_proportion() {
     assert_eq!(t, line((7.5, 0.0), (7.5, 0.0)));
     let t = line((0.0, 0.0), (100.0, 0.0)).trim(10.0, 12.0);
     assert_eq!(t, line((10.0, 0.0), (88.0, 0.0)));
+}
+
+#[test]
+fn rounding_keeps_segment_tags() {
+    let path = [
+        (line((0.0, 0.0), (100.0, 0.0)), 0usize),
+        (line((100.0, 0.0), (100.0, 100.0)), 1),
+        (line((100.0, 100.0), (200.0, 100.0)), 1),
+    ];
+    let out = round_corners_tagged(&path, 10.0);
+    let tags: Vec<usize> = out.iter().map(|(_, t)| *t).collect();
+    assert_eq!(tags, vec![0, 0, 1, 1, 1]);
+    let plain: Vec<PathSeg> = out.into_iter().map(|(s, _)| s).collect();
+    let untagged: Vec<PathSeg> = path.iter().map(|(s, _)| *s).collect();
+    assert_eq!(plain, round_corners(&untagged, 10.0));
 }

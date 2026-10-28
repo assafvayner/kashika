@@ -8,6 +8,7 @@ Errors stop `render` unless `--force` is given. `kashika ref <code>` shows one r
 | `unknown-id` | error | reference to an id that doesn't exist | apply the did-you-mean suggestion |
 | `unknown-anchor` | error | bad anchor name or `@t` | use a listed anchor; `@t` only on edges, `0 <= t <= 1` |
 | `duplicate-id` | error | two statements share an id | rename one; ids are global |
+| `duplicate-style` | error | two `style` statements share a name | merge them or rename one; style names are separate from ids |
 | `placement-cycle` | error | `at` references form a cycle | give one shape in the cycle literal coordinates |
 | `label-overflow` | error | text doesn't fit the text area | grow the box to the size in the help line, shorten the text or break it with `\n` |
 | `text-conflict` | error | `label` or `sublabel` plus stacked block items | move them into the block as its first items, or give every item an `at` |

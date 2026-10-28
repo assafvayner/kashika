@@ -60,7 +60,7 @@ fn snapshot_basic() {
 }
 
 #[test]
-fn paint_order_is_groups_boxes_lines_then_labels_and_texts() {
+fn paint_order_is_groups_boxes_lines_then_overlays_in_file_order() {
     let s = svg("diagram \"p\" size (300,300)\n\
                  text \"T\" at (5,5)\n\
                  line l: (0,150) -> h 300 label=\"L\"\n\
@@ -73,7 +73,7 @@ fn paint_order_is_groups_boxes_lines_then_labels_and_texts() {
     let line = pos(r#"d="M 0 150 L 300 150""#);
     let label = pos(r#"aria-label="L""#);
     let text = pos(r#"aria-label="T""#);
-    assert!(outer < inner && inner < bx && bx < line && line < label && label < text);
+    assert!(outer < inner && inner < bx && bx < line && line < text && text < label);
 }
 
 #[test]
@@ -129,4 +129,20 @@ fn markup_switches_fonts_in_one_path() {
 fn spaces_only_lines_draw_nothing() {
     let s = svg("diagram \"s\" size (100,100)\ntext \"  \" at (50,50)\n");
     assert!(!s.contains("aria-label"));
+}
+
+#[test]
+fn nested_groups_paint_before_later_sibling_groups() {
+    let s = svg("diagram \"g\" size (400,200)\ngroup a \"A\" at (10,10) size (180,180) {\n  group a2 \"A2\" at (10,30) size (100,100) {\n  }\n}\ngroup b \"B\" at (210,10) size (180,180) {\n}\n");
+    let pos = |label: &str| s.find(&format!("aria-label=\"{label}\"")).unwrap();
+    assert!(pos("A") < pos("A2") && pos("A2") < pos("B"), "{s}");
+}
+
+#[test]
+fn line_labels_and_texts_paint_in_file_order() {
+    let s = svg("diagram \"t\" size (200,100)\ntext \"T\" at (10,10)\nline l: (0,50) -> h 100 label=\"L\"\n");
+    assert!(
+        s.find("aria-label=\"T\"").unwrap() < s.find("aria-label=\"L\"").unwrap(),
+        "{s}"
+    );
 }

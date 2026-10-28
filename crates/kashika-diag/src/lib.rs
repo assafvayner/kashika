@@ -55,6 +55,54 @@ pub enum Severity {
     Warn,
 }
 
+/// An element a diagnostic is about, with enough geometry to locate it.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Element {
+    pub id: String,
+    /// `box`, `group`, `line`, `junction`, `text` or `label`.
+    pub kind: &'static str,
+    pub span: Span,
+    /// 1-based index of the authored `-> ...` segment.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub segment: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from: Option<[f64; 2]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub to: Option<[f64; 2]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bbox: Option<[[f64; 2]; 2]>,
+    /// Id of the group whose frame the element's literals use.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub frame: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub local_bbox: Option<[[f64; 2]; 2]>,
+}
+
+impl Element {
+    pub fn new(id: impl Into<String>, kind: &'static str, span: Span) -> Self {
+        Self {
+            id: id.into(),
+            kind,
+            span,
+            segment: None,
+            from: None,
+            to: None,
+            bbox: None,
+            frame: None,
+            local_bbox: None,
+        }
+    }
+}
+
+/// A source edit the author may paste. Never applied automatically.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Suggestion {
+    pub span: Span,
+    pub replacement: String,
+    /// Ids whose geometry would change.
+    pub ripple: Vec<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Diagnostic {
     pub severity: Severity,
@@ -62,22 +110,55 @@ pub struct Diagnostic {
     pub message: String,
     pub span: Span,
     #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub elements: Vec<Element>,
+    #[serde(skip_serializing_if = "serde_json::Map::is_empty")]
+    pub facts: serde_json::Map<String, serde_json::Value>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub help: Vec<String>,
+    pub suggestions: Vec<Suggestion>,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub suppressed: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 impl Diagnostic {
-    pub fn error(code: &'static str, span: Span, message: impl Into<String>) -> Self {
+    fn new(severity: Severity, code: &'static str, span: Span, message: String) -> Self {
         Self {
-            severity: Severity::Error,
+            severity,
             code,
-            message: message.into(),
+            message,
             span,
+            elements: Vec::new(),
+            facts: serde_json::Map::new(),
             help: Vec::new(),
+            suggestions: Vec::new(),
+            suppressed: false,
+            reason: None,
         }
+    }
+
+    pub fn error(code: &'static str, span: Span, message: impl Into<String>) -> Self {
+        Self::new(Severity::Error, code, span, message.into())
+    }
+
+    pub fn warn(code: &'static str, span: Span, message: impl Into<String>) -> Self {
+        Self::new(Severity::Warn, code, span, message.into())
     }
 
     pub fn with_help(mut self, help: impl Into<String>) -> Self {
         self.help.push(help.into());
+        self
+    }
+
+    pub fn with_element(mut self, element: Element) -> Self {
+        self.elements.push(element);
+        self
+    }
+
+    pub fn with_fact(mut self, key: &str, value: impl Serialize) -> Self {
+        let v = serde_json::to_value(value).unwrap_or(serde_json::Value::Null);
+        self.facts.insert(key.to_string(), v);
         self
     }
 }
@@ -143,5 +224,35 @@ mod tests {
         ];
         sort(&mut d);
         assert_eq!(d[0].code, "a");
+    }
+
+    #[test]
+    fn warnings_serialize_elements_facts_and_suppression() {
+        let span = Span::new(2, 1, 2, 9);
+        let mut d = Diagnostic::warn("cross", span, "a crosses b")
+            .with_element(Element {
+                segment: Some(1),
+                from: Some([0.0, 0.0]),
+                to: Some([10.0, 0.0]),
+                ..Element::new("a", "line", span)
+            })
+            .with_fact("at", [5.0, 0.0]);
+        d.suppressed = true;
+        d.reason = Some("bus".into());
+        let v = serde_json::to_value(&d).unwrap();
+        assert_eq!(v["severity"], "warn");
+        assert_eq!(v["elements"][0]["id"], "a");
+        assert_eq!(v["elements"][0]["segment"], 1);
+        assert!(v["elements"][0].get("bbox").is_none());
+        assert_eq!(v["facts"]["at"], serde_json::json!([5.0, 0.0]));
+        assert_eq!(v["suggestions"], serde_json::json!([]));
+        assert_eq!(v["suppressed"], true);
+        assert_eq!(v["reason"], "bus");
+
+        let e = serde_json::to_value(Diagnostic::error("parse", Span::default(), "x")).unwrap();
+        assert!(e.get("elements").is_none());
+        assert!(e.get("facts").is_none());
+        assert!(e.get("suppressed").is_none());
+        assert!(e.get("reason").is_none());
     }
 }

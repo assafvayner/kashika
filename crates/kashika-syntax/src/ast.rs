@@ -125,6 +125,8 @@ pub enum Value {
     /// An identifier, or a `:`/`,`-joined list of them, e.g. `cross:l2,near`.
     Word(String),
     Pair(f64, f64),
+    /// `side@t`, accepted only as the value of `pin`.
+    AnchorAt(String, f64),
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -12,6 +12,7 @@ const ERROR_CODES: &[&str] = &[
     "unknown-id",
     "unknown-anchor",
     "duplicate-id",
+    "duplicate-style",
     "placement-cycle",
     "label-overflow",
     "text-conflict",

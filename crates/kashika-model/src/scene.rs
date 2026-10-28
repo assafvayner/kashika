@@ -17,6 +17,10 @@ pub struct Scene {
     pub junctions: Vec<Junction>,
     pub texts: Vec<Text>,
     pub lines: Vec<Line>,
+    /// Who is placed relative to whom: `at` references and group frames.
+    pub placement: Vec<PlacementEdge>,
+    /// Every number the author wrote as a position, distance or size.
+    pub literals: Vec<Literal>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -50,6 +54,10 @@ pub struct Shape {
     /// Height of a group's reserved title band from its top edge; 0 for boxes and
     /// unlabeled groups.
     pub title_band: f64,
+    pub allow: Vec<Allow>,
+    pub reason: Option<String>,
+    /// Canvas position of the frame this element's literals are written in.
+    pub origin: Pt,
     pub span: Span,
 }
 
@@ -57,6 +65,58 @@ impl Shape {
     pub fn corner_radius(&self) -> f64 {
         corner_radius(self.style.radius, self.rect)
     }
+
+    /// The bounding box in the frame the shape was written in.
+    pub fn local_rect(&self) -> Rect {
+        Rect::new(
+            self.rect.x - self.origin.x,
+            self.rect.y - self.origin.y,
+            self.rect.w,
+            self.rect.h,
+        )
+    }
+
+    /// Canvas position of an anchor, or `None` when the name or `t` is invalid.
+    pub fn anchor(&self, name: &str, t: Option<f64>) -> Option<Pt> {
+        crate::anchor::resolve(self.rect, self.corner_radius(), &self.id, name, t).ok()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum EdgeKind {
+    /// `from`'s `at` references `to`.
+    At,
+    /// `from` is written inside group `to`.
+    Frame,
+}
+
+impl EdgeKind {
+    pub fn name(self) -> &'static str {
+        match self {
+            EdgeKind::At => "at",
+            EdgeKind::Frame => "frame",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct PlacementEdge {
+    pub from: String,
+    pub to: String,
+    pub kind: EdgeKind,
+}
+
+/// A number the author wrote as a position, distance or size, in its own frame.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Literal {
+    /// Id of the element the number belongs to (`line@L<n>`/`text@L<n>` when unnamed).
+    pub owner: String,
+    /// `x`, `y`, `dx`, `dy`, `h`, `v`, `width` or `height`.
+    pub what: &'static str,
+    pub value: f64,
+    /// The enclosing point, segment or statement.
+    pub span: Span,
 }
 
 pub(crate) fn corner_radius(radius: f64, rect: Rect) -> f64 {
@@ -69,6 +129,7 @@ pub struct Junction {
     pub at: Pt,
     pub dot: bool,
     pub parent: Option<String>,
+    pub origin: Pt,
     pub span: Span,
 }
 
@@ -91,6 +152,7 @@ pub struct Text {
     pub rect: Rect,
     pub lines: Vec<PlacedLine>,
     pub parent: Option<String>,
+    pub origin: Pt,
     pub span: Span,
 }
 
@@ -127,6 +189,14 @@ pub struct Line {
     pub id: String,
     pub named: bool,
     pub path: Vec<PathSeg>,
+    /// The authored segments, in order.
+    pub segments: Vec<Segment>,
+    /// For each piece of `path`, the index into `segments` that drew it.
+    pub path_seg: Vec<usize>,
+    /// Whether the start point was written as a literal or mixed point rather than an anchor or junction.
+    pub start_literal: bool,
+    /// Whether the last segment ended on a literal: `h`/`v`, a numeric `x`/`y`, or a literal target point.
+    pub end_literal: bool,
     pub start: Marker,
     pub end: Marker,
     pub style: Style,
@@ -135,13 +205,47 @@ pub struct Line {
     pub allow: Vec<Allow>,
     pub reason: Option<String>,
     pub parent: Option<String>,
+    pub origin: Pt,
     pub span: Span,
 }
 
-impl Shape {
-    /// The canvas position of a plain anchor (`top`, `tl`, ...) on this shape, resolved the
-    /// same way as anchors written in a file.
-    pub fn anchor(&self, name: &str) -> Option<Pt> {
-        crate::anchor::resolve(self.rect, self.corner_radius(), &self.id, name, None).ok()
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum SegmentKind {
+    To,
+    H,
+    V,
+    X,
+    Y,
+    Hv,
+    Vh,
+    Curve,
+    CurveVia,
+}
+
+impl SegmentKind {
+    pub fn name(self) -> &'static str {
+        match self {
+            SegmentKind::To => "to",
+            SegmentKind::H => "h",
+            SegmentKind::V => "v",
+            SegmentKind::X => "x",
+            SegmentKind::Y => "y",
+            SegmentKind::Hv => "hv",
+            SegmentKind::Vh => "vh",
+            SegmentKind::Curve => "curve",
+            SegmentKind::CurveVia => "curve-via",
+        }
     }
+}
+
+/// One authored `-> ...` segment of a line.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Segment {
+    pub kind: SegmentKind,
+    pub span: Span,
+    pub from: Pt,
+    pub to: Pt,
+    /// The geometry this segment drew before corner rounding, without zero-length pieces.
+    pub pieces: Vec<PathSeg>,
 }

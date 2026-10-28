@@ -645,13 +645,41 @@ fn pin_rejects_unknown_anchors_and_positions() {
 }
 
 #[test]
-fn pin_with_position_is_unsupported_and_uses_the_plain_anchor() {
-    let (s, d) = kashika_model::compile(&format!(
-        "{HEAD}box a at (100,100) size (40,20) pin=left@0.25\n"
-    ));
+fn pin_accepts_a_position_on_an_edge() {
+    let s = ok("box api at (40,40) size (120,60)\nbox db at api.right+(100,0) size (100,80) pin=left@0.25\n");
+    assert_eq!(rect(&s, "db"), Rect::new(260.0, 50.0, 100.0, 80.0));
+}
+
+#[test]
+fn pin_position_errors() {
+    assert_eq!(
+        errors("box a at (0,0) size (10,10) pin=tl@0.5\n")[0].code,
+        "unknown-anchor"
+    );
+    assert_eq!(
+        errors("box a at (0,0) size (10,10) pin=left@2\n")[0].code,
+        "unknown-anchor"
+    );
+    assert_eq!(
+        errors("box a at (0,0) size (10,10) pin=lft@0.5\n")[0].code,
+        "attr"
+    );
+}
+
+#[test]
+fn placement_cycle_points_at_the_at_clause() {
+    let d = errors("box a at b.right size (10,10)\nbox b at a.left size (10,10)\n");
+    let c = d.iter().find(|d| d.code == "placement-cycle").unwrap();
+    assert_eq!((c.span.line, c.span.col), (2, 10));
+}
+
+#[test]
+fn duplicate_style_has_its_own_code() {
+    let d = errors("style s { fill=#fff }\nstyle s { fill=#000 }\n");
     assert_eq!(d.len(), 1, "{d:#?}");
-    assert_eq!(d[0].code, "unsupported");
-    assert_eq!(rect(&s, "a"), Rect::new(100.0, 90.0, 40.0, 20.0));
+    assert_eq!(d[0].code, "duplicate-style");
+    assert_eq!(d[0].span.line, 3);
+    ok("style a { fill=#fff }\nbox a at (0,0) size (1,1) style=a\n");
 }
 
 #[test]
@@ -1082,4 +1110,143 @@ fn diagram_must_come_first_even_after_a_broken_statement() {
 fn text_color_cannot_be_none() {
     let d = errors("text \"t\" at (0,0) color=none\n");
     assert_eq!(codes_of(&d), vec!["attr"], "{d:#?}");
+}
+
+#[test]
+fn elements_keep_their_frame_origin() {
+    let s = ok("group g at (100,50) size (300,200) {\n  box a at (10,20) size (40,30)\n  junction j at (5,5)\n  text \"t\" at (1,2)\n  line l: (0,0) -> h 10\n}\n");
+    let a = s.shapes.iter().find(|x| x.id == "a").unwrap();
+    assert_eq!(a.origin, Pt::new(100.0, 50.0));
+    assert_eq!(a.local_rect(), Rect::new(10.0, 20.0, 40.0, 30.0));
+    assert_eq!(a.anchor("right", None), Some(Pt::new(150.0, 85.0)));
+    assert_eq!(a.anchor("nope", None), None);
+    let g = s.shapes.iter().find(|x| x.id == "g").unwrap();
+    assert_eq!(g.origin, Pt::new(0.0, 0.0));
+    assert_eq!(s.junctions[0].origin, Pt::new(100.0, 50.0));
+    assert_eq!(s.texts[0].origin, Pt::new(100.0, 50.0));
+    assert_eq!(s.lines[0].origin, Pt::new(100.0, 50.0));
+}
+
+#[test]
+fn placement_graph_records_at_references_and_frames() {
+    use kashika_model::{EdgeKind, PlacementEdge};
+    let s = ok("box api at (40,40) size (120,60)\ngroup g at (0,200) size (400,200) {\n  box db at (api.left.x, 20) size (100,60)\n}\njunction j at db.bottom+(0,20)\n");
+    let e = |f: &str, t: &str, kind: EdgeKind| PlacementEdge {
+        from: f.into(),
+        to: t.into(),
+        kind,
+    };
+    assert_eq!(
+        s.placement,
+        vec![
+            e("db", "g", EdgeKind::Frame),
+            e("db", "api", EdgeKind::At),
+            e("j", "db", EdgeKind::At),
+        ]
+    );
+}
+
+#[test]
+fn placement_graph_survives_cycles() {
+    let (s, _) = compile(&format!(
+        "{HEAD}box a at b.right size (10,10)\nbox b at a.left size (10,10)\n"
+    ));
+    assert_eq!(s.placement.len(), 2);
+}
+
+#[test]
+fn lines_keep_their_authored_segments() {
+    use kashika_model::SegmentKind;
+    let s = ok(
+        "box a at (0,0) size (40,40)\nline l: a.right -> h 20 -> hv (200,100) -> v 0 radius=5\n",
+    );
+    let l = &s.lines[0];
+    let kinds: Vec<SegmentKind> = l.segments.iter().map(|g| g.kind).collect();
+    assert_eq!(kinds, [SegmentKind::H, SegmentKind::Hv, SegmentKind::V]);
+    let hv = &l.segments[1];
+    assert_eq!(
+        (hv.from, hv.to),
+        (Pt::new(60.0, 20.0), Pt::new(200.0, 100.0))
+    );
+    assert_eq!(hv.span.line, 3);
+    assert_eq!(
+        hv.pieces,
+        vec![
+            PathSeg::Line {
+                from: Pt::new(60.0, 20.0),
+                to: Pt::new(200.0, 20.0)
+            },
+            PathSeg::Line {
+                from: Pt::new(200.0, 20.0),
+                to: Pt::new(200.0, 100.0)
+            },
+        ]
+    );
+    assert!(l.segments[2].pieces.is_empty());
+    assert_eq!(l.path_seg, vec![0, 0, 1, 1, 1]);
+    assert_eq!(l.path.len(), l.path_seg.len());
+    assert_eq!(SegmentKind::CurveVia.name(), "curve-via");
+}
+
+#[test]
+fn literals_are_recorded_in_their_own_frame() {
+    let s = ok("group g at (100,50) size (300,200) {\n  box a at (10,20) size (40,30)\n}\nline l: a.right+(5,0) -> h 15 -> (300,95)\n");
+    let lits: Vec<(&str, &str, f64)> = s
+        .literals
+        .iter()
+        .map(|l| (l.owner.as_str(), l.what, l.value))
+        .collect();
+    assert_eq!(
+        lits,
+        [
+            ("g", "x", 100.0),
+            ("g", "y", 50.0),
+            ("g", "width", 300.0),
+            ("g", "height", 200.0),
+            ("a", "x", 10.0),
+            ("a", "y", 20.0),
+            ("a", "width", 40.0),
+            ("a", "height", 30.0),
+            ("l", "dx", 5.0),
+            ("l", "dy", 0.0),
+            ("l", "h", 15.0),
+            ("l", "x", 300.0),
+            ("l", "y", 95.0),
+        ]
+    );
+    assert_eq!(s.literals[4].span.line, 3);
+}
+
+#[test]
+fn line_endpoints_know_whether_they_are_literal() {
+    let s = ok("box a at (0,0) size (40,40)\nline m: (100,100) -> a.left\nline n: a.top -> y -20\nline o: a.bottom -> x a.right\nline p: a.right -> hv (80,80)\n");
+    let flags: Vec<(bool, bool)> = s
+        .lines
+        .iter()
+        .map(|l| (l.start_literal, l.end_literal))
+        .collect();
+    assert_eq!(
+        flags,
+        [(true, false), (false, true), (false, false), (false, true)]
+    );
+}
+
+#[test]
+fn boxes_and_groups_accept_allow_and_reason() {
+    let s = ok("box a at (0,0) size (10,10) allow=overlap reason=\"badge\"\ngroup g at (0,0) size (50,50) allow=spill:a {\n}\n");
+    let a = s.shapes.iter().find(|x| x.id == "a").unwrap();
+    assert_eq!(
+        a.allow,
+        vec![kashika_model::Allow {
+            code: "overlap".into(),
+            other: None
+        }]
+    );
+    assert_eq!(a.reason.as_deref(), Some("badge"));
+    let g = s.shapes.iter().find(|x| x.id == "g").unwrap();
+    assert_eq!(g.allow[0].other.as_deref(), Some("a"));
+    assert_eq!(
+        errors("box a at (0,0) size (10,10) allow=overlpa\n")[0].code,
+        "attr"
+    );
 }

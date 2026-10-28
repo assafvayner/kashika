@@ -88,21 +88,6 @@ fn inset(r: f64, along: f64, len: f64) -> f64 {
     r - (r * r - d * d).max(0.0).sqrt()
 }
 
-/// Offset of the `pin` anchor from a box's top-left corner.
-pub fn pin_offset(name: &str, w: f64, h: f64) -> Pt {
-    match canonical(name) {
-        "top" => Pt::new(w / 2.0, 0.0),
-        "bottom" => Pt::new(w / 2.0, h),
-        "left" => Pt::new(0.0, h / 2.0),
-        "right" => Pt::new(w, h / 2.0),
-        "center" => Pt::new(w / 2.0, h / 2.0),
-        "tr" => Pt::new(w, 0.0),
-        "bl" => Pt::new(0.0, h),
-        "br" => Pt::new(w, h),
-        _ => Pt::new(0.0, 0.0),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -143,14 +128,5 @@ mod tests {
         );
         assert!(resolve(R, 0.0, "r", "center", Some(0.5)).is_err());
         assert!(resolve(R, 0.0, "r", "top", Some(1.5)).is_err());
-    }
-
-    #[test]
-    fn pin_offsets() {
-        assert_eq!(pin_offset("left", 120.0, 60.0), Pt::new(0.0, 30.0));
-        assert_eq!(
-            pin_offset("bottom-right", 120.0, 60.0),
-            Pt::new(120.0, 60.0)
-        );
     }
 }

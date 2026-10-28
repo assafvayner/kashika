@@ -264,7 +264,7 @@ fn guides(out: &mut String, scene: &Scene) {
             GUIDE,
         );
         for a in ANCHORS {
-            if let Some(p) = s.anchor(a) {
+            if let Some(p) = s.anchor(a, None) {
                 dot(out, p);
             }
         }

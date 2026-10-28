@@ -104,3 +104,21 @@ fn corpus_round_trips() {
         assert_eq!(codes(&da), codes(&db), "{}", f.display());
     }
 }
+
+#[test]
+fn pin_with_position_round_trips() {
+    let src = "diagram \"d\" size (200,100)\nbox a at (10,10) size (40,20) pin=left@0.25\n";
+    let dir = tempfile::tempdir().unwrap();
+    let f = dir.path().join("d.kash");
+    std::fs::write(&f, src).unwrap();
+    kashika()
+        .args(["fmt", f.to_str().unwrap(), "--check"])
+        .assert()
+        .code(0);
+    std::fs::write(&f, src.replace("pin=left@0.25", "pin=left @ 0.25")).unwrap();
+    kashika()
+        .args(["fmt", f.to_str().unwrap()])
+        .assert()
+        .code(0);
+    assert_eq!(std::fs::read_to_string(&f).unwrap(), src);
+}

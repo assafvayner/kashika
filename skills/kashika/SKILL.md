@@ -33,7 +33,7 @@ diagram "Title" size (900,500) kashika=1
 style svc { fill=#e8f0fe stroke=#1a73e8 }                 // built-ins: service datastore external queue boundary note
 box api "API" at (40,40) size (140,60) style=service       // shape=rect|rounded
 box pay "Payments API" at (40,140) size (180,60) sublabel="v2.4.1"   // muted second line, 0.8 × size
-box db "DB" at api.right+(120,0) size (140,60) pin=left    // pin: any plain anchor name (no `@t`); default `tl`
+box db "DB" at api.right+(120,0) size (140,60) pin=left    // pin: any anchor, `side@t` included (`pin=left@0.25`); default `tl`
 group vpc "VPC" at (20,140) size (600,300) { ... }         // children use vpc-relative coordinates
 junction fan at (api.bottom.x, 130)                        // shared point for fan-out/fan-in
 text "note" at (700,480) size=12 align=right muted
@@ -87,8 +87,8 @@ Long lines can continue on the next line by starting it with `->`; attributes an
 | `text-conflict` | move `label`/`sublabel` into the text block as its first items, or give every block item an `at` |
 | `degenerate-curve` / `zero-length` | the endpoints coincide; check your coordinates |
 | `diagram` | the file must start with `diagram "<title>" size (w,h)` |
-| `unsupported` | feature is in the spec but not built yet (`icon`, shapes other than `rect`/`rounded`, `import`/`shape`/`image`, `icons=`, `pin=side@t`). Remove it; put the info in the label or a text block |
-| `duplicate-id` / `unknown-style` / `size` / `parse` | fix as the message says; ids are unique across boxes, groups, junctions, lines and texts. Coordinates stay within ±1,000,000, sizes at most 1,000,000 |
+| `unsupported` | feature is in the spec but not built yet (`icon`, shapes other than `rect`/`rounded`, `import`/`shape`/`image`, `icons=`). Remove it; put the info in the label or a text block |
+| `duplicate-id` / `duplicate-style` / `unknown-style` / `size` / `parse` | fix as the message says; ids are unique across boxes, groups, junctions, lines and texts; style names are unique among styles. Coordinates stay within ±1,000,000, sizes at most 1,000,000 |
 
 Exit codes: `0` clean, `1` warnings, `2` errors, `3` tool/usage failure. `render` writes nothing on errors unless `--force` is given (it then marks each error in red). `render -o file.png` writes PNG; `--debug` overlays rulers, ids and anchor dots to help you locate problems.
 
