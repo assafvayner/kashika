@@ -2,6 +2,17 @@
 
 Each example lives in its own directory with its source and committed renders.
 
+## Regenerating the renders
+
+Run from the repository root after changing an example, the renderer or the language:
+
+```sh
+cargo run -p kashika-cli -- render examples/flowchart/flowchart.kash -o examples/flowchart/flowchart.svg
+cargo run -p kashika-cli -- render examples/flowchart/flowchart.kash -o examples/flowchart/flowchart.png
+```
+
+`render` refuses to write when the file has errors, and every example must also check with 0 warnings (`kashika check examples/<name>/<name>.kash`). `cargo test` fails if a committed `.svg` or `.png` is missing or doesn't match a fresh render, and its message names the command to run.
+
 ## upload
 
 Upload path: a browser through a load balancer, two APIs, a queue, a worker and Postgres inside a VPC group.
