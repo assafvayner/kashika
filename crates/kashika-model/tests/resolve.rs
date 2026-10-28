@@ -168,3 +168,109 @@ fn rounded_shape_projects_anchors() {
     let s = ok("box r at (0,0) size (100,60) shape=rounded\nline l: r.top@0 -> (0,-50)\n");
     assert_eq!(pts(&s, "l")[0], Pt::new(0.0, 8.0));
 }
+
+#[test]
+fn every_segment_kind_resolves() {
+    let s = ok("box a at (0,0) size (100,60)\nbox b at (300,200) size (100,60)\n\
+                line l: a.right -> h 50 -> y b.top -> x 400 -> v 10 -> hv (500,300) -> vh (520,320)\n");
+    let p = |x: f64, y: f64| Pt::new(x, y);
+    assert_eq!(
+        pts(&s, "l"),
+        vec![
+            p(100.0, 30.0),
+            p(150.0, 30.0),
+            p(150.0, 200.0),
+            p(400.0, 200.0),
+            p(400.0, 210.0),
+            p(500.0, 210.0),
+            p(500.0, 300.0),
+            p(500.0, 320.0),
+            p(520.0, 320.0),
+        ]
+    );
+}
+
+#[test]
+fn already_aligned_elbows_drop_zero_length_pieces() {
+    let s = ok("line l: (0,0) -> hv (100,0)\n");
+    assert_eq!(s.lines[0].path.len(), 1);
+}
+
+#[test]
+fn numeric_axis_targets_use_the_group_frame() {
+    let s = ok("group g at (100,100) size (300,300) {\n  line l: (0,0) -> x 50 -> y 20\n}\n");
+    assert_eq!(
+        pts(&s, "l"),
+        vec![
+            Pt::new(100.0, 100.0),
+            Pt::new(150.0, 100.0),
+            Pt::new(150.0, 120.0)
+        ]
+    );
+}
+
+#[test]
+fn curve_left_bulges_up_when_travelling_right() {
+    let s = ok("line l: (0,100) -> curve left:20 (100,100)\n");
+    let PathSeg::Quad { ctrl, .. } = s.lines[0].path[0] else {
+        panic!("expected quad")
+    };
+    assert_eq!(ctrl, Pt::new(50.0, 60.0));
+    assert_eq!(s.lines[0].path[0].eval(0.5), Pt::new(50.0, 80.0));
+}
+
+#[test]
+fn curve_right_bulges_right_when_travelling_up() {
+    let s = ok("line l: (0,100) -> curve right:10 (0,0)\n");
+    let PathSeg::Quad { ctrl, .. } = s.lines[0].path[0] else {
+        panic!("expected quad")
+    };
+    assert_eq!(ctrl, Pt::new(20.0, 50.0));
+}
+
+#[test]
+fn curve_via_makes_a_cubic() {
+    let s = ok("line l: (0,0) -> curve via (0,50) (100,50) (100,0)\n");
+    assert!(matches!(s.lines[0].path[0], PathSeg::Cubic { .. }));
+}
+
+#[test]
+fn radius_rounds_polyline_corners() {
+    let s = ok("line l: (0,0) -> h 100 -> v 100 radius=10\n");
+    assert_eq!(s.lines[0].path.len(), 3);
+    assert!(matches!(s.lines[0].path[1], PathSeg::Quad { .. }));
+}
+
+#[test]
+fn labels_markers_and_unnamed_ids() {
+    let s = ok("line (0,0) -> h 100 label=\"a\" label@0.25=\"b\" end=arrow start=dot\n");
+    let l = &s.lines[0];
+    assert_eq!(l.id, "line@L2");
+    assert!(!l.named);
+    assert_eq!(
+        l.labels.iter().map(|x| x.t).collect::<Vec<_>>(),
+        vec![0.5, 0.25]
+    );
+    assert_eq!(
+        (l.start, l.end),
+        (kashika_model::Marker::Dot, kashika_model::Marker::Arrow)
+    );
+}
+
+#[test]
+fn ortho_rejects_diagonals() {
+    let d = errors("line l: (0,0) -> (10,10) ortho\n");
+    assert_eq!(d[0].code, "not-ortho");
+}
+
+#[test]
+fn degenerate_curve() {
+    let d = errors("line l: (0,0) -> curve left:10 (0,0)\n");
+    assert_eq!(d[0].code, "degenerate-curve");
+}
+
+#[test]
+fn zero_length_line() {
+    let d = errors("line l: (0,0) -> h 0\n");
+    assert_eq!(d[0].code, "zero-length");
+}
