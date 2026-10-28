@@ -480,6 +480,7 @@ version = "0.1.0"
 dependencies = [
  "base64",
  "insta",
+ "kashika-check",
  "kashika-diag",
  "kashika-geom",
  "kashika-model",
@@ -493,6 +494,7 @@ dependencies = [
 name = "kashika-route"
 version = "0.1.0"
 dependencies = [
+ "kashika-check",
  "kashika-diag",
  "kashika-geom",
  "kashika-model",

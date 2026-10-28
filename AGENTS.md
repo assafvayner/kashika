@@ -12,9 +12,9 @@ In dependency order (`crates/`):
 - `kashika-syntax`: lexer, parser, AST and the whitespace-only formatter.
 - `kashika-model`: resolver; turns the AST into a `Scene` with anchors, attributes, styles and laid-out text (`compile`, `compile_with`). Also the built-in shape library (`shapes.rs`), outlines (`form.rs`), sandboxed file loading (`loader.rs`), imports (`library.rs`), SVG/PNG/JPEG assets (`assets.rs`) and the bundled icons (`icons/`).
 - `kashika-check`: warning lints (one file each under `src/lints/`), suppression, metrics, free intervals and ports, built on a shared `Ctx` of shape polygons and flattened line pieces. `Ctx::boxes()` is boxes and images: the opaque shapes lines must avoid.
-- `kashika-route`: `kashika route` path suggestions, ranked by crossings, near-misses, segments and length.
-- `kashika-render`: `Scene` to SVG and PNG, with images and icons embedded as `data:` URIs.
-- `kashika-cli`: the `kashika` binary (`check`, `render`, `inspect`, `route`, `measure`, `fmt`, `icons`, `ref`), text and JSON reports.
+- `kashika-route`: `kashika route` path suggestions. Each candidate is compiled as a real `line` and scored with `kashika_check::check`, so it ranks by the `cross` and `near`/`shared-segment` findings `check` reports (`through` drops it), then segments and length.
+- `kashika-render`: `Scene` to SVG and PNG (resvg), with images and icons embedded as `data:` URIs, and the `render --force`/`--debug` overlay.
+- `kashika-cli`: the `kashika` binary (`check`, `render`, `inspect`, `route`, `measure`, `fmt`, `icons`, `ref`), text and JSON reports. `ref` pages are Markdown in `crates/kashika-cli/ref/`.
 
 ## Commands
 
@@ -27,6 +27,9 @@ cargo run -p kashika-cli -- render examples/upload.kash -o target/upload.svg
 cargo run -p kashika-cli -- measure "**Payments** API" --size 14
 cargo run -p kashika-cli -- inspect examples/upload.kash --ports
 cargo run -p kashika-cli -- icons --search server
+cargo run -p kashika-cli -- fmt --check examples/upload.kash
+cargo run -p kashika-cli -- route examples/upload.kash --line api1_queue arc
+cargo run -p kashika-cli -- ref
 ```
 
 ## Invariants
@@ -36,7 +39,9 @@ cargo run -p kashika-cli -- icons --search server
 - The parser and resolver recover and report diagnostics; they never panic on bad input.
 - Spec features not yet implemented report the `unsupported` diagnostic.
 - Every lint has a positive and a negative test in `crates/kashika-check/tests/`.
-- A language change updates the spec, the tests and `skills/kashika/SKILL.md` together.
+- A language or CLI change updates the spec, the tests, the `ref` pages and `skills/kashika/SKILL.md` together. Every ```` ```kash ```` block in `ref` is a fixture that must check clean and be in `fmt` form.
+- `fmt` changes only whitespace; it never changes tokens.
+- `route` never edits files.
 - All file access in the model goes through `loader.rs`, which enforces local-only paths, the project root and the search path. The model never reads the environment; the CLI passes `KASHIKA_ICON_PATH` in `Options`.
 - Embedded SVG is always the usvg re-serialization, never the input bytes.
 - Text is measured and drawn only with the fonts in `crates/kashika-text/fonts/`. SVG text is glyph outlines (`<path aria-label=…>`), never `<text>`, so checks and every viewer agree.

@@ -64,7 +64,10 @@ fn default_page_has_the_required_parts_and_length() {
     ] {
         assert!(p.contains(recipe), "missing recipe {recipe}");
     }
-    let words = p.split_whitespace().count();
+    let words = p
+        .split_whitespace()
+        .filter(|w| w.chars().any(char::is_alphanumeric))
+        .count();
     assert!(
         (1500..=2300).contains(&words),
         "default page has {words} words"
@@ -182,4 +185,37 @@ fn ref_examples_check_clean_and_are_formatted() {
             "not in fmt form:\n{b}"
         );
     }
+}
+
+#[test]
+fn shapes_page_lists_every_builtin_shape() {
+    let p = page(&["shapes"]);
+    for name in kashika_model::BUILTIN_SHAPES {
+        assert!(p.contains(&format!("\n| `{name}`")), "missing {name}");
+    }
+}
+
+#[test]
+fn skill_points_at_real_ref_topics() {
+    let skill = std::fs::read_to_string(format!(
+        "{}/../../skills/kashika/SKILL.md",
+        env!("CARGO_MANIFEST_DIR")
+    ))
+    .unwrap();
+    let mut checked = 0;
+    for (i, _) in skill.match_indices("kashika ref ") {
+        let topic: String = skill[i + "kashika ref ".len()..]
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric() || *c == '-')
+            .collect();
+        if topic.is_empty() {
+            continue;
+        }
+        checked += 1;
+        kashika().args(["ref", &topic]).assert().code(0);
+    }
+    assert!(
+        checked > 0,
+        "SKILL.md should point at `kashika ref <topic>` pages"
+    );
 }

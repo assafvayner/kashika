@@ -87,3 +87,22 @@ fn debug_draws_rulers_ids_and_anchor_dots() {
         "9 anchors x 2 boxes"
     );
 }
+
+#[test]
+fn debug_marks_a_through_warning_at_its_entry_point() {
+    let src = "diagram \"t\" size (300,100)\n\
+box a at (10,30) size (40,40)\n\
+box w at (120,20) size (40,60)\n\
+box b at (240,30) size (40,40)\n\
+line ab: a.right -> b.left\n";
+    let (scene, _) = compile(src);
+    let d = kashika_check::check(&scene)
+        .into_iter()
+        .find(|d| d.code == "through")
+        .expect("through is reported");
+    let s = render_svg_with(&scene, std::slice::from_ref(&d), DEBUG);
+    assert!(
+        s.contains(r##"<circle cx="120" cy="50" r="6" fill="none" stroke="#ea580c""##),
+        "{s}"
+    );
+}

@@ -10,11 +10,11 @@ Kashika has **no auto-layout**. You decide every box position and every line pat
 ## Loop
 
 1. Sketch the layout as a grid on paper first: rows/columns, ~60–80px gaps, and lanes for the lines.
-2. Write the `.kash` file.
+2. Write the `.kash` file. `kashika ref` prints the full reference (rules, grammar, anchors, segments, every diagnostic, routing recipes, a worked example); look things up by topic (`kashika ref paths`, `kashika ref examples`, `kashika ref cli`) or by diagnostic code (`kashika ref through`).
 3. `kashika check file.kash --format json`. Fix every error first, starting with the first one, then every warning. The `help` entries name the fix: did-you-mean names, required sizes. Size boxes from the text: `kashika measure "Payments API"` prints the exact width and height; add 2 × padding (16px by default). Warnings name their `elements` (with the authored `segment` index for lines): `free` lists clear lanes for `through`/`near`/`cross`, `shared-segment` names the nearest free lane, `label-collision` lists clear `label@t` positions, and `endpoint-off-edge` gives the exact anchor.
-4. When a fix needs coordinates, `kashika inspect file.kash <ids> --ports` shows resolved boxes, anchors, line vertices and which side anchors are taken; `--corridors x1,y1,x2,y2` lists free lanes in a region. `kashika route file.kash api.right db.left` suggests ready-to-paste `line` statements ranked by crossings (`--line <id>` reroutes an existing one).
+4. When a fix needs coordinates, `kashika inspect file.kash <ids> --ports` shows resolved boxes, anchors, line vertices and which side anchors are taken; `--corridors x1,y1,x2,y2` lists free lanes in a region. `kashika route file.kash api.right db.left` suggests ready-to-paste `line` statements, ranked by the `cross` and `near` findings `check` would report; add `arc` for rounded corners or `bezier` for curves, and `--line <id>` to reroute an existing line. It never edits the file.
 5. If a warning is intentional, suppress it narrowly on the line or shape: `allow=cross:other_line reason="..."`. Prefer `code:id` over a bare code. Suppressed findings still count in the summary.
-6. `kashika fmt file.kash` to normalize layout, then `kashika render file.kash -o file.svg` when the check is clean.
+6. `kashika fmt file.kash` to normalize layout (whitespace only; comments are kept), then `kashika render file.kash -o file.svg` (or `-o file.png`) when the check is clean.
 
 Check snippets without a file: `kashika check - --stdin-name draft.kash < draft`. Focus on one area with `--focus api,db` (warnings involving those ids only).
 
@@ -44,7 +44,7 @@ junction fan at (api.bottom.x, 130)                        // shared point for f
 text "note" at (700,480) size=12 align=right muted
 line api_db: api.right -> db.left end=arrow label="SQL"
 box badge at db.tr size (16,16) pin=center allow=overlap:db reason="corner badge"
-image logo "assets/logo.png" at (20,20) size (80,80) fit=contain   // SVG/PNG/JPEG; fit=contain|cover|stretch
+image logo "assets/logo.png" at (700,20) size (80,80) fit=contain  // SVG/PNG/JPEG; fit=contain|cover|stretch
 box q "Jobs" at (40,200) size (160,60) icon="queue"        // icon-pos=left|top icon-size=24; bundled: server browser queue lock cloud person
 ```
 

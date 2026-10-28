@@ -16,7 +16,7 @@ fn prints_ranked_ready_to_paste_candidates() {
         .assert()
         .code(0)
         .stdout(
-            "#1  crossings=0 near=0 segments=3 length=444px  via corridor y 0..40\n    line a_b: a.top -> y wall.tl+(0,-12) -> hv b.top end=arrow\n",
+            "#1  crossings=0 near=0 segments=3 length=444px  via corridor y 0..34\n    line a_b: a.top -> y wall.tl+(0,-12) -> hv b.top end=arrow\n",
         );
 }
 

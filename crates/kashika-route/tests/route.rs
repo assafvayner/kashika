@@ -162,7 +162,7 @@ fn routes_over_the_wall() {
         c.corridor,
         Some(Corridor {
             axis: "y",
-            band: [0.0, 40.0]
+            band: [0.0, 34.0]
         })
     );
 }
@@ -335,5 +335,80 @@ group g \"G\" at (100,100) size (280,180) {\n\
         assert!(diags.is_empty(), "{}: {diags:#?}", c.statement);
         let path = &scene.lines[0].path;
         assert_eq!(path[path.len() - 1].to(), Pt::new(280.0, 220.0));
+    }
+}
+
+/// Every candidate's numbers are what `kashika check` reports once the statement is pasted.
+fn agrees_with_check(src: &str, s: &Suggestion) {
+    assert!(!s.candidates.is_empty(), "no candidates for\n{src}");
+    for c in &s.candidates {
+        let id = c.statement["line ".len()..].split(':').next().unwrap();
+        let (scene, diags) = kashika_model::compile(&format!("{src}{}\n", c.statement));
+        assert!(diags.is_empty(), "{}: {diags:#?}", c.statement);
+        let mine: Vec<_> = kashika_check::check(&scene)
+            .into_iter()
+            .filter(|d| d.elements.iter().any(|e| e.id == id))
+            .collect();
+        let count = |codes: &[&str]| mine.iter().filter(|d| codes.contains(&d.code)).count();
+        assert_eq!(count(&["through"]), 0, "{}: {mine:#?}", c.statement);
+        assert_eq!(count(&["cross"]), c.crossings, "{}: {mine:#?}", c.statement);
+        assert_eq!(
+            count(&["near", "shared-segment"]),
+            c.near,
+            "{}: {mine:#?}",
+            c.statement
+        );
+    }
+}
+
+const DIAMOND: &str = "diagram \"d\" size (320,240)\n\
+box a at (20,70) size (60,40)\n\
+box b at (150,0) size (80,40)\n\
+box d at (160,80) size (120,120) shape=diamond\n";
+
+#[test]
+fn routes_through_the_bounding_box_corner_of_a_diamond() {
+    let s = suggest(&req(DIAMOND, "a.right", "b.bottom", Style::Corner)).unwrap();
+    let statements: Vec<&str> = s.candidates.iter().map(|c| c.statement.as_str()).collect();
+    assert_eq!(statements, ["line a_b: a.right -> hv b.bottom end=arrow"]);
+    assert_eq!((s.candidates[0].crossings, s.candidates[0].near), (0, 0));
+    agrees_with_check(DIAMOND, &s);
+}
+
+#[test]
+fn routes_over_a_cylinder_and_an_image() {
+    for wall in [
+        "box wall \"W\" at (200,40) size (40,160) shape=cylinder",
+        "image wall \"server\" at (200,40) size (40,160)",
+    ] {
+        let src = WALL.replace("box wall \"W\" at (200,40) size (40,160)", wall);
+        let s = suggest(&req(&src, "a.top", "b.top", Style::Corner)).unwrap();
+        assert_eq!(
+            s.candidates[0].statement, "line a_b: a.top -> y wall.tl+(0,-12) -> hv b.top end=arrow",
+            "{wall}"
+        );
+        agrees_with_check(&src, &s);
+    }
+}
+
+#[test]
+fn candidate_numbers_match_kashika_check() {
+    let blocked = format!("{WALL}line blocker: (160,10) -> (160,230)\n");
+    let near = "diagram \"n\" size (300,200)\n\
+box a at (20,20) size (40,40)\n\
+box b at (220,20) size (40,40)\n\
+box c at (100,76) size (40,40)\n";
+    let cases: [(&str, &str, &str, Style); 6] = [
+        (WALL, "a.top", "b.top", Style::Corner),
+        (WALL, "a.top", "b.top", Style::Arc),
+        (&blocked, "a.top", "b.top", Style::Corner),
+        (near, "a.bottom", "b.bottom", Style::Corner),
+        (DIAG, "a.right", "b.left", Style::Bezier),
+        (DIAG, "a.bottom", "b.left", Style::Corner),
+    ];
+    for (src, from, to, style) in cases {
+        let mut r = req(src, from, to, style);
+        r.max = 20;
+        agrees_with_check(src, &suggest(&r).unwrap());
     }
 }

@@ -32,3 +32,25 @@ fn png_is_deterministic_and_draws_glyph_paths_without_fonts() {
     let dark = (60..140).any(|x| (50..90).any(|y| pix.pixel(x, y).unwrap().red() < 128));
     assert!(dark, "the API label was not rasterized");
 }
+
+#[test]
+fn png_rasterizes_embedded_images() {
+    use resvg::tiny_skia::{Color, Pixmap};
+    let dir = tempfile::tempdir().unwrap();
+    let mut red = Pixmap::new(10, 10).unwrap();
+    red.fill(Color::from_rgba8(255, 0, 0, 255));
+    std::fs::write(dir.path().join("red.png"), red.encode_png().unwrap()).unwrap();
+    let opts = kashika_model::Options {
+        path: Some(dir.path().join("i.kash")),
+        ..Default::default()
+    };
+    let src = "diagram \"i\" size (100,100)\nimage logo \"red.png\" at (20,20) size (40,40)\n";
+    let (scene, diags) = kashika_model::compile_with(src, &opts);
+    assert!(diags.is_empty(), "{diags:#?}");
+    let png = svg_to_png(&render_svg(&scene)).unwrap();
+    let pix = Pixmap::decode_png(&png).unwrap();
+    let p = pix.pixel(40, 40).unwrap();
+    assert!(p.red() > 200 && p.green() < 50, "image not drawn: {p:?}");
+    let q = pix.pixel(80, 80).unwrap();
+    assert!(q.green() > 200, "background is not red: {q:?}");
+}

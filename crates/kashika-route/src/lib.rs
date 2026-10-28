@@ -254,11 +254,6 @@ fn rank(
     } else {
         String::new()
     };
-    let ctx = score::Ctx {
-        start_owner: from.owner.as_deref(),
-        end_owner: to.owner.as_deref(),
-        ignore: req.line,
-    };
     let mut seen: Vec<Vec<(i64, i64)>> = Vec::new();
     let mut candidates = Vec::new();
     for plan in generate(scene, &from, &to, req.style) {
@@ -277,7 +272,7 @@ fn rank(
         if !directions_ok(line, &from, &to, req.style) {
             continue;
         }
-        let Some(s) = score::score(&probed, line, &ctx) else {
+        let Some(s) = score::score(&probed, line, req.line) else {
             continue;
         };
         let key = geometry_key(&line.path);
@@ -285,13 +280,14 @@ fn rank(
             continue;
         }
         seen.push(key);
-        let corridor = plan.lane.map(|(axis, v)| {
+        let skip: Vec<&str> = [PROBE].into_iter().chain(req.line).collect();
+        let corridor = plan.lane.and_then(|(axis, v)| {
             let span = if axis == "y" {
                 (from.at.x, to.at.x)
             } else {
                 (from.at.y, to.at.y)
             };
-            score::corridor(&probed, axis, v, span)
+            score::corridor(&probed, axis, v, span, &skip)
         });
         candidates.push(Candidate {
             crossings: s.crossed.len(),
