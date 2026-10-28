@@ -1,0 +1,11 @@
+[package]
+name = "kashika-model"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+kashika-diag.workspace = true
+kashika-geom.workspace = true
+kashika-syntax.workspace = true
+serde.workspace = true

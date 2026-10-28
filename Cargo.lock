@@ -17,6 +17,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "kashika-model"
+version = "0.1.0"
+dependencies = [
+ "kashika-diag",
+ "kashika-geom",
+ "kashika-syntax",
+ "serde",
+]
+
+[[package]]
 name = "kashika-syntax"
 version = "0.1.0"
 dependencies = [
