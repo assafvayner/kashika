@@ -1,5 +1,5 @@
 use kashika_diag::Diagnostic;
-use kashika_geom::{inside_runs, Pt};
+use kashika_geom::{inside_runs, Pt, TOLERANCE};
 
 use crate::ctx::{arr, kind_name, line_el, shape_el, Ctx};
 use crate::free::with_free;
@@ -8,10 +8,10 @@ use crate::free::with_free;
 /// only on its first and last segments, so leaving and re-entering is flagged.
 pub fn through(ctx: &Ctx) -> Vec<Diagnostic> {
     let mut out = Vec::new();
-    for l in &ctx.lines {
+    for (i, l) in ctx.lines.iter().enumerate() {
         let (starts, ends) = (ctx.attached(l.start), ctx.attached(l.end));
         let last = l.last_segment();
-        for s in ctx.boxes() {
+        for s in ctx.boxes_near(ctx.line_boxes[i], TOLERANCE) {
             let id = s.shape.id.as_str();
             let mut runs: Vec<(Pt, Pt, usize)> = Vec::new();
             for &(p, q, k) in &l.pieces {

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use kashika_diag::Diagnostic;
 use kashika_geom::TOLERANCE;
 
@@ -10,9 +12,17 @@ const MIN_GAP: f64 = 8.0;
 /// draw a marker (stacked arrowheads). Junction endpoints are exempt.
 pub fn port_crowding(ctx: &Ctx) -> Vec<Diagnostic> {
     let all = ports(ctx);
+    let mut by_shape: HashMap<&str, Vec<usize>> = HashMap::new();
+    for (i, p) in all.iter().enumerate() {
+        by_shape.entry(p.shape.as_str()).or_default().push(i);
+    }
     let mut out = Vec::new();
     for (i, a) in all.iter().enumerate() {
-        for b in all[i + 1..].iter().filter(|b| b.shape == a.shape) {
+        for b in by_shape[a.shape.as_str()]
+            .iter()
+            .filter(|&&j| j > i)
+            .map(|&j| &all[j])
+        {
             let gap = a.at.dist(b.at);
             let stacked = gap <= TOLERANCE;
             if gap >= MIN_GAP || (stacked && !(a.marker && b.marker)) || a.line == b.line {

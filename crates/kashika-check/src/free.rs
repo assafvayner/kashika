@@ -60,12 +60,17 @@ pub fn free_intervals(
             blocked.push((along.0 - c, along.1 + c));
         }
     };
-    for s in ctx.boxes() {
+    let big = f64::MAX / 4.0;
+    let strip = match axis {
+        Axis::Y => Rect::new(b0, -big, b1 - b0, 2.0 * big),
+        Axis::X => Rect::new(-big, b0, 2.0 * big, b1 - b0),
+    };
+    for s in ctx.boxes_near(strip, c) {
         if !skip.contains(&s.shape.id.as_str()) {
             block(s.shape.rect);
         }
     }
-    for l in &ctx.lines {
+    for l in ctx.lines_near(strip, c).into_iter().map(|i| &ctx.lines[i]) {
         if skip.contains(&l.line.id.as_str()) {
             continue;
         }

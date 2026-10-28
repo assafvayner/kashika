@@ -14,6 +14,7 @@ pub fn suppress(scene: &Scene, diags: &mut [Diagnostic]) {
                 .iter()
                 .map(|s| (s.id.as_str(), s.allow.as_slice(), &s.reason)),
         )
+        .filter(|(_, allow, _)| !allow.is_empty())
         .collect();
     for d in diags.iter_mut() {
         if scene.allow.iter().any(|a| a.code == d.code) {

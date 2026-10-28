@@ -37,13 +37,19 @@ fn parallel(p: Pt, q: Pt, e0: Pt, e1: Pt) -> Option<(f64, f64)> {
     Some((gap, hi - lo))
 }
 
+/// How far apart two bounding boxes can be while pieces in them are within `c`: a parallel
+/// gap is measured square to one piece, so allow some slack.
+fn reach(c: f64) -> f64 {
+    2.0 * c + 1.0
+}
+
 fn near_boxes(ctx: &Ctx) -> Vec<Diagnostic> {
     let c = ctx.scene.clearance;
     let mut out = Vec::new();
-    for l in &ctx.lines {
+    for (i, l) in ctx.lines.iter().enumerate() {
         let mut own = ctx.attached(l.start);
         own.extend(ctx.attached(l.end));
-        for s in ctx.boxes() {
+        for s in ctx.boxes_near(ctx.line_boxes[i], reach(c)) {
             let id = s.shape.id.as_str();
             let attached = own.contains(&id);
             if !attached
@@ -104,8 +110,8 @@ fn near_boxes(ctx: &Ctx) -> Vec<Diagnostic> {
 fn near_groups(ctx: &Ctx) -> Vec<Diagnostic> {
     let c = ctx.scene.clearance;
     let mut out = Vec::new();
-    for l in &ctx.lines {
-        for g in ctx.groups() {
+    for (i, l) in ctx.lines.iter().enumerate() {
+        for g in ctx.groups_near(ctx.line_boxes[i], reach(c)) {
             let mut best: Option<(f64, usize)> = None;
             for &(p, q, k) in &l.pieces {
                 for (e0, e1) in edges(&g.poly) {
@@ -147,7 +153,11 @@ fn near_lines(ctx: &Ctx) -> Vec<Diagnostic> {
     let c = ctx.scene.clearance;
     let mut out = Vec::new();
     for (i, a) in ctx.lines.iter().enumerate() {
-        for b in &ctx.lines[i + 1..] {
+        for j in ctx.lines_near(ctx.line_boxes[i], reach(c)) {
+            if j <= i {
+                continue;
+            }
+            let b = &ctx.lines[j];
             let (mut run, mut gap, mut at) = (0.0, f64::INFINITY, None);
             for &(p, q, ai) in &a.pieces {
                 let mut longest = 0.0f64;

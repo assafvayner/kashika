@@ -1,5 +1,5 @@
 use kashika_diag::Diagnostic;
-use kashika_geom::{boundary_nearest, TOLERANCE};
+use kashika_geom::{boundary_nearest, Rect, TOLERANCE};
 
 use crate::ctx::{anchor_text, arr, fmt_num, fmt_pt, line_el, shape_el, Ctx};
 
@@ -19,8 +19,9 @@ pub fn endpoint_off_edge(ctx: &Ctx) -> Vec<Diagnostic> {
                 continue;
             }
             let best = ctx
-                .shapes
-                .iter()
+                .shapes_near(Rect::new(p.x, p.y, 0.0, 0.0), SNAP)
+                .into_iter()
+                .map(|i| &ctx.shapes[i])
                 .map(|s| {
                     let (d, q) = boundary_nearest(p, &s.poly);
                     (d, q, s)

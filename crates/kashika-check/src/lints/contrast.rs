@@ -1,5 +1,5 @@
 use kashika_diag::{Diagnostic, Element, Span};
-use kashika_geom::{point_in_polygon, Pt};
+use kashika_geom::{point_in_polygon, Pt, Rect};
 use kashika_model::{Shape, ShapeKind, TextRole};
 
 use crate::ctx::{line_el, round2, shape_el, text_el, text_id, Ctx};
@@ -91,14 +91,19 @@ fn check(
 fn backdrop(ctx: &Ctx, p: Pt, last: Option<&str>) -> [f64; 3] {
     let canvas = ctx.scene.background.as_deref().and_then(rgba);
     let mut c = canvas.map_or(WHITE, |bg| over(bg, WHITE));
-    for s in ctx.groups().chain(ctx.boxes()) {
+    let order = |i: usize| (ctx.shapes[i].shape.kind != ShapeKind::Group, i);
+    let stop = last.and_then(|id| ctx.shape_index(id)).map(order);
+    let mut near = ctx.shapes_near(Rect::new(p.x, p.y, 0.0, 0.0), 0.0);
+    near.sort_by_key(|&i| order(i));
+    for i in near {
+        if stop.is_some_and(|s| order(i) > s) {
+            break;
+        }
+        let s = &ctx.shapes[i];
         if paints_fill(s.shape) && point_in_polygon(p, &s.poly) {
             if let Some(fill) = rgba(&s.shape.style.fill) {
                 c = over(fill, c);
             }
-        }
-        if last == Some(s.shape.id.as_str()) {
-            break;
         }
     }
     c

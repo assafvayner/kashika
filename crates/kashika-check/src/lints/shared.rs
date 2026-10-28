@@ -9,7 +9,11 @@ use crate::free::free_around;
 pub fn shared_segment(ctx: &Ctx) -> Vec<Diagnostic> {
     let mut out = Vec::new();
     for (i, a) in ctx.lines.iter().enumerate() {
-        for b in &ctx.lines[i + 1..] {
+        for j in ctx.lines_near(ctx.line_boxes[i], TOLERANCE) {
+            if j <= i {
+                continue;
+            }
+            let b = &ctx.lines[j];
             let mut total = 0.0;
             let mut first: Option<(Pt, Pt, usize, usize)> = None;
             for &(a0, a1, ai) in a.pieces.iter().filter(|p| a.straight(p.2)) {

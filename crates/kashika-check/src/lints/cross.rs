@@ -8,7 +8,11 @@ use crate::free::with_free;
 pub fn cross(ctx: &Ctx) -> Vec<Diagnostic> {
     let mut out = Vec::new();
     for (i, a) in ctx.lines.iter().enumerate() {
-        for b in &ctx.lines[i + 1..] {
+        for j in ctx.lines_near(ctx.line_boxes[i], TOLERANCE) {
+            if j <= i {
+                continue;
+            }
+            let b = &ctx.lines[j];
             for (ka, kb, p) in crossings(ctx, a, b) {
                 out.push(report(ctx, b, b.pieces[kb].2, a, a.pieces[ka].2, p));
             }

@@ -1,5 +1,6 @@
 pub mod ctx;
 pub mod free;
+pub mod index;
 mod lints;
 pub mod outline;
 pub mod ports;

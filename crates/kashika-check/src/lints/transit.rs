@@ -6,8 +6,8 @@ use crate::ctx::{arr, line_el, shape_el, Ctx};
 /// `group-transit`: a line passes through a group's interior while neither endpoint is inside it.
 pub fn group_transit(ctx: &Ctx) -> Vec<Diagnostic> {
     let mut out = Vec::new();
-    for l in &ctx.lines {
-        for g in ctx.groups() {
+    for (i, l) in ctx.lines.iter().enumerate() {
+        for g in ctx.groups_near(ctx.line_boxes[i], TOLERANCE) {
             let inside =
                 |p: Pt| point_in_polygon(p, &g.poly) || boundary_nearest(p, &g.poly).0 <= TOLERANCE;
             if inside(l.start) || inside(l.end) {

@@ -1,5 +1,5 @@
 use kashika_diag::Diagnostic;
-use kashika_geom::polygons_overlap;
+use kashika_geom::{polygons_overlap, TOLERANCE};
 use kashika_model::ShapeKind;
 
 use crate::ctx::{bbox, contains, intersection, kind_name, shape_el, Ctx};
@@ -9,7 +9,11 @@ use crate::ctx::{bbox, contains, intersection, kind_name, shape_el, Ctx};
 pub fn overlap(ctx: &Ctx) -> Vec<Diagnostic> {
     let mut out = Vec::new();
     for (i, a) in ctx.shapes.iter().enumerate() {
-        for b in &ctx.shapes[i + 1..] {
+        for j in ctx.shapes_near(ctx.shape_boxes[i], TOLERANCE) {
+            if j <= i {
+                continue;
+            }
+            let b = &ctx.shapes[j];
             let (sa, sb) = (a.shape, b.shape);
             if ctx.is_ancestor(&sa.id, &sb.id) || ctx.is_ancestor(&sb.id, &sa.id) {
                 continue;

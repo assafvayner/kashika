@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use kashika_diag::Element;
 use kashika_geom::{boundary_nearest, pieces, point_in_polygon, PathSeg, Pt, Rect, TOLERANCE};
 use kashika_model::{Junction, Line, Scene, Shape, ShapeKind, Text};
 
+use crate::index::Grid;
 use crate::outline::polygon;
 use crate::text_box::text_box;
 
@@ -45,11 +48,20 @@ pub struct Ctx<'a> {
     pub scene: &'a Scene,
     pub shapes: Vec<ShapeGeom<'a>>,
     pub lines: Vec<LineGeom<'a>>,
+    /// Bounding boxes of each shape (outline and rect) and line (pieces and ends), and grids over them.
+    pub shape_boxes: Vec<Rect>,
+    pub line_boxes: Vec<Rect>,
+    shape_grid: Grid,
+    line_grid: Grid,
+    /// Index into `scene.shapes` of the first shape with each id.
+    shape_ids: HashMap<&'a str, usize>,
+    /// Index into `lines` of the first line with each id.
+    line_ids: HashMap<&'a str, usize>,
 }
 
 impl<'a> Ctx<'a> {
     pub fn new(scene: &'a Scene) -> Self {
-        let shapes = scene
+        let shapes: Vec<ShapeGeom> = scene
             .shapes
             .iter()
             .map(|s| ShapeGeom {
@@ -57,7 +69,7 @@ impl<'a> Ctx<'a> {
                 poly: polygon(s),
             })
             .collect();
-        let lines = scene
+        let lines: Vec<LineGeom> = scene
             .lines
             .iter()
             .filter(|l| !l.path.is_empty())
@@ -68,11 +80,66 @@ impl<'a> Ctx<'a> {
                 end: l.path[l.path.len() - 1].to(),
             })
             .collect();
+        let shape_boxes: Vec<Rect> = shapes
+            .iter()
+            .map(|s| {
+                let r = s.shape.rect;
+                let corners = [r.origin(), Pt::new(r.right(), r.bottom())];
+                extent(s.poly.iter().copied().chain(corners))
+            })
+            .collect();
+        let line_boxes: Vec<Rect> = lines
+            .iter()
+            .map(|l| {
+                let ends = [l.start, l.end];
+                extent(l.pieces.iter().flat_map(|&(p, q, _)| [p, q]).chain(ends))
+            })
+            .collect();
+        let mut shape_ids = HashMap::new();
+        for (i, s) in scene.shapes.iter().enumerate() {
+            shape_ids.entry(s.id.as_str()).or_insert(i);
+        }
+        let mut line_ids = HashMap::new();
+        for (i, l) in lines.iter().enumerate() {
+            line_ids.entry(l.line.id.as_str()).or_insert(i);
+        }
         Ctx {
             scene,
+            shape_grid: Grid::new(&shape_boxes),
+            line_grid: Grid::new(&line_boxes),
             shapes,
             lines,
+            shape_boxes,
+            line_boxes,
+            shape_ids,
+            line_ids,
         }
+    }
+
+    /// Indices into `shapes`, ascending, of the shapes whose outline may lie within `margin` of `r`.
+    pub fn shapes_near(&self, r: Rect, margin: f64) -> Vec<usize> {
+        self.shape_grid.near(r, margin + 1.0)
+    }
+
+    /// Indices into `lines`, ascending, of the lines whose pieces may lie within `margin` of `r`.
+    pub fn lines_near(&self, r: Rect, margin: f64) -> Vec<usize> {
+        self.line_grid.near(r, margin + 1.0)
+    }
+
+    /// Boxes and images whose outline may lie within `margin` of `r`, in `boxes()` order.
+    pub fn boxes_near(&self, r: Rect, margin: f64) -> impl Iterator<Item = &ShapeGeom<'a>> + '_ {
+        self.shapes_near(r, margin)
+            .into_iter()
+            .map(|i| &self.shapes[i])
+            .filter(|s| s.shape.kind != ShapeKind::Group)
+    }
+
+    /// Groups whose outline may lie within `margin` of `r`, in `groups()` order.
+    pub fn groups_near(&self, r: Rect, margin: f64) -> impl Iterator<Item = &ShapeGeom<'a>> + '_ {
+        self.shapes_near(r, margin)
+            .into_iter()
+            .map(|i| &self.shapes[i])
+            .filter(|s| s.shape.kind == ShapeKind::Group)
     }
 
     /// Boxes and images: the opaque shapes that lines and labels must stay clear of.
@@ -90,7 +157,7 @@ impl<'a> Ctx<'a> {
 
     /// Boxes that `p` lies on or inside: the boxes a line ending at `p` attaches to.
     pub fn attached(&self, p: Pt) -> Vec<&'a str> {
-        self.boxes()
+        self.boxes_near(Rect::new(p.x, p.y, 0.0, 0.0), TOLERANCE)
             .filter(|s| point_in_polygon(p, &s.poly) || boundary_nearest(p, &s.poly).0 <= TOLERANCE)
             .map(|s| s.shape.id.as_str())
             .collect()
@@ -104,11 +171,16 @@ impl<'a> Ctx<'a> {
     }
 
     pub fn shape(&self, id: &str) -> Option<&'a Shape> {
-        self.scene.shapes.iter().find(|s| s.id == id)
+        self.shape_index(id).map(|i| &self.scene.shapes[i])
+    }
+
+    /// Index into `shapes` of the first shape with id `id`.
+    pub fn shape_index(&self, id: &str) -> Option<usize> {
+        self.shape_ids.get(id).copied()
     }
 
     pub fn line(&self, id: &str) -> Option<&LineGeom<'a>> {
-        self.lines.iter().find(|l| l.line.id == id)
+        self.line_ids.get(id).map(|&i| &self.lines[i])
     }
 
     /// True when `anc` is a parent, grandparent, ... of shape `id`.
@@ -240,6 +312,15 @@ pub fn points_bbox(pts: impl IntoIterator<Item = Pt>) -> Rect {
         hi = Pt::new(hi.x.max(p.x), hi.y.max(p.y));
     }
     Rect::new(lo.x, lo.y, hi.x - lo.x, hi.y - lo.y)
+}
+
+/// The bounding box of `pts`, or a NaN box when any of them is not finite.
+fn extent(pts: impl Iterator<Item = Pt> + Clone) -> Rect {
+    if pts.clone().all(|p| p.x.is_finite() && p.y.is_finite()) {
+        points_bbox(pts)
+    } else {
+        Rect::new(f64::NAN, f64::NAN, 0.0, 0.0)
+    }
 }
 
 pub fn line_bbox(l: &LineGeom) -> Rect {

@@ -5,6 +5,7 @@ use kashika_model::Marker;
 use crate::ctx::{
     bbox, fmt_num, intersection, kind_name, line_el, shape_el, text_el, text_id, Ctx,
 };
+use crate::index::Grid;
 use crate::text_box::{below_box, label_box, label_box_at, text_box, title_box};
 
 const ARROW_LEN: f64 = 10.0;
@@ -28,10 +29,16 @@ struct Subject<'c> {
 /// its own, or (for a line label) its own line's markers.
 pub fn label_collision(ctx: &Ctx) -> Vec<Diagnostic> {
     let subjects = subjects(ctx);
+    let grid = Grid::new(&subjects.iter().map(|s| s.rect).collect::<Vec<_>>());
     let mut out = Vec::new();
     for (i, s) in subjects.iter().enumerate() {
         let mut hits = obstacles(ctx, s.rect, s.label.map(|(li, _)| li), s.shape);
-        for o in &subjects[..i] {
+        for o in grid
+            .near(s.rect, 1.0)
+            .into_iter()
+            .take_while(|&j| j < i)
+            .map(|j| &subjects[j])
+        {
             if intersection(s.rect, o.rect).is_some() {
                 hits.push((o.what.clone(), o.el.clone()));
             }
@@ -46,7 +53,7 @@ pub fn label_collision(ctx: &Ctx) -> Vec<Diagnostic> {
             .with_element(el)
             .with_fact("bbox", bbox(s.rect));
             if let Some((li, label)) = s.label {
-                let clear = clear_positions(ctx, &subjects, i, li, label);
+                let clear = clear_positions(ctx, &subjects, &grid, i, li, label);
                 d = d
                     .with_fact("clear_t", &clear)
                     .with_help(describe_clear(&ctx.lines[li].line.id, &clear));
@@ -112,7 +119,7 @@ fn obstacles(
 ) -> Vec<(String, Element)> {
     let poly = rect_polygon(rect);
     let mut out = Vec::new();
-    for s in ctx.boxes() {
+    for s in ctx.boxes_near(rect, 0.0) {
         if own_shape != Some(s.shape.id.as_str()) && polygons_overlap(&poly, &s.poly) {
             out.push((
                 format!("{} '{}'", kind_name(s.shape), s.shape.id),
@@ -128,7 +135,8 @@ fn obstacles(
             ));
         }
     }
-    for (i, l) in ctx.lines.iter().enumerate() {
+    for i in ctx.lines_near(rect, 0.0) {
+        let l = &ctx.lines[i];
         if own != Some(i)
             && l.pieces
                 .iter()
@@ -197,6 +205,7 @@ fn markers(l: &kashika_model::Line) -> Vec<(&'static str, &'static str, Vec<Pt>)
 fn clear_positions(
     ctx: &Ctx,
     subjects: &[Subject],
+    grid: &Grid,
     i: usize,
     li: usize,
     label: &kashika_model::Label,
@@ -207,10 +216,10 @@ fn clear_positions(
         .filter(|&t| {
             let r = label_box_at(label, point_at(&l.line.path, t));
             obstacles(ctx, r, Some(li), None).is_empty()
-                && subjects
-                    .iter()
-                    .enumerate()
-                    .all(|(j, o)| j == i || intersection(r, o.rect).is_none())
+                && grid
+                    .near(r, 1.0)
+                    .into_iter()
+                    .all(|j| j == i || intersection(r, subjects[j].rect).is_none())
         })
         .collect()
 }
