@@ -382,6 +382,7 @@ fn resolve_link(path: &Path) -> PathBuf {
 }
 
 fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    use std::hash::BuildHasher;
     use std::io::Write;
     let path = &resolve_link(path);
     let dir = path
@@ -392,9 +393,13 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default();
-    let tmp = dir.join(format!(".{name}.{}.tmp", std::process::id()));
+    let nonce = std::hash::RandomState::new().hash_one(std::process::id());
+    let tmp = dir.join(format!(".{name}.{nonce:016x}.tmp"));
+    let mut f = std::fs::File::options()
+        .write(true)
+        .create_new(true)
+        .open(&tmp)?;
     let result = (|| {
-        let mut f = std::fs::File::create(&tmp)?;
         f.write_all(bytes)?;
         if let Ok(meta) = std::fs::metadata(path) {
             f.set_permissions(meta.permissions())?;
