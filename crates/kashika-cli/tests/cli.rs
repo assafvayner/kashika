@@ -144,7 +144,10 @@ fn missing_file_is_a_tool_error() {
 #[test]
 fn bundled_examples_check_clean() {
     for name in ["upload", "shapes"] {
-        let example = format!("{}/../../examples/{name}.kash", env!("CARGO_MANIFEST_DIR"));
+        let example = format!(
+            "{}/../../examples/{name}/{name}.kash",
+            env!("CARGO_MANIFEST_DIR")
+        );
         kashika()
             .args(["check", &example])
             .assert()

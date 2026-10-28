@@ -22,15 +22,25 @@ In dependency order (`crates/`):
 cargo fmt --all        # stable rustfmt, never +nightly
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
-cargo run -p kashika-cli -- check examples/upload.kash
-cargo run -p kashika-cli -- render examples/upload.kash -o target/upload.svg
+cargo run -p kashika-cli -- check examples/upload/upload.kash
+cargo run -p kashika-cli -- render examples/upload/upload.kash -o target/upload.svg
 cargo run -p kashika-cli -- measure "**Payments** API" --size 14
-cargo run -p kashika-cli -- inspect examples/upload.kash --ports
+cargo run -p kashika-cli -- inspect examples/upload/upload.kash --ports
 cargo run -p kashika-cli -- icons --search server
-cargo run -p kashika-cli -- fmt --check examples/upload.kash
-cargo run -p kashika-cli -- route examples/upload.kash --line api1_queue arc
+cargo run -p kashika-cli -- fmt --check examples/upload/upload.kash
+cargo run -p kashika-cli -- route examples/upload/upload.kash --line api1_queue arc
 cargo run -p kashika-cli -- ref
 ```
+
+## Adding an example
+
+Create `examples/<name>/<name>.kash` (it must check with 0 errors and 0 warnings), then generate both renders from the repo root and add an entry to `examples/README.md`:
+
+```sh
+for ext in svg png; do cargo run -p kashika-cli -- render examples/<name>/<name>.kash -o examples/<name>/<name>.$ext; done
+```
+
+Commit the `.svg` and `.png` with the source. `crates/kashika-cli/tests/examples.rs` fails if a render is missing or stale; rerun the loop after any renderer or language change.
 
 ## Invariants
 

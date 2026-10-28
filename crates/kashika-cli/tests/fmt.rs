@@ -68,8 +68,15 @@ fn missing_file_is_a_tool_error() {
 #[test]
 fn corpus_round_trips() {
     let mut files = Vec::new();
-    for dir in ["examples", "crates/kashika-cli/tests/fixtures"] {
-        for e in std::fs::read_dir(root().join(dir)).unwrap() {
+    let mut dirs = vec![root().join("crates/kashika-cli/tests/fixtures")];
+    for e in std::fs::read_dir(root().join("examples")).unwrap() {
+        let p = e.unwrap().path();
+        if p.is_dir() {
+            dirs.push(p);
+        }
+    }
+    for dir in dirs {
+        for e in std::fs::read_dir(dir).unwrap() {
             let p = e.unwrap().path();
             if p.extension().is_some_and(|x| x == "kash") {
                 files.push(p);

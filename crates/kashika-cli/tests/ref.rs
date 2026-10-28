@@ -81,7 +81,7 @@ fn every_topic_has_a_page() {
     }
     assert!(page(&["examples"]).contains(
         &std::fs::read_to_string(format!(
-            "{}/../../examples/upload.kash",
+            "{}/../../examples/upload/upload.kash",
             env!("CARGO_MANIFEST_DIR")
         ))
         .unwrap()
