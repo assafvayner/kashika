@@ -107,3 +107,63 @@ fn label_over_the_boxes_its_line_connects() {
         ]
     );
 }
+
+#[test]
+fn labels_on_group_borders() {
+    let groups = "group a \"A\" at (0,0) size (200,200) {\n}\ngroup b \"B\" at (230,0) size (200,200) {\n}\n";
+    let d = lint(
+        "label-collision",
+        &format!("{groups}line l (100,100) -> h 230 label=\"HTTPS\"\n"),
+    );
+    assert_eq!(d.len(), 2, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "label \"HTTPS\" of l collides with the border of group 'a'"
+    );
+    assert_eq!(
+        d[1].message,
+        "label \"HTTPS\" of l collides with the border of group 'b'"
+    );
+    assert_eq!(
+        d[0].help,
+        vec!["clear label positions on l: label@0.05..0.35, label@0.65..0.95".to_string()]
+    );
+    assert!(
+        lint(
+            "label-collision",
+            &format!("{groups}line l (100,100) -> h 230 label@0.2=\"HTTPS\"\n"),
+        )
+        .is_empty()
+    );
+    assert!(
+        lint(
+            "label-collision",
+            &format!("{groups}text \"inside\" at (100,100)\ntext \"x\" at (215,150)\n"),
+        )
+        .is_empty()
+    );
+}
+
+#[test]
+fn lines_crossing_group_titles() {
+    let group = "group pub \"public subnet\" at (0,0) size (300,200) {\n  box nat \"NAT\" at (20,60) size (80,40)\n}\n";
+    let d = lint(
+        "label-collision",
+        &format!("{group}line l nat.top -> y -40\n"),
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].message, "l crosses the title of group 'pub'");
+    assert_eq!(d[0].elements[1].id, "pub");
+    assert!(
+        d[0].help[0].starts_with("the title of 'pub' covers x 8.."),
+        "{:?}",
+        d[0].help
+    );
+    assert!(
+        lint(
+            "label-collision",
+            &format!("{group}line l nat.right -> h 100 -> v -100\n"),
+        )
+        .is_empty()
+    );
+}

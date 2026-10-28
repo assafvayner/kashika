@@ -3,7 +3,7 @@
 ```text
 diagram "<title>" size (w,h) [kashika="0.1.0"] [grid=N] [clearance=N] [background=C] [allow=<code>,...]
 style <name> { key=value ... }
-box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=<shape>] [style=<name>] [sublabel="..."] [text-align=left|center|right] [text-valign=top|middle|bottom] [gap=N] [style keys] [{ text block }]
+box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=<shape>] [style=<name>] [layer=under|over] [sublabel="..."] [text-align=left|center|right] [text-valign=top|middle|bottom] [gap=N] [style keys] [{ text block }]
 group <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [style=<name>] [sublabel="..."] [text-align=...] [gap=N] { children }
 junction <id> at <point> [dot]
 text  [<id>] "<content>" at <point> [size=N] [color=C] [align=left|center|right] [muted]
@@ -17,7 +17,16 @@ line  [<id>] <point> -> <segment> [-> <segment> ...] [line attributes] [ortho]
 - Text in boxes: `sublabel` is one muted line under the label. Markup works in labels and texts: `**bold**` and `` `code` ``; escape with `\*` and `` \` ``. For three or more lines, use a block, `{ text "..." [size=N] [muted] ... }`. Items without `at` stack `gap` apart. Don't combine `label` with stacked items (`text-conflict`). An item with `at (x,y)` is absolute, in box-local coordinates.
 - Groups hold `box`, `group`, `junction`, `text` and `line`, use the `boundary` style, and reserve a title band at the top. A group's `text-valign` is an error.
 - More shapes, `import`, `image` and `icon=`: `kashika ref shapes`.
-- `text` is centered vertically on `at`. Paint order: groups (file order), boxes, lines, then labels and texts in file order.
+- `text` is centered vertically on `at`. Paint order: `layer=under` shapes, groups (file order), boxes, lines, labels and texts in file order, then `layer=over` shapes.
+- `layer=under|over` on a box or image (not a group) paints it first or last, with its own text. Layered shapes are backdrops and highlights, never obstacles: `overlap`, `through`, `near`, `label-collision`, `endpoint-off-edge`, `route` and `--corridors` ignore them; `spill`, `out-of-canvas` and their own text checks still apply.
+
+```kash
+diagram "Board" size (200,120)
+box a1 at (20,20) size (80,80) fill=#b58863 stroke=none layer=under
+box b1 at (100,20) size (80,80) fill=#f0d9b5 stroke=none layer=under
+box k "K" at (40,40) size (40,40)
+box ring at (36,36) size (48,48) fill=none stroke=#dd3333 radius=24 layer=over
+```
 
 ```kash
 diagram "Text" size (360,200)

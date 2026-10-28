@@ -30,8 +30,9 @@ const NODE_KEYS: &[&str] = &[
     "icon",
     "icon-pos",
     "icon-size",
+    "layer",
 ];
-const IMAGE_KEYS: &[&str] = &["pin", "fit", "allow", "reason"];
+const IMAGE_KEYS: &[&str] = &["pin", "fit", "layer", "allow", "reason"];
 const LINE_KEYS: &[&str] = &[
     "start",
     "end",
@@ -123,6 +124,7 @@ struct NodeProps {
     reason: Option<String>,
     icon: Option<IconProps>,
     image: Option<ImageProps>,
+    layer: Layer,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]

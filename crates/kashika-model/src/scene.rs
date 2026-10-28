@@ -36,6 +36,24 @@ pub enum ShapeKind {
     Image,
 }
 
+/// `layer=`: when a box or image paints, and whether checks treat it as an obstacle.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Layer {
+    /// Before everything else, groups included; not an obstacle.
+    Under,
+    #[default]
+    Normal,
+    /// After everything else, texts and line labels included; not an obstacle.
+    Over,
+}
+
+impl Layer {
+    pub fn is_normal(&self) -> bool {
+        *self == Layer::Normal
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Outline {
@@ -61,6 +79,8 @@ pub struct Shape {
     pub rect: Rect,
     pub parent: Option<String>,
     pub depth: usize,
+    #[serde(skip_serializing_if = "Layer::is_normal")]
+    pub layer: Layer,
     pub style: Style,
     /// The bounding box inset by `padding` (and by the shape's own reduction).
     pub text_area: Rect,

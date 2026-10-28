@@ -22,6 +22,7 @@ pub fn endpoint_off_edge(ctx: &Ctx, out: &mut Sink) {
                 .shapes_near(Rect::new(p.x, p.y, 0.0, 0.0), SNAP)
                 .into_iter()
                 .map(|i| &ctx.shapes[i])
+                .filter(|s| s.shape.layer.is_normal())
                 .map(|s| {
                     let (d, q) = boundary_nearest(p, &s.poly);
                     (d, q, s)

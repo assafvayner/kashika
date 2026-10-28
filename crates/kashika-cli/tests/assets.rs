@@ -69,6 +69,73 @@ fn escaping_paths_need_allow_path() {
 }
 
 #[test]
+fn include_grants_single_files_outside_the_root() {
+    let tmp = tempfile::tempdir().unwrap();
+    write(
+        tmp.path(),
+        "lib/pieces.kash",
+        "import \"base.kash\"\nshape king from \"king.svg\"\n",
+    );
+    write(
+        tmp.path(),
+        "lib/base.kash",
+        "style piece { fill=#eeeeee }\n",
+    );
+    write(tmp.path(), "lib/king.svg", SVG);
+    write(
+        tmp.path(),
+        "diagrams/board.kash",
+        "diagram \"b\" size (300,200)\nimport \"../lib/pieces.kash\"\nbox k at (20,20) size (40,40) shape=king style=piece\n",
+    );
+    let run = |extra: &[&str]| {
+        let mut c = kashika();
+        c.current_dir(tmp.path().join("diagrams"))
+            .args(["check", "board.kash"])
+            .args(extra);
+        c.assert()
+    };
+    run(&[]).code(2).stdout(predicate::str::contains(
+        "`../lib/pieces.kash` is outside the project root",
+    ));
+    run(&["--include", "../lib/pieces.kash"])
+        .code(2)
+        .stdout(predicate::str::contains(
+            "`base.kash` is outside the project root",
+        ))
+        .stdout(predicate::str::contains(
+            "`king.svg` is outside the project root",
+        ));
+    run(&[
+        "--include",
+        "../lib/pieces.kash",
+        "--include",
+        "../lib/base.kash",
+        "--include",
+        "../lib/king.svg",
+    ])
+    .code(0);
+    for cmd in [
+        &["inspect", "board.kash"][..],
+        &["route", "board.kash", "k.right", "(200,40)"],
+        &["render", "board.kash", "-o", "b.svg"],
+    ] {
+        kashika()
+            .current_dir(tmp.path().join("diagrams"))
+            .args(cmd)
+            .args(["--include", "../lib/nope.kash"])
+            .assert()
+            .code(3)
+            .stderr(predicate::str::contains("--include `../lib/nope.kash`"));
+    }
+    run(&["--include", "../lib"])
+        .code(3)
+        .stderr(predicate::str::contains("is not a file"));
+    run(&["--include", "../lib/nope.kash", "--format", "json"])
+        .code(3)
+        .stdout(predicate::str::contains("\"tool_error\""));
+}
+
+#[test]
 fn icon_path_comes_from_the_environment() {
     let tmp = tempfile::tempdir().unwrap();
     write(tmp.path(), "vendor/aws/s3.svg", SVG);

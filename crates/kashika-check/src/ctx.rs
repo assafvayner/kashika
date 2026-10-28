@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use kashika_diag::Element;
 use kashika_geom::{PathSeg, Pt, Rect, TOLERANCE, boundary_nearest, pieces, point_in_polygon};
-use kashika_model::{Junction, Line, Scene, Shape, ShapeKind, Text};
+use kashika_model::{Junction, Layer, Line, Scene, Shape, ShapeKind, Text};
 
 use crate::index::Grid;
 use crate::outline::polygon;
@@ -171,7 +171,7 @@ impl<'a> Ctx<'a> {
         self.shapes_near(r, margin)
             .into_iter()
             .map(|i| &self.shapes[i])
-            .filter(|s| s.shape.kind != ShapeKind::Group)
+            .filter(|s| is_box(s.shape))
     }
 
     /// Groups whose outline may lie within `margin` of `r`, in `groups()` order.
@@ -182,11 +182,10 @@ impl<'a> Ctx<'a> {
             .filter(|s| s.shape.kind == ShapeKind::Group)
     }
 
-    /// Boxes and images: the opaque shapes that lines and labels must stay clear of.
+    /// Boxes and images on the normal layer: the opaque shapes that lines and labels must
+    /// stay clear of. `layer=under` and `layer=over` shapes are never obstacles.
     pub fn boxes(&self) -> impl Iterator<Item = &ShapeGeom<'a>> + '_ {
-        self.shapes
-            .iter()
-            .filter(|s| s.shape.kind != ShapeKind::Group)
+        self.shapes.iter().filter(|s| is_box(s.shape))
     }
 
     pub fn groups(&self) -> impl Iterator<Item = &ShapeGeom<'a>> + '_ {
@@ -287,13 +286,18 @@ fn marks(scene: &Scene) -> Vec<Mark<'_>> {
             owner: l.id.as_str(),
         })
     });
-    let below = scene.shapes.iter().filter_map(|s| {
+    let below = scene.shapes.iter().filter(|s| is_box(s)).filter_map(|s| {
         below_box(s).map(|rect| Mark {
             rect,
             owner: s.id.as_str(),
         })
     });
     junctions.chain(texts).chain(labels).chain(below).collect()
+}
+
+/// A box or image on the normal layer.
+pub fn is_box(s: &Shape) -> bool {
+    s.kind != ShapeKind::Group && s.layer == Layer::Normal
 }
 
 pub fn round2(v: f64) -> f64 {

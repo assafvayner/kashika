@@ -1,4 +1,5 @@
 use kashika_diag::Diagnostic;
+use kashika_model::ShapeKind;
 
 use crate::ctx::{Ctx, fmt_num, round2, shape_el};
 use crate::sink::Sink;
@@ -8,7 +9,12 @@ const MAX_DISTORTION: f64 = 0.05;
 /// `image-distort`: `fit=stretch` changes an image's aspect ratio by more than 5%.
 pub fn image_distort(ctx: &Ctx, out: &mut Sink) {
     let assets = &ctx.scene.assets;
-    for s in ctx.boxes().map(|g| g.shape) {
+    for s in ctx
+        .scene
+        .shapes
+        .iter()
+        .filter(|s| s.kind != ShapeKind::Group)
+    {
         let (Some(d), Some(img)) = (s.image_distortion(assets), s.image.as_ref()) else {
             continue;
         };

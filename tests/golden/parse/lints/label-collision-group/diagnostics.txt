@@ -1,0 +1,12 @@
+warn[label-collision] 12:25-12:29: nat_igw crosses the title of group 'pub'
+  = help: the title of 'pub' covers x 28..117.39, y 48..65.5; route nat_igw around it, e.g. inside the group below y=65.5 or outside it
+  elements: [{"from":[80,100],"id":"nat_igw","kind":"line","segment":1,"span":{"col":1,"end_col":39,"end_line":12,"line":12},"to":[80,10]},{"bbox":[[20,40],[250,270]],"frame":"vpc","id":"pub","kind":"group","local_bbox":[[10,30],[240,260]],"span":{"col":3,"end_col":54,"end_line":5,"line":5}}]
+  facts: {"bbox":[[28,48],[117.39,65.5]],"entry":[80,65.5]}
+warn[label-collision] 13:61-13:80: label "egress" of nat_app collides with the border of group 'priv'
+  = help: clear label positions on nat_app: label@0.05..0.5, label@0.7..0.95
+  elements: [{"bbox":[[246.23,212.5],[284.77,227.5]],"id":"nat_app","kind":"label","span":{"col":61,"end_col":80,"end_line":13,"line":13}},{"bbox":[[280,40],[490,270]],"frame":"vpc","id":"priv","kind":"group","local_bbox":[[270,30],[480,260]],"span":{"col":3,"end_col":57,"end_line":8,"line":8}}]
+  facts: {"bbox":[[246.23,212.5],[284.77,227.5]],"clear_t":[0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.7,0.75,0.8,0.85,0.9,0.95]}
+warn[label-collision] 13:61-13:80: label "egress" of nat_app collides with the border of group 'pub'
+  = help: clear label positions on nat_app: label@0.05..0.5, label@0.7..0.95
+  elements: [{"bbox":[[246.23,212.5],[284.77,227.5]],"id":"nat_app","kind":"label","span":{"col":61,"end_col":80,"end_line":13,"line":13}},{"bbox":[[20,40],[250,270]],"frame":"vpc","id":"pub","kind":"group","local_bbox":[[10,30],[240,260]],"span":{"col":3,"end_col":54,"end_line":5,"line":5}}]
+  facts: {"bbox":[[246.23,212.5],[284.77,227.5]],"clear_t":[0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.7,0.75,0.8,0.85,0.9,0.95]}

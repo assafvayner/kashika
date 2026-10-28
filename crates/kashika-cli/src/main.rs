@@ -88,6 +88,9 @@ struct InspectArgs {
     /// Allow file references outside the input file's directory
     #[arg(long)]
     allow_path: bool,
+    /// Allow this one file outside the input file's directory (repeatable; relative to the current directory)
+    #[arg(long, value_name = "FILE")]
+    include: Vec<PathBuf>,
     /// List the endpoints on each shape side and the lines that use them
     #[arg(long)]
     ports: bool,
@@ -124,6 +127,9 @@ struct Common {
     /// Allow file references outside the input file's directory
     #[arg(long)]
     allow_path: bool,
+    /// Allow this one file outside the input file's directory (repeatable; relative to the current directory)
+    #[arg(long, value_name = "FILE")]
+    include: Vec<PathBuf>,
     /// Also list suppressed findings
     #[arg(long)]
     show_suppressed: bool,
@@ -159,12 +165,30 @@ pub(crate) fn icon_path() -> Vec<PathBuf> {
         .unwrap_or_default()
 }
 
-pub(crate) fn options(file: &str, allow_path: bool) -> kashika_model::Options {
-    kashika_model::Options {
+/// The sandbox for `file`. Each `--include` must name an existing file; it is canonicalized
+/// relative to the current directory.
+pub(crate) fn options(
+    file: &str,
+    allow_path: bool,
+    include: &[PathBuf],
+) -> Result<kashika_model::Options, String> {
+    let include = include
+        .iter()
+        .map(|p| match p.canonicalize() {
+            Ok(c) if c.is_file() => Ok(c),
+            Ok(_) => Err(format!(
+                "--include `{}` is not a file; include each file, or pass --allow-path",
+                p.display()
+            )),
+            Err(e) => Err(format!("--include `{}`: {e}", p.display())),
+        })
+        .collect::<Result<_, _>>()?;
+    Ok(kashika_model::Options {
         path: (file != "-").then(|| PathBuf::from(file)),
         allow_path,
         icon_path: icon_path(),
-    }
+        include,
+    })
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -224,7 +248,10 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
             return fail(&format!("output must end in {}", output::SUPPORTED));
         }
     }
-    let opts = options(&c.file, c.allow_path);
+    let opts = match options(&c.file, c.allow_path, &c.include) {
+        Ok(o) => o,
+        Err(msg) => return fail(&msg),
+    };
     if let Some(diags) = kashika_model::compile_library_with(&src, &opts) {
         if render.is_some() {
             return fail(&format!(
@@ -333,7 +360,11 @@ fn run_inspect(a: &InspectArgs) -> ExitCode {
         Ok(v) => v,
         Err(msg) => return fail(&msg),
     };
-    let (scene, mut diags) = kashika_model::compile_with(&src, &options(&a.file, a.allow_path));
+    let opts = match options(&a.file, a.allow_path, &a.include) {
+        Ok(o) => o,
+        Err(msg) => return fail(&msg),
+    };
+    let (scene, mut diags) = kashika_model::compile_with(&src, &opts);
     diags.retain(|d| !d.suppressed);
     let lints: usize = kashika_check::check_bounded(&scene, 0, &|d| !d.suppressed)
         .omitted

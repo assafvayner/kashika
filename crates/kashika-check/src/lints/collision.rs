@@ -3,11 +3,11 @@ use kashika_geom::{Pt, Rect, inside_runs, point_at, polygons_overlap, rect_polyg
 use kashika_model::Marker;
 
 use crate::ctx::{
-    Ctx, bbox, fmt_num, intersection, kind_name, line_el, shape_el, text_el, text_id,
+    Ctx, arr, bbox, contains, fmt_num, intersection, kind_name, line_el, shape_el, text_el, text_id,
 };
 use crate::index::Grid;
 use crate::sink::Sink;
-use crate::text_box::{below_box, label_box, label_box_at, text_box, title_box};
+use crate::text_box::{below_box, label_box, label_box_at, text_box, title_band, title_box};
 
 const ARROW_LEN: f64 = 10.0;
 const DIAMOND_LEN: f64 = 12.0;
@@ -26,8 +26,8 @@ struct Subject<'c> {
 }
 
 /// `label-collision`: a line label, text or the label under a `text-area=below` shape
-/// intersects a box, an image, a group title, another label or text, a line other than
-/// its own, or (for a line label) its own line's markers.
+/// intersects a box, an image, a group title or border, another label or text, a line other
+/// than its own, or (for a line label) its own line's markers; or a line crosses a group title.
 pub fn label_collision(ctx: &Ctx, out: &mut Sink) {
     let subjects = subjects(ctx);
     let grid = Grid::new(&subjects.iter().map(|s| s.rect).collect::<Vec<_>>());
@@ -64,6 +64,52 @@ pub fn label_collision(ctx: &Ctx, out: &mut Sink) {
                 d = d.with_fact("clear_t", ts).with_help(help);
             }
             out.push(d);
+        }
+    }
+    titles_crossed(ctx, out);
+}
+
+/// Lines that cross a group's title text.
+fn titles_crossed(ctx: &Ctx, out: &mut Sink) {
+    for g in ctx.groups() {
+        let Some(t) = title_box(g.shape) else {
+            continue;
+        };
+        let poly = rect_polygon(t);
+        for i in ctx.lines_near(t, 0.0) {
+            let l = &ctx.lines[i];
+            let hit = l
+                .pieces
+                .iter()
+                .find_map(|&(p, q, k)| inside_runs(p, q, &poly).first().map(|r| (r.0, k)));
+            let Some((entry, k)) = hit else { continue };
+            let seg = l.segment(k);
+            let span = l.line.segments.get(seg).map_or(l.line.span, |s| s.span);
+            let band = title_band(g.shape).map_or(t.bottom(), |b| b.bottom());
+            out.push(
+                Diagnostic::warn(
+                    "label-collision",
+                    span,
+                    format!(
+                        "{} crosses the title of group '{}'",
+                        l.line.id, g.shape.id
+                    ),
+                )
+                .with_element(line_el(l.line, Some(seg)))
+                .with_element(shape_el(g.shape))
+                .with_fact("bbox", bbox(t))
+                .with_fact("entry", arr(entry))
+                .with_help(format!(
+                    "the title of '{}' covers x {}..{}, y {}..{}; route {} around it, e.g. inside the group below y={} or outside it",
+                    g.shape.id,
+                    fmt_num(t.x),
+                    fmt_num(t.right()),
+                    fmt_num(t.y),
+                    fmt_num(t.bottom()),
+                    l.line.id,
+                    fmt_num(band)
+                )),
+            );
         }
     }
 }
@@ -135,6 +181,12 @@ fn obstacles(
         if title_box(g.shape).is_some_and(|t| intersection(rect, t).is_some()) {
             out.push((
                 format!("the title of group '{}'", g.shape.id),
+                shape_el(g.shape),
+            ));
+        }
+        if intersection(rect, g.shape.rect).is_some() && !contains(g.shape.rect, rect) {
+            out.push((
+                format!("the border of group '{}'", g.shape.id),
                 shape_el(g.shape),
             ));
         }

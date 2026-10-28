@@ -13,6 +13,9 @@ pub struct Options {
     pub allow_path: bool,
     /// Extra search directories, from `KASHIKA_ICON_PATH`.
     pub icon_path: Vec<PathBuf>,
+    /// Single files outside the project root that may be read (`--include`). Only the
+    /// file itself is allowed, not its directory.
+    pub include: Vec<PathBuf>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -40,6 +43,7 @@ pub(crate) struct Loader {
     root: PathBuf,
     main: Option<PathBuf>,
     search: Vec<PathBuf>,
+    include: Vec<PathBuf>,
     allow_path: bool,
 }
 
@@ -59,10 +63,16 @@ impl Loader {
             .iter()
             .filter_map(|p| p.canonicalize().ok())
             .collect();
+        let include = opts
+            .include
+            .iter()
+            .filter_map(|p| p.canonicalize().ok())
+            .collect();
         Loader {
             root,
             main,
             search,
+            include,
             allow_path: opts.allow_path,
         }
     }
@@ -95,13 +105,14 @@ impl Loader {
         if self.allow_path
             || p.starts_with(&self.root)
             || self.search.iter().any(|s| p.starts_with(s))
+            || self.include.iter().any(|f| f == p)
         {
             return Ok(());
         }
         Err(FileError {
             message: format!("`{written}` is outside the project root"),
             help: Some(
-                "move it under the diagram's directory, add its directory to KASHIKA_ICON_PATH, or pass --allow-path"
+                "move it under the diagram's directory, pass `--include <file>` for this file, add its directory to KASHIKA_ICON_PATH, or pass --allow-path"
                     .into(),
             ),
         })
@@ -361,6 +372,27 @@ mod tests {
         assert!(l.find(l.root(), "s3.svg").is_ok());
         assert!(l.add_icons_dir("..").is_err());
         assert!(l.add_icons_dir("nope").is_err());
+    }
+
+    #[test]
+    fn included_files_are_allowed_one_by_one() {
+        let (t, _) = setup(false);
+        std::fs::write(t.path().join("other.svg"), "<svg/>").unwrap();
+        let l = Loader::new(&Options {
+            path: Some(t.path().join("proj/main.kash")),
+            include: vec![t.path().join("proj/../secret.svg")],
+            ..Options::default()
+        });
+        assert!(l.find(l.root(), "../secret.svg").is_ok());
+        let e = l.find(l.root(), "../other.svg").unwrap_err();
+        assert!(
+            e.message.contains("outside the project root"),
+            "{}",
+            e.message
+        );
+        assert!(e.help.unwrap_or_default().contains("--include"));
+        let e = l.find(l.root(), "../secrt.svg").unwrap_err();
+        assert_eq!(e.help.as_deref(), Some("did you mean `../secret.svg`?"));
     }
 
     #[test]

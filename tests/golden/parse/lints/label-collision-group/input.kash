@@ -1,0 +1,13 @@
+// spec: 7
+// A line label on the border between two subnets, and a line crossing a group's title.
+diagram "group collisions" size (520,300)
+group vpc "VPC" at (10,10) size (500,280) {
+  group pub "public subnet" at (10,30) size (230,230) {
+    box nat "NAT" at (20,60) size (80,40)
+  }
+  group priv "private subnet" at (270,30) size (210,230) {
+    box app "App" at (110,120) size (80,40)
+  }
+}
+line nat_igw nat.top -> y 10 end=arrow
+line nat_app nat.bottom -> y 220 -> hv app.bottom end=arrow label@0.59="egress"

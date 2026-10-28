@@ -1,12 +1,12 @@
 # CLI
 
 ```text
-kashika check   <file|-> [--format text|json] [--stdin-name <name>] [--allow-path] [--summary]
-kashika render  <file|-> -o <out.svg|out.png|out.jpg|out.jpeg|out.webp> [--force] [--debug] [--format text|json] [--stdin-name <name>] [--allow-path] [--summary]
-kashika inspect <file|-> [id ...] [--ports] [--corridors x1,y1,x2,y2] [--format text|json] [--stdin-name <name>] [--allow-path]
+kashika check   <file|-> [--format text|json] [--stdin-name <name>] [--allow-path] [--include <file>] [--summary]
+kashika render  <file|-> -o <out.svg|out.png|out.jpg|out.jpeg|out.webp> [--force] [--debug] [--format text|json] [--stdin-name <name>] [--allow-path] [--include <file>] [--summary]
+kashika inspect <file|-> [id ...] [--ports] [--corridors x1,y1,x2,y2] [--format text|json] [--stdin-name <name>] [--allow-path] [--include <file>]
 kashika fmt     <file|-> [--check]
 kashika measure "<text>"... [--size N] [--weight bold] [--format text|json]
-kashika route   <file|-> <from> <to> [corner|arc|bezier] [--line <id>] [--radius N] [--max N] [--format text|json] [--stdin-name <name>] [--allow-path]
+kashika route   <file|-> <from> <to> [corner|arc|bezier] [--line <id>] [--radius N] [--max N] [--format text|json] [--stdin-name <name>] [--allow-path] [--include <file>]
 kashika icons   [dir...] [--search <term>] [--format text|json]
 kashika ref     [topic] [--json]
 kashika --version
@@ -20,7 +20,7 @@ kashika --version
 - `fmt` changes only whitespace: indentation, spacing and blank lines. Comments and the spelling of numbers and strings are kept. Line endings become LF everywhere, including inside block comments, and a leading byte order mark is dropped. `--check` exits 1 when the file isn't formatted; a parse error exits 2. `fmt -` reads stdin and writes the formatted text to stdout (`--check` on stdin prints nothing but exits 1 when it isn't formatted).
 - `measure` prints the exact width and height of each text argument, with markup applied. One text gives one result (JSON: the fields at top level); several give one line each (JSON: a `results` array with each `text`). A markup error exits 2.
 - `route` prints up to `--max` (default 3) ready-to-paste `line` statements from `<from>` to `<to>`, ranked by crossings, near-misses, segments and length. It never edits the file. Styles: `corner` (`x`/`y`/`hv`/`vh`), `arc` (the same plus `radius=N`, default 8), `bezier` (`curve`). `--line <id>` reroutes an existing line and keeps its attributes; without it, an existing line between the same two shapes counts as an obstacle, and `route` adds a `hint:` line (JSON: `existing_lines`) naming it. Literal points are canvas coordinates. `--format json` is supported. Orthogonal styles try paths with up to 2 elbows and detours with 3 or 4 elbows along lanes beside boxes or through free corridors (16 lanes per axis nearest the endpoints, 32 detours scored); `bezier` tries single curves. Beyond that, write the path by hand along a lane from `inspect --corridors`.
-- Files (`import`, `shape from`, `image`, `icon=`) resolve from the input file's directory (the current directory for stdin), then the `icons=` directory, then each `KASHIKA_ICON_PATH` entry (`:`-separated), then the bundled icons. `check`, `render` and `route` take `--allow-path` to permit references outside the input's directory; without it they report `error[file]`. `KASHIKA_ICON_PATH` entries are always trusted.
+- Files (`import`, `shape from`, `image`, `icon=`) resolve from the input file's directory (the current directory for stdin), then the `icons=` directory, then each `KASHIKA_ICON_PATH` entry (`:`-separated), then the bundled icons. `check`, `render`, `inspect` and `route` take `--allow-path` to permit references outside the input's directory; without it they report `error[file]`. `--include <file>` (repeatable) permits just that file, given relative to the current directory: `kashika check diagrams/board.kash --include lib/pieces.kash` for `import "../lib/pieces.kash"`. An included library's own relative references resolve from its directory and need their own `--include` (or to be inside the input's directory or on the search path). A `--include` that is missing or a directory exits 3. `KASHIKA_ICON_PATH` entries are always trusted.
 - `icons` lists the bundled icons, then the images and `.kash` shapes under each `dir` (default: the `KASHIKA_ICON_PATH` entries), as `name path size library`. `--search` matches the name or path, case-insensitively; with no match it says so on stderr and exits 1. A `dir` that isn't a directory exits 3. Symlinked directories aren't followed. `--format json` returns `{"schema":"kashika.icons/1","icons":[...]}`.
 - `ref` prints this reference; `--json` wraps a page as `{"schema":"kashika.ref/1",...}`.
 - `--radius` must be a finite number, 0 or more; `route --max` and `--corridors` coordinates are validated (non-finite values exit 3). A JSON tool error (exit 3) carries the command's own schema: `kashika.route/1`, `kashika.inspect/1`, `kashika.measure/1`, `kashika.icons/1`, `kashika.ref/1`, and `kashika.check/1` for check, render and fmt.

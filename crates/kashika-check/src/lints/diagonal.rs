@@ -2,11 +2,12 @@ use kashika_diag::Diagnostic;
 use kashika_geom::PathSeg;
 
 use crate::ctx::{Ctx, fmt_pt, line_el};
+use crate::lints::axis::slant;
 use crate::sink::Sink;
 
 /// `diagonal-tail`: the final segment is diagonal while the line has at least one other
 /// straight segment and all of those are horizontal or vertical. A line whose only straight
-/// segment is the diagonal has no tail.
+/// segment is the diagonal has no tail. A tail within 5° of an axis is `near-axis` instead.
 pub fn diagonal_tail(ctx: &Ctx, out: &mut Sink) {
     for l in &ctx.lines {
         let path = &l.line.path;
@@ -19,6 +20,7 @@ pub fn diagonal_tail(ctx: &Ctx, out: &mut Sink) {
         if last != path.len() - 1
             || straight.len() < 2
             || path[last].is_axis_aligned()
+            || slant(path[last].from(), path[last].to()).is_some()
             || !straight[..straight.len() - 1]
                 .iter()
                 .all(|&i| path[i].is_axis_aligned())

@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::Args;
@@ -29,6 +30,9 @@ pub struct RouteArgs {
     /// Allow file references outside the input file's directory
     #[arg(long)]
     allow_path: bool,
+    /// Allow this one file outside the input file's directory (repeatable; relative to the current directory)
+    #[arg(long, value_name = "FILE")]
+    include: Vec<PathBuf>,
     /// File name to report for stdin input
     #[arg(long)]
     stdin_name: Option<String>,
@@ -61,6 +65,10 @@ pub fn run(a: &RouteArgs) -> ExitCode {
             );
         }
     };
+    let opts = match crate::options(&a.file, a.allow_path, &a.include) {
+        Ok(o) => o,
+        Err(msg) => return crate::tool_error(a.format, SCHEMA, &msg),
+    };
     let req = Request {
         src: &src,
         from,
@@ -69,7 +77,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
         line: a.line.as_deref(),
         radius: a.radius,
         max: a.max,
-        opts: &crate::options(&a.file, a.allow_path),
+        opts: &opts,
     };
     match kashika_route::suggest(&req) {
         Err(Error::Usage(msg)) => crate::tool_error(a.format, SCHEMA, &msg),

@@ -86,7 +86,7 @@ impl<'a> Resolver<'a> {
         let what = if group { "group" } else { "box" };
         let keys: Vec<&str> = NODE_KEYS
             .iter()
-            .filter(|k| !group || **k != "shape")
+            .filter(|k| !group || !matches!(**k, "shape" | "layer"))
             .chain(STYLE_KEYS)
             .chain(SHAPE_TEXT_KEYS)
             .copied()
@@ -129,6 +129,7 @@ impl<'a> Resolver<'a> {
         let (allow, reason) = self.allow_reason(&a);
         let style = props.resolve();
         let icon = self.icon_props(&a, group, style.font_size);
+        let layer = self.layer(&a);
         NodeProps {
             outline,
             shape,
@@ -140,6 +141,18 @@ impl<'a> Resolver<'a> {
             reason,
             icon,
             image: None,
+            layer,
+        }
+    }
+
+    fn layer(&mut self, a: &Attrs<'_>) -> Layer {
+        match a
+            .get("layer")
+            .and_then(|x| attrs::word(x, &["under", "over"], &mut self.diags))
+        {
+            Some("under") => Layer::Under,
+            Some("over") => Layer::Over,
+            _ => Layer::Normal,
         }
     }
 
@@ -201,6 +214,7 @@ impl<'a> Resolver<'a> {
             _ => Fit::Contain,
         };
         let (allow, reason) = self.allow_reason(&a);
+        let layer = self.layer(&a);
         let asset = self.load_asset(&i.file, i.file_span);
         NodeProps {
             outline: Outline::Rect,
@@ -213,6 +227,7 @@ impl<'a> Resolver<'a> {
             reason,
             icon: None,
             image: Some(ImageProps { asset, fit }),
+            layer,
         }
     }
 

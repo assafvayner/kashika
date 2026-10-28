@@ -22,19 +22,20 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `range` | error | a coordinate or curve amount beyond ±1,000,000 | keep coordinates within -1000000..1000000 |
 | `diagram` | error | missing, misplaced or repeated `diagram` | start with one `diagram "<title>" size (w,h)` |
 | `version` | error | `kashika=` is malformed or newer than the binary | fix the file or the binary |
-| `file` | error | missing, oversized or unusable file, an import cycle, or too many imports | fix the path or pass `--allow-path` |
+| `file` | error | missing, oversized or unusable file, an import cycle, or too many imports | fix the path, or pass `--include <file>` or `--allow-path` |
 | `cross` | warn | two lines intersect away from a shared endpoint | reroute via a free interval |
 | `shared-segment` | warn | two lines overlap collinearly over 1px | move one to the free lane |
-| `through` | warn | a line enters a box or image | route around it |
+| `through` | warn | a line enters a box or image (not `layer=under`/`over`) | route around it |
 | `near` | warn | a line within `clearance` of a box, a parallel line or along a group border | move it `clearance` away |
 | `overlap` | warn | two shapes overlap, unless a group contains the other | move one, or use a group |
 | `spill` | warn | a child leaves its group or enters its title band | grow the group |
 | `diagonal-tail` | warn | the last segment is diagonal and every other straight segment is horizontal or vertical (at least one) | end with `hv`/`vh` |
+| `near-axis` | warn | a straight segment (no `ortho`) is off horizontal or vertical by more than 0.5px but at most 5°, so it shows a slant | use the level anchor in the help line, or `hv`/`vh` |
 | `endpoint-off-edge` | warn | a literal endpoint near but off an outline | use the anchor in the help line |
 | `port-crowding` | warn | two endpoints on a shape within 8px | spread them with `side@t` |
 | `group-transit` | warn | a line crosses a group it doesn't connect to (a junction on it that taps into the group counts as connecting) | route around the group |
 | `low-contrast` | warn | text contrast below 3:1 | change the color or fill |
-| `label-collision` | warn | a label or text overlaps another element, or a label its own line's marker | move it; the help lists clear `t` |
+| `label-collision` | warn | a label or text overlaps another element, a group's title or border, or a label its own line's marker; or a line crosses a group's title | move it; the help lists clear `t` or the title's extent |
 | `out-of-canvas` | warn | an element extends past `size` (children of a group that itself extends past it aren't reported again) | move it or grow `size` |
 | `off-grid` | warn | a literal is not a multiple of `grid` | round it |
 | `block-reducible` | warn | a block of 1–2 items in one style | use the rewrite in the help line |

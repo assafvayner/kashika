@@ -15,7 +15,11 @@ pub fn overlap(ctx: &Ctx, out: &mut Sink) {
             }
             let b = &ctx.shapes[j];
             let (sa, sb) = (a.shape, b.shape);
-            if ctx.is_ancestor(&sa.id, &sb.id) || ctx.is_ancestor(&sb.id, &sa.id) {
+            if !sa.layer.is_normal()
+                || !sb.layer.is_normal()
+                || ctx.is_ancestor(&sa.id, &sb.id)
+                || ctx.is_ancestor(&sb.id, &sa.id)
+            {
                 continue;
             }
             let group_holds = |outer: &kashika_model::Shape, inner: &kashika_model::Shape| {

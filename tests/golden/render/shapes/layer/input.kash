@@ -1,0 +1,13 @@
+// spec: 3, 7
+// `layer=under` squares paint before the group and `layer=over` rings after the texts; neither is an obstacle, so the check is clean.
+diagram "layers" size (260,220)
+group board "Board" at (10,10) size (240,200) {
+  box piece "K" at (50,80) size (40,40) style=service
+}
+box a1 at (20,40) size (60,60) fill=#b58863 stroke=none layer=under
+box b1 at (80,40) size (60,60) fill=#f0d9b5 stroke=none layer=under
+box a2 at (20,100) size (60,60) fill=#f0d9b5 stroke=none layer=under
+box b2 at (80,100) size (60,60) fill=#b58863 stroke=none layer=under
+line move piece.right -> h 90 end=arrow label="Kd2"
+text "check" at (110,190)
+box ring at (52,82) size (56,56) fill=none stroke=#d33 stroke-width=3 radius=28 layer=over

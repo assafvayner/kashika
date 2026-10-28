@@ -126,6 +126,7 @@ static OPTS: kashika_model::Options = kashika_model::Options {
     path: None,
     allow_path: false,
     icon_path: Vec::new(),
+    include: Vec::new(),
 };
 
 fn req<'a>(src: &'a str, from: &'a str, to: &'a str, style: Style) -> Request<'a> {

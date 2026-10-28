@@ -346,7 +346,11 @@ fn lanes(scene: &Scene, a: f64, b: f64, axis: &str) -> Vec<Lane> {
         value: mid,
         expr: None,
     }];
-    for s in scene.shapes.iter().filter(|s| s.kind != ShapeKind::Group) {
+    for s in scene
+        .shapes
+        .iter()
+        .filter(|s| s.kind != ShapeKind::Group && s.layer.is_normal())
+    {
         let (r, id) = (s.rect, &s.id);
         if axis == "x" {
             out.push(Lane {

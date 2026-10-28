@@ -47,12 +47,12 @@ diagram "<title>" size (w,h) [kashika="0.1.0"] [grid=N] [clearance=N] [backgroun
 import "<file.kash>" [as <ns>]                      // §3a
 style <name> { key=value ... }
 shape <name> { ... }  |  shape <name> from "<file.svg>" [...]   // §3a
-box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=<shape>] [style=<name>] [allow=<code>[:<id>],...] [reason="..."] [attrs]
+box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=<shape>] [style=<name>] [layer=under|over] [allow=<code>[:<id>],...] [reason="..."] [attrs]
 group <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [style=<name>] [allow=<code>[:<id>],...] [reason="..."] { ... }
 junction <id> at <point> [dot]
 text  [<id>] "<content>" at <point> [size=N] [color=C] [align=left|center|right] [muted]
 line  [<id>] <point> (-> <segment>)+ [attrs]
-image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stretch]   // §3a
+image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stretch] [layer=under|over]   // §3a
 ```
 
 `diagram` comes first, then any `import` statements, then everything else. "First" means first in the source: a statement before `diagram` makes it misplaced even when that statement failed to parse. Boxes accept `sublabel=`, `text-align=`, `text-valign=`, `gap=`, `icon=` and a `{ }` text block (§6). Groups accept `sublabel=`, `text-align=`, `gap=` and `icon=`; a group's `{ }` holds its children, and `text-valign` on a group is an `attr` error because the title always sits at the top.
@@ -73,7 +73,10 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
 - `junction`: a zero-size named point that lines can start or end at. Lines meeting at a junction are connected, not crossing. `dot` draws a 6px dot there. Junctions model buses and fan-in/fan-out.
 - `text`: `at` is the anchor point for the alignment. `color=none` is an `attr` error. Vertically, `at` is the **center** of the text block, not the baseline.
 
-**Paint order is fixed:** groups → boxes and images → lines → line labels and texts. Groups paint in file order, so a group paints right after its parent and before any later sibling. Within every layer, file order applies, so line labels and texts interleave by where their statements appear. Lines are never hidden by boxes.
+**Paint order is fixed:** `layer=under` boxes and images → groups → boxes and images → lines → line labels and texts → `layer=over` boxes and images. Groups paint in file order, so a group paints right after its parent and before any later sibling. Within every layer, file order applies, so line labels and texts interleave by where their statements appear. Lines are never hidden by boxes, except by `layer=over` ones.
+
+- `layer=under|over` on a `box` or `image` moves it (with its own label, sublabel, text block and icon) to the first or last paint layer above. Without it a shape paints in the normal layer. Groups, texts, junctions and lines take no `layer`; on a group it is an unknown-attribute `attr` error.
+- A layered shape is a backdrop or a highlight (a board square, a selection ring), not an obstacle. It is skipped, both as the shape reported and as the thing hit, by `overlap`, `through`, `near` (its edges; lines attached to it are not attached to a box), `label-collision` (as an obstacle, and the label under it as a subject), `endpoint-off-edge`, and the `free` intervals, `inspect --corridors` and `route` obstacles and lanes. Its own checks still apply: `spill`, `out-of-canvas`, `label-overflow`, `text-outside-shape`, `block-reducible`, `image-distort`, `port-crowding` and `off-grid`. `low-contrast` follows the paint order: an under-layer fill counts behind every text, and an over-layer fill only behind that shape's own text and later over-layer shapes' text.
 
 ## 3a. Shapes, images and imports
 
@@ -126,8 +129,9 @@ Library files may contain only `shape`, `style` and `import`; any other statemen
 
 ### Rules for files
 - **Local files only.** No URLs.
-- **Path resolution:** paths are relative to the importing file. A path that escapes the project root is an error unless `--allow-path` is given.
+- **Path resolution:** paths are relative to the importing file. A path that escapes the project root is an error unless `--allow-path` is given or the file is included with `--include`.
 - **Project root:** the input file's directory; for stdin, the current working directory (`--stdin-name` does not change it). Directories on the search path (`icons=`, `KASHIKA_ICON_PATH`) are additional trusted roots, as is anything under `--allow-path`.
+- **Included files:** `--include <file>` (repeatable) allows exactly that one file outside the project root, e.g. `kashika check diagrams/board.kash --include lib/pieces.kash` for a diagram that writes `import "../lib/pieces.kash"`. The path is relative to the current directory and is canonicalized, so the sandbox compares the real file; a symlink is included by its target. It grants nothing else: an included library's own relative references (`import`, `shape ... from`) still resolve from its own directory, as for any import, and each must be inside the project root, on the search path, or included too. A `--include` that does not name an existing file (a missing path or a directory) is a usage error (exit 3).
 - **Search path:** besides the importing file's directory, Kashika searches `icons=` on the `diagram` line and `KASHIKA_ICON_PATH`, then falls back to the bundled icons for a bare name such as `icon="queue"`.
 - **SVG sanitizing:** scripts, external references and `foreignObject` are stripped.
 - **Image size limits:** a PNG or JPEG, attached or embedded in an SVG, is judged by its header before any pixel is decoded and is a `file` error beyond 8,192 px per side or 32,000,000 px in total. Raster output has its own, larger canvas cap (§8).
@@ -263,7 +267,7 @@ These block output unless `--force` is given:
 | `range` | A resolved coordinate or curve amount more than 1,000,000 from the origin, or not a finite number (§1) |
 | `diagram` | Missing, misplaced or repeated `diagram` statement |
 | `version` | `kashika=` is not a quoted semver string, or names a newer version or a different major version than the tool |
-| `file` | A referenced file (`import`, `shape ... from`, `image`, `icon=`, `icons=`) is missing, is a directory, escapes the project root without `--allow-path`, is a remote URL, can't be read or decoded, has the wrong type, is over the file size limits, is an image over the size limits or an SVG nested too deep (§3a); an import cycle; imports nested more than 32 deep; more than 1,000 library instances. Errors inside an imported file are reported at the `import` with an ``in `file` at L:C:`` prefix |
+| `file` | A referenced file (`import`, `shape ... from`, `image`, `icon=`, `icons=`) is missing, is a directory, escapes the project root without `--allow-path` or `--include`, is a remote URL, can't be read or decoded, has the wrong type, is over the file size limits, is an image over the size limits or an SVG nested too deep (§3a); an import cycle; imports nested more than 32 deep; more than 1,000 library instances. Errors inside an imported file are reported at the `import` with an ``in `file` at L:C:`` prefix |
 
 ### Warnings
 
@@ -271,11 +275,12 @@ These block output unless `--force` is given:
 |---|---|
 | `cross` | Two lines intersect, including tangency, at a point that is not a shared endpoint or junction |
 | `shared-segment` | Two lines overlap collinearly for more than 1px |
-| `through` | A line enters a box's or image's interior. For a line's own start and end boxes, only the first and last segments are exempt, so leaving and re-entering is flagged. Groups are never obstacles |
+| `through` | A line enters a box's or image's interior. For a line's own start and end boxes, only the first and last segments are exempt, so leaving and re-entering is flagged. Groups and `layer=under`/`over` shapes (§3) are never obstacles |
 | `near` | A line runs within `clearance` of a box edge it doesn't attach to, or within `clearance` of a parallel line for more than 20px. **This includes a line running along its own box's edge**, and a line running parallel to a group's border within `clearance` of it, on the border included (crossing the border is fine) |
-| `overlap` | Two shapes have intersecting interiors. A group whose rectangle contains the other shape is not an overlap, and a shape nested inside a group in the source is left to `spill`. A box containing another shape is an overlap |
+| `overlap` | Two shapes have intersecting interiors. A group whose rectangle contains the other shape is not an overlap, and a shape nested inside a group in the source is left to `spill`. A box containing another shape is an overlap. `layer=under`/`over` shapes never overlap anything |
 | `spill` | A child extends outside its group or into the group's title band. Touching the edge is fine |
-| `diagonal-tail` | A line's final segment is diagonal when it has at least one other straight segment and all of those are horizontal or vertical |
+| `diagonal-tail` | A line's final segment is diagonal when it has at least one other straight segment and all of those are horizontal or vertical. A final segment that is `near-axis` is reported only as `near-axis` |
+| `near-axis` | On a line without `ortho`, a straight segment whose smaller extent (horizontal or vertical) is more than 0.5px but at most `tan 5° ×` its larger extent, so it is within 5° of an axis without being on it and renders as a visible slant (`users.right -> cdn.left` with the anchors 5px apart in y). Curves are exempt. The help gives the fix: for the first or last segment, the anchor on the attached box that levels it (`cdn.left@0.42`, or `cdn.left+(0,-5)` when no two-decimal `t` lands within 0.25px), and always the offset to remove, or `hv`/`vh` for a deliberate elbow |
 | `endpoint-off-edge` | A literal endpoint is within 8px of a shape outline but not on it. A start point is literal unless it is written `id.anchor[+offset]` or a junction (a mixed point is literal). An end is literal when the last segment is `h`, `v`, a numeric `x`/`y`, or goes to a literal point; `x`/`y` with a point target is not |
 | `port-crowding` | Two endpoints on the same shape are within 8px of each other. This includes identical endpoints where both lines draw a marker (stacked arrowheads). Junctions are exempt |
 | `group-transit` | A line passes through a group's interior while neither of its endpoints is inside that group. A line also connects into the group when a junction lies on it (an endpoint or a point along it) and another line with an endpoint at that junction has an endpoint inside the group: a trunk that taps a child through a junction does not transit the child's group |
@@ -283,7 +288,7 @@ These block output unless `--force` is given:
 | `block-reducible` | A text block holds only 1–2 stacked items, in one alignment, that a `label` would draw the same: the first in the box's font size and color, the second either in that style too (a second label line, `\n`) or in the `sublabel` style (`0.8 × font-size`, `muted`, not bold). The help line shows the `label`/`sublabel` rewrite |
 | `text-outside-shape` | An absolute block item lies outside the shape's text area (§6), or outside the band under a `text-area=below` shape. The help line gives the text area in the box-local frame |
 | `image-distort` | `fit=stretch` changes an image's aspect ratio by more than 5% |
-| `label-collision` | A label or text box intersects a box, another label or text, a group title, or a line other than its own. A line label also must not cover its own line's markers (arrowheads, diamonds, dots); sitting on its own stroke is fine |
+| `label-collision` | A label or text box intersects a box, another label or text, a group title, a group's border (it straddles the group's rectangle: partly inside, partly outside), or a line other than its own. A line label also must not cover its own line's markers (arrowheads, diamonds, dots); sitting on its own stroke is fine. A line that crosses the box of a group's title text is also reported, naming the line and the group, with the title's extent and the bottom of its title band in the help |
 | `out-of-canvas` | An element extends beyond the diagram size; children of a group that itself extends beyond it are not reported again |
 | `off-grid` | An authored literal is not a multiple of `grid` |
 
@@ -313,7 +318,7 @@ kashika ref     [topic] [--json]          // topics: syntax anchors paths shapes
 kashika --version
 ```
 
-Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`), `--show-suppressed`, `--focus <id,...>` (only warnings involving these ids), `--max N` (default 50), `--stdin-name <name>`, `--summary` (print per-code counts; JSON always has `by_code`). `inspect` takes only `--format`, `--stdin-name`, `--allow-path`, ids, `--ports` and `--corridors`; `--corridors` without ids prints only the corridors.
+Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`), `--show-suppressed`, `--focus <id,...>` (only warnings involving these ids), `--max N` (default 50), `--stdin-name <name>`, `--summary` (print per-code counts; JSON always has `by_code`), `--allow-path` and `--include <file>` (§3a). `inspect` takes only `--format`, `--stdin-name`, `--allow-path`, `--include`, ids, `--ports` and `--corridors`; `--corridors` without ids prints only the corridors. `route` takes `--allow-path` and `--include` too. `fmt` reads no other files, so it takes neither.
 
 - `--focus` filters warnings only; errors are always reported. An unknown id is a usage error.
 - Suppressed findings are excluded from `warn` and from the exit code, and counted in `suppressed`. `crossings` in the metrics counts every crossing, suppressed or not, and is computed before `--focus` filtering.

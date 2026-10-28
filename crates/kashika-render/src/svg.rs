@@ -1,6 +1,6 @@
 use kashika_geom::{PathSeg, Pt};
 use kashika_model::{
-    Asset, Label, Line, Marker, Scene, Shape, ShapeKind, StrokeStyle, Style, Text,
+    Asset, Label, Layer, Line, Marker, Scene, Shape, ShapeKind, StrokeStyle, Style, Text,
 };
 
 use crate::{shapes, text};
@@ -28,10 +28,17 @@ pub fn render_svg(scene: &Scene) -> String {
             "<rect width=\"100%\" height=\"100%\" fill=\"{bg}\"/>\n"
         ));
     }
+    for s in scene.shapes.iter().filter(|s| s.layer == Layer::Under) {
+        shape(&mut out, s, &scene.assets);
+    }
     for g in scene.shapes.iter().filter(|s| s.kind == ShapeKind::Group) {
         shape(&mut out, g, &scene.assets);
     }
-    for b in scene.shapes.iter().filter(|s| s.kind != ShapeKind::Group) {
+    for b in scene
+        .shapes
+        .iter()
+        .filter(|s| s.kind != ShapeKind::Group && s.layer == Layer::Normal)
+    {
         shape(&mut out, b, &scene.assets);
     }
     for j in scene.junctions.iter().filter(|j| j.dot) {
@@ -61,6 +68,9 @@ pub fn render_svg(scene: &Scene) -> String {
             }
             Overlay::Text(t) => text::lines(&mut out, &t.lines, t.size, &t.color),
         }
+    }
+    for s in scene.shapes.iter().filter(|s| s.layer == Layer::Over) {
+        shape(&mut out, s, &scene.assets);
     }
     out.push_str("</svg>\n");
     let hash = format!("{:08x}", fnv1a32(out.as_bytes()));

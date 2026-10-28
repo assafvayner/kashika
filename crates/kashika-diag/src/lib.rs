@@ -36,6 +36,7 @@ pub const LINT_CODES: &[&str] = &[
     "overlap",
     "spill",
     "diagonal-tail",
+    "near-axis",
     "endpoint-off-edge",
     "port-crowding",
     "group-transit",

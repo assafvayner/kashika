@@ -1,6 +1,6 @@
 use kashika_diag::{Diagnostic, Element, Span};
 use kashika_geom::{Pt, Rect, point_in_polygon};
-use kashika_model::{Shape, ShapeKind, TextRole};
+use kashika_model::{Layer, Shape, ShapeKind, TextRole};
 
 use crate::ctx::{Ctx, line_el, round2, shape_el, text_el, text_id};
 use crate::sink::Sink;
@@ -77,15 +77,28 @@ fn check(out: &mut Sink, color: &str, bg: [f64; 3], el: Element, span: Span, wha
     );
 }
 
-/// The canvas with every fill containing `p` painted on top in paint order (groups, then
-/// boxes), including the shape `last` when given and none after it. A transparent canvas
-/// counts as white. Images and SVG-file shapes draw their file instead of a fill, so they
-/// add nothing.
+/// The canvas with every fill containing `p` painted on top in paint order (`layer=under`
+/// shapes, groups, then boxes), including the shape `last` when given and none after it.
+/// Without `last`, the text paints after every box but before `layer=over` shapes. A
+/// transparent canvas counts as white. Images and SVG-file shapes draw their file instead of
+/// a fill, so they add nothing.
 fn backdrop(ctx: &Ctx, p: Pt, last: Option<&str>) -> [f64; 3] {
     let canvas = ctx.scene.background.as_deref().and_then(rgba);
     let mut c = canvas.map_or(WHITE, |bg| over(bg, WHITE));
-    let order = |i: usize| (ctx.shapes[i].shape.kind != ShapeKind::Group, i);
-    let stop = last.and_then(|id| ctx.shape_index(id)).map(order);
+    let order = |i: usize| {
+        let s = ctx.shapes[i].shape;
+        let rank = match (s.layer, s.kind) {
+            (Layer::Under, _) => 0,
+            (_, ShapeKind::Group) => 1,
+            (Layer::Normal, _) => 2,
+            (Layer::Over, _) => 3,
+        };
+        (rank, i)
+    };
+    let stop = match last {
+        Some(id) => ctx.shape_index(id).map(order),
+        None => Some((2, usize::MAX)),
+    };
     let mut near = ctx.shapes_near(Rect::new(p.x, p.y, 0.0, 0.0), 0.0);
     near.sort_by_key(|&i| order(i));
     for i in near {

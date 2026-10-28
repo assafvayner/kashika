@@ -39,7 +39,7 @@ image logo "browser" at (20,120) size (60,60)
 ```
 
 - `shape <name> from "<file.svg>" [outline=bbox|hull] [text-area=below|inside]` draws the SVG stretched onto the box instead of a fill and stroke. Anchors and checks use the box, or the drawing's convex hull with `outline=hull`. `text-area=below` puts the label `padding` under the box; checks look for it there.
-- `image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stretch]` places an SVG, PNG or JPEG. It is top-level only, defaults to `fit=contain`, and checks treat it as an opaque box. `fit=stretch` that distorts the aspect ratio by over 5% is `image-distort`. `kashika inspect` shows the natural size.
+- `image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stretch] [layer=under|over]` places an SVG, PNG or JPEG. It is top-level only, defaults to `fit=contain`, and checks treat it as an opaque box. `fit=stretch` that distorts the aspect ratio by over 5% is `image-distort`. `kashika inspect` shows the natural size.
 - `icon="<file>"` on a box or group, with `icon-pos=left|top` (default `left`) and `icon-size=N` (default 24; on a group, the title's line height). The text area shrinks by `icon-size + padding` on the icon's side. Groups only take `left`.
 - Bundled icons, by bare name: `server`, `browser`, `queue`, `lock`, `cloud`, `person`.
 
@@ -47,5 +47,5 @@ image logo "browser" at (20,120) size (60,60)
 
 - `import "<file.kash>" [as <ns>]` comes right after `diagram`. A library holds only `shape`, `style` and `import`. With `as aws`, use `shape=aws.s3` and `style=aws.service`.
 - Errors inside a library are reported at the `import` path, as ``in `lib/aws.kash` at 3:5: ...``. `kashika check lib/aws.kash` checks a library on its own.
-- Files are local. They resolve from the `.kash` file's directory, then `icons="<dir>"` on the `diagram` line, then `KASHIKA_ICON_PATH`, then the bundled icons. Paths outside the file's directory need `--allow-path`. Problems are `file` errors, with did-you-mean.
+- Files are local. They resolve from the `.kash` file's directory, then `icons="<dir>"` on the `diagram` line, then `KASHIKA_ICON_PATH`, then the bundled icons. Paths outside the file's directory need `--include <file>` for each file, or `--allow-path`. Problems are `file` errors, with did-you-mean.
 - `kashika icons [dir...] [--search <term>]` lists what's available, with natural sizes.

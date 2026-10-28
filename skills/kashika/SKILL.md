@@ -61,13 +61,14 @@ group vpc "VPC" at (20,180) size (600,280) {  // children use vpc-relative coord
 junction fan at api.bottom+(0,40) dot  // a point lines meet at; draws nothing without `dot`
 text note1 "note" at (880,480) size=12 align=right muted  // the id is optional (a text is not a line endpoint); centered on `at` unless align=left|right
 image logo "assets/logo.png" at (780,20) size (80,80) fit=contain  // SVG/PNG/JPEG; fit=contain|cover|stretch
+box sq at (40,400) size (60,60) fill=#f0d9b5 stroke=none layer=under  // boxes and images: under paints first, over paints last (rings, highlights); neither is an obstacle for overlap/through/near/label-collision
 ```
 
 Anchors: `top bottom left right center tl tr bl br`, plus `side@t` (e.g. `db.left@0.25`) and offsets `+(dx,dy)` or `-(dx,dy)` (`db.top-(10,0)` is `db.top+(-10,0)`). Mixed points take each axis from a reference: `(db.left.x, lane.y)`, `(b.top.x, fan.y)` with a junction. `.x`/`.y` only work inside such a parenthesized point.
 
 On non-rectangular shapes, `top`/`bottom`/`left`/`right` (and `@t`) slide along their axis onto the outline, so a vertical line into `db.top` stays vertical. Corners (`tl` …) stay on the bounding box. `kashika ref shapes` lists each shape's outline and text area.
 
-Files (imports, SVG shapes, images, icons) are local only and resolve from the `.kash` file's directory, then `icons="<dir>"` on the `diagram` line, then `KASHIKA_ICON_PATH`, then the bundled icons. Paths outside the file's directory need `--allow-path`. `kashika icons [dir] --search <term>` lists what's available, with natural sizes. `import` goes right after `diagram`. A library file has no `diagram` line and holds only `shape`, `style` and `import`; `kashika check lib.kash` checks it on its own, resolving its definitions. Images are top-level only. Image and SVG files are capped at 16 MiB and libraries at 1 MiB; an SVG nested more than 256 elements deep is refused, and importing one library under two namespaces at every level soon hits the 1,000 library-instance cap.
+Files (imports, SVG shapes, images, icons) are local only and resolve from the `.kash` file's directory, then `icons="<dir>"` on the `diagram` line, then `KASHIKA_ICON_PATH`, then the bundled icons. Paths outside the file's directory need `--include <file>` per file (relative to the current directory, repeatable; an included library's own relative imports need their own `--include`), or `--allow-path` for everything. `kashika icons [dir] --search <term>` lists what's available, with natural sizes. `import` goes right after `diagram`. A library file has no `diagram` line and holds only `shape`, `style` and `import`; `kashika check lib.kash` checks it on its own, resolving its definitions. Images are top-level only. Image and SVG files are capped at 16 MiB and libraries at 1 MiB; an SVG nested more than 256 elements deep is refused, and importing one library under two namespaces at every level soon hits the 1,000 library-instance cap.
 
 `grid=N` makes `off-grid` check every number you write for a position or distance: point coordinates (also inside mixed points), `+(dx,dy)` offsets, sizes, `h`/`v`, numeric `x`/`y` and `curve via` points. Anchors, `@t`, `curve left N` and attribute values aren't checked. Round measured sizes up to the grid.
 
@@ -142,6 +143,8 @@ Comments: `// to end of line` and `/* block */` (no nesting; an unclosed `/*` is
 - `cross` / `through` / `near`: move the segment to a lane from the `free` help; `allow=cross:<other>` only for a non-planar graph.
 - `shared-segment` / `port-crowding`: spread ports with `side@t`, or fan out from a `junction`.
 - `not-ortho` / `diagonal-tail`: finish with `hv`/`vh` or `x`/`y`.
+- `label-collision` on a group border or title: move the label to a `label@t` from the help, and route lines below a group's title band, not through its title.
+- `near-axis`: a straight hop within 5° of horizontal/vertical (two anchors a few px apart) renders slanted; use the level anchor from the help (`cdn.left@0.42`) or `hv`/`vh`.
 - `text-conflict`: move `label`/`sublabel` into the block as its first items, or give every block item an `at`.
 
 Exit codes: `0` clean, `1` warnings, `2` errors, `3` tool/usage failure. `render` writes nothing on errors unless `--force` is given (it then marks each error in red). `render -o file.png` writes PNG; raster output (png/jpg/webp) is capped at 16,384 px per side and 100,000,000 px in total (use `.svg` beyond that); attached PNG/JPEG images are limited to 8,192 px per side and 32,000,000 px in total; `--debug` overlays rulers, ids and anchor dots to help you locate problems.

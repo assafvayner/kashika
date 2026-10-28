@@ -1,0 +1,8 @@
+// spec: 7
+// A straight segment a few degrees off horizontal or vertical, with the anchor that levels it.
+diagram "near axis" size (500,300)
+box users "Users" at (20,40) size (100,60)
+box cdn "CDN" at (360,45) size (100,60)
+box api "API" at (20,200) size (100,60)
+line users_cdn users.right -> cdn.left end=arrow
+line users_api users.bottom -> (74,200) end=arrow

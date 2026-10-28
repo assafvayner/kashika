@@ -1,3 +1,4 @@
+mod axis;
 mod block;
 mod canvas;
 mod collision;
@@ -34,6 +35,7 @@ pub const ALL: &[Lint] = &[
     grid::off_grid,
     image::image_distort,
     near::near,
+    axis::near_axis,
     overlap::overlap,
     shared::shared_segment,
     spill::spill,

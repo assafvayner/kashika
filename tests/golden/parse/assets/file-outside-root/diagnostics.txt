@@ -1,2 +1,2 @@
 error[file] 4:8-4:32: `../shared/outside.kash` is outside the project root
-  = help: move it under the diagram's directory, add its directory to KASHIKA_ICON_PATH, or pass --allow-path
+  = help: move it under the diagram's directory, pass `--include <file>` for this file, add its directory to KASHIKA_ICON_PATH, or pass --allow-path

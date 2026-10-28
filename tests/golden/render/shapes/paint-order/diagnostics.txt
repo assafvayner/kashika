@@ -8,10 +8,15 @@ warn[through] 11:1-11:39: l passes through box 'a'
   elements: [{"from":[20,150],"id":"l","kind":"line","segment":1,"span":{"col":1,"end_col":39,"end_line":11,"line":11},"to":[380,150]},{"bbox":[[150,120],[250,180]],"id":"a","kind":"box","span":{"col":1,"end_col":39,"end_line":12,"line":12}}]
   facts: {"entry":[150,150],"exit":[250,150],"free":{"axis":"y","band":[20,380],"intervals":[[0,5.25],[46,54],[76,114],[186,234],[246,254],[294.75,300]]}}
 warn[label-collision] 11:26-11:39: label "label" of l collides with box 'a'
-  = help: clear label positions on l: label@0.05..0.3, label@0.7..0.95
+  = help: clear label positions on l: label@0.05..0.25, label@0.75..0.95
   = suppressed
   elements: [{"bbox":[[186.55,142.5],[213.45,157.5]],"id":"l","kind":"label","span":{"col":26,"end_col":39,"end_line":11,"line":11}},{"bbox":[[150,120],[250,180]],"id":"a","kind":"box","span":{"col":1,"end_col":39,"end_line":12,"line":12}}]
-  facts: {"bbox":[[186.55,142.5],[213.45,157.5]],"clear_t":[0.05,0.1,0.15,0.2,0.25,0.3,0.7,0.75,0.8,0.85,0.9,0.95]}
+  facts: {"bbox":[[186.55,142.5],[213.45,157.5]],"clear_t":[0.05,0.1,0.15,0.2,0.25,0.75,0.8,0.85,0.9,0.95]}
+warn[label-collision] 11:26-11:39: label "label" of l collides with the border of group 'sibling'
+  = help: clear label positions on l: label@0.05..0.25, label@0.75..0.95
+  = suppressed
+  elements: [{"bbox":[[186.55,142.5],[213.45,157.5]],"id":"l","kind":"label","span":{"col":26,"end_col":39,"end_line":11,"line":11}},{"bbox":[[200,60],[380,260]],"id":"sibling","kind":"group","span":{"col":1,"end_col":51,"end_line":9,"line":9}}]
+  facts: {"bbox":[[186.55,142.5],[213.45,157.5]],"clear_t":[0.05,0.1,0.15,0.2,0.25,0.75,0.8,0.85,0.9,0.95]}
 warn[overlap] 12:1-12:39: box 'a' overlaps group 'sibling'
   = suppressed
   elements: [{"bbox":[[150,120],[250,180]],"id":"a","kind":"box","span":{"col":1,"end_col":39,"end_line":12,"line":12}},{"bbox":[[200,60],[380,260]],"id":"sibling","kind":"group","span":{"col":1,"end_col":51,"end_line":9,"line":9}}]

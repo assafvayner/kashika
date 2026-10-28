@@ -65,6 +65,7 @@ fn run_parse(case: &Case) -> Result<Vec<Output>, String> {
         path: Some(input),
         allow_path: case.allow_path,
         icon_path: case.icon_path.iter().map(|p| case.dir.join(p)).collect(),
+        include: Vec::new(),
     };
     let (scene, diags) = match kashika_model::compile_library_with(&case.src, &opts) {
         Some(diags) => (None, diags),
