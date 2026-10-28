@@ -20,7 +20,7 @@ How v0 became v1 is recorded in `docs/review/review-synthesis.md`.
 
 ## 2. Lexical rules
 
-- Comments: `//` to end of line, outside strings. `#` is never a comment character.
+- Comments: `//` to end of line, and `/* ... */` block comments, both outside strings. Block comments don't nest. A block comment that spans lines counts as one line break, so it never joins two statements. An unclosed `/*` is a `parse` error. `#` is never a comment character.
 - Strings: `"..."` with escapes `\"`, `\\`, `\n`.
 - Identifiers: `[a-zA-Z_][a-zA-Z0-9_-]*`. **Ids are unique across the whole file** (shapes, groups, junctions, lines, texts) and are always referenced by bare id. There are no dotted paths.
 - Numbers: integers or decimals, optionally negative. Colors: `#rgb`, `#rrggbb` or `#rrggbbaa`.
