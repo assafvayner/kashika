@@ -448,3 +448,464 @@ fn grandchildren_of_duplicate_group_are_not_reference_targets() {
         "{d:#?}"
     );
 }
+
+fn junction(s: &Scene, id: &str) -> Pt {
+    s.junctions.iter().find(|j| j.id == id).unwrap().at
+}
+
+#[test]
+fn nested_groups_compose_frames() {
+    let s = ok("group outer at (100,100) size (400,400) {\n  group inner at (50,60) size (200,200) {\n    box a at (5,5) size (10,10)\n    line l: (0,0) -> h 10\n  }\n}\n");
+    assert_eq!(rect(&s, "inner"), Rect::new(150.0, 160.0, 200.0, 200.0));
+    assert_eq!(rect(&s, "a"), Rect::new(155.0, 165.0, 10.0, 10.0));
+    assert_eq!(pts(&s, "l")[0], Pt::new(150.0, 160.0));
+}
+
+#[test]
+fn anchor_references_inside_a_group_are_absolute() {
+    let s = ok("box a at (300,300) size (100,60)\ngroup g at (100,100) size (100,100) {\n  box b at a.right+(10,0) size (20,20) pin=left\n  junction j at a.tl\n  line l: (0,0) -> a.left\n}\n");
+    assert_eq!(rect(&s, "b"), Rect::new(410.0, 320.0, 20.0, 20.0));
+    assert_eq!(junction(&s, "j"), Pt::new(300.0, 300.0));
+    assert_eq!(*pts(&s, "l").last().unwrap(), Pt::new(300.0, 330.0));
+}
+
+#[test]
+fn references_into_groups_resolve_to_true_positions() {
+    let s = ok("group g at (100,100) size (300,300) {\n  box a at (10,10) size (40,20)\n}\nline l: a.right -> h 50\n");
+    assert_eq!(pts(&s, "l")[0], Pt::new(150.0, 120.0));
+}
+
+#[test]
+fn hv_and_curve_via_points_use_the_group_frame() {
+    let s = ok("group g at (100,100) size (300,300) {\n  line l: (0,0) -> hv (50,50) -> curve via (60,50) (70,60) (70,70)\n}\n");
+    assert_eq!(
+        pts(&s, "l"),
+        vec![
+            Pt::new(100.0, 100.0),
+            Pt::new(150.0, 100.0),
+            Pt::new(150.0, 150.0),
+            Pt::new(170.0, 170.0)
+        ]
+    );
+    let PathSeg::Cubic { c1, c2, .. } = s.lines[0].path[2] else {
+        panic!("expected cubic")
+    };
+    assert_eq!((c1, c2), (Pt::new(160.0, 150.0), Pt::new(170.0, 160.0)));
+}
+
+#[test]
+fn text_and_junction_literals_use_the_group_frame() {
+    let s = ok("group g at (100,50) size (300,300) {\n  junction j at (10,20)\n  text t \"hi\" at (30,40)\n}\n");
+    assert_eq!(junction(&s, "j"), Pt::new(110.0, 70.0));
+    assert_eq!(s.texts[0].at, Pt::new(130.0, 90.0));
+    assert_eq!(s.texts[0].parent.as_deref(), Some("g"));
+}
+
+#[test]
+fn negative_moves_go_left_and_up() {
+    let s = ok("line l: (100,100) -> h -30 -> v -40\n");
+    assert_eq!(
+        pts(&s, "l"),
+        vec![
+            Pt::new(100.0, 100.0),
+            Pt::new(70.0, 100.0),
+            Pt::new(70.0, 60.0)
+        ]
+    );
+}
+
+#[test]
+fn axis_targets_take_a_points_coordinate() {
+    let s =
+        ok("box a at (200,300) size (100,60)\nline l: (0,0) -> x a.right -> y a.bottom+(0,10)\n");
+    assert_eq!(
+        pts(&s, "l"),
+        vec![
+            Pt::new(0.0, 0.0),
+            Pt::new(300.0, 0.0),
+            Pt::new(300.0, 370.0)
+        ]
+    );
+}
+
+#[test]
+fn every_anchor_and_alias_resolves() {
+    let s = ok("box a at (100,100) size (100,60)\n");
+    let r = rect(&s, "a");
+    for (name, want) in [
+        ("top", (150.0, 100.0)),
+        ("bottom", (150.0, 160.0)),
+        ("left", (100.0, 130.0)),
+        ("right", (200.0, 130.0)),
+        ("center", (150.0, 130.0)),
+        ("tl", (100.0, 100.0)),
+        ("tr", (200.0, 100.0)),
+        ("bl", (100.0, 160.0)),
+        ("br", (200.0, 160.0)),
+        ("top-left", (100.0, 100.0)),
+        ("top-right", (200.0, 100.0)),
+        ("bottom-left", (100.0, 160.0)),
+        ("bottom-right", (200.0, 160.0)),
+        ("top@0.5", (150.0, 100.0)),
+        ("top@0", (100.0, 100.0)),
+        ("bottom@0.25", (125.0, 160.0)),
+        ("left@0.25", (100.0, 115.0)),
+        ("right@1", (200.0, 160.0)),
+    ] {
+        let s = ok(&format!(
+            "box a at ({},{}) size ({},{})\njunction j at a.{name}\n",
+            r.x, r.y, r.w, r.h
+        ));
+        assert_eq!(junction(&s, "j"), Pt::new(want.0, want.1), "{name}");
+    }
+}
+
+#[test]
+fn anchor_t_and_offset_compose() {
+    let s = ok("box db at (0,0) size (100,40)\njunction j at db.left@0.25+(0,4)\njunction k at db.top+(-10,0)\n");
+    assert_eq!(junction(&s, "j"), Pt::new(0.0, 14.0));
+    assert_eq!(junction(&s, "k"), Pt::new(40.0, 0.0));
+}
+
+#[test]
+fn group_anchors_work_like_box_anchors() {
+    let s = ok("group k8s at (100,100) size (200,100) {\n}\njunction j at k8s.top\nbox b at k8s.right+(20,0) size (10,10) pin=left\n");
+    assert_eq!(junction(&s, "j"), Pt::new(200.0, 100.0));
+    assert_eq!(rect(&s, "b"), Rect::new(320.0, 145.0, 10.0, 10.0));
+}
+
+#[test]
+fn junction_references_take_offsets_and_axes() {
+    let s = ok(
+        "junction j at (40,50)\njunction k at j+(5,-5)\njunction m at (j.x, k.y)\nline l: j -> k\n",
+    );
+    assert_eq!(junction(&s, "k"), Pt::new(45.0, 45.0));
+    assert_eq!(junction(&s, "m"), Pt::new(40.0, 45.0));
+    assert_eq!(pts(&s, "l"), vec![Pt::new(40.0, 50.0), Pt::new(45.0, 45.0)]);
+}
+
+#[test]
+fn mixed_points_take_each_axis_from_a_reference() {
+    let s = ok("box app1 at (100,0) size (60,40)\njunction lane1 at (0,200)\nline l: app1.bottom -> (app1.bottom.x, lane1.y)\n");
+    assert_eq!(
+        pts(&s, "l"),
+        vec![Pt::new(130.0, 40.0), Pt::new(130.0, 200.0)]
+    );
+}
+
+#[test]
+fn anchor_position_out_of_range() {
+    let d = errors("box a at (0,0) size (10,10)\njunction j at a.top@1.5\n");
+    assert_eq!(d[0].code, "unknown-anchor");
+    let d = errors("box a at (0,0) size (10,10)\njunction j at a.tl@0.5\n");
+    assert_eq!(d[0].code, "unknown-anchor");
+}
+
+#[test]
+fn every_pin_anchor_lands_on_at() {
+    for (pin, want) in [
+        ("tl", (100.0, 100.0)),
+        ("top", (80.0, 100.0)),
+        ("tr", (60.0, 100.0)),
+        ("right", (60.0, 90.0)),
+        ("br", (60.0, 80.0)),
+        ("bottom", (80.0, 80.0)),
+        ("bl", (100.0, 80.0)),
+        ("left", (100.0, 90.0)),
+        ("center", (80.0, 90.0)),
+        ("top-left", (100.0, 100.0)),
+        ("bottom-right", (60.0, 80.0)),
+    ] {
+        let s = ok(&format!("box a at (100,100) size (40,20) pin={pin}\n"));
+        assert_eq!(
+            rect(&s, "a"),
+            Rect::new(want.0, want.1, 40.0, 20.0),
+            "{pin}"
+        );
+    }
+}
+
+#[test]
+fn pin_rejects_unknown_anchors_and_positions() {
+    let d = errors("box a at (0,0) size (10,10) pin=lft\n");
+    assert_eq!(d[0].code, "attr");
+    assert_eq!(d[0].help, vec!["did you mean `left`?".to_string()]);
+    assert!(!errors("box a at (0,0) size (10,10) pin=left@0.5\n").is_empty());
+}
+
+#[test]
+fn group_pin_moves_its_frame() {
+    let s = ok("group g at (100,100) size (40,20) pin=center {\n  box a at (0,0) size (1,1)\n}\n");
+    assert_eq!(rect(&s, "g"), Rect::new(80.0, 90.0, 40.0, 20.0));
+    assert_eq!(rect(&s, "a"), Rect::new(80.0, 90.0, 1.0, 1.0));
+}
+
+#[test]
+fn self_placement_is_a_cycle() {
+    let d = errors("box a at a.left size (10,10)\n");
+    assert_eq!(d[0].code, "placement-cycle");
+    assert!(d[0].message.contains("a -> a"), "{d:#?}");
+}
+
+#[test]
+fn group_placed_relative_to_its_own_child_is_a_cycle() {
+    let d = errors("group g at c.left size (100,100) {\n  box c at (0,0) size (10,10)\n}\n");
+    assert!(d.iter().any(|x| x.code == "placement-cycle"), "{d:#?}");
+}
+
+#[test]
+fn mixed_point_cycles_are_detected() {
+    let d = errors("junction j at (k.x, 0)\njunction k at (j.x, 0)\n");
+    assert_eq!(
+        d.iter().filter(|x| x.code == "placement-cycle").count(),
+        1,
+        "{d:#?}"
+    );
+}
+
+#[test]
+fn ids_are_unique_across_kinds_and_groups() {
+    for body in [
+        "box a at (0,0) size (1,1)\nline a: (0,0) -> h 1\n",
+        "junction a at (0,0)\ntext a \"x\" at (0,0)\n",
+        "box a at (0,0) size (1,1)\ngroup g at (0,0) size (10,10) {\n  junction a at (0,0)\n}\n",
+    ] {
+        let d = errors(body);
+        assert_eq!(d.len(), 1, "{body}: {d:#?}");
+        assert_eq!(d[0].code, "duplicate-id", "{body}");
+    }
+}
+
+#[test]
+fn texts_and_lines_cannot_be_referenced() {
+    let d = errors("text t \"x\" at (0,0)\njunction j at t.left\n");
+    assert_eq!(d[0].code, "unknown-id");
+}
+
+#[test]
+fn inline_attributes_override_named_style() {
+    let s = ok("style svc { fill=#111111 stroke=#222222 }\nbox a at (0,0) size (1,1) style=svc fill=#333333\n");
+    assert_eq!(s.shapes[0].style.fill, "#333333");
+    assert_eq!(s.shapes[0].style.stroke, "#222222");
+}
+
+#[test]
+fn group_style_and_inline_apply_over_boundary() {
+    let s = ok("style blue { stroke=#0000ff }\ngroup g at (0,0) size (10,10) style=blue stroke-style=solid {\n}\n");
+    assert_eq!(s.shapes[0].style.stroke, "#0000ff");
+    assert_eq!(s.shapes[0].style.stroke_style, StrokeStyle::Solid);
+}
+
+#[test]
+fn styles_may_be_defined_after_use() {
+    let s = ok("box a at (0,0) size (1,1) style=mine\nstyle mine { fill=#abcdef }\n");
+    assert_eq!(s.shapes[0].style.fill, "#abcdef");
+}
+
+#[test]
+fn every_style_key_is_accepted() {
+    ok("style s { fill=#fff stroke=#000 stroke-width=2 stroke-style=dotted font-size=12 font-weight=bold color=#111 radius=4 padding=6 muted=#888 }\n");
+    let d = errors("style s { fil=#fff }\n");
+    assert_eq!(d[0].code, "attr");
+}
+
+#[test]
+fn every_builtin_style_exists() {
+    for name in [
+        "service",
+        "datastore",
+        "external",
+        "queue",
+        "boundary",
+        "note",
+    ] {
+        ok(&format!("box a at (0,0) size (1,1) style={name}\n"));
+    }
+}
+
+#[test]
+fn line_style_applies_only_stroke_and_font_keys() {
+    let s = ok("style s { fill=#ff0000 stroke=#00ff00 radius=10 font-size=20 }\nline l: (0,0) -> h 100 -> v 100 style=s\n");
+    let l = &s.lines[0];
+    assert_eq!(l.style.stroke, "#00ff00");
+    assert_eq!(l.style.font_size, 20.0);
+    assert_ne!(l.style.fill, "#ff0000");
+    assert_eq!(l.path.len(), 2, "style radius must not round lines");
+}
+
+#[test]
+fn line_inline_stroke_attributes() {
+    let s = ok("line l: (0,0) -> h 10 stroke=#123456 stroke-width=3 stroke-style=dashed\n");
+    let st = &s.lines[0].style;
+    assert_eq!(
+        (st.stroke.as_str(), st.stroke_width, st.stroke_style),
+        ("#123456", 3.0, StrokeStyle::Dashed)
+    );
+    assert_eq!(errors("line l: (0,0) -> h 10 fill=#fff\n")[0].code, "attr");
+}
+
+#[test]
+fn markers_default_to_none_and_accept_every_kind() {
+    let s = ok("line l: (0,0) -> h 10\n");
+    assert_eq!(
+        (s.lines[0].start, s.lines[0].end),
+        (kashika_model::Marker::None, kashika_model::Marker::None)
+    );
+    for m in ["arrow", "open", "diamond", "dot", "none"] {
+        ok(&format!("line l: (0,0) -> h 10 start={m} end={m}\n"));
+    }
+    assert_eq!(errors("line l: (0,0) -> h 10 end=arow\n")[0].code, "attr");
+}
+
+#[test]
+fn label_position_must_be_in_range() {
+    let d = errors("line l: (0,0) -> h 10 label@1.5=\"x\"\n");
+    assert_eq!(d[0].code, "attr");
+}
+
+#[test]
+fn ortho_rejects_curves() {
+    let d = errors("line l: (0,0) -> curve left:10 (100,0) ortho\n");
+    assert_eq!(d[0].code, "not-ortho");
+    ok("line l: (0,0) -> h 10 -> vh (20,20) ortho\n");
+}
+
+#[test]
+fn reason_is_kept() {
+    let s = ok("line l: (0,0) -> h 10 allow=cross reason=\"bus\"\n");
+    assert_eq!(s.lines[0].reason.as_deref(), Some("bus"));
+}
+
+#[test]
+fn unnamed_continued_line_is_named_after_its_first_line() {
+    let s = ok("\nline (0,0)\n  -> h 10\n  -> v 10\n");
+    assert_eq!(s.lines[0].id, "line@L3");
+}
+
+#[test]
+fn diagram_attributes() {
+    let s = ok("");
+    assert_eq!((s.clearance, s.grid), (6.0, None));
+    let (s, d) = compile(
+        "diagram \"t\" size (10,10) kashika=1 grid=10 clearance=4 icons=\"i\" allow=near\n",
+    );
+    assert!(d.is_empty(), "{d:#?}");
+    assert_eq!((s.clearance, s.grid, s.allow.len()), (4.0, Some(10.0), 1));
+}
+
+#[test]
+fn diagram_must_be_first_and_unique() {
+    let (_, d) = compile("box a at (0,0) size (1,1)\ndiagram \"t\" size (10,10)\n");
+    assert_eq!(d[0].code, "diagram");
+    let (_, d) = compile("diagram \"t\" size (10,10)\ndiagram \"u\" size (10,10)\n");
+    assert_eq!(d[0].code, "diagram");
+    let (_, d) = compile("style s { fill=#fff }\ndiagram \"t\" size (10,10)\n");
+    assert_eq!(d[0].code, "diagram");
+}
+
+#[test]
+fn diagram_inside_a_group_is_misplaced() {
+    let d = errors("group g at (0,0) size (10,10) {\n  diagram \"x\" size (1,1)\n}\n");
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "diagram");
+}
+
+#[test]
+fn shapes_need_positive_sizes() {
+    for body in [
+        "box a at (0,0) size (0,10)\n",
+        "box a at (0,0) size (10,-1)\n",
+        "group g at (0,0) size (0,0) {\n}\n",
+        "text \"x\" at (0,0) size=0\n",
+    ] {
+        let d = errors(body);
+        assert!(d.iter().any(|x| x.code == "size"), "{body}: {d:#?}");
+    }
+}
+
+#[test]
+fn box_shapes() {
+    let s = ok("box a \"A\" at (0,0) size (10,10) shape=rect\n");
+    assert_eq!(s.shapes[0].outline, kashika_model::Outline::Rect);
+    assert_eq!(s.shapes[0].label.as_deref(), Some("A"));
+    let s = ok("box a at (0,0) size (10,10) shape=rounded\n");
+    assert_eq!(s.shapes[0].outline, kashika_model::Outline::Rounded);
+    let d = errors("box a at (0,0) size (10,10) shape=rectt\n");
+    assert_eq!(d[0].code, "attr");
+}
+
+#[test]
+fn every_unimplemented_shape_is_unsupported() {
+    for shape in [
+        "cylinder", "diamond", "ellipse", "hexagon", "doc", "cloud", "person",
+    ] {
+        let d = errors(&format!("box a at (0,0) size (10,10) shape={shape}\n"));
+        assert_eq!(d.len(), 1, "{shape}: {d:#?}");
+        assert_eq!(d[0].code, "unsupported", "{shape}");
+    }
+}
+
+#[test]
+fn every_text_feature_attribute_is_unsupported() {
+    for attr in [
+        "sublabel=\"x\"",
+        "text-align=left",
+        "text-valign=top",
+        "gap=2",
+        "icon=\"x.svg\"",
+        "icon-pos=left",
+        "icon-size=16",
+    ] {
+        let d = errors(&format!("box a at (0,0) size (10,10) {attr}\n"));
+        assert_eq!(d.len(), 1, "{attr}: {d:#?}");
+        assert_eq!(d[0].code, "unsupported", "{attr}");
+        let d = errors(&format!("group g at (0,0) size (10,10) {attr} {{\n}}\n"));
+        assert_eq!(d[0].code, "unsupported", "group {attr}");
+    }
+}
+
+#[test]
+fn groups_take_no_shape() {
+    let d = errors("group g at (0,0) size (10,10) shape=rect {\n}\n");
+    assert_eq!(d[0].code, "attr");
+}
+
+#[test]
+fn junction_dot() {
+    let s = ok("junction a at (0,0) dot\njunction b at (1,1)\n");
+    assert_eq!(
+        s.junctions.iter().map(|j| j.dot).collect::<Vec<_>>(),
+        vec![true, false]
+    );
+    assert_eq!(errors("junction a at (0,0) dot=1\n")[0].code, "attr");
+}
+
+#[test]
+fn text_attributes() {
+    let s =
+        ok("text t \"hi\" at (10,20) size=18 color=#ff0000 align=right\ntext \"anon\" at (0,0)\n");
+    let t = &s.texts[0];
+    assert_eq!(t.id.as_deref(), Some("t"));
+    assert_eq!(
+        (t.size, t.color.as_str(), t.align),
+        (18.0, "#ff0000", kashika_model::Align::Right)
+    );
+    assert_eq!(s.texts[1].id, None);
+    assert_eq!(s.texts[1].align, kashika_model::Align::Center);
+    assert_eq!(errors("text \"x\" at (0,0) align=middle\n")[0].code, "attr");
+}
+
+#[test]
+fn duplicate_and_mistyped_attributes() {
+    let d = errors("box a at (0,0) size (10,10) fill=#fff fill=#000\n");
+    assert_eq!(d[0].code, "attr");
+    assert!(d[0].message.contains("duplicate"));
+    let d = errors("box a at (0,0) size (10,10) stroke-width=\"2\"\n");
+    assert_eq!(d[0].code, "attr");
+}
+
+#[test]
+fn style_inside_a_group_is_rejected() {
+    let d = errors("group g at (0,0) size (10,10) {\n  style s { fill=#fff }\n}\n");
+    assert_eq!(d[0].code, "parse");
+}

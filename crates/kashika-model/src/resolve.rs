@@ -239,12 +239,22 @@ impl<'a> Resolver<'a> {
                 Stmt::Junction(j) => Item::Junction(j),
                 Stmt::Text(t) => Item::Text(t),
                 Stmt::Line(l) => Item::Line(l),
-                Stmt::Diagram(_) | Stmt::Style(_) => {
+                Stmt::Diagram(_) => {
+                    if parent.is_some() {
+                        self.diags.push(Diagnostic::error(
+                            "diagram",
+                            stmt.span(),
+                            "`diagram` is only allowed as the first top-level statement",
+                        ));
+                    }
+                    continue;
+                }
+                Stmt::Style(_) => {
                     if parent.is_some() {
                         self.diags.push(Diagnostic::error(
                             "parse",
                             stmt.span(),
-                            "`diagram` and `style` are only allowed at the top level",
+                            "`style` is only allowed at the top level",
                         ));
                     }
                     continue;
@@ -489,7 +499,18 @@ impl<'a> Resolver<'a> {
         let a = Attrs::new(&t.attrs, "text", TEXT_KEYS, &mut self.diags);
         let size = a
             .get("size")
-            .and_then(|x| attrs::num(x, &mut self.diags))
+            .and_then(|x| {
+                let v = attrs::num(x, &mut self.diags)?;
+                if v <= 0.0 {
+                    self.diags.push(Diagnostic::error(
+                        "size",
+                        x.span,
+                        "text size must be positive",
+                    ));
+                    return None;
+                }
+                Some(v)
+            })
             .unwrap_or(14.0);
         let color = a
             .get("color")

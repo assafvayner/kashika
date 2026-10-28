@@ -156,3 +156,141 @@ fn block_comment_between_statements() {
     );
     assert_eq!(f.stmts.len(), 2);
 }
+
+#[test]
+fn identifiers_allow_underscores_digits_and_hyphens() {
+    let f = parse_ok("box _a1 at (0,0) size (1,1)\nbox a--b at (0,0) size (1,1)\nbox c- at (0,0) size (1,1)\nline a--b.right->c-.left\n");
+    let ids: Vec<_> = f
+        .stmts
+        .iter()
+        .filter_map(|s| match s {
+            Stmt::Box(b) => Some(b.id.name.clone()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(ids, ["_a1", "a--b", "c-"]);
+    let Stmt::Line(l) = &f.stmts[3] else {
+        panic!("expected line")
+    };
+    assert_eq!(l.segs.len(), 1);
+}
+
+#[test]
+fn numbers_are_integers_or_decimals_optionally_negative() {
+    let f = parse_ok("box a at (-1.5,20) size (0.25,3)\n");
+    let Stmt::Box(b) = &f.stmts[0] else {
+        panic!("expected box")
+    };
+    let Point::Lit {
+        x: Coord::Num(x),
+        y: Coord::Num(y),
+        ..
+    } = &b.at
+    else {
+        panic!("expected literal point")
+    };
+    assert_eq!((*x, *y, b.size), (-1.5, 20.0, (0.25, 3.0)));
+}
+
+#[test]
+fn colors_take_three_six_or_eight_hex_digits() {
+    let f = parse_ok("style s { fill=#abc stroke=#a1b2c3 color=#a1b2c3d4 }\n");
+    let Stmt::Style(s) = &f.stmts[0] else {
+        panic!("expected style")
+    };
+    assert_eq!(s.attrs[2].value, Value::Color("#a1b2c3d4".into()));
+    for bad in ["#ab", "#abcd", "#ggg"] {
+        let (_, d) = parse(&format!("style s {{ fill={bad} }}\n"));
+        assert_eq!(d[0].code, "parse", "{bad}");
+    }
+}
+
+#[test]
+fn statements_end_at_a_newline() {
+    let (_, d) = parse("box a at (0,0) size (1,1) box b at (0,0) size (1,1)\n");
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "parse");
+    let (_, d) = parse("box a at (0,0)\n  size (1,1)\n");
+    assert!(!d.is_empty());
+}
+
+#[test]
+fn arrow_continuation_skips_blank_and_comment_lines() {
+    let f = parse_ok("line a.top\n\n  // first hop\n  -> y 40\n  /* second\n     hop */\n  -> h 10 // trailing\n\n  end=arrow\nbox c at (0,0) size (1,1)\n");
+    assert_eq!(f.stmts.len(), 2);
+    let Stmt::Line(l) = &f.stmts[0] else {
+        panic!("expected line")
+    };
+    assert_eq!((l.segs.len(), l.attrs.len()), (2, 1));
+}
+
+#[test]
+fn a_new_statement_ends_a_line_without_arrow() {
+    let f = parse_ok("line (0,0) -> h 5\nline (0,0)\n  -> v 5\n");
+    assert_eq!(f.stmts.len(), 2);
+}
+
+#[test]
+fn block_comment_spanning_lines_never_joins_statements() {
+    let (_, d) = parse("box a at (0,0) /* x\n */ size (1,1)\n");
+    assert!(!d.is_empty());
+    assert_eq!(d[0].code, "parse");
+}
+
+#[test]
+fn unclosed_block_comment_is_a_parse_error() {
+    let (_, d) = parse("box a at (0,0) size (1,1)\n/* never closed\n");
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "parse");
+}
+
+#[test]
+fn line_attributes_parse() {
+    let f = parse_ok("line l: (0,0) -> h 5 start=dot end=arrow stroke=#000 stroke-width=2 stroke-style=dashed style=s radius=4 label=\"a\" label@0.25=\"b\" ortho allow=cross reason=\"r\"\n");
+    let Stmt::Line(l) = &f.stmts[0] else {
+        panic!("expected line")
+    };
+    assert_eq!(l.attrs.len(), 12);
+}
+
+#[test]
+fn text_parses_with_and_without_id() {
+    let f = parse_ok("text t \"a\" at (0,0) size=12 align=left\ntext \"b\" at (0,0)\n");
+    let ids: Vec<_> = f
+        .stmts
+        .iter()
+        .map(|s| match s {
+            Stmt::Text(t) => t.id.as_ref().map(|i| i.name.clone()),
+            _ => panic!("expected text"),
+        })
+        .collect();
+    assert_eq!(ids, [Some("t".to_string()), None]);
+}
+
+#[test]
+fn junction_with_dot_flag() {
+    let f = parse_ok("junction j at (0,0) dot\n");
+    let Stmt::Junction(j) = &f.stmts[0] else {
+        panic!("expected junction")
+    };
+    assert_eq!(j.attrs[0].value, Value::Flag);
+}
+
+#[test]
+fn line_needs_a_segment() {
+    let (_, d) = parse("line (0,0)\n");
+    assert_eq!(d[0].code, "parse");
+    assert!(d[0].message.contains("`->`"), "{d:#?}");
+}
+
+#[test]
+fn nested_groups_parse() {
+    let f = parse_ok("group a at (0,0) size (9,9) {\n  group b at (0,0) size (5,5) {\n    junction j at (0,0)\n    text \"t\" at (0,0)\n    line (0,0) -> h 1\n  }\n}\n");
+    let Stmt::Group(a) = &f.stmts[0] else {
+        panic!("expected group")
+    };
+    let Stmt::Group(b) = &a.children[0] else {
+        panic!("expected group")
+    };
+    assert_eq!(b.children.len(), 3);
+}

@@ -187,12 +187,8 @@ impl Lexer {
     fn ident(&mut self, line: u32, col: u32) {
         let mut s = String::new();
         while let Some(c) = self.peek(0) {
-            let continues = c.is_ascii_alphanumeric()
-                || c == '_'
-                || (c == '-'
-                    && self
-                        .peek(1)
-                        .is_some_and(|n| n.is_ascii_alphanumeric() || n == '_'));
+            let continues =
+                c.is_ascii_alphanumeric() || c == '_' || (c == '-' && self.peek(1) != Some('>'));
             if !continues {
                 break;
             }

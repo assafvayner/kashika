@@ -55,3 +55,36 @@ fn multi_line_labels_stack() {
 fn snapshot_basic() {
     insta::assert_snapshot!("basic", svg(BASIC));
 }
+
+#[test]
+fn paint_order_is_groups_boxes_lines_then_labels_and_texts() {
+    let s = svg("diagram \"p\" size (300,300)\n\
+                 text \"T\" at (5,5)\n\
+                 line l: (0,150) -> h 300 label=\"L\"\n\
+                 box b at (100,100) size (50,50)\n\
+                 group outer at (0,0) size (300,300) {\n  group inner at (20,20) size (100,100) {\n  }\n}\n");
+    let pos = |needle: &str| s.find(needle).unwrap_or_else(|| panic!("{needle}"));
+    let outer = pos(r#"<rect x="0" y="0" width="300""#);
+    let inner = pos(r#"<rect x="20" y="20""#);
+    let bx = pos(r#"<rect x="100" y="100""#);
+    let line = pos(r#"d="M 0 150 L 300 150""#);
+    let label = pos(">L</text>");
+    let text = pos(">T</text>");
+    assert!(outer < inner && inner < bx && bx < line && line < label && label < text);
+}
+
+#[test]
+fn junction_dot_is_six_pixels() {
+    let s = svg("diagram \"j\" size (100,100)\njunction a at (10,20) dot\njunction b at (30,40)\n");
+    assert!(s.contains(r#"<circle cx="10" cy="20" r="3""#));
+    assert!(!s.contains(r#"cx="30""#));
+}
+
+#[test]
+fn text_at_is_the_vertical_center() {
+    let s = svg("diagram \"t\" size (100,100)\ntext \"hi\" at (50,40) align=left\n");
+    assert!(s.contains(
+        r#"x="50" y="40" font-family="Inter, Helvetica, Arial, sans-serif" font-size="14""#
+    ));
+    assert!(s.contains(r#"text-anchor="start" dominant-baseline="central""#));
+}
