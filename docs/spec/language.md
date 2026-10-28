@@ -4,8 +4,6 @@ Kashika is a text-to-diagram language for technical design diagrams (architectur
 
 The CLI renders `.kash` files to SVG or PNG and runs geometric checks (crossings, overlaps, near-misses, text overflow). It also exposes the resolved geometry, so an author who cannot see the image can still verify and repair it.
 
-How v0 became v1 is recorded in `docs/review/review-synthesis.md`.
-
 ---
 
 ## 1. Coordinates and frames
