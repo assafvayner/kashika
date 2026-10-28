@@ -44,7 +44,7 @@ Kashika has **no auto-layout**. You decide every box position and every line pat
 
 ## Cheat sheet
 
-```kash
+```kash fragment
 diagram "Title" size (900,500) kashika="0.1.0"  // optional: grid=10 clearance=6 icons="dir" background=#rrggbb (default transparent)
 import "lib/aws.kash" as aws  // library shapes and styles: shape=aws.s3 style=aws.service
 shape tri { path "M 0.5 0 L 1 1 L 0 1 Z" }  // unit coordinates 0..1, stretched to the box; M L H V C Q A Z
@@ -67,7 +67,7 @@ Anchors: `top bottom left right center tl tr bl br`, plus `side@t` (e.g. `db.lef
 
 On non-rectangular shapes, `top`/`bottom`/`left`/`right` (and `@t`) slide along their axis onto the outline, so a vertical line into `db.top` stays vertical. Corners (`tl` …) stay on the bounding box. `kashika ref shapes` lists each shape's outline and text area.
 
-Files (imports, SVG shapes, images, icons) are local only and resolve from the `.kash` file's directory, then `icons="<dir>"` on the `diagram` line, then `KASHIKA_ICON_PATH`, then the bundled icons. Paths outside the file's directory need `--allow-path`. `kashika icons [dir] --search <term>` lists what's available, with natural sizes. `import` goes right after `diagram`. A library file has no `diagram` line and holds only `shape`, `style` and `import`; it can't be checked on its own, so check it through a diagram that imports it. Images are top-level only.
+Files (imports, SVG shapes, images, icons) are local only and resolve from the `.kash` file's directory, then `icons="<dir>"` on the `diagram` line, then `KASHIKA_ICON_PATH`, then the bundled icons. Paths outside the file's directory need `--allow-path`. `kashika icons [dir] --search <term>` lists what's available, with natural sizes. `import` goes right after `diagram`. A library file has no `diagram` line and holds only `shape`, `style` and `import`; `kashika check lib.kash` checks it on its own, resolving its definitions. Images are top-level only.
 
 `grid=N` makes `off-grid` check every number you write for a position or distance: point coordinates (also inside mixed points), `+(dx,dy)` offsets, sizes, `h`/`v`, numeric `x`/`y` and `curve via` points. Anchors, `@t`, `curve left N` and attribute values aren't checked. Round measured sizes up to the grid.
 

@@ -126,7 +126,8 @@ Library files may contain only `shape`, `style` and `import`; any other statemen
 ### Rules for files
 - **Local files only.** No URLs.
 - **Path resolution:** paths are relative to the importing file. A path that escapes the project root is an error unless `--allow-path` is given.
-- **Search path:** besides the importing file's directory, Kashika searches `icons=` on the `diagram` line and `KASHIKA_ICON_PATH`.
+- **Project root:** the input file's directory; for stdin, the current working directory (`--stdin-name` does not change it). Directories on the search path (`icons=`, `KASHIKA_ICON_PATH`) are additional trusted roots, as is anything under `--allow-path`.
+- **Search path:** besides the importing file's directory, Kashika searches `icons=` on the `diagram` line and `KASHIKA_ICON_PATH`, then falls back to the bundled icons for a bare name such as `icon="queue"`.
 - **SVG sanitizing:** scripts, external references and `foreignObject` are stripped.
 - **Image size limits:** a PNG or JPEG, attached or embedded in an SVG, is judged by its header before any pixel is decoded and is a `file` error beyond 8,192 px per side or 32,000,000 px in total. Raster output has its own, larger canvas cap (§8).
 - **Self-contained output:** images are embedded in SVG output and rasterized into PNG output.
@@ -219,13 +220,13 @@ Unnamed lines are referred to as `line@L<n>`, where n is the source line of the 
 
 - Kashika bundles Inter (Regular and Bold) and JetBrains Mono (for `` `code` ``), so measurements are identical on every machine.
 - Defaults: `font-size=14`, line height `1.25 × font-size`, `padding=8`.
-- A box's **text area** is its bounding box inset by `padding`, with a further reduction for some shapes:
+- A box's **text area** is the shape's own text area (the whole box for `rect` and `rounded`, otherwise as below) inset by `padding` on every side:
 
   | shape | text area |
   |---|---|
   | diamond | central 50% |
   | ellipse | the inscribed rectangle |
-  | hexagon | horizontally inset by `h/4` |
+  | hexagon | horizontally inset by `min(h/4, w/2)` |
   | cylinder | below the cap |
   | rounded | same as `rect` |
 - The stacked text (or each absolute item) must fit the text area. `label-overflow` reports the required box size; for an absolute item it fires only when the item is larger than the text area. Placing an item outside the text area is the `text-outside-shape` warning (§7), not an error. For small text areas, such as a diamond's, it suggests a roomier shape.
@@ -307,7 +308,7 @@ kashika ref     [topic] [--json]          // topics: syntax anchors paths shapes
 kashika --version
 ```
 
-Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`), `--show-suppressed`, `--focus <id,...>` (only warnings involving these ids), `--max N`, `--stdin-name <name>`.
+Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`), `--show-suppressed`, `--focus <id,...>` (only warnings involving these ids), `--max N` (default 50), `--stdin-name <name>`.
 
 - `--focus` filters warnings only; errors are always reported. An unknown id is a usage error.
 - Suppressed findings are excluded from `warn` and from the exit code, and counted in `suppressed`. `crossings` in the metrics counts every crossing, suppressed or not, and is computed before `--focus` filtering.
@@ -423,7 +424,7 @@ A detour lists its second lane as its corridor. When no candidate is clear of ev
 
 ### ref
 
-`ref` is embedded in the binary and matches its version. The default page is about 1,500–2,000 words. It contains:
+`ref` is embedded in the binary and matches its version. The default page is about 2,000–2,500 words. It contains:
 - the five non-obvious rules (y-down; the frame rule; ids are global; anchors resolve absolutely; what `allow` hides)
 - a compact grammar
 - the anchor, segment and attribute tables, with defaults

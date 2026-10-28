@@ -47,7 +47,7 @@ fn default_page_has_the_required_parts_and_length() {
         .filter(|w| w.chars().any(char::is_alphanumeric))
         .count();
     assert!(
-        (1500..=2300).contains(&words),
+        (1500..=2800).contains(&words),
         "default page has {words} words"
     );
 }
@@ -156,6 +156,22 @@ fn ref_examples_check_clean_and_are_formatted() {
         blocks.extend(kash_blocks(&page(&[*t])));
     }
     assert!(blocks.len() >= 9, "found {} blocks", blocks.len());
+    assert_blocks_clean_and_formatted(blocks);
+}
+
+#[test]
+fn skill_examples_check_clean_and_are_formatted() {
+    let skill = std::fs::read_to_string(format!(
+        "{}/../../skills/kashika/SKILL.md",
+        env!("CARGO_MANIFEST_DIR")
+    ))
+    .unwrap();
+    let blocks = kash_blocks(&skill);
+    assert!(blocks.len() >= 2, "found {} blocks", blocks.len());
+    assert_blocks_clean_and_formatted(blocks);
+}
+
+fn assert_blocks_clean_and_formatted(blocks: Vec<String>) {
     for b in blocks {
         let (scene, mut diags) = kashika_model::compile(&b);
         diags.extend(
