@@ -1,6 +1,6 @@
 use kashika_geom::{PathSeg, Pt};
 use kashika_model::{
-    Label, Layer, Line, Marker, Scene, Shape, ShapeKind, StrokeStyle, Style, Text,
+    ErParts, Label, Layer, Line, Marker, Scene, Shape, ShapeKind, StrokeStyle, Style, Text,
 };
 
 use crate::shapes::{self, Defs};
@@ -178,10 +178,31 @@ pub(crate) fn path_data(path: &[PathSeg]) -> String {
     d
 }
 
-/// Opens a group masked so the line and its markers are cut out under its own labels,
-/// leaving whatever is beneath visible. Returns whether a group was opened.
-fn label_mask(out: &mut String, l: &Line, i: usize, (w, h): (f64, f64), id: &str) -> bool {
-    if l.labels.is_empty() {
+/// Each marker of `l` with its tip and the direction it points: the end first, then the start.
+fn ends(l: &Line) -> Vec<(Marker, Pt, Pt, ErParts)> {
+    let (Some(first), Some(last)) = (l.path.first(), l.path.last()) else {
+        return Vec::new();
+    };
+    vec![
+        (l.end, last.to(), last.end_dir(), l.er_parts(false)),
+        (
+            l.start,
+            first.from(),
+            first.start_dir() * -1.0,
+            l.er_parts(true),
+        ),
+    ]
+}
+
+/// Opens a group masked so the line and its markers are cut out under its own labels and
+/// inside the open circles of its `zero-*` ends, leaving whatever is beneath visible.
+/// Returns whether a group was opened.
+fn line_mask(out: &mut String, l: &Line, i: usize, (w, h): (f64, f64), id: &str) -> bool {
+    let circles: Vec<(Pt, f64)> = ends(l)
+        .into_iter()
+        .filter_map(|(.., parts)| parts.circle)
+        .collect();
+    if l.labels.is_empty() && circles.is_empty() {
         return false;
     }
     let id = format!("kashika-{id}-mask-{i}");
@@ -199,12 +220,20 @@ fn label_mask(out: &mut String, l: &Line, i: usize, (w, h): (f64, f64), id: &str
             n(lab.rect.h)
         ));
     }
+    for (c, r) in circles {
+        out.push_str(&format!(
+            "<circle cx=\"{}\" cy=\"{}\" r=\"{}\" fill=\"#000\"/>",
+            n(c.x),
+            n(c.y),
+            n((r - l.style.stroke_width / 2.0).max(0.0))
+        ));
+    }
     out.push_str(&format!("</mask>\n<g mask=\"url(#{id})\">\n"));
     true
 }
 
 fn line(out: &mut String, l: &Line, i: usize, size: (f64, f64), id: &str) {
-    let masked = label_mask(out, l, i, size, id);
+    let masked = line_mask(out, l, i, size, id);
     let mut path = l.path.clone();
     trim(&mut path, l.start, l.end);
     out.push_str(&format!(
@@ -212,15 +241,8 @@ fn line(out: &mut String, l: &Line, i: usize, size: (f64, f64), id: &str) {
         path_data(&path),
         stroke_attrs(&l.style)
     ));
-    if let (Some(first), Some(last)) = (l.path.first(), l.path.last()) {
-        marker(out, l.end, last.to(), last.end_dir(), &l.style);
-        marker(
-            out,
-            l.start,
-            first.from(),
-            first.start_dir() * -1.0,
-            &l.style,
-        );
+    for (m, tip, dir, parts) in ends(l) {
+        marker(out, m, tip, dir, &parts, &l.style);
     }
     if masked {
         out.push_str("</g>\n");
@@ -228,7 +250,7 @@ fn line(out: &mut String, l: &Line, i: usize, size: (f64, f64), id: &str) {
 }
 
 /// Draws a marker whose tip sits on `tip`, pointing along `dir`.
-fn marker(out: &mut String, m: Marker, tip: Pt, dir: Pt, style: &Style) {
+fn marker(out: &mut String, m: Marker, tip: Pt, dir: Pt, parts: &ErParts, style: &Style) {
     let pts = |ps: &[Pt]| {
         ps.iter()
             .map(|p| format!("{},{}", n(p.x), n(p.y)))
@@ -261,6 +283,29 @@ fn marker(out: &mut String, m: Marker, tip: Pt, dir: Pt, style: &Style) {
                 n(Marker::DOT_RADIUS),
                 style.stroke
             ));
+        }
+        Marker::One | Marker::Many | Marker::OneMany | Marker::ZeroOne | Marker::ZeroMany => {
+            let d: String = parts
+                .strokes
+                .iter()
+                .map(|(a, b)| format!("M {} {} L {} {}", n(a.x), n(a.y), n(b.x), n(b.y)))
+                .collect::<Vec<_>>()
+                .join(" ");
+            out.push_str(&format!(
+                "<path d=\"{d}\" fill=\"none\" stroke=\"{}\" stroke-width=\"{}\" stroke-linecap=\"round\"/>\n",
+                style.stroke,
+                n(style.stroke_width)
+            ));
+            if let Some((c, r)) = parts.circle {
+                out.push_str(&format!(
+                    "<circle cx=\"{}\" cy=\"{}\" r=\"{}\" fill=\"none\" stroke=\"{}\" stroke-width=\"{}\"/>\n",
+                    n(c.x),
+                    n(c.y),
+                    n(r),
+                    style.stroke,
+                    n(style.stroke_width)
+                ));
+            }
         }
     }
 }

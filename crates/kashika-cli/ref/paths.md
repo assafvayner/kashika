@@ -15,7 +15,7 @@ A line is `start -> segment -> segment ...`. Each segment ends at a point, which
 
 | attribute | default | meaning |
 |---|---|---|
-| `start=` `end=` | `none` | `arrow`, `open`, `diamond`, `dot` or `none`; the tip sits on the endpoint |
+| `start=` `end=` | `none` | `arrow`, `open`, `diamond`, `dot` or `none`; the tip sits on the endpoint. Crow's-foot (ER) ends `one`, `many`, `one-many`, `zero-one`, `zero-many` sit on the line without trimming it; a `zero-*` circle is open |
 | `label="..."` `label@t="..."` | `t=0.5` | label at fraction `t` of the path length, markup allowed; repeatable |
 | `radius=N` | `0` | rounds every corner |
 | `stroke` `stroke-width` `stroke-style` `style=` | style | a style applies only its stroke and font keys |

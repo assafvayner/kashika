@@ -107,6 +107,37 @@ fn markers_at_both_ends_of_a_short_line_share_it() {
 }
 
 #[test]
+fn crows_foot_ends_keep_the_full_stroke() {
+    let s = svg("diagram \"c\" size (200,100)\nline l (20,50) -> h 160 start=one end=many\n");
+    assert_eq!(path_d(&s), "M 20 50 L 180 50");
+    assert!(s.contains(r##"<path d="M 28 44 L 28 56" fill="none" stroke="#334155" stroke-width="1.5" stroke-linecap="round"/>"##), "{s}");
+    assert!(
+        s.contains("M 168 50 L 180 56 M 168 50 L 180 50 M 168 50 L 180 44"),
+        "{s}"
+    );
+    assert!(!s.contains("<mask "), "{s}");
+}
+
+#[test]
+fn zero_ends_mask_the_line_inside_their_open_circle() {
+    let s = svg("diagram \"c\" size (200,100)\nline l (20,50) -> h 160 end=zero-many\n");
+    assert!(
+        s.contains(r##"<circle cx="160" cy="50" r="3.25" fill="#000"/></mask>"##),
+        "{s}"
+    );
+    assert!(
+        s.contains(
+            r##"<circle cx="160" cy="50" r="4" fill="none" stroke="#334155" stroke-width="1.5"/>"##
+        ),
+        "{s}"
+    );
+    assert!(
+        !s.contains("<rect width=\"100%\""),
+        "nothing paints the canvas: {s}"
+    );
+}
+
+#[test]
 fn line_labels_get_a_mask_and_texts_do_not() {
     let s = svg(
         "diagram \"h\" size (200,100)\nline l (0,50) -> h 200 label=\"L\"\ntext \"T\" at (100,90)\n",

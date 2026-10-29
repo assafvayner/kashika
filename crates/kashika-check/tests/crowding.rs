@@ -43,3 +43,24 @@ fn junction_endpoints_are_exempt() {
     )
     .is_empty());
 }
+
+#[test]
+fn crows_feet_need_room_for_both_spreads() {
+    let d = lint(
+        "port-crowding",
+        "box a at (100,100) size (100,60)\nline l1 a.top@0.5 -> v -50 start=many\nline l2 a.top@0.6 -> v -50 start=one-many\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].message, "l2 and l1 meet 'a' 10px apart (minimum 12px)");
+    assert!(d[0].help[0].starts_with("spread the endpoints at least 12px apart"));
+    assert!(lint(
+        "port-crowding",
+        "box a at (100,100) size (100,60)\nline l1 a.top@0.5 -> v -50 start=many\nline l2 a.top@0.62 -> v -50 start=zero-many\n"
+    )
+    .is_empty());
+    assert!(lint(
+        "port-crowding",
+        "box a at (100,100) size (100,60)\nline l1 a.top@0.5 -> v -50 start=arrow\nline l2 a.top@0.6 -> v -50 start=arrow\n"
+    )
+    .is_empty());
+}

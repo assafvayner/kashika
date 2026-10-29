@@ -9,7 +9,8 @@ use crate::sink::Sink;
 
 const MIN_GAP: f64 = 8.0;
 
-/// `port-crowding`: two endpoints on one shape are within 8px, or are identical and both
+/// `port-crowding`: two endpoints on one shape are within 8px (or closer than their two
+/// markers' half-widths add up to, so crow's feet don't overlap), or are identical and both
 /// draw a marker (stacked arrowheads). Junction endpoints are exempt.
 pub fn port_crowding(ctx: &Ctx, out: &mut Sink) {
     let all = ports(ctx);
@@ -24,8 +25,9 @@ pub fn port_crowding(ctx: &Ctx, out: &mut Sink) {
             .map(|&j| &all[j])
         {
             let gap = a.at.dist(b.at);
+            let min = MIN_GAP.max(a.marker_half_width + b.marker_half_width);
             let stacked = gap <= TOLERANCE;
-            if gap >= MIN_GAP || (stacked && !(a.marker && b.marker)) || a.line == b.line {
+            if gap >= min || (stacked && !(a.marker && b.marker)) || a.line == b.line {
                 continue;
             }
             let (Some(la), Some(lb), Some(s)) =
@@ -43,11 +45,12 @@ pub fn port_crowding(ctx: &Ctx, out: &mut Sink) {
                 )
             } else {
                 format!(
-                    "{} and {} meet '{}' {}px apart (minimum 8px)",
+                    "{} and {} meet '{}' {}px apart (minimum {}px)",
                     b.line,
                     a.line,
                     s.id,
-                    fmt_num(gap)
+                    fmt_num(gap),
+                    fmt_num(min)
                 )
             };
             out.push(
@@ -57,8 +60,8 @@ pub fn port_crowding(ctx: &Ctx, out: &mut Sink) {
                     .with_element(shape_el(s))
                     .with_fact("gap", round2(gap))
                     .with_help(format!(
-                        "spread the endpoints at least 8px apart, e.g. `{0}.{1}@0.3` and `{0}.{1}@0.7`, or meet at a `junction`",
-                        s.id, b.side
+                        "spread the endpoints at least {2}px apart, e.g. `{0}.{1}@0.3` and `{0}.{1}@0.7`, or meet at a `junction`",
+                        s.id, b.side, fmt_num(min)
                     )),
             );
         }

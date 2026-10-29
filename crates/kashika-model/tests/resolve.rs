@@ -917,10 +917,77 @@ fn markers_default_to_none_and_accept_every_kind() {
         (s.lines[0].start, s.lines[0].end),
         (kashika_model::Marker::None, kashika_model::Marker::None)
     );
-    for m in ["arrow", "open", "diamond", "dot", "none"] {
+    for m in [
+        "arrow",
+        "open",
+        "diamond",
+        "dot",
+        "none",
+        "one",
+        "many",
+        "one-many",
+        "zero-one",
+        "zero-many",
+    ] {
         ok(&format!("line l (0,0) -> h 10 start={m} end={m}\n"));
     }
     assert_eq!(errors("line l (0,0) -> h 10 end=arow\n")[0].code, "attr");
+}
+
+#[test]
+fn crows_foot_markers_parse_to_their_kinds() {
+    use kashika_model::Marker;
+    let s = ok("line l (0,0) -> h 100 start=zero-many end=one-many\n\
+                line m (0,20) -> h 100 start=zero-one end=many\n\
+                line n (0,40) -> h 100 end=one\n");
+    let got: Vec<_> = s.lines.iter().map(|l| (l.start, l.end)).collect();
+    assert_eq!(
+        got,
+        [
+            (Marker::ZeroMany, Marker::OneMany),
+            (Marker::ZeroOne, Marker::Many),
+            (Marker::None, Marker::One),
+        ]
+    );
+    let d = errors("line l (0,0) -> h 10 end=one_many\n");
+    assert_eq!(d[0].help, ["did you mean `one-many`?"]);
+}
+
+#[test]
+fn crows_foot_parts_sit_on_the_line_and_touch_the_tip() {
+    let s = ok("line l (0,0) -> h 100 start=zero-one end=many\n");
+    let l = &s.lines[0];
+    let foot = l.er_parts(false);
+    let ends: Vec<Pt> = foot.strokes.iter().map(|s| s.1).collect();
+    assert_eq!(
+        ends,
+        [
+            Pt::new(100.0, 6.0),
+            Pt::new(100.0, 0.0),
+            Pt::new(100.0, -6.0)
+        ]
+    );
+    assert!(foot.strokes.iter().all(|s| s.0 == Pt::new(88.0, 0.0)));
+    assert_eq!(foot.circle, None);
+    let zero_one = l.er_parts(true);
+    assert_eq!(zero_one.strokes, [(Pt::new(8.0, -6.0), Pt::new(8.0, 6.0))]);
+    assert_eq!(zero_one.circle, Some((Pt::new(16.0, 0.0), 4.0)));
+    assert_eq!(kashika_model::Marker::Many.length(), 0.0);
+}
+
+#[test]
+fn crows_foot_bars_follow_a_curve() {
+    let s = ok("line l (0,0) -> curve left 30 (100,0) end=one\n");
+    let l = &s.lines[0];
+    let (a, b) = l.er_parts(false).strokes[0];
+    let mid = (a + b) * 0.5;
+    let on_path = (0..=1000)
+        .map(|i| l.path[0].eval(f64::from(i) / 1000.0).dist(mid))
+        .fold(f64::INFINITY, f64::min);
+    assert!(
+        on_path < 0.5,
+        "bar center {mid:?} is {on_path}px off the curve"
+    );
 }
 
 #[test]

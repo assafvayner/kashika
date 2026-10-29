@@ -84,7 +84,7 @@ Segments after `->`:
 | `curve left 30 db.top` | the curve's midpoint bulges 30px off the straight chord, left/right as seen walking along the line |
 | `curve via (c1) (c2) db.top` | explicit cubic |
 
-Line attributes: `start=`/`end=` (`arrow open diamond dot none`), `stroke-style=dashed|dotted`, `stroke-width=2`, `radius=8` (rounded corners), `label="x"`, `label@0.25="x"` (`t` is the fraction of the whole path length, across all segments; a label masks the line under it), `ortho`. A line may start or end at a junction, with or without an arrow.
+Line attributes: `start=`/`end=` (`arrow open diamond dot none`, plus the crow's-foot ER ends `one many one-many zero-one zero-many`, which sit on the line untrimmed), `stroke-style=dashed|dotted`, `stroke-width=2`, `radius=8` (rounded corners), `label="x"`, `label@0.25="x"` (`t` is the fraction of the whole path length, across all segments; a label masks the line under it), `ortho`. A line may start or end at a junction, with or without an arrow.
 
 ## Line recipes
 
@@ -92,7 +92,7 @@ Line attributes: `start=`/`end=` (`arrow open diamond dot none`), `stroke-style=
 - **Two lines on one side** of a box: spread them with `side@t` (`core.right@0.3`, `core.right@0.7`) to avoid `port-crowding`/`shared-segment`.
 - **Self-loop:** `curve via` from `top@0.8` back to `top@0.2`, with control points above the box. `out-of-canvas` measures a curve's true extent, labels included, so leave room.
 - **Sequence diagram:** lifelines are 2px-wide dashed boxes under each participant, with `layer=under` so messages that skip past them raise no `through`/`near`/`label-collision`. An activation bar is a narrow white box on the lifeline, also `layer=under`, written after the lifeline so it paints on top. Place each message at an absolute height with an offset from the lifeline's top (`lc.top+(0,30) -> x ls.left`) and point it at the bar's side while active. A label sits at the middle of the line; on a message that skips lifelines, pick a `label@t` between two of them. Space lifelines by label width + ~30px.
-- **Table cards (ER diagrams):** a `layer=under` outline box, a header box, then one row box per column stacked with `at prev.bl`, each with `stroke=none padding=3 text-align=left`. `` `code` `` text is monospace and keeps its spaces, so pad the names to line the columns up. Draw relationships between row boxes (`orders_cust.right -> customers_id.left`); offset a card's y so the two rows are level. There are no crow's-foot line ends: use `1`/`N` labels near the ends, or build the prongs from short lines meeting at a junction.
+- **Table cards (ER diagrams):** a `layer=under` outline box, a header box, then one row box per column stacked with `at prev.bl`, each with `stroke=none padding=3 text-align=left`. `` `code` `` text is monospace and keeps its spaces, so pad the names to line the columns up. Draw relationships between row boxes (`orders_cust.right -> customers_id.left`); offset a card's y so the two rows are level. Mark cardinality with crow's-foot ends: `start=many end=one` on a foreign key, `zero-one`/`zero-many` when optional, `one-many` for at least one. Two crow's feet on one side need 12px between them.
 - **Guides for rows and columns:** a junction without `dot` draws nothing, so use junctions as named lanes and columns, chained so they move together, and place shapes on them with mixed points. Moving a lane or the first column is then a one-line edit. Put repeated looks, `shape=` included, in a `style` (see below).
 - **Graphs and timelines** (commit graphs, state dots): place small markers with `pin=center` on guide columns and lanes, leave `grid=` off, and give hollow markers `fill=white`. Lines to a diamond's `left`/`right` meet its tips. Diagonal and curved edges are fine here; leave `ortho` off.
 
@@ -156,7 +156,7 @@ box customers at (300,42) size (200,74) stroke=#475569 layer=under
 box customers_h "**customers**" at customers.tl size (200,26) fill=#dbeafe stroke=none padding=4
 box customers_id "`id     uuid  PK`" at customers_h.bl size (200,22) stroke=none padding=3 text-align=left font-size=12
 box customers_em "`email  text`" at customers_id.bl size (200,22) stroke=none padding=3 text-align=left font-size=12
-line fk orders_cust.right -> customers_id.left end=arrow
+line fk orders_cust.right -> customers_id.left start=many end=one
 ```
 
 ## Text

@@ -55,7 +55,18 @@ const DIAGRAM_KEYS: &[&str] = &[
     "icons",
     "allow",
 ];
-const MARKERS: &[&str] = &["none", "arrow", "open", "diamond", "dot"];
+const MARKERS: &[&str] = &[
+    "none",
+    "arrow",
+    "open",
+    "diamond",
+    "dot",
+    "one",
+    "many",
+    "one-many",
+    "zero-one",
+    "zero-many",
+];
 /// Longest chain of placement references, counting group frames.
 const MAX_PLACEMENT_DEPTH: usize = 256;
 /// Cycles longer than this print only their first few members.

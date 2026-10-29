@@ -226,6 +226,11 @@ fn markers(l: &kashika_model::Line) -> Vec<(&'static str, &'static str, Vec<Pt>)
             Marker::None => return None,
             Marker::Arrow | Marker::Open => ("arrowhead", m.outline(tip, dir)),
             Marker::Diamond => ("diamond", m.outline(tip, dir)),
+            Marker::One => ("bar", l.er_parts(end == "start").hull()),
+            Marker::ZeroOne => ("bar and circle", l.er_parts(end == "start").hull()),
+            Marker::Many | Marker::OneMany | Marker::ZeroMany => {
+                ("crow's foot", l.er_parts(end == "start").hull())
+            }
             Marker::Dot => (
                 "dot",
                 rect_polygon(Rect::new(

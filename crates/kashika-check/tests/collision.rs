@@ -167,3 +167,31 @@ fn lines_crossing_group_titles() {
         .is_empty()
     );
 }
+
+#[test]
+fn label_over_its_own_crows_foot() {
+    let d = lint(
+        "label-collision",
+        "line l (20,100) -> h 60 start=zero-many label@0.15=\"x\"\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "label \"x\" of l collides with the start crow's foot of l"
+    );
+    let d = lint(
+        "label-collision",
+        "line l (20,100) -> h 60 end=one label@0.85=\"x\"\n",
+    );
+    assert_eq!(
+        d.iter().map(|d| d.message.as_str()).collect::<Vec<_>>(),
+        ["label \"x\" of l collides with the end bar of l"]
+    );
+    assert!(
+        lint(
+            "label-collision",
+            "line l (20,100) -> h 200 start=zero-many end=one-many label=\"x\"\n"
+        )
+        .is_empty()
+    );
+}

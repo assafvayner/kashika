@@ -1,5 +1,5 @@
 use kashika_diag::Span;
-use kashika_geom::{PathSeg, Pt, Rect};
+use kashika_geom::{PathSeg, Pt, Rect, convex_hull};
 use kashika_text::PlacedLine;
 use serde::Serialize;
 
@@ -202,32 +202,111 @@ pub struct Text {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "kebab-case")]
 pub enum Marker {
     None,
     Arrow,
     Open,
     Diamond,
     Dot,
+    One,
+    Many,
+    OneMany,
+    ZeroOne,
+    ZeroMany,
+}
+
+/// The strokes of a crow's-foot end: bars and prongs as (from, to), and the open circle of
+/// the `zero-*` ends as (center, radius).
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct ErParts {
+    pub tip: Pt,
+    pub strokes: Vec<(Pt, Pt)>,
+    pub circle: Option<(Pt, f64)>,
 }
 
 impl Marker {
     pub const DOT_RADIUS: f64 = 3.0;
+    pub const CIRCLE_RADIUS: f64 = 4.0;
     const ARROW_LEN: f64 = 10.0;
     const DIAMOND_LEN: f64 = 12.0;
     const HALF_WIDTH: f64 = 4.0;
+    const FOOT_LEN: f64 = 12.0;
+    const ER_HALF_WIDTH: f64 = 6.0;
+    const BAR_AT: f64 = 8.0;
+    const ER_GAP: f64 = 4.0;
 
-    /// How far the line stroke stops short of the tip.
+    /// How far the line stroke stops short of the tip. Crow's-foot ends sit on the line and
+    /// don't trim it.
     pub fn length(self) -> f64 {
         match self {
             Marker::Arrow => Self::ARROW_LEN,
             Marker::Diamond => Self::DIAMOND_LEN,
-            Marker::None | Marker::Open | Marker::Dot => 0.0,
+            _ => 0.0,
+        }
+    }
+
+    /// How far the marker reaches to either side of the line.
+    pub fn half_width(self) -> f64 {
+        match self {
+            Marker::None => 0.0,
+            Marker::Dot => Self::DOT_RADIUS,
+            Marker::Arrow | Marker::Open | Marker::Diamond => Self::HALF_WIDTH,
+            Marker::One | Marker::Many | Marker::OneMany | Marker::ZeroOne | Marker::ZeroMany => {
+                Self::ER_HALF_WIDTH
+            }
+        }
+    }
+
+    /// The bars, prongs and circle of a crow's-foot end. `back(d)` is the point `d` back
+    /// along the line from the tip and the line's direction there, toward the tip; the tip
+    /// is `back(0)`. Bars cross the line where they sit, so they stay on a curve. Empty for
+    /// the other markers.
+    pub fn er_parts(self, back: impl Fn(f64) -> (Pt, Pt)) -> ErParts {
+        let across = |d: f64| {
+            let (p, dir) = back(d);
+            let u = dir.norm();
+            (p, Pt::new(-u.y, u.x) * Self::ER_HALF_WIDTH)
+        };
+        let bar = |d: f64| {
+            let (p, perp) = across(d);
+            (p + perp, p - perp)
+        };
+        let foot = || {
+            let (tip, perp) = across(0.0);
+            let apex = back(Self::FOOT_LEN).0;
+            vec![(apex, tip + perp), (apex, tip), (apex, tip - perp)]
+        };
+        let circle = |d: f64| {
+            Some((
+                back(d + Self::ER_GAP + Self::CIRCLE_RADIUS).0,
+                Self::CIRCLE_RADIUS,
+            ))
+        };
+        let (strokes, circle) = match self {
+            Marker::One => (vec![bar(Self::BAR_AT)], None),
+            Marker::Many => (foot(), None),
+            Marker::OneMany => {
+                let mut s = foot();
+                s.push(bar(Self::FOOT_LEN + Self::ER_GAP));
+                (s, None)
+            }
+            Marker::ZeroOne => (vec![bar(Self::BAR_AT)], circle(Self::BAR_AT)),
+            Marker::ZeroMany => (foot(), circle(Self::FOOT_LEN)),
+            Marker::None | Marker::Arrow | Marker::Open | Marker::Diamond | Marker::Dot => {
+                (Vec::new(), None)
+            }
+        };
+        ErParts {
+            tip: back(0.0).0,
+            strokes,
+            circle,
         }
     }
 
     /// Vertices of the head with its tip on `tip` pointing along `dir`: the tip first, then
-    /// the rest in drawing order. Empty for `None` and `Dot`.
+    /// the rest in drawing order. For crow's-foot ends on a straight end segment, the
+    /// convex hull of their parts. Empty for `None` and `Dot`.
     pub fn outline(self, tip: Pt, dir: Pt) -> Vec<Pt> {
         let u = dir.norm();
         let perp = Pt::new(-u.y, u.x) * Self::HALF_WIDTH;
@@ -241,7 +320,31 @@ impl Marker {
                 vec![tip, mid + perp, tip - u * Self::DIAMOND_LEN, mid - perp]
             }
             Marker::None | Marker::Dot => Vec::new(),
+            Marker::One | Marker::Many | Marker::OneMany | Marker::ZeroOne | Marker::ZeroMany => {
+                self.er_parts(|d| (tip - u * d, u)).hull()
+            }
         }
+    }
+}
+
+impl ErParts {
+    /// The convex hull of the tip, the bars, the prongs and the circle's bounding square, or
+    /// nothing when there are no parts.
+    pub fn hull(&self) -> Vec<Pt> {
+        if self.strokes.is_empty() {
+            return Vec::new();
+        }
+        let mut pts: Vec<Pt> = self.strokes.iter().flat_map(|&(a, b)| [a, b]).collect();
+        pts.push(self.tip);
+        if let Some((c, r)) = self.circle {
+            pts.extend([
+                c + Pt::new(r, r),
+                c + Pt::new(r, -r),
+                c + Pt::new(-r, r),
+                c + Pt::new(-r, -r),
+            ]);
+        }
+        convex_hull(&pts)
     }
 }
 
@@ -286,6 +389,39 @@ pub struct Line {
     pub parent: Option<String>,
     pub origin: Pt,
     pub span: Span,
+}
+
+impl Line {
+    /// The crow's-foot parts of the start (`start`) or end marker, laid along the end
+    /// segment. Past that segment they continue straight along its far end.
+    pub fn er_parts(&self, start: bool) -> ErParts {
+        let (m, seg) = if start {
+            (self.start, self.path.first())
+        } else {
+            (self.end, self.path.last())
+        };
+        let Some(&seg) = seg else {
+            return ErParts::default();
+        };
+        let len = seg.length();
+        m.er_parts(|d| {
+            if start {
+                if d < len {
+                    let s = seg.trim(d, 0.0);
+                    (s.from(), s.start_dir() * -1.0)
+                } else {
+                    let u = seg.end_dir();
+                    (seg.to() + u * (d - len), u * -1.0)
+                }
+            } else if d < len {
+                let s = seg.trim(0.0, d);
+                (s.to(), s.end_dir())
+            } else {
+                let u = seg.start_dir();
+                (seg.from() - u * (d - len), u)
+            }
+        })
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]

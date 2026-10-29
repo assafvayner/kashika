@@ -347,6 +347,11 @@ impl<'a> Resolver<'a> {
             Some("open") => Marker::Open,
             Some("diamond") => Marker::Diamond,
             Some("dot") => Marker::Dot,
+            Some("one") => Marker::One,
+            Some("many") => Marker::Many,
+            Some("one-many") => Marker::OneMany,
+            Some("zero-one") => Marker::ZeroOne,
+            Some("zero-many") => Marker::ZeroMany,
             _ => Marker::None,
         };
         let start = marker(

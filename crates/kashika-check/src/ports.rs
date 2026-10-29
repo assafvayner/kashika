@@ -15,6 +15,8 @@ pub struct Port {
     pub end: &'static str,
     /// Whether the line draws a marker at this end.
     pub marker: bool,
+    /// How far that marker reaches to either side of the line; 0 without one.
+    pub marker_half_width: f64,
 }
 
 /// Every endpoint on an outline, in shape order then line order. Endpoints at junctions are skipped.
@@ -39,6 +41,7 @@ pub fn ports(ctx: &Ctx) -> Vec<Port> {
                     line: l.line.id.clone(),
                     end,
                     marker: marker != Marker::None,
+                    marker_half_width: marker.half_width(),
                 });
             }
         }

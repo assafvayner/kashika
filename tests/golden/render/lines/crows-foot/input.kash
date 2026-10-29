@@ -1,0 +1,13 @@
+// spec: 5
+// raster: png
+// Crow's-foot ends on every side of a box and on a curve; the open circles show the background.
+diagram "crows foot" size (480,260) background=#f8fafc
+box a "Customer" at (40,30) size (120,50)
+box b "Order" at (320,30) size (120,50)
+box c "Item" at (320,180) size (120,50)
+box d "Address" at (40,180) size (120,50)
+line places a.right@0.75 -> b.left@0.75 start=one end=many
+line refers a.right@0.3 -> curve left 14 b.left@0.3 start=one-many end=one
+line holds b.bottom -> c.top start=zero-one end=one-many
+line ships d.right -> c.left start=one end=zero-many
+line lives a.bottom -> d.top start=zero-many end=zero-one
