@@ -280,10 +280,10 @@ fn version_rejects_newer_and_other_major() {
         let d = version_diags(v);
         assert_eq!(d.len(), 1, "{v}");
         assert_eq!(d[0].code, "version");
-        assert!(
-            d[0].message
-                .contains("or newer (same major version); this is kashika 0.1.0")
-        );
+        assert!(d[0].message.contains(&format!(
+            "or newer (same major version); this is kashika {}",
+            env!("CARGO_PKG_VERSION")
+        )));
         assert!(!d[0].help.is_empty());
     }
 }

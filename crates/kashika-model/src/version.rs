@@ -24,6 +24,10 @@ fn parse(s: &str) -> Option<(u64, u64, u64)> {
     Some((major, minor, patch))
 }
 
+fn release(tool: &str) -> &str {
+    tool.split(['-', '+']).next().unwrap_or(tool)
+}
+
 pub fn check(file: &str, tool: &str) -> Result<(), Problem> {
     let Some(want) = parse(file) else {
         return Err(Problem {
@@ -31,7 +35,7 @@ pub fn check(file: &str, tool: &str) -> Result<(), Problem> {
             help: FORM_HELP.to_string(),
         });
     };
-    let have = parse(tool).unwrap_or((0, 0, 0));
+    let have = parse(release(tool)).unwrap_or((0, 0, 0));
     if want.0 == have.0 && want <= have {
         return Ok(());
     }
@@ -107,6 +111,32 @@ mod tests {
             let p = check(s, "0.1.0").err().unwrap_or_else(|| panic!("{s}"));
             assert!(p.help.contains("kashika=\"0.1.0\""), "{s}");
         }
+    }
+
+    #[test]
+    fn prerelease_tool_compares_by_release() {
+        assert!(ok("0.1.0", "0.1.0-dev0"));
+        assert!(ok("0.0.5", "0.1.0-dev0"));
+        assert!(ok("0.1.0", "0.1.0+build.5"));
+        assert!(!ok("0.1.1", "0.1.0-dev0"));
+        assert!(!ok("0.2.0", "0.1.0-dev0"));
+        assert!(!ok("1.0.0", "0.1.0-dev0"));
+    }
+
+    #[test]
+    fn prerelease_file_is_malformed() {
+        let p = check("0.1.0-dev0", "0.1.0-dev0").err().unwrap();
+        assert!(p.help.contains("kashika=\"0.1.0\""));
+    }
+
+    #[test]
+    fn message_prints_full_tool_version() {
+        let p = check("0.2.0", "0.1.0-dev0").err().unwrap();
+        assert!(
+            p.message.ends_with("this is kashika 0.1.0-dev0"),
+            "{}",
+            p.message
+        );
     }
 
     #[test]
