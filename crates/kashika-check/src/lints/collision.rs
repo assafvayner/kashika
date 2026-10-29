@@ -1,4 +1,4 @@
-use kashika_diag::{Diagnostic, Element, Span};
+use kashika_diag::{Diagnostic, Element, Span, fact};
 use kashika_geom::{PathSeg, Pt, Rect, inside_runs, point_at, polygons_overlap, rect_polygon};
 use kashika_model::Marker;
 
@@ -118,7 +118,7 @@ fn titles_crossed(ctx: &Ctx, out: &mut Sink) {
                 .with_element(line_el(l.line, Some(seg)))
                 .with_element(shape_el(g.shape))
                 .with_fact("bbox", bbox(t))
-                .with_fact("entry", arr(entry))
+                .with_fact(fact::ENTRY, arr(entry))
                 .with_help(format!(
                     "the title of '{}' covers x {}..{}, y {}..{}; route {} around it, e.g. inside the group below y={} or outside it",
                     g.shape.id,

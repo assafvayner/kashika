@@ -1,4 +1,4 @@
-use kashika_diag::Diagnostic;
+use kashika_diag::{Diagnostic, code, fact};
 use kashika_geom::{Hit, Pt, TOLERANCE, dist_point_seg, seg_hit};
 
 use crate::ctx::{Ctx, LineGeom, arr, fmt_pt, line_el};
@@ -72,13 +72,13 @@ fn crossings(ctx: &Ctx, a: &LineGeom, b: &LineGeom) -> Vec<(usize, usize, Pt)> {
 fn report(l: &LineGeom, li: usize, other: &LineGeom, oi: usize, p: Pt) -> Diagnostic {
     let (id, oid) = (l.line.id.as_str(), other.line.id.as_str());
     let d = Diagnostic::warn(
-        "cross",
+        code::CROSS,
         l.line.span,
         format!("{id} crosses {oid} at {}", fmt_pt(p)),
     )
     .with_element(line_el(l.line, Some(l.segment(li))))
     .with_element(line_el(other.line, Some(other.segment(oi))))
-    .with_fact("at", arr(p));
+    .with_fact(fact::AT, arr(p));
     let allow = if other.line.named {
         format!("if intentional: allow=cross:{oid} on {id}")
     } else {

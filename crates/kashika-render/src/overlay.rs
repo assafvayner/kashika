@@ -1,4 +1,4 @@
-use kashika_diag::{Diagnostic, Severity, Span};
+use kashika_diag::{Diagnostic, Severity, Span, fact};
 use kashika_geom::{PathSeg, Pt, Rect, point_at};
 use kashika_model::{Font, Run, Scene};
 
@@ -86,29 +86,24 @@ fn tag(d: &Diagnostic) -> String {
 }
 
 fn locate(scene: &Scene, d: &Diagnostic) -> Option<Mark> {
-    from_json(d).or_else(|| from_span(scene, d.span))
+    carried(d).or_else(|| from_span(scene, d.span))
 }
 
-/// Geometry the diagnostic carries itself, under the JSON field names of spec §8.
-fn from_json(d: &Diagnostic) -> Option<Mark> {
-    let v = serde_json::to_value(d).ok()?;
-    let pt = |v: &serde_json::Value| -> Option<Pt> {
-        Some(Pt {
-            x: v.get(0)?.as_f64()?,
-            y: v.get(1)?.as_f64()?,
-        })
-    };
-    for key in ["/facts/at", "/facts/entry"] {
-        if let Some(p) = v.pointer(key).and_then(pt) {
-            return Some(Mark::Point(p));
+/// Geometry the diagnostic carries itself: a point fact, else its first element's segment or
+/// bounding box.
+fn carried(d: &Diagnostic) -> Option<Mark> {
+    let pt = |[x, y]: [f64; 2]| (x.is_finite() && y.is_finite()).then_some(Pt { x, y });
+    for key in [fact::AT, fact::ENTRY] {
+        if let Some(p) = d.point(key) {
+            return Some(Mark::Point(Pt { x: p[0], y: p[1] }));
         }
     }
-    let e = v.pointer("/elements/0")?;
-    if let (Some(from), Some(to)) = (e.get("from").and_then(pt), e.get("to").and_then(pt)) {
+    let e = d.elements.first()?;
+    if let (Some(from), Some(to)) = (e.from.and_then(pt), e.to.and_then(pt)) {
         return Some(Mark::Path(vec![PathSeg::Line { from, to }]));
     }
-    let bb = e.get("bbox")?;
-    let (a, b) = (pt(bb.get(0)?)?, pt(bb.get(1)?)?);
+    let [a, b] = e.bbox?;
+    let (a, b) = (pt(a)?, pt(b)?);
     Some(Mark::Rect(Rect {
         x: a.x,
         y: a.y,

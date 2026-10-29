@@ -548,7 +548,6 @@ dependencies = [
  "kashika-model",
  "kashika-text",
  "resvg",
- "serde_json",
  "tempfile",
 ]
 

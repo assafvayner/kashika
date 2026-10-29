@@ -2,7 +2,7 @@
 
 use kashika_check::ctx::Ctx;
 use kashika_check::free::{Axis, free_intervals};
-use kashika_diag::Diagnostic;
+use kashika_diag::{Diagnostic, code, fact};
 use kashika_geom::{Pt, TOLERANCE, length};
 use kashika_model::{Line, Scene};
 
@@ -23,37 +23,39 @@ pub(crate) fn score(scene: &Scene, probe: &Line, ignore: Option<&str>) -> Option
         .into_iter()
         .filter(|d| involves(d, &probe.id) && !ignore.is_some_and(|id| involves(d, id)))
         .collect();
-    if mine.iter().any(|d| d.code == "through") {
+    if mine.iter().any(|d| d.code == code::THROUGH) {
         return None;
     }
     let crossed = mine
         .iter()
-        .filter(|d| d.code == "cross")
-        .map(|d| Crossing {
-            line: d
-                .elements
-                .iter()
-                .map(|e| e.id.as_str())
-                .find(|id| *id != probe.id)
-                .unwrap_or_default()
-                .to_string(),
-            at: at(d, "at"),
+        .filter(|d| d.code == code::CROSS)
+        .filter_map(|d| {
+            Some(Crossing {
+                line: d
+                    .elements
+                    .iter()
+                    .map(|e| e.id.as_str())
+                    .find(|id| *id != probe.id)
+                    .unwrap_or_default()
+                    .to_string(),
+                at: at(d, fact::AT)?,
+            })
         })
         .collect();
     let transited = mine
         .iter()
-        .filter(|d| d.code == "group-transit")
+        .filter(|d| d.code == code::GROUP_TRANSIT)
         .filter_map(|d| {
             let group = d.elements.iter().find(|e| e.kind == "group")?;
             Some(Transit {
                 group: group.id.clone(),
-                at: at(d, "entry"),
+                at: at(d, fact::ENTRY)?,
             })
         })
         .collect();
     let near = mine
         .iter()
-        .filter(|d| d.code == "near" || d.code == "shared-segment")
+        .filter(|d| d.code == code::NEAR || d.code == code::SHARED_SEGMENT)
         .count();
     Some(Score {
         crossed,
@@ -67,12 +69,11 @@ fn involves(d: &Diagnostic, id: &str) -> bool {
     d.elements.iter().any(|e| e.id == id)
 }
 
-fn at(d: &Diagnostic, fact: &str) -> Pt {
-    let c = |i: usize| d.facts.get(fact).and_then(|v| v[i].as_f64());
-    match (c(0), c(1)) {
-        (Some(x), Some(y)) => Pt::new(x, y),
-        _ => Pt::default(),
-    }
+/// The point `fact` of `d`, which its lint always writes.
+fn at(d: &Diagnostic, fact: &str) -> Option<Pt> {
+    let p = d.point(fact);
+    debug_assert!(p.is_some(), "`{}` has no `{fact}` fact", d.code);
+    p.map(|[x, y]| Pt::new(x, y))
 }
 
 /// The free interval, as `kashika inspect --corridors` reports it, that holds a lane at

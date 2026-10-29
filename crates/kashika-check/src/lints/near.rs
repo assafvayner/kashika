@@ -1,4 +1,4 @@
-use kashika_diag::Diagnostic;
+use kashika_diag::{Diagnostic, code};
 use kashika_geom::{Pt, TOLERANCE, cross, dot, edges, inside_runs, seg_seg_dist};
 
 use crate::ctx::{Ctx, LineGeom, ShapeGeom, fmt_num, kind_name, line_el, round2, shape_el};
@@ -76,7 +76,7 @@ fn near_boxes(ctx: &Ctx, out: &mut Sink) {
             let Some((gap, k, p, q)) = best else { continue };
             if let Some((message, help)) = attached.then(|| wrong_elbow(ctx, l, s, p, q)).flatten()
             {
-                let d = Diagnostic::warn("near", l.line.span, message)
+                let d = Diagnostic::warn(code::NEAR, l.line.span, message)
                     .with_element(line_el(l.line, Some(l.segment(k))))
                     .with_element(shape_el(s.shape))
                     .with_fact("distance", round2(gap))
@@ -102,7 +102,7 @@ fn near_boxes(ctx: &Ctx, out: &mut Sink) {
                     fmt_num(c)
                 )
             };
-            let d = Diagnostic::warn("near", l.line.span, message)
+            let d = Diagnostic::warn(code::NEAR, l.line.span, message)
                 .with_element(line_el(l.line, Some(l.segment(k))))
                 .with_element(shape_el(s.shape))
                 .with_fact("distance", round2(gap))
@@ -189,7 +189,7 @@ fn near_groups(ctx: &Ctx, out: &mut Sink) {
                     fmt_num(c)
                 )
             };
-            let d = Diagnostic::warn("near", l.line.span, message)
+            let d = Diagnostic::warn(code::NEAR, l.line.span, message)
                 .with_element(line_el(l.line, Some(l.segment(k))))
                 .with_element(shape_el(g.shape))
                 .with_fact("distance", round2(gap))
@@ -227,7 +227,7 @@ fn near_lines(ctx: &Ctx, out: &mut Sink) {
                 continue;
             }
             let d = Diagnostic::warn(
-                "near",
+                code::NEAR,
                 b.line.span,
                 format!(
                     "{} runs {}px from {} for {}px (clearance {})",

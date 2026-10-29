@@ -29,10 +29,10 @@ pub const ERROR_CODES: &[&str] = &[
 ];
 
 pub const LINT_CODES: &[&str] = &[
-    "cross",
-    "shared-segment",
-    "through",
-    "near",
+    code::CROSS,
+    code::SHARED_SEGMENT,
+    code::THROUGH,
+    code::NEAR,
     "overlap",
     "spill",
     "diagonal-tail",
@@ -40,7 +40,7 @@ pub const LINT_CODES: &[&str] = &[
     "jog",
     "endpoint-off-edge",
     "port-crowding",
-    "group-transit",
+    code::GROUP_TRANSIT,
     "low-contrast",
     "label-collision",
     "out-of-canvas",
@@ -51,6 +51,25 @@ pub const LINT_CODES: &[&str] = &[
     "svg-dropped",
     "missing-glyph",
 ];
+
+/// Lint codes that other passes read back.
+pub mod code {
+    pub const CROSS: &str = "cross";
+    pub const SHARED_SEGMENT: &str = "shared-segment";
+    pub const THROUGH: &str = "through";
+    pub const NEAR: &str = "near";
+    pub const GROUP_TRANSIT: &str = "group-transit";
+}
+
+/// Fact keys that other passes read back.
+pub mod fact {
+    /// `[x, y]` where two lines cross.
+    pub const AT: &str = "at";
+    /// `[x, y]` where a line enters a shape.
+    pub const ENTRY: &str = "entry";
+    /// `[x, y]` where a line leaves a shape.
+    pub const EXIT: &str = "exit";
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
 pub struct Span {
@@ -243,6 +262,12 @@ impl Diagnostic {
         let v = serde_json::to_value(value).expect("a fact serializes to JSON");
         self.facts.insert(key.to_string(), v);
         self
+    }
+
+    /// The `[x, y]` fact under `key`, if there is one.
+    pub fn point(&self, key: &str) -> Option<[f64; 2]> {
+        let v = self.facts.get(key)?;
+        Some([v.get(0)?.as_f64()?, v.get(1)?.as_f64()?])
     }
 }
 
@@ -451,6 +476,8 @@ mod tests {
         assert_eq!(v["elements"][0]["segment"], 1);
         assert!(v["elements"][0].get("bbox").is_none());
         assert_eq!(v["facts"]["at"], serde_json::json!([5.0, 0.0]));
+        assert_eq!(d.point(fact::AT), Some([5.0, 0.0]));
+        assert_eq!(d.point(fact::ENTRY), None);
         assert_eq!(v["suggestions"], serde_json::json!([]));
         assert_eq!(v["suppressed"], true);
         assert_eq!(v["reason"], "bus");

@@ -1,4 +1,4 @@
-use kashika_diag::Diagnostic;
+use kashika_diag::{Diagnostic, code, fact};
 use kashika_geom::{Pt, TOLERANCE, inside_runs, strictly_inside};
 
 use crate::ctx::{Ctx, arr, kind_name, line_el, shape_el};
@@ -49,7 +49,7 @@ pub fn through(ctx: &Ctx, out: &mut Sink) {
                 };
                 out.push(
                     Diagnostic::warn(
-                        "through",
+                        code::THROUGH,
                         l.line.span,
                         format!(
                             "{} runs through the inside of its own endpoint {} '{id}'",
@@ -59,8 +59,8 @@ pub fn through(ctx: &Ctx, out: &mut Sink) {
                     )
                     .with_element(line_el(l.line, Some(l.segment(k))))
                     .with_element(shape_el(s.shape))
-                    .with_fact("entry", arr(entry))
-                    .with_fact("exit", arr(exit))
+                    .with_fact(fact::ENTRY, arr(entry))
+                    .with_fact(fact::EXIT, arr(exit))
                     .with_help(help),
                 );
                 continue;
@@ -71,14 +71,14 @@ pub fn through(ctx: &Ctx, out: &mut Sink) {
             let mut skip = vec![l.line.id.as_str()];
             skip.extend(starts.iter().chain(&ends).copied());
             let d = Diagnostic::warn(
-                "through",
+                code::THROUGH,
                 l.line.span,
                 format!("{} passes through {} '{id}'", l.line.id, kind_name(s.shape)),
             )
             .with_element(line_el(l.line, Some(l.segment(k))))
             .with_element(shape_el(s.shape))
-            .with_fact("entry", arr(entry))
-            .with_fact("exit", arr(exit));
+            .with_fact(fact::ENTRY, arr(entry))
+            .with_fact(fact::EXIT, arr(exit));
             out.push(with_free(d, l, k, &skip));
         }
     }

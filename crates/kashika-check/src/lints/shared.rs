@@ -1,4 +1,4 @@
-use kashika_diag::Diagnostic;
+use kashika_diag::{Diagnostic, code};
 use kashika_geom::{Hit, Pt, TOLERANCE, seg_hit};
 
 use crate::ctx::{Ctx, LineGeom, arr, fmt_num, fmt_pt, line_el, round2};
@@ -43,7 +43,7 @@ fn report(
 ) -> Diagnostic {
     let id = l.line.id.as_str();
     let d = Diagnostic::warn(
-        "shared-segment",
+        code::SHARED_SEGMENT,
         l.line.span,
         format!(
             "{id} runs along {} for {}px, from {} to {}",

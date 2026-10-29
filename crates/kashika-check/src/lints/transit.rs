@@ -1,4 +1,4 @@
-use kashika_diag::Diagnostic;
+use kashika_diag::{Diagnostic, code, fact};
 use kashika_geom::{
     Pt, Rect, TOLERANCE, boundary_nearest, dist_point_seg, inside_runs, point_in_polygon,
 };
@@ -26,7 +26,7 @@ pub fn group_transit(ctx: &Ctx, out: &mut Sink) {
             }
             out.push(
                 Diagnostic::warn(
-                    "group-transit",
+                    code::GROUP_TRANSIT,
                     l.line.span,
                     format!(
                         "{} passes through group '{}' without connecting to anything inside it",
@@ -35,7 +35,7 @@ pub fn group_transit(ctx: &Ctx, out: &mut Sink) {
                 )
                 .with_element(line_el(l.line, Some(l.segment(k))))
                 .with_element(shape_el(g.shape))
-                .with_fact("entry", arr(entry))
+                .with_fact(fact::ENTRY, arr(entry))
                 .with_help("route around the group, for example along its outside margin"),
             );
         }

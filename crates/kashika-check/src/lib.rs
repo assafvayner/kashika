@@ -8,7 +8,7 @@ mod sink;
 mod suppress;
 pub mod text_box;
 
-use kashika_diag::Diagnostic;
+use kashika_diag::{Diagnostic, code};
 use kashika_model::Scene;
 use serde::Serialize;
 
@@ -77,7 +77,7 @@ fn lint(ctx: &ctx::Ctx, mut sink: sink::Sink) -> Bounded {
 
 /// Summary numbers for the report: crossings (suppressed ones included) and total line length.
 pub fn metrics(scene: &Scene, diags: &[Diagnostic]) -> Metrics {
-    let crossings = diags.iter().filter(|d| d.code == "cross").count();
+    let crossings = diags.iter().filter(|d| d.code == code::CROSS).count();
     metrics_with(scene, crossings)
 }
 
@@ -96,6 +96,6 @@ fn metrics_with(scene: &Scene, crossings: usize) -> Metrics {
 impl Bounded {
     /// Like `metrics`, counting every crossing found, also those filtered out or omitted.
     pub fn metrics(&self, scene: &Scene) -> Metrics {
-        metrics_with(scene, self.found("cross"))
+        metrics_with(scene, self.found(code::CROSS))
     }
 }
