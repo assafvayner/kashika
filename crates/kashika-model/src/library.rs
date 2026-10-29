@@ -9,6 +9,7 @@ use kashika_syntax::ast::{self, ShapeBody, Stmt};
 use crate::assets::Store;
 use crate::attrs::{self, Attrs};
 use crate::loader::{FileError, Found, Loader};
+use crate::scene::Fit;
 use crate::shapes::{SHAPES, UnitShape, builtin_shape, shape_names};
 use crate::style::{self, StyleProps};
 
@@ -19,7 +20,7 @@ const MAX_INSTANCES: usize = 1000;
 /// Largest library file read.
 const MAX_IMPORT_BYTES: u64 = 1024 * 1024;
 /// Keys a `shape <name> from "<file.svg>"` takes.
-pub(crate) const SHAPE_FROM_KEYS: &[&str] = &["outline", "text-area"];
+pub(crate) const SHAPE_FROM_KEYS: &[&str] = &["outline", "text-area", "fit"];
 /// Import chains longer than this print only their first two and last hops.
 const HOPS_SHOWN: usize = 4;
 
@@ -49,6 +50,8 @@ pub(crate) struct SvgShape {
     pub hull: bool,
     /// `text-area=below`.
     pub below: bool,
+    /// How the drawing fills the box; `contain` unless `fit=` says otherwise.
+    pub fit: Fit,
 }
 
 /// Shape and style definitions from the main file and its imports, by qualified name.
@@ -708,11 +711,21 @@ fn svg_shape(
         .get("text-area")
         .and_then(|x| attrs::word(x, &["below", "inside"], &mut ctx.diags))
         == Some("below");
+    let fit = a
+        .get("fit")
+        .and_then(|x| attrs::word(x, Fit::NAMES, &mut ctx.diags))
+        .and_then(Fit::from_name)
+        .unwrap_or(Fit::Contain);
     match ctx
         .store
         .load_svg(ctx.loader, dir, file, "`shape ... from`")
     {
-        Ok(asset) => Some(SvgShape { asset, hull, below }),
+        Ok(asset) => Some(SvgShape {
+            asset,
+            hull,
+            below,
+            fit,
+        }),
         Err(e) => {
             push_file_error(&mut ctx.diags, span, e);
             None

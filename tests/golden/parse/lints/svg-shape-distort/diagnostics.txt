@@ -1,0 +1,4 @@
+warn[image-distort] 6:1-6:38: box 'a' is stretched 50% away from its 40x20 aspect ratio
+  = help: use fit=contain or fit=cover on shape `s`, or size (80, 40) to keep the ratio
+  elements: [{"bbox":[[20,20],[100,100]],"id":"a","kind":"box","span":{"col":1,"end_col":38,"end_line":6,"line":6}}]
+  facts: {"distortion":0.5,"natural":[40,20],"size":[80,80]}

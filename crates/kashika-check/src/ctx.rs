@@ -352,7 +352,7 @@ pub fn overflow_fact(over: &[(&str, f64)]) -> serde_json::Value {
 
 /// The bounding-box side nearest to `p`, and `p`'s position along it (0..1).
 pub fn side_anchor(s: &Shape, p: Pt) -> (&'static str, f64) {
-    let r = s.rect;
+    let r = s.anchor_frame();
     let sides = [
         ("top", (p.y - r.y).abs()),
         ("bottom", (p.y - r.bottom()).abs()),
@@ -385,7 +385,7 @@ pub fn outline_anchor(s: &Shape, p: Pt) -> (&'static str, f64) {
     if s.form.is_none() {
         return nearest;
     }
-    let r = s.rect;
+    let r = s.anchor_frame();
     let mut sides = [
         ("top", (p.y - r.y).abs()),
         ("bottom", (p.y - r.bottom()).abs()),

@@ -17,8 +17,8 @@ warn[label-collision] 9:1-9:71: the label under box 'crossed' collides with line
   elements: [{"bbox":[[273.41,88],[326.59,105.5]],"id":"crossed","kind":"label","span":{"col":1,"end_col":71,"end_line":9,"line":9}},{"id":"under","kind":"line","span":{"col":1,"end_col":29,"end_line":10,"line":10}}]
   facts: {"bbox":[[273.41,88],[326.59,105.5]]}
 warn[label-collision] 13:1-13:74: the label under box 'straddle' collides with the border of group 'zone2'
-  elements: [{"bbox":[[323.1,158],[376.9,175.5]],"id":"straddle","kind":"label","span":{"col":1,"end_col":74,"end_line":13,"line":13}},{"bbox":[[260,160],[460,240]],"id":"zone2","kind":"group","span":{"col":1,"end_col":62,"end_line":11,"line":11}}]
-  facts: {"bbox":[[323.1,158],[376.9,175.5]]}
+  elements: [{"bbox":[[323.1,153],[376.9,170.5]],"id":"straddle","kind":"label","span":{"col":1,"end_col":74,"end_line":13,"line":13}},{"bbox":[[260,160],[460,240]],"id":"zone2","kind":"group","span":{"col":1,"end_col":62,"end_line":11,"line":11}}]
+  facts: {"bbox":[[323.1,153],[376.9,170.5]]}
 warn[low-contrast] 14:1-14:49: label "dim" of 'dim' has contrast 1.0:1 against its background (minimum 3:1)
   = help: darken the text `color` or lighten the `fill` behind it
   elements: [{"bbox":[[40,200],[100,240]],"id":"dim","kind":"box","span":{"col":1,"end_col":49,"end_line":14,"line":14}}]

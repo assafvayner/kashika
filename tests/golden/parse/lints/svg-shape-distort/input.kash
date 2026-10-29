@@ -1,0 +1,8 @@
+// spec: 3a, 7
+// `fit=stretch` on a `shape from` SVG that distorts its aspect ratio by over 5% is `image-distort`; a kept ratio and the default `contain` are quiet.
+diagram "svg shape distort" size (400,120)
+shape s from "tri.svg" fit=stretch
+shape c from "tri.svg"
+box a at (20,20) size (80,80) shape=s
+box b at (140,20) size (80,40) shape=s
+box k at (260,20) size (80,80) shape=c

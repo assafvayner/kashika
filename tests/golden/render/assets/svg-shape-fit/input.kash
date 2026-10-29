@@ -1,0 +1,24 @@
+// spec: 3a
+// raster: png
+// `shape from` SVGs keep their aspect ratio by default (`fit=contain`), centered in wide and tall boxes, with anchors, the text area and the label below on the drawing; `fit=stretch` fills the box and `fit=cover` fills it cropped.
+diagram "svg shape fit" size (620,300)
+shape badge from "badge.svg"
+shape badge_below from "badge.svg" text-area=below
+shape badge_stretch from "badge.svg" fit=stretch
+shape badge_cover from "badge.svg" fit=cover
+shape tri from "tri.svg" outline=hull
+box wide "wide" at (40,40) size (160,40) shape=badge
+box tall "tall" at (260,20) size (60,100) shape=badge_below
+box stretch "stretch" at (380,20) size (80,80) shape=badge_stretch allow=image-distort reason="shows fit=stretch"
+box cover "cover" at (500,20) size (80,80) shape=badge_cover
+box hull at (40,180) size (160,60) shape=tri
+line lw1 wide.left -> h -20
+line lw2 wide.right -> h 20
+line lw3 wide.top -> v -20
+line lt1 tall.left -> h -20
+line lt2 tall.top -> v -15
+line ls stretch.top -> v -15
+line lc cover.left -> h -15
+line lh1 hull.left -> h -20
+line lh2 hull.right -> h 20
+line lh3 hull.top -> v -20

@@ -1,4 +1,5 @@
 use crate::point::Pt;
+use crate::rect::Rect;
 
 /// Convex hull (Andrew's monotone chain), counter-clockwise in y-up terms, without
 /// collinear points. Fewer than three distinct points come back as they are, sorted.
@@ -63,5 +64,33 @@ fn hits(poly: &[Pt], at: f64, axes: impl Fn(Pt) -> (f64, f64)) -> Vec<f64> {
     }
     out.sort_by(f64::total_cmp);
     out.dedup_by(|a, b| (*a - *b).abs() < 1e-9);
+    out
+}
+
+/// The part of the convex polygon `poly` inside `r` (Sutherland-Hodgman). Empty when they
+/// do not meet.
+pub fn clip_to_rect(poly: &[Pt], r: Rect) -> Vec<Pt> {
+    let coord = |p: Pt, x: bool| if x { p.x } else { p.y };
+    let planes = [
+        (true, r.x, 1.0),
+        (true, r.right(), -1.0),
+        (false, r.y, 1.0),
+        (false, r.bottom(), -1.0),
+    ];
+    let mut out = poly.to_vec();
+    for (x, at, sign) in planes {
+        let inside = |p: Pt| (coord(p, x) - at) * sign >= 0.0;
+        let input = std::mem::take(&mut out);
+        for (i, &b) in input.iter().enumerate() {
+            let a = input[(i + input.len() - 1) % input.len()];
+            if inside(b) != inside(a) {
+                let t = (at - coord(a, x)) / (coord(b, x) - coord(a, x));
+                out.push(a.lerp(b, t));
+            }
+            if inside(b) {
+                out.push(b);
+            }
+        }
+    }
     out
 }

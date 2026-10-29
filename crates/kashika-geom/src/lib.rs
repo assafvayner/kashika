@@ -17,6 +17,6 @@ pub use path::{
     round_corners_tagged,
 };
 pub use point::{Pt, TOLERANCE};
-pub use poly::{convex_hull, horizontal_hits, vertical_hits};
+pub use poly::{clip_to_rect, convex_hull, horizontal_hits, vertical_hits};
 pub use rect::Rect;
 pub use unit_path::{arc_to_cubics, parse_unit_path};

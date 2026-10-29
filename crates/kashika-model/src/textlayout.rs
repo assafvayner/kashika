@@ -5,7 +5,7 @@ use kashika_text::{Block, HAlign, MarkupError, PlacedLine, VAlign, measure, stac
 use serde::Serialize;
 
 use crate::attrs::{self, Attrs, LIMIT, Min};
-use crate::scene::{Align, ShapeKind};
+use crate::scene::{Align, Fit, ShapeKind};
 use crate::shapes;
 use crate::style::{FontWeight, Padding, Style};
 
@@ -204,6 +204,9 @@ pub(crate) struct ShapeInput<'x> {
     pub custom_text_area: Option<Rect>,
     /// `text-area=below`: the text sits in a band `padding` under the box.
     pub text_below: bool,
+    /// The natural size of an SVG-file shape drawn with `fit=contain`: its text area, and
+    /// the band under it, follow the drawing instead of the box.
+    pub contain: Option<(f64, f64)>,
     /// How far an icon pushes the text area from the left and from the top edge.
     pub icon_inset: (f64, f64),
     pub rect: Rect,
@@ -319,8 +322,40 @@ fn with_inset(s: &ShapeInput, need: (f64, f64)) -> (f64, f64) {
 
 /// The box size, in whole pixels, whose text area holds `need`.
 fn required_box(s: &ShapeInput, need: (f64, f64)) -> (f64, f64) {
-    let (w, h) = required_size(s.shape, s.custom_text_area, need, s.style.padding, s.rect);
+    let (w, h) = match s.contain {
+        Some(natural) => contained_size(natural, need, s.style.padding, s.rect),
+        None => required_size(s.shape, s.custom_text_area, need, s.style.padding, s.rect),
+    };
     (w.ceil(), h.ceil())
+}
+
+/// The smallest box, at least `rect`'s, whose contained drawing of `natural` size holds
+/// `need` plus `padding`. An axis that `rect` leaves at 0 follows the drawing's aspect
+/// ratio from the other axis, so a fitted box hugs its drawing.
+fn contained_size(
+    natural: (f64, f64),
+    need: (f64, f64),
+    padding: Padding,
+    rect: Rect,
+) -> (f64, f64) {
+    let (nw, nh) = natural;
+    let (w, h) = (need.0 + 2.0 * padding.x, need.1 + 2.0 * padding.y);
+    if nw <= 0.0 || nh <= 0.0 {
+        return (w.max(rect.w), h.max(rect.h));
+    }
+    let ratio = nw / nh;
+    let (dw, dh) = (w.max(h * ratio), h.max(w / ratio));
+    let fw = if rect.w > 0.0 {
+        dw.max(rect.w)
+    } else {
+        dw.max(rect.h * ratio)
+    };
+    let fh = if rect.h > 0.0 {
+        dh.max(rect.h)
+    } else {
+        dh.max(rect.w / ratio)
+    };
+    (fw, fh)
 }
 
 /// Lays out a shape's label, sublabel and text block, and reports `text-conflict`,
@@ -328,7 +363,8 @@ fn required_box(s: &ShapeInput, need: (f64, f64)) -> (f64, f64) {
 pub(crate) fn layout_shape(s: &ShapeInput, diags: &mut Vec<Diagnostic>) -> ShapeText {
     let st = s.style;
     let p = s.props;
-    let mut area = text_area(s.shape, s.custom_text_area, s.rect, st.padding);
+    let drawn = s.contain.map_or(s.rect, |n| Fit::Contain.place(n, s.rect));
+    let mut area = text_area(s.shape, s.custom_text_area, drawn, st.padding);
     let m = measure_shape(s, diags);
     let absolute: Vec<(Pending, Pt)> = m
         .absolute
@@ -350,7 +386,7 @@ pub(crate) fn layout_shape(s: &ShapeInput, diags: &mut Vec<Diagnostic>) -> Shape
     }
     let flow = m.flow;
     if s.text_below {
-        area = below_area(s.rect, &flow, st, p.gap);
+        area = below_area(drawn, &flow, st, p.gap);
     } else {
         let (dx, dy) = s.icon_inset;
         area = Rect::new(
@@ -393,9 +429,9 @@ pub(crate) fn layout_shape(s: &ShapeInput, diags: &mut Vec<Diagnostic>) -> Shape
     }
 }
 
-/// The band under a `text-area=below` shape: `padding` below the bottom edge, as tall as
-/// the stacked text (one line when there is none) and as wide as the box or the text,
-/// whichever is wider, centered on the box.
+/// The band under a `text-area=below` shape: `padding` below the bottom edge of `rect` (the
+/// drawing), as tall as the stacked text (one line when there is none) and as wide as the
+/// drawing or the text, whichever is wider, centered on the drawing.
 fn below_area(rect: Rect, flow: &[Pending], st: &Style, gap: f64) -> Rect {
     let blocks: Vec<&Block> = flow.iter().map(|x| &x.block).collect();
     let (w, h) = if blocks.is_empty() {

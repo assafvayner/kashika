@@ -1,8 +1,10 @@
-use kashika_geom::{PathSeg, Pt, Rect, arc_to_cubics, flatten, horizontal_hits, vertical_hits};
+use kashika_geom::{
+    PathSeg, Pt, Rect, arc_to_cubics, clip_to_rect, flatten, horizontal_hits, vertical_hits,
+};
 use serde::Serialize;
 
 use crate::anchor;
-use crate::scene::{Asset, Fit, Outline, Shape, ShapeKind, corner_radius};
+use crate::scene::{Asset, Fit, Outline, Shape, corner_radius};
 use crate::shapes::UnitShape;
 
 /// The geometry of a non-rectangular shape, in canvas coordinates.
@@ -12,6 +14,10 @@ pub struct Form {
     pub draw: Vec<Vec<PathSeg>>,
     /// Closed outline polygon, flattened, used for anchors and checks.
     pub outline: Vec<Pt>,
+    /// The rect anchors resolve on when it is not the box: the drawing of an SVG-file
+    /// shape with `fit=contain` whose aspect ratio differs from the box's.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub frame: Option<Rect>,
 }
 
 impl Shape {
@@ -27,12 +33,18 @@ impl Shape {
         }
     }
 
-    /// How much `fit=stretch` changes an image's aspect ratio: |box ratio / natural ratio - 1|.
-    /// `None` for other fits, non-images, and images whose file failed to load.
+    /// The rect anchors resolve on: the drawing of a contained SVG-file shape, else the box.
+    pub fn anchor_frame(&self) -> Rect {
+        self.form
+            .as_ref()
+            .and_then(|f| f.frame)
+            .unwrap_or(self.rect)
+    }
+
+    /// How much `fit=stretch` changes the aspect ratio of an image or SVG-file shape:
+    /// |box ratio / natural ratio - 1|. `None` for other fits, shapes without an image,
+    /// and files that failed to load.
     pub fn image_distortion(&self, assets: &[Asset]) -> Option<f64> {
-        if self.kind != ShapeKind::Image {
-            return None;
-        }
         let img = self.image.as_ref().filter(|i| i.fit == Fit::Stretch)?;
         let (nw, nh) = assets.get(img.asset)?.natural;
         if nw <= 0.0 || nh <= 0.0 || img.rect.h <= 0.0 {
@@ -53,20 +65,37 @@ impl Form {
         if u.hidden_outline {
             draw.remove(u.outline);
         }
-        Form { draw, outline }
+        Form {
+            draw,
+            outline,
+            frame: None,
+        }
     }
 
     /// An SVG-file shape: nothing to draw (the image draws instead) and an outline that is
-    /// the box, or the drawing's convex hull stretched onto the box.
-    pub(crate) fn from_svg(asset: &Asset, hull: bool, r: Rect) -> Form {
+    /// the drawing's rect, or its convex hull, as `fit` places it on the box and cropped
+    /// to the box.
+    pub(crate) fn from_svg(asset: &Asset, hull: bool, fit: Fit, r: Rect) -> Form {
+        let placed = fit.place(asset.natural, r);
         let outline = if hull {
-            asset.unit_hull.iter().map(|p| r.map_unit(*p)).collect()
+            let pts: Vec<Pt> = asset
+                .unit_hull
+                .iter()
+                .map(|p| placed.map_unit(*p))
+                .collect();
+            match fit {
+                Fit::Cover => clip_to_rect(&pts, r),
+                _ => pts,
+            }
         } else {
-            corners(r)
+            corners(placed.intersect(r).unwrap_or(placed))
         };
+        let differs = (placed.w - r.w).abs() > 1e-9 || (placed.h - r.h).abs() > 1e-9;
+        let frame = (fit == Fit::Contain && differs).then_some(placed);
         Form {
             draw: Vec::new(),
             outline,
+            frame,
         }
     }
 }
@@ -82,7 +111,8 @@ pub(crate) fn resolve_anchor(
     t: Option<f64>,
 ) -> Result<Pt, (String, Option<String>)> {
     match form {
-        Some(f) => anchor::resolve(rect, 0.0, owner, name, t).map(|p| project(&f.outline, name, p)),
+        Some(f) => anchor::resolve(f.frame.unwrap_or(rect), 0.0, owner, name, t)
+            .map(|p| project(&f.outline, name, p)),
         None => anchor::resolve(rect, corner_radius(radius, rect), owner, name, t),
     }
 }

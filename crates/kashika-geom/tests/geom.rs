@@ -1,6 +1,6 @@
 use kashika_geom::{
-    FLATTEN_TOLERANCE, MAX_FLATTEN_STEPS, PathSeg, Pt, Rect, flatten, length, point_at,
-    round_corners, round_corners_tagged,
+    FLATTEN_TOLERANCE, MAX_FLATTEN_STEPS, PathSeg, Pt, Rect, clip_to_rect, flatten, length,
+    point_at, round_corners, round_corners_tagged,
 };
 
 fn line(a: (f64, f64), b: (f64, f64)) -> PathSeg {
@@ -144,4 +144,18 @@ fn rounding_keeps_segment_tags() {
     let plain: Vec<PathSeg> = out.into_iter().map(|(s, _)| s).collect();
     let untagged: Vec<PathSeg> = path.iter().map(|(s, _)| *s).collect();
     assert_eq!(plain, round_corners(&untagged, 10.0));
+}
+
+#[test]
+fn clip_to_rect_keeps_the_part_inside() {
+    let tri = [Pt::new(0.0, 0.0), Pt::new(20.0, 0.0), Pt::new(0.0, 20.0)];
+    let r = Rect::new(5.0, 0.0, 10.0, 10.0);
+    let c = clip_to_rect(&tri, r);
+    assert_eq!(Rect::bounding(c.iter().copied()), r);
+    assert!(c.iter().all(|p| p.x >= 5.0 && p.x <= 15.0 && p.y <= 10.0));
+    assert!(clip_to_rect(&tri, Rect::new(30.0, 30.0, 5.0, 5.0)).is_empty());
+    assert_eq!(
+        clip_to_rect(&tri, Rect::new(-1.0, -1.0, 30.0, 30.0)).len(),
+        3
+    );
 }

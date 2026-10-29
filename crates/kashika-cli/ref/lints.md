@@ -47,6 +47,6 @@ If a warning is intentional, suppress it narrowly on the line or shape: `allow=c
 | `off-grid` | warn | a literal is not a multiple of `grid` | round it |
 | `block-reducible` | warn | a block of 1–2 items in one style | use the rewrite in the help line |
 | `text-outside-shape` | warn | an absolute block item outside the text area | move it inside the range in the help line |
-| `image-distort` | warn | `fit=stretch` distorts by over 5% | use `fit=contain` |
+| `image-distort` | warn | `fit=stretch` on an image or `shape from` SVG distorts by over 5% | use `fit=contain` |
 | `svg-dropped` | warn | an SVG file's `<image>` (not a `data:` URI) or `foreignObject` is lost when embedded | embed it as a path, or use a separate `image` |
 | `missing-glyph` | warn | text has a character no bundled font can draw (CJK, `✘`, ...) | use Latin, Greek, Cyrillic, box drawing or emoji, or an `icon=`/`image` |

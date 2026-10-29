@@ -54,6 +54,32 @@ fn image_distort_can_be_allowed() {
     assert!(d[0].suppressed);
 }
 
+#[test]
+fn image_distort_flags_stretched_svg_shapes() {
+    let dir = tempfile::tempdir().unwrap();
+    let d = lint_in(
+        dir.path(),
+        "image-distort",
+        "shape s from \"server\" fit=stretch\nshape c from \"server\"\n\
+         box a at (0,0) size (80,40) shape=s\n\
+         box b at (100,0) size (60,60) shape=s\n\
+         box k at (200,0) size (80,40) shape=c\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].span.line, 4);
+    assert_eq!(
+        d[0].message,
+        "box 'a' is stretched 100% away from its 24x24 aspect ratio"
+    );
+    assert!(
+        d[0].help
+            .iter()
+            .any(|h| h.contains("fit=cover on shape `s`, or size (80, 80)")),
+        "{:?}",
+        d[0].help
+    );
+}
+
 const SVG_HEAD: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">"#;
 
 #[test]

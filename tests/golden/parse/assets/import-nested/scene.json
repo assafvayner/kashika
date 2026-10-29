@@ -21,11 +21,12 @@
       "depth": 0,
       "form": {
         "draw": [],
-        "outline": [{"x":20,"y":20},{"x":100,"y":20},{"x":100,"y":80},{"x":20,"y":80}]
+        "frame": {"h":40,"w":80,"x":20,"y":30},
+        "outline": [{"x":20,"y":30},{"x":100,"y":30},{"x":100,"y":70},{"x":20,"y":70}]
       },
       "icon": null,
       "id": "a",
-      "image": {"asset":0,"fit":"stretch","rect":{"h":60,"w":80,"x":20,"y":20}},
+      "image": {"asset":0,"fit":"contain","rect":{"h":60,"w":80,"x":20,"y":20}},
       "kind": "box",
       "label": "x",
       "origin": {"x":0,"y":0},
@@ -55,7 +56,7 @@
           "span": {"col":1,"end_col":63,"end_line":6,"line":6}
         }
       ],
-      "text_area": {"h":44,"w":64,"x":28,"y":28},
+      "text_area": {"h":24,"w":64,"x":28,"y":38},
       "text_below": false,
       "title_band": 0
     }

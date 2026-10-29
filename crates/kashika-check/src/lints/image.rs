@@ -8,7 +8,8 @@ use crate::sink::Sink;
 
 const MAX_DISTORTION: f64 = 0.05;
 
-/// `image-distort`: `fit=stretch` changes an image's aspect ratio by more than 5%.
+/// `image-distort`: `fit=stretch` changes the aspect ratio of an image or SVG-file shape by
+/// more than 5%.
 pub fn image_distort(ctx: &Ctx, out: &mut Sink) {
     let assets = &ctx.scene.assets;
     for s in ctx
@@ -30,7 +31,8 @@ pub fn image_distort(ctx: &Ctx, out: &mut Sink) {
                 "image-distort",
                 s.span,
                 format!(
-                    "image '{}' is stretched {}% away from its {}x{} aspect ratio",
+                    "{} '{}' is stretched {}% away from its {}x{} aspect ratio",
+                    s.kind.name(),
                     s.id,
                     (d * 100.0).round(),
                     fmt_num(nw),
@@ -42,7 +44,12 @@ pub fn image_distort(ctx: &Ctx, out: &mut Sink) {
             .with_fact("size", [round2(r.w), round2(r.h)])
             .with_fact("distortion", round2(d))
             .with_help(format!(
-                "use fit=contain or fit=cover, or size ({}, {}) to keep the ratio",
+                "use fit=contain or fit=cover{}, or size ({}, {}) to keep the ratio",
+                if s.kind == ShapeKind::Image {
+                    String::new()
+                } else {
+                    format!(" on shape `{}`", s.shape)
+                },
                 fmt_num(r.w),
                 fmt_num((r.w * nh / nw).round())
             )),

@@ -218,6 +218,7 @@ impl<'a> Resolver<'a> {
             shape: &shape,
             custom_text_area: self.lib.shapes.get(&shape).and_then(LibShape::text_area),
             text_below: self.svg_shape(&shape).is_some_and(|s| s.below),
+            contain: self.contained(&shape),
             icon_inset: p.icon_inset(false),
             rect: Rect::new(0.0, 0.0, w.unwrap_or(0.0), h.unwrap_or(0.0)),
             style: &p.style,
@@ -360,7 +361,9 @@ impl<'a> Resolver<'a> {
     pub(super) fn form(&self, name: &str, rect: Rect) -> Option<Form> {
         match self.lib.shapes.get(name) {
             Some(LibShape::Unit(u)) => Some(Form::from_unit(u, rect)),
-            Some(LibShape::Svg(s)) => Some(Form::from_svg(self.store.get(s.asset), s.hull, rect)),
+            Some(LibShape::Svg(s)) => {
+                Some(Form::from_svg(self.store.get(s.asset), s.hull, s.fit, rect))
+            }
             None => shapes::builtin(name, rect.w, rect.h).map(|u| Form::from_unit(&u, rect)),
         }
     }
@@ -370,6 +373,13 @@ impl<'a> Resolver<'a> {
             Some(LibShape::Svg(s)) => Some(*s),
             _ => None,
         }
+    }
+
+    /// The natural size of an SVG-file shape drawn with `fit=contain`.
+    pub(super) fn contained(&self, name: &str) -> Option<(f64, f64)> {
+        self.svg_shape(name)
+            .filter(|s| s.fit == Fit::Contain)
+            .map(|s| self.store.get(s.asset).natural)
     }
 
     pub(super) fn named_style(&mut self, a: &ast::Attr) -> Option<StyleProps> {

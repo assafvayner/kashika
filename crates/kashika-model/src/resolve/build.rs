@@ -9,7 +9,7 @@ use super::{IconPos, Item, Resolver};
 
 /// An entry's scene item, built before `build` adds it to the scene.
 pub(super) enum Built {
-    Shape(Shape),
+    Shape(Box<Shape>),
     Junction(Junction),
     Text(Text),
     Line(Line),
@@ -32,14 +32,14 @@ impl<'a> Resolver<'a> {
                 Item::Box(n) | Item::Group(ast::Group { node: n, .. }) => {
                     self.record_edges(idx, &n.at);
                     if let Some(Built::Shape(s)) = built {
-                        scene.shapes.push(s);
+                        scene.shapes.push(*s);
                         self.record_node(n);
                     }
                 }
                 Item::Image(i) => {
                     self.record_edges(idx, &i.at);
                     if let Some(Built::Shape(s)) = built {
-                        scene.shapes.push(s);
+                        scene.shapes.push(*s);
                         self.record_point(&i.id.name, &i.at);
                         self.literal(&i.id.name, "width", i.size.0, i.span);
                         self.literal(&i.id.name, "height", i.size.1, i.span);
@@ -96,11 +96,11 @@ impl<'a> Resolver<'a> {
         match item {
             Item::Box(n) => self
                 .make_shape(idx, n, ShapeKind::Box, parent, depth)
-                .map(Built::Shape),
+                .map(|s| Built::Shape(Box::new(s))),
             Item::Group(g) => self
                 .make_shape(idx, &g.node, ShapeKind::Group, parent, depth)
-                .map(Built::Shape),
-            Item::Image(i) => self.make_image(idx, i).map(Built::Shape),
+                .map(|s| Built::Shape(Box::new(s))),
+            Item::Image(i) => self.make_image(idx, i).map(|s| Built::Shape(Box::new(s))),
             Item::Junction(j) => {
                 let r = self.place(idx)?;
                 let dot = self.entries[idx].dot();
@@ -173,6 +173,7 @@ impl<'a> Resolver<'a> {
                 shape: &shape,
                 custom_text_area: self.lib.shapes.get(&shape).and_then(LibShape::text_area),
                 text_below: svg.is_some_and(|s| s.below),
+                contain: self.contained(&shape),
                 icon_inset,
                 rect,
                 style: &p.style,
@@ -190,7 +191,7 @@ impl<'a> Resolver<'a> {
             image: svg.map(|s| ImageRef {
                 asset: s.asset,
                 rect,
-                fit: Fit::Stretch,
+                fit: s.fit,
             }),
             icon: icon.map(|ic| {
                 let pad = p.style.padding;

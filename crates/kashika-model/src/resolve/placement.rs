@@ -295,7 +295,9 @@ impl<'a> Resolver<'a> {
         let (name, t) = p.pin;
         let radius = p.style.radius;
         let shape = p.drawn_shape();
-        let form = self.form(&shape, local);
+        let form = self
+            .form(&shape, local)
+            .map(|f| form::Form { frame: None, ..f });
         let off =
             form::resolve_anchor(form.as_ref(), local, radius, "pin", name, t).unwrap_or_default();
         Some(Rect::new(at.x - off.x, at.y - off.y, w, h))
@@ -357,6 +359,7 @@ impl<'a> Resolver<'a> {
             shape: &shape,
             custom_text_area: None,
             text_below: false,
+            contain: None,
             icon_inset: p.icon_inset(true),
             rect: Rect::new(0.0, 0.0, w, h),
             style: &p.style,

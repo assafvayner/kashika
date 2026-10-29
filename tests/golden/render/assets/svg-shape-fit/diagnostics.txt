@@ -1,0 +1,5 @@
+warn[image-distort] 12:1-12:114: box 'stretch' is stretched 50% away from its 40x20 aspect ratio
+  = help: use fit=contain or fit=cover on shape `badge_stretch`, or size (80, 40) to keep the ratio
+  = suppressed: shows fit=stretch
+  elements: [{"bbox":[[380,20],[460,100]],"id":"stretch","kind":"box","span":{"col":1,"end_col":114,"end_line":12,"line":12}}]
+  facts: {"distortion":0.5,"natural":[40,20],"size":[80,80]}

@@ -798,6 +798,23 @@ impl Fit {
             Fit::Stretch => "stretch",
         }
     }
+
+    /// Where a drawing of `natural` size lands when fitted to `r`, centered: inside `r` for
+    /// `contain`, covering it (and cropped to it when drawn) for `cover`, `r` for `stretch`.
+    pub fn place(self, natural: (f64, f64), r: Rect) -> Rect {
+        let (nw, nh) = natural;
+        if self == Fit::Stretch || nw <= 0.0 || nh <= 0.0 {
+            return r;
+        }
+        let (sx, sy) = (r.w / nw, r.h / nh);
+        let s = if self == Fit::Contain {
+            sx.min(sy)
+        } else {
+            sx.max(sy)
+        };
+        let (w, h) = (nw * s, nh * s);
+        Rect::new(r.x + (r.w - w) / 2.0, r.y + (r.h - h) / 2.0, w, h)
+    }
 }
 
 /// A placed asset: which file, where, and how it fills its rect.

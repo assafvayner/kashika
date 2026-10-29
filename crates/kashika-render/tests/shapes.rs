@@ -88,7 +88,9 @@ fn svg_shapes_draw_only_their_image() {
         "diagram \"s\" size (300,200)\nshape t from \"t.svg\" text-area=below\nbox a at (100,100) size (80,40) shape=t\n",
     );
     assert!(
-        s.contains(r#"<image x="100" y="100" width="80" height="40" preserveAspectRatio="none""#),
+        s.contains(
+            r#"<image x="100" y="100" width="80" height="40" preserveAspectRatio="xMidYMid meet""#
+        ),
         "{s}"
     );
     assert!(!s.contains(r#"<rect x="100" y="100""#));

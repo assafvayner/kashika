@@ -125,7 +125,7 @@ fn svg_shapes_use_bbox_or_hull() {
         start(&s, "lb")
     );
     let a = shape(&s, "a");
-    assert_eq!(a.image.as_ref().unwrap().fit, Fit::Stretch);
+    assert_eq!(a.image.as_ref().unwrap().fit, Fit::Contain);
     assert_eq!(
         a.image.as_ref().unwrap().rect,
         Rect::new(100.0, 100.0, 80.0, 40.0)
@@ -138,6 +138,89 @@ fn svg_shapes_use_bbox_or_hull() {
     assert_eq!(s.assets.len(), 1, "both shapes share one asset");
     assert_eq!(s.assets[0].natural, (40.0, 20.0));
     assert_eq!(s.assets[0].path, "t.svg");
+}
+
+#[test]
+fn svg_shapes_contain_their_drawing_by_default() {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "t.svg", SVG.as_bytes());
+    let (s, d) = run(
+        dir.path(),
+        &format!(
+            "{HEAD}shape tb from \"t.svg\"\nshape tl from \"t.svg\" text-area=below\n\
+             shape th from \"t.svg\" outline=hull\n\
+             box a \"A\" at (100,100) size (80,80) shape=tb\n\
+             box b \"B\" at (300,100) size (80,80) shape=tl\n\
+             box c at (100,300) size (120,40) shape=th\n\
+             box d at (500,100) size (80,80) shape=tb pin=top\n\
+             line la a.top -> v -20\nline lc c.left -> h -20\nline lk a.top-left -> v -20\n"
+        ),
+    );
+    assert!(d.is_empty(), "{d:#?}");
+    let a = shape(&s, "a");
+    assert_eq!(a.image.as_ref().unwrap().fit, Fit::Contain);
+    assert_eq!(a.rect, Rect::new(100.0, 100.0, 80.0, 80.0));
+    assert_eq!(a.anchor_frame(), Rect::new(100.0, 120.0, 80.0, 40.0));
+    assert_eq!(start(&s, "la"), Pt::new(140.0, 120.0));
+    assert_eq!(start(&s, "lk"), Pt::new(100.0, 120.0));
+    assert_eq!(a.text_area, Rect::new(108.0, 128.0, 64.0, 24.0));
+    assert_eq!(shape(&s, "d").rect, Rect::new(460.0, 80.0, 80.0, 80.0));
+    assert_eq!(
+        shape(&s, "b").text_area,
+        Rect::new(300.0, 168.0, 80.0, 17.5)
+    );
+    assert!(
+        close(start(&s, "lc"), Pt::new(130.0, 320.0)),
+        "{:?}",
+        start(&s, "lc")
+    );
+}
+
+#[test]
+fn svg_shapes_take_cover_and_stretch() {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "t.svg", SVG.as_bytes());
+    let (s, d) = run(
+        dir.path(),
+        &format!(
+            "{HEAD}shape tc from \"t.svg\" fit=cover outline=hull\nshape ts from \"t.svg\" fit=stretch\n\
+             box a at (400,300) size (40,40) shape=tc\nbox b at (100,100) size (80,80) shape=ts\n\
+             line lb b.top -> v -20\n"
+        ),
+    );
+    assert!(d.is_empty(), "{d:#?}");
+    let a = shape(&s, "a");
+    assert_eq!(a.image.as_ref().unwrap().fit, Fit::Cover);
+    assert_eq!(a.anchor_frame(), a.rect);
+    let hull = a.outline_polygon();
+    assert!(
+        hull.iter()
+            .all(|p| (400.0..=440.0).contains(&p.x) && (300.0..=340.0).contains(&p.y)),
+        "{hull:?}"
+    );
+    assert_eq!(a.image_distortion(&s.assets), None);
+    let b = shape(&s, "b");
+    assert_eq!(b.image.as_ref().unwrap().fit, Fit::Stretch);
+    assert_eq!(b.image_distortion(&s.assets), Some(0.5));
+    assert_eq!(start(&s, "lb"), Pt::new(140.0, 100.0));
+}
+
+#[test]
+fn fitted_svg_shapes_keep_the_drawing_ratio() {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "t.svg", SVG.as_bytes());
+    let (s, d) = run(
+        dir.path(),
+        &format!(
+            "{HEAD}shape tb from \"t.svg\"\n\
+             box a \"Payments\" at (100,100) shape=tb\n\
+             box b \"B\" at (300,100) size (200, auto) shape=tb\n"
+        ),
+    );
+    assert!(d.is_empty(), "{d:#?}");
+    let a = shape(&s, "a").rect;
+    assert!((a.w / a.h - 2.0).abs() < 0.1, "{a:?}");
+    assert_eq!(shape(&s, "b").rect, Rect::new(300.0, 100.0, 200.0, 100.0));
 }
 
 #[test]
