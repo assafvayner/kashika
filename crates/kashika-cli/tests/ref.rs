@@ -92,6 +92,17 @@ fn every_topic_has_a_page() {
 }
 
 #[test]
+fn bundled_upload_example_matches_examples() {
+    let dir = env!("CARGO_MANIFEST_DIR");
+    let read = |p: &str| std::fs::read_to_string(format!("{dir}/{p}")).unwrap();
+    assert_eq!(
+        read("ref/upload.kash"),
+        read("../../examples/upload/upload.kash"),
+        "copy examples/upload/upload.kash to crates/kashika-cli/ref/upload.kash"
+    );
+}
+
+#[test]
 fn every_diagnostic_code_has_a_page() {
     for (codes, severity) in [
         (kashika_diag::ERROR_CODES, "error"),
