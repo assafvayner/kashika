@@ -1,0 +1,4 @@
+// spec: 3, 7
+// A negative `margin=` is an `attr` error; the canvas then keeps the default margin.
+diagram "margins" margin=-5
+box a "A" at (10,10) size (40,40)

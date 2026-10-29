@@ -36,7 +36,7 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `group-transit` | warn | a line crosses a group it doesn't connect to (a junction on it that taps into the group counts as connecting) | route around the group |
 | `low-contrast` | warn | text contrast below 3:1, or a `currentColor` icon (every bundled icon) against the fill under it | change the color or fill; an icon follows the shape's `color` |
 | `label-collision` | warn | a label or text overlaps another element, a group's title or border, or a label its own line's marker (or its own line, with `label-side`); or a line crosses a group's title | move it; the help lists clear `t` or the title's extent |
-| `out-of-canvas` | warn | an element extends past `size` (children of a group that itself extends past it aren't reported again) | move it or grow `size` |
+| `out-of-canvas` | warn | an element extends past `size`, or above or left of `(0,0)` (children of a group that itself extends past it aren't reported again) | move it, grow `size`, or leave `size` out to fit the canvas |
 | `off-grid` | warn | a literal is not a multiple of `grid` | round it |
 | `block-reducible` | warn | a block of 1–2 items in one style | use the rewrite in the help line |
 | `text-outside-shape` | warn | an absolute block item outside the text area | move it inside the range in the help line |

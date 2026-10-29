@@ -1,6 +1,13 @@
 File {
     stmts: [
-        Diagram(Diagram { title: "custom", size: (320.0, 200.0), attrs: [], span: 4:1-4:32 }),
+        Diagram(
+            Diagram {
+                title: "custom",
+                size: Some(Size { w: Some(320.0), h: Some(200.0) }),
+                attrs: [],
+                span: 4:1-4:32,
+            },
+        ),
         Shape(
             ShapeDef {
                 name: Ident { name: "lb_icon", span: 5:7-5:14 },

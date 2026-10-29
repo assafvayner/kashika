@@ -1,0 +1,10 @@
+// spec: 3, 8
+// dump: scene
+// A diagram without `size` fits its canvas to everything drawn (here a line's arrowhead and a
+// label below the bottom box), plus the default 20px margin on the right and bottom.
+diagram "auto canvas"
+box a "Client" at (20,20) size (80,40)
+box b "Server" at (20,120) size (80,40)
+line ab a.bottom -> b.top end=arrow
+line out a.right -> h 150 end=arrow label="out"
+text "**note**" at (60,180)

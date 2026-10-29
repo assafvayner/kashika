@@ -1,6 +1,13 @@
 File {
     stmts: [
-        Diagram(Diagram { title: "reserved", size: (400.0, 200.0), attrs: [], span: 4:1-4:34 }),
+        Diagram(
+            Diagram {
+                title: "reserved",
+                size: Some(Size { w: Some(400.0), h: Some(200.0) }),
+                attrs: [],
+                span: 4:1-4:34,
+            },
+        ),
     ],
     first_stmt: Some(4:1-4:8),
     failed_ids: [],

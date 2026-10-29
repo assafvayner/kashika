@@ -1,0 +1,147 @@
+{
+  "allow": [],
+  "assets": [],
+  "background": null,
+  "clearance": 6,
+  "grid": null,
+  "junctions": [],
+  "lines": [],
+  "literals": [
+    {"owner":"a","span":{"col":48,"end_col":55,"end_line":6,"line":6},"value":20,"what":"x"},
+    {"owner":"a","span":{"col":48,"end_col":55,"end_line":6,"line":6},"value":20,"what":"y"},
+    {"owner":"b","span":{"col":15,"end_col":23,"end_line":7,"line":7},"value":20,"what":"x"},
+    {"owner":"b","span":{"col":15,"end_col":23,"end_line":7,"line":7},"value":-30,"what":"y"},
+    {"owner":"b","span":{"col":1,"end_col":36,"end_line":7,"line":7},"value":60,"what":"width"},
+    {"owner":"b","span":{"col":1,"end_col":36,"end_line":7,"line":7},"value":40,"what":"height"},
+    {"owner":"c","span":{"col":16,"end_col":24,"end_line":8,"line":8},"value":20,"what":"x"},
+    {"owner":"c","span":{"col":16,"end_col":24,"end_line":8,"line":8},"value":300,"what":"y"},
+    {"owner":"c","span":{"col":1,"end_col":37,"end_line":8,"line":8},"value":60,"what":"width"},
+    {"owner":"c","span":{"col":1,"end_col":37,"end_line":8,"line":8},"value":40,"what":"height"}
+  ],
+  "placement": [],
+  "shapes": [
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "a",
+      "image": null,
+      "kind": "box",
+      "label": "A wide box that runs past the width",
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":34,"w":250,"x":20,"y":20},
+      "shape": "rect",
+      "span": {"col":1,"end_col":55,"end_line":6,"line":6},
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "A wide box that runs past the width",
+          "lines": [
+            {
+              "baseline": 42.09,
+              "runs": [{"font":"regular","text":"A wide box that runs past the width"}],
+              "width": 233.63,
+              "x": 28.19
+            }
+          ],
+          "rect": {"h":17.5,"w":233.63,"x":28.19,"y":28.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":55,"end_line":6,"line":6}
+        }
+      ],
+      "text_area": {"h":18,"w":234,"x":28,"y":28},
+      "text_below": false,
+      "title_band": 0
+    },
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "b",
+      "image": null,
+      "kind": "box",
+      "label": "Up",
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":40,"w":60,"x":20,"y":-30},
+      "shape": "rect",
+      "span": {"col":1,"end_col":36,"end_line":7,"line":7},
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "Up",
+          "lines": [
+            {
+              "baseline": -4.91,
+              "runs": [{"font":"regular","text":"Up"}],
+              "width": 18.99,
+              "x": 40.5
+            }
+          ],
+          "rect": {"h":17.5,"w":18.99,"x":40.5,"y":-18.75},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":36,"end_line":7,"line":7}
+        }
+      ],
+      "text_area": {"h":24,"w":44,"x":28,"y":-22},
+      "text_below": false,
+      "title_band": 0
+    },
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "c",
+      "image": null,
+      "kind": "box",
+      "label": "Low",
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":40,"w":60,"x":20,"y":300},
+      "shape": "rect",
+      "span": {"col":1,"end_col":37,"end_line":8,"line":8},
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "Low",
+          "lines": [
+            {
+              "baseline": 325.09,
+              "runs": [{"font":"regular","text":"Low"}],
+              "width": 27.77,
+              "x": 36.12
+            }
+          ],
+          "rect": {"h":17.5,"w":27.77,"x":36.12,"y":311.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":37,"end_line":8,"line":8}
+        }
+      ],
+      "text_area": {"h":24,"w":44,"x":28,"y":308},
+      "text_below": false,
+      "title_band": 0
+    }
+  ],
+  "size": [200,349],
+  "texts": [],
+  "title": "one axis"
+}

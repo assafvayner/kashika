@@ -1,6 +1,13 @@
 File {
     stmts: [
-        Diagram(Diagram { title: "junctions", size: (300.0, 120.0), attrs: [], span: 4:1-4:35 }),
+        Diagram(
+            Diagram {
+                title: "junctions",
+                size: Some(Size { w: Some(300.0), h: Some(120.0) }),
+                attrs: [],
+                span: 4:1-4:35,
+            },
+        ),
         Junction(
             Junction {
                 id: Ident { name: "j", span: 5:10-5:11 },

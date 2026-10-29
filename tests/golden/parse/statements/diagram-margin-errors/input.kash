@@ -1,0 +1,7 @@
+// spec: 3, 7
+// `margin=` sets the room after a fitted canvas, so it is an error with a fixed size, and it
+// must be at least 0. An `auto` axis is only for boxes and the diagram.
+diagram "margins" size (200,100) margin=10
+group g at (10,10) size (auto, 50) {
+}
+box a "A" at (10,10) size (40,40)

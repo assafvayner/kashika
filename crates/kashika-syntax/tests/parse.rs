@@ -655,7 +655,7 @@ fn at_size_and_attributes_come_in_any_order() {
     let Stmt::Diagram(d) = &f.stmts[0] else {
         panic!("expected diagram")
     };
-    assert_eq!(d.size, (400.0, 300.0));
+    assert_eq!(d.size, sized(400.0, 300.0));
     assert_eq!(d.attrs.len(), 2);
     let Stmt::Box(b) = &f.stmts[2] else {
         panic!("expected box")
@@ -710,9 +710,23 @@ fn box_size_is_optional_and_takes_auto() {
 }
 
 #[test]
-fn auto_size_is_a_box_feature() {
+fn auto_size_is_for_boxes_and_the_diagram() {
+    for (src, size) in [
+        ("diagram \"t\"\n", None),
+        (
+            "diagram \"t\" size (auto,100)\n",
+            Some(Size {
+                w: None,
+                h: Some(100.0),
+            }),
+        ),
+    ] {
+        let Stmt::Diagram(d) = &parse_ok(src).stmts[0] else {
+            panic!("expected diagram")
+        };
+        assert_eq!(d.size, size);
+    }
     for src in [
-        "diagram \"t\" size (auto,100)\n",
         "image i \"x.png\" at (0,0) size (auto,10)\n",
         "group g at (0,0) size (10,auto) {\n}\n",
         "group g at (0,0) {\n}\n",

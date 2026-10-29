@@ -34,6 +34,11 @@ pub struct Inspect {
     tool: &'static str,
     input: Input,
     counts: Counts,
+    /// The canvas size, after any `auto` axis is fitted.
+    canvas: P,
+    /// Whether the text output lists everything, so it starts with the canvas.
+    #[serde(skip)]
+    all: bool,
     shapes: Vec<ShapeInfo>,
     junctions: Vec<JunctionInfo>,
     texts: Vec<TextInfo>,
@@ -321,6 +326,8 @@ pub fn build(
             error: errors,
             warn: diags.len() - errors + lints,
         },
+        canvas: [round2(scene.size.0), round2(scene.size.1)],
+        all: req.ids.is_empty() && !corridors_only,
         shapes,
         junctions,
         texts,
@@ -378,6 +385,9 @@ fn within(parent: &Option<String>) -> String {
 
 pub fn text(i: &Inspect) -> String {
     let mut out = String::new();
+    if i.all {
+        out.push_str(&format!("canvas {}x{}\n", i.canvas[0], i.canvas[1]));
+    }
     for s in &i.shapes {
         let label = s
             .label

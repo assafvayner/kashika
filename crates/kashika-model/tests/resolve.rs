@@ -1771,3 +1771,34 @@ fn line_style_ignores_shape() {
     let s = ok("style s { shape=ellipse stroke=#00ff00 }\nline l (0,0) -> h 100 style=s\n");
     assert_eq!(s.lines[0].style.stroke, "#00ff00");
 }
+
+#[test]
+fn canvas_without_size_fits_the_drawing_plus_a_margin() {
+    let (s, d) = compile("diagram \"t\"\nbox a at (10,10) size (100,50)\n");
+    assert!(d.is_empty(), "{d:#?}");
+    assert_eq!(s.size, (111.0 + 20.0, 61.0 + 20.0));
+    let (s, _) = compile("diagram \"t\" margin=0\nline l (10,10) -> h 100 end=arrow\n");
+    assert_eq!(s.size, (114.0, 14.0));
+    let (s, _) = compile("diagram \"t\" margin=5\ntext \"note\" at (50,100)\n");
+    let t = s.texts[0].rect;
+    assert_eq!(s.size, (t.right().ceil() + 5.0, t.bottom().ceil() + 5.0));
+}
+
+#[test]
+fn canvas_fits_one_axis() {
+    let (s, d) =
+        compile("diagram \"t\" size (300, auto)\nbox a at (10,10) size (100,50) stroke=none\n");
+    assert!(d.is_empty(), "{d:#?}");
+    assert_eq!(s.size, (300.0, 81.0));
+    let (s, _) = compile("diagram \"t\" size (auto, 300)\nbox a at (10,10) size (100,50)\n");
+    assert_eq!(s.size, (131.0, 300.0));
+}
+
+#[test]
+fn margin_needs_a_fitted_canvas() {
+    let (s, d) = compile("diagram \"t\" size (300,200) margin=10\n");
+    assert_eq!(codes_of(&d), vec!["attr"], "{d:#?}");
+    assert_eq!(s.size, (300.0, 200.0));
+    let (_, d) = compile("diagram \"t\" margin=-1\n");
+    assert_eq!(codes_of(&d), vec!["attr"], "{d:#?}");
+}

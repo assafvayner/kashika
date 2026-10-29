@@ -1,0 +1,8 @@
+// spec: 3, 7
+// dump: scene
+// `size (w, auto)` fixes the width and fits the height with `margin=`: `out-of-canvas` still
+// fires past the fixed width and above the top, but never below the drawing.
+diagram "one axis" size (200, auto) margin=8
+box a "A wide box that runs past the width" at (20,20)
+box b "Up" at (20,-30) size (60,40)
+box c "Low" at (20,300) size (60,40)

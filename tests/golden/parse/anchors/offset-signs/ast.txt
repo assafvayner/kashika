@@ -1,6 +1,13 @@
 File {
     stmts: [
-        Diagram(Diagram { title: "offset signs", size: (300.0, 200.0), attrs: [], span: 4:1-4:38 }),
+        Diagram(
+            Diagram {
+                title: "offset signs",
+                size: Some(Size { w: Some(300.0), h: Some(200.0) }),
+                attrs: [],
+                span: 4:1-4:38,
+            },
+        ),
         Box(
             Node {
                 id: Ident { name: "a", span: 5:5-5:6 },

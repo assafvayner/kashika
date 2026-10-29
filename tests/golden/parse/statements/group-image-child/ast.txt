@@ -1,7 +1,12 @@
 File {
     stmts: [
         Diagram(
-            Diagram { title: "image in group", size: (300.0, 200.0), attrs: [], span: 4:1-4:40 },
+            Diagram {
+                title: "image in group",
+                size: Some(Size { w: Some(300.0), h: Some(200.0) }),
+                attrs: [],
+                span: 4:1-4:40,
+            },
         ),
         Group(
             Group {

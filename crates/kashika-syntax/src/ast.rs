@@ -47,7 +47,8 @@ impl Stmt {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Diagram {
     pub title: String,
-    pub size: (f64, f64),
+    /// `None` when omitted; the canvas then fits what is drawn.
+    pub size: Option<Size>,
     pub attrs: Vec<Attr>,
     pub span: Span,
 }

@@ -46,7 +46,7 @@ Kashika has **no auto-layout**. You decide every box position and every line pat
 ## Cheat sheet
 
 ```kash fragment
-diagram "Title" size (900,500) kashika="0.1.0"  // optional: grid=10 (skip it for small markers or tight spacing) clearance=6 icons="dir" background=#rrggbb (default transparent)
+diagram "Title" size (900,500) kashika="0.1.0"  // leave out size to fit the canvas to the drawing (+ margin=20); optional: grid=10 (skip it for small markers or tight spacing) clearance=6 icons="dir" background=#rrggbb (default transparent)
 import "lib/aws.kash" as aws  // library shapes and styles: shape=aws.s3 style=aws.service
 shape tri { path "M 0.5 0 L 1 1 L 0 1 Z" }  // unit coordinates 0..1, stretched to the box; M L H V C Q A Z
 shape s3 from "icons/s3.svg" text-area=below  // an SVG file as a shape; outline=bbox|hull

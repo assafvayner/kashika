@@ -1,0 +1,11 @@
+// spec: 3, 8
+// raster: png
+// A fitted canvas, painted with `background=` to show its edge: the margin follows the farthest
+// arrowhead, label and group border.
+diagram "auto canvas" background=#f8fafc margin=16
+group vpc "VPC" at (20,20) size (240,120) {
+  box api "API" at (20,60)
+  box db "DB" at api.right+(80,0) pin=left shape=cylinder style=datastore
+}
+line l api.right -> db.left end=arrow
+line out db.bottom -> v 60 -> h 120 end=arrow label@0.75="export" label-side=above

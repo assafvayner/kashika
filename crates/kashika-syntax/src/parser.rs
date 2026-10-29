@@ -513,7 +513,7 @@ impl Parser<'_> {
                 self.diags.push(
                     Diagnostic::error("parse", span, format!("{what} size can't be `auto`"))
                         .with_help(
-                            "only a box fits its size to its text; give it a size: `size (w,h)`",
+                            "only boxes and the diagram take `auto`; give it a size: `size (w,h)`",
                         ),
                 );
                 Err(())
@@ -526,7 +526,7 @@ impl Parser<'_> {
         let tail = self.tail(Clauses::SIZE)?;
         Ok(Diagram {
             title,
-            size: self.fixed_size(tail.size, "a diagram's")?,
+            size: tail.size.map(|(s, _)| s),
             attrs: tail.attrs,
             span: start.to(self.prev_span()),
         })

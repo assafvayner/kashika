@@ -1,6 +1,13 @@
 File {
     stmts: [
-        Diagram(Diagram { title: "style", size: (300.0, 120.0), attrs: [], span: 4:1-4:31 }),
+        Diagram(
+            Diagram {
+                title: "style",
+                size: Some(Size { w: Some(300.0), h: Some(120.0) }),
+                attrs: [],
+                span: 4:1-4:31,
+            },
+        ),
         Style(
             StyleDef {
                 name: "warm",

@@ -1,6 +1,13 @@
 File {
     stmts: [
-        Diagram(Diagram { title: "import", size: (300.0, 120.0), attrs: [], span: 4:1-4:32 }),
+        Diagram(
+            Diagram {
+                title: "import",
+                size: Some(Size { w: Some(300.0), h: Some(120.0) }),
+                attrs: [],
+                span: 4:1-4:32,
+            },
+        ),
         Import(Import { path: "lib/aws.kash", path_span: 5:8-5:22, ns: None, span: 5:1-5:22 }),
         Box(
             Node {

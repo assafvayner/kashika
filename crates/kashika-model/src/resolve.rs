@@ -15,6 +15,7 @@ use crate::textlayout::ShapeTextProps;
 use crate::version;
 
 mod build;
+mod canvas;
 mod checks;
 mod lines;
 mod placement;
@@ -55,7 +56,10 @@ const DIAGRAM_KEYS: &[&str] = &[
     "background",
     "icons",
     "allow",
+    "margin",
 ];
+/// Room a fitted canvas leaves to the right of and below the drawing, unless `margin=` sets it.
+const DEFAULT_MARGIN: f64 = 20.0;
 /// Longest chain of placement references, counting group frames.
 const MAX_PLACEMENT_DEPTH: usize = 256;
 /// Cycles longer than this print only their first few members.
@@ -190,6 +194,8 @@ pub fn resolve_with(file: &ast::File, opts: &Options) -> (Scene, Vec<Diagnostic>
         edges: Vec::new(),
         literals: Vec::new(),
         grid: None,
+        canvas_fit: (false, false),
+        margin: DEFAULT_MARGIN,
         diags: Vec::new(),
     };
     r.icons_dir(file);
@@ -209,6 +215,7 @@ pub fn resolve_with(file: &ast::File, opts: &Options) -> (Scene, Vec<Diagnostic>
     r.validate();
     r.placement_graph();
     r.build(&mut scene);
+    r.fit_canvas(&mut scene);
     scene.assets = std::mem::take(&mut r.store).into_vec();
     (scene, r.diags)
 }
@@ -255,6 +262,10 @@ struct Resolver<'a> {
     literals: Vec<Literal>,
     /// The diagram's `grid=`, which fitted sizes round up to.
     grid: Option<f64>,
+    /// Which canvas axes are `auto`, fitted to what is drawn.
+    canvas_fit: (bool, bool),
+    /// The diagram's `margin=`, added after the drawing on a fitted axis.
+    margin: f64,
     diags: Vec<Diagnostic>,
 }
 
@@ -319,8 +330,10 @@ impl<'a> Resolver<'a> {
                 ));
             }
             scene.title = markup::unescape(&d.title);
-            if self.size_ok(d.size, d.span, "the diagram") {
-                scene.size = d.size;
+            let ast::Size { w, h } = d.size.unwrap_or(ast::Size { w: None, h: None });
+            if self.size_ok((w.unwrap_or(1.0), h.unwrap_or(1.0)), d.span, "the diagram") {
+                scene.size = (w.unwrap_or(0.0), h.unwrap_or(0.0));
+                self.canvas_fit = (w.is_none(), h.is_none());
             }
 
             let a = Attrs::new(&d.attrs, "diagram", DIAGRAM_KEYS, &mut self.diags);
@@ -350,6 +363,20 @@ impl<'a> Resolver<'a> {
             }
             if let Some(x) = a.get("allow") {
                 scene.allow = self.allow_list(x, false);
+            }
+            if let Some(x) = a.get("margin") {
+                if w.is_some() && h.is_some() {
+                    self.diags.push(
+                        Diagnostic::error(
+                            "attr",
+                            x.span,
+                            "`margin` applies only to a canvas that fits its content",
+                        )
+                        .with_help("remove `margin`, or leave out `size` (or write `size (w, auto)`) to fit the canvas"),
+                    );
+                } else if let Some(v) = attrs::num_in(x, Min::NonNegative, &mut self.diags) {
+                    self.margin = v;
+                }
             }
         }
         if !seen && !file.failed_diagram {

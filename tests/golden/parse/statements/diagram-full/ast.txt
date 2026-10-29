@@ -3,7 +3,7 @@ File {
         Diagram(
             Diagram {
                 title: "Full",
-                size: (400.0, 300.0),
+                size: Some(Size { w: Some(400.0), h: Some(300.0) }),
                 attrs: [
                     Attr {
                         key: Ident { name: "kashika", span: 4:31-4:38 },

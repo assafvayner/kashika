@@ -1,6 +1,13 @@
 File {
     stmts: [
-        Diagram(Diagram { title: "numbers", size: (300.0, 200.0), attrs: [], span: 4:1-4:33 }),
+        Diagram(
+            Diagram {
+                title: "numbers",
+                size: Some(Size { w: Some(300.0), h: Some(200.0) }),
+                attrs: [],
+                span: 4:1-4:33,
+            },
+        ),
         Box(
             Node {
                 id: Ident { name: "a", span: 5:5-5:6 },
