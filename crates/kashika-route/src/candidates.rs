@@ -10,6 +10,9 @@ use kashika_model::{Scene, ShapeKind};
 use crate::{Endpoint, SQUARE, Style};
 use kashika_geom::fmt_num as num;
 
+#[cfg(test)]
+mod tests;
+
 /// Lanes per axis that detours pick from: those nearest either endpoint.
 pub(crate) const DETOUR_LANES: usize = 16;
 /// One-lane plans scored with `kashika check`: the best of a geometric pre-pass.
