@@ -17,7 +17,7 @@ line  [<id>] <point> -> <segment> [-> <segment> ...] [line attributes] [ortho]
 - Text in boxes: `sublabel` is one muted line under the label. Markup works in labels and texts: `**bold**` and `` `code` ``; escape with `\*` and `` \` ``. For three or more lines, use a block, `{ text "..." [size=N] [muted] ... }`. Items without `at` stack `gap` apart. Don't combine `label` with stacked items (`text-conflict`). An item with `at (x,y)` is absolute, in box-local coordinates.
 - Groups hold `box`, `group`, `junction`, `text` and `line`, use the `boundary` style, and reserve a title band at the top. A group's `text-valign` is an error.
 - More shapes, `import`, `image` and `icon=`: `kashika ref shapes`.
-- `text` is centered vertically on `at`. Paint order: `layer=under` shapes, groups (file order), boxes, lines, labels and texts in file order, then `layer=over` shapes.
+- `text` is centered vertically on `at`. Paint order: `layer=under` shapes, groups (file order), boxes, lines, labels and texts in file order, then `layer=over` shapes. A `layer=under` shape inside a group paints right after that group's fill, so the fill never hides it.
 - `layer=under|over` on a box or image (not a group) paints it first or last, with its own text. Layered shapes are backdrops and highlights, never obstacles: `overlap`, `through`, `near`, `label-collision`, `endpoint-off-edge`, `route` and `--corridors` ignore them; `spill`, `out-of-canvas` and their own text checks still apply.
 
 ```kash

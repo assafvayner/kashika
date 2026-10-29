@@ -28,6 +28,51 @@ pub struct Scene {
     pub literals: Vec<Literal>,
 }
 
+impl Scene {
+    /// Indices into `shapes` in paint order: top-level `layer=under` shapes, each group followed
+    /// by its own `layer=under` children, the other boxes and images, then `layer=over` shapes.
+    /// Junction dots, lines, line labels and texts paint before the `layer=over` shapes.
+    pub fn paint_order(&self) -> Vec<usize> {
+        let groups: Vec<&str> = self
+            .shapes
+            .iter()
+            .filter(|g| g.kind == ShapeKind::Group)
+            .map(|g| g.id.as_str())
+            .collect();
+        let under: Vec<(usize, Option<&str>)> = self
+            .shapes
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| s.layer == Layer::Under)
+            .map(|(i, s)| (i, s.parent.as_deref().filter(|p| groups.contains(p))))
+            .collect();
+        let under_in = |parent: Option<&str>| {
+            under
+                .iter()
+                .filter(move |(_, p)| *p == parent)
+                .map(|&(i, _)| i)
+                .collect::<Vec<_>>()
+        };
+        let mut order = under_in(None);
+        for (i, g) in self.shapes.iter().enumerate() {
+            if g.kind == ShapeKind::Group {
+                order.push(i);
+                order.extend(under_in(Some(&g.id)));
+            }
+        }
+        for layer in [Layer::Normal, Layer::Over] {
+            order.extend(
+                self.shapes
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, s)| s.kind != ShapeKind::Group && s.layer == layer)
+                    .map(|(i, _)| i),
+            );
+        }
+        order
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ShapeKind {
@@ -40,7 +85,8 @@ pub enum ShapeKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Layer {
-    /// Before everything else, groups included; not an obstacle.
+    /// Before everything else in its parent: a top-level shape before every group, a group's
+    /// child right after that group's own fill and border. Not an obstacle.
     Under,
     #[default]
     Normal,

@@ -11,6 +11,24 @@ const WHITE: [f64; 3] = [1.0, 1.0, 1.0];
 
 /// `low-contrast`: the WCAG contrast ratio between text and the fill behind it is below 3:1.
 pub fn low_contrast(ctx: &Ctx, out: &mut Sink) {
+    let mut rank = vec![0; ctx.shapes.len()];
+    for (r, i) in ctx.scene.paint_order().into_iter().enumerate() {
+        rank[i] = r;
+    }
+    let texts = ctx
+        .shapes
+        .iter()
+        .enumerate()
+        .filter(|(_, s)| s.shape.layer != Layer::Over)
+        .map(|(i, _)| rank[i])
+        .max();
+    let backdrop = |p: Pt, last: Option<&str>| {
+        let stop = match last {
+            Some(id) => ctx.shape_index(id).map(|i| rank[i]),
+            None => texts,
+        };
+        backdrop(ctx, &rank, p, stop)
+    };
     for s in &ctx.shapes {
         let sh = s.shape;
         for item in &sh.text {
@@ -19,7 +37,7 @@ pub fn low_contrast(ctx: &Ctx, out: &mut Sink) {
                 TextRole::Sublabel => format!("sublabel \"{}\"", item.content),
                 TextRole::Stacked | TextRole::Absolute => format!("text \"{}\"", item.content),
             };
-            let bg = backdrop(ctx, item.rect.center(), Some(&sh.id));
+            let bg = backdrop(item.rect.center(), Some(&sh.id));
             check(
                 out,
                 &item.color,
@@ -31,7 +49,7 @@ pub fn low_contrast(ctx: &Ctx, out: &mut Sink) {
         }
     }
     for t in &ctx.scene.texts {
-        let bg = backdrop(ctx, text_box(t).center(), None);
+        let bg = backdrop(text_box(t).center(), None);
         check(
             out,
             &t.color,
@@ -44,7 +62,7 @@ pub fn low_contrast(ctx: &Ctx, out: &mut Sink) {
     for l in &ctx.lines {
         for lab in &l.line.labels {
             let what = format!("label \"{}\" of {}", lab.text, l.line.id);
-            let bg = backdrop(ctx, lab.rect.center(), None);
+            let bg = backdrop(lab.rect.center(), None);
             check(
                 out,
                 &l.line.style.color,
@@ -77,34 +95,18 @@ fn check(out: &mut Sink, color: &str, bg: [f64; 3], el: Element, span: Span, wha
     );
 }
 
-/// The canvas with every fill containing `p` painted on top in paint order (`layer=under`
-/// shapes, groups, then boxes), including the shape `last` when given and none after it.
-/// Without `last`, the text paints after every box but before `layer=over` shapes. A
-/// transparent canvas counts as white. Images and SVG-file shapes draw their file instead of
-/// a fill, so they add nothing.
-fn backdrop(ctx: &Ctx, p: Pt, last: Option<&str>) -> [f64; 3] {
+/// The canvas with every fill containing `p` painted on top in paint order (`rank`, from
+/// `Scene::paint_order`), up to and including the shape ranked `stop`; `None` stops before
+/// any shape. A transparent canvas counts as white. Images and SVG-file shapes draw their
+/// file instead of a fill, so they add nothing.
+fn backdrop(ctx: &Ctx, rank: &[usize], p: Pt, stop: Option<usize>) -> [f64; 3] {
     let canvas = ctx.scene.background.as_deref().and_then(rgba);
     let mut c = canvas.map_or(WHITE, |bg| over(bg, WHITE));
-    let order = |i: usize| {
-        let s = ctx.shapes[i].shape;
-        let rank = match (s.layer, s.kind) {
-            (Layer::Under, _) => 0,
-            (_, ShapeKind::Group) => 1,
-            (Layer::Normal, _) => 2,
-            (Layer::Over, _) => 3,
-        };
-        (rank, i)
-    };
-    let stop = match last {
-        Some(id) => ctx.shape_index(id).map(order),
-        None => Some((2, usize::MAX)),
-    };
+    let Some(stop) = stop else { return c };
     let mut near = ctx.shapes_near(Rect::new(p.x, p.y, 0.0, 0.0), 0.0);
-    near.sort_by_key(|&i| order(i));
+    near.retain(|&i| rank[i] <= stop);
+    near.sort_by_key(|&i| rank[i]);
     for i in near {
-        if stop.is_some_and(|s| order(i) > s) {
-            break;
-        }
         let s = &ctx.shapes[i];
         if paints_fill(s.shape) && point_in_polygon(p, &s.poly) {
             if let Some(fill) = rgba(&s.shape.style.fill) {

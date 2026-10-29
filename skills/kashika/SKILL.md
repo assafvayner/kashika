@@ -62,7 +62,7 @@ group vpc "VPC" at (20,180) size (600,280) {  // children use vpc-relative coord
 junction fan at api.bottom+(0,40) dot  // a point lines meet at; draws nothing without `dot`
 text note1 "note" at (880,480) size=12 align=right muted  // the id is optional (a text is not a line endpoint); centered on `at` unless align=left|right
 image logo "assets/logo.png" at (780,20) size (80,80) fit=contain  // SVG/PNG/JPEG; fit=contain|cover|stretch
-box sq at (40,400) size (60,60) fill=#f0d9b5 stroke=none layer=under  // boxes and images: under paints first, over paints last (rings, highlights); neither is an obstacle for overlap/through/near/label-collision
+box sq at (40,400) size (60,60) fill=#f0d9b5 stroke=none layer=under  // boxes and images: under paints first (inside a group: right after the group's fill), over paints last (rings, highlights); neither is an obstacle for overlap/through/near/label-collision
 ```
 
 Anchors: `top bottom left right center tl tr bl br`, plus `side@t` (e.g. `db.left@0.25`) and offsets `+(dx,dy)` or `-(dx,dy)` (`db.top-(10,0)` is `db.top+(-10,0)`). Mixed points take each axis from a reference: `(db.left.x, lane.y)`, `(b.top.x, fan.y)` with a junction. `.x`/`.y` only work inside such a parenthesized point. Parentheses around a point are allowed and change nothing: `at (db.center+(0,40))` is `at db.center+(0,40)`. Use one set at most; `((db.center))` is an error.

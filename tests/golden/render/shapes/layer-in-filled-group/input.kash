@@ -1,0 +1,12 @@
+// spec: 3, 7
+// raster: png
+// A `layer=under` box inside a filled group paints right after the group's fill, so it shows; a top-level one stays under every group.
+diagram "layer in filled group" size (360,160)
+box backdrop at (10,10) size (340,140) fill=#e2e8f0 stroke=none layer=under
+group hg "H" at (20,20) size (160,120) fill=#1e293b color=white {
+  box low "Low" at (20,40) size (60,40) layer=under fill=#fde68a
+  box top "Top" at (60,60) size (80,40)
+}
+group other "Other" at (200,20) size (140,120) fill=#f1f5f9 {
+  box b "B" at (30,50) size (80,40)
+}

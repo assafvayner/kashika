@@ -73,6 +73,19 @@ fn contrast_follows_paint_order() {
 }
 
 #[test]
+fn an_under_layer_fill_inside_a_group_sits_above_the_group_fill() {
+    let body = |inner: &str, outer: &str| {
+        format!(
+            "{outer}group g at (0,0) size (300,300) fill=#1e293b {{\n{inner}  text \"dark\" at (150,150) color=#333333\n}}\n"
+        )
+    };
+    let light = "box sq at (100,100) size (100,100) fill=#fde68a layer=under\n";
+    assert!(lint("low-contrast", &body(&format!("  {light}"), "")).is_empty());
+    assert_eq!(lint("low-contrast", &body("", light)).len(), 1);
+    assert_eq!(lint("low-contrast", &body("", "")).len(), 1);
+}
+
+#[test]
 fn layer_values_and_where_it_applies() {
     let (_, d) = kashika_model::compile(&format!(
         "{HEAD}box a at (0,0) size (10,10) layer=top\ngroup g at (0,0) size (10,10) layer=under {{\n}}\n"
