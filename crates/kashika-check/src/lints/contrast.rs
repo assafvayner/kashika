@@ -1,6 +1,6 @@
 use kashika_diag::{Diagnostic, Element, Span};
 use kashika_geom::{Pt, Rect, point_in_polygon};
-use kashika_model::{Layer, Shape, ShapeKind, TextRole};
+use kashika_model::{Layer, PlacedLine, Shape, ShapeKind, TextRole};
 
 use crate::ctx::{Ctx, line_el, round2, shape_el, text_el, text_id};
 use crate::sink::Sink;
@@ -32,6 +32,9 @@ pub fn low_contrast(ctx: &Ctx, out: &mut Sink) {
     for s in &ctx.shapes {
         let sh = s.shape;
         for item in &sh.text {
+            if emoji_only(&item.lines) {
+                continue;
+            }
             let what = match item.role {
                 TextRole::Label => format!("label \"{}\"", item.content),
                 TextRole::Sublabel => format!("sublabel \"{}\"", item.content),
@@ -65,6 +68,9 @@ pub fn low_contrast(ctx: &Ctx, out: &mut Sink) {
         }
     }
     for t in &ctx.scene.texts {
+        if emoji_only(&t.lines) {
+            continue;
+        }
         let bg = backdrop(text_box(t).center(), None);
         check(
             out,
@@ -77,6 +83,9 @@ pub fn low_contrast(ctx: &Ctx, out: &mut Sink) {
     }
     for l in &ctx.lines {
         for lab in &l.line.labels {
+            if emoji_only(&lab.lines) {
+                continue;
+            }
             let what = format!("label \"{}\" of {}", lab.text, l.line.id);
             let bg = backdrop(lab.rect.center(), None);
             check(
@@ -89,6 +98,11 @@ pub fn low_contrast(ctx: &Ctx, out: &mut Sink) {
             );
         }
     }
+}
+
+/// Emoji keep their own colors, so text that is only emoji is not judged.
+fn emoji_only(lines: &[PlacedLine]) -> bool {
+    kashika_text::only_emoji(lines.iter().flat_map(|l| &l.runs))
 }
 
 fn check(out: &mut Sink, color: &str, bg: [f64; 3], el: Element, span: Span, what: String) {

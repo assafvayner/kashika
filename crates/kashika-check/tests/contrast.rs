@@ -75,6 +75,20 @@ fn aligned_text_takes_the_fill_under_its_center_not_its_anchor() {
 }
 
 #[test]
+fn emoji_keep_their_own_colors_and_are_not_judged() {
+    let src = |label: &str| {
+        format!(
+            "box a \"{label}\" at (0,0) size (100,60) fill=#ffffff color=#eeeeee\n\
+             text \"{label}\" at (200,50) color=#eeeeee\n\
+             style faint {{ color=#eeeeee }}\n\
+             line l (0,120) -> h 100 label=\"{label}\" style=faint\n"
+        )
+    };
+    assert!(lint("low-contrast", &src("🚀 ✅")).is_empty());
+    assert_eq!(lint("low-contrast", &src("🚀 ok")).len(), 3);
+}
+
+#[test]
 fn line_labels_on_a_bare_canvas_count_as_white() {
     assert_eq!(
         lint(

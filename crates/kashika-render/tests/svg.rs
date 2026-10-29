@@ -43,6 +43,20 @@ fn groups_are_dashed_and_drawn_first() {
 }
 
 #[test]
+fn emoji_draw_as_colored_layers_in_a_labeled_group() {
+    let src = "diagram \"e\" size (200,100)\nbox a \"Go 🚀\" at (0,0) size (90,40) color=#123456\n";
+    let s = svg(src);
+    let g = s.find(r#"<g aria-label="Go 🚀">"#).expect("labeled group");
+    let end = g + s[g..].find("</g>").expect("closed group");
+    let group = &s[g..end];
+    assert!(group.contains(r##"<path d="M"##));
+    assert!(group.contains(r##"fill="#123456"/>"##));
+    assert!(group.matches("<path d=").count() > 2, "{group}");
+    assert!(!s.contains(r#"<path aria-label="Go"#));
+    assert_eq!(s, svg(src));
+}
+
+#[test]
 fn escapes_text() {
     let s = svg("diagram \"e\" size (100,100)\nbox a \"a < b & c\" at (0,0) size (90,40)\n");
     assert!(s.contains(r#"aria-label="a &lt; b &amp; c""#));
