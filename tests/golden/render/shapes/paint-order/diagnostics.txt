@@ -4,6 +4,7 @@ warn[overlap] 9:1-9:51: group 'sibling' overlaps group 'outer'
   facts: {"intersection":[[200,60],[260,240]]}
 warn[through] 11:1-11:39: l passes through box 'a'
   = help: segment 1 runs at y=150; free y-intervals across x 20..380: 0..5.25, 46..54, 76..114, 186..234, 246..254, 294.75..300
+  = help: if 'a' is a stop on this path, split the line at it: one line ending at 'a'.left, another starting at 'a'.right
   = suppressed
   elements: [{"from":[20,150],"id":"l","kind":"line","segment":1,"span":{"col":1,"end_col":39,"end_line":11,"line":11},"to":[380,150]},{"bbox":[[150,120],[250,180]],"id":"a","kind":"box","span":{"col":1,"end_col":39,"end_line":12,"line":12}}]
   facts: {"entry":[150,150],"exit":[250,150],"free":{"axis":"y","band":[20,380],"intervals":[[0,5.25],[46,54],[76,114],[186,234],[246,254],[294.75,300]]}}

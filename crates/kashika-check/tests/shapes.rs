@@ -174,6 +174,7 @@ fn labels_below_a_shape_are_checked_where_they_sit() {
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "the label under box 's' collides with line l");
+    assert!(d[0].help.is_empty(), "{:#?}", d[0].help);
     assert!(lint("label-collision", &body).is_empty());
     let d = lint(
         "spill",
@@ -185,6 +186,23 @@ fn labels_below_a_shape_are_checked_where_they_sit() {
     assert!(
         d[0].message
             .starts_with("the label under box 's' extends outside group 'g'")
+    );
+}
+
+#[test]
+fn a_line_leaving_through_the_label_below_suggests_another_side() {
+    let body = format!("{BELOW}box s \"Uploads\" at (100,100) size (60,60) shape=srv\n");
+    let d = lint(
+        "label-collision",
+        &format!("{body}line l s.bottom -> v 100\n"),
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].help,
+        vec![
+            "move the line to another side of 's', or give 's' an `icon=` with the text inside the box instead of below"
+                .to_string()
+        ]
     );
 }
 

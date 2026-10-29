@@ -20,8 +20,42 @@ fn line_through_a_box_reports_entry_exit_and_free_lanes() {
         d[0].help,
         vec![
             "segment 1 runs at y=140; free y-intervals across x 180..520: 0..104, 176..600"
+                .to_string(),
+            "if 'cache' is a stop on this path, split the line at it: one line ending at 'cache'.left, another starting at 'cache'.right"
                 .to_string()
         ]
+    );
+}
+
+#[test]
+fn a_line_through_the_middle_of_a_box_suggests_splitting_at_it() {
+    let help = |body: &str| {
+        let d = lint("through", body);
+        assert_eq!(d.len(), 1, "{d:#?}");
+        d[0].help
+            .iter()
+            .find(|h| h.contains("is a stop on this path"))
+            .cloned()
+    };
+    assert_eq!(
+        help("box m at (100,100) size (80,60)\nline l (140,300) -> v -280\n").as_deref(),
+        Some(
+            "if 'm' is a stop on this path, split the line at it: one line ending at 'm'.bottom, another starting at 'm'.top"
+        )
+    );
+    assert_eq!(
+        help("box m at (100,100) size (80,60)\nline l (300,130) -> h -280\n").as_deref(),
+        Some(
+            "if 'm' is a stop on this path, split the line at it: one line ending at 'm'.right, another starting at 'm'.left"
+        )
+    );
+    assert_eq!(
+        help("box m at (100,100) size (80,60)\nline l (0,105) -> h 300\n"),
+        None
+    );
+    assert_eq!(
+        help("box m at (100,100) size (80,60)\nline l (0,130) -> (140,130) -> v 200\n"),
+        None
     );
 }
 

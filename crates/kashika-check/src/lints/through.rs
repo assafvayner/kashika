@@ -1,5 +1,5 @@
 use kashika_diag::{Diagnostic, code, fact};
-use kashika_geom::{Pt, TOLERANCE, inside_runs, strictly_inside};
+use kashika_geom::{Pt, Rect, TOLERANCE, inside_runs, strictly_inside};
 
 use crate::ctx::Ctx;
 use crate::element::{arr, line_el, shape_el};
@@ -84,7 +84,36 @@ pub fn through(ctx: &Ctx, out: &mut Sink) {
             .with_element(shape_el(s.shape))
             .with_fact(fact::ENTRY, arr(entry))
             .with_fact(fact::EXIT, arr(exit));
-            out.push(with_free(d, l, k, &skip));
+            let mut f = with_free(d, l, k, &skip);
+            let stop = match runs.as_slice() {
+                [(entry, exit, _)] if !is_start && !is_end => {
+                    stop_sides(s.shape.rect, *entry, *exit)
+                }
+                _ => None,
+            };
+            if let Some((into, from)) = stop {
+                f = f.with_help(format!(
+                    "if '{id}' is a stop on this path, split the line at it: one line ending at '{id}'.{into}, another starting at '{id}'.{from}"
+                ));
+            }
+            out.push(f);
         }
     }
+}
+
+/// The sides a straight run from `entry` to `exit` goes in and out of `r` by, when it crosses
+/// between opposite sides near the middle, as a line through a stop on its path would.
+fn stop_sides(r: Rect, entry: Pt, exit: Pt) -> Option<(&'static str, &'static str)> {
+    let c = r.center();
+    let (d, off, across, along, sides) = if (entry.y - exit.y).abs() <= TOLERANCE {
+        (exit.x - entry.x, entry.y - c.y, r.h, r.w, ("left", "right"))
+    } else if (entry.x - exit.x).abs() <= TOLERANCE {
+        (exit.y - entry.y, entry.x - c.x, r.w, r.h, ("top", "bottom"))
+    } else {
+        return None;
+    };
+    if off.abs() > across / 4.0 || d.abs() < along / 2.0 {
+        return None;
+    }
+    Some(if d > 0.0 { sides } else { (sides.1, sides.0) })
 }

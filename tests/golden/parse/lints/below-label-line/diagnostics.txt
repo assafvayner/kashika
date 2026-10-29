@@ -1,0 +1,4 @@
+warn[label-collision] 5:1-5:51: the label under box 'gw' collides with line down
+  = help: move the line to another side of 'gw', or give 'gw' an `icon=` with the text inside the box instead of below
+  elements: [{"bbox":[[51.81,88],[108.19,105.5]],"id":"gw","kind":"label","span":{"col":1,"end_col":51,"end_line":5,"line":5}},{"id":"down","kind":"line","span":{"col":1,"end_col":32,"end_line":7,"line":7}}]
+  facts: {"bbox":[[51.81,88],[108.19,105.5]]}

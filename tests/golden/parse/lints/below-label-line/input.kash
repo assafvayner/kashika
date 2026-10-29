@@ -1,0 +1,9 @@
+// spec: 7
+// A line leaving the bottom of a `text-area=below` shape runs through its label.
+diagram "below label line" size (300,240)
+shape tri from "tri.svg" text-area=below
+box gw "gateway" at (40,40) size (80,40) shape=tri
+box api "API" at (40,160) size (80,40)
+arrow down gw.bottom -> api.top
+box ok "routed" at (180,40) size (80,40) shape=tri
+arrow side ok.right -> h 20 -> v 140 -> h -40

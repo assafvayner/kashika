@@ -79,10 +79,36 @@ pub fn label_collision(ctx: &Ctx, out: &mut Sink) {
                     d = d.with_help(help);
                 }
             }
+            if let Some(id) = s
+                .shape
+                .filter(|id| el.kind == "line" && leaves_bottom(ctx, &el.id, id))
+            {
+                d = d.with_help(format!(
+                    "move the line to another side of '{id}', or give '{id}' an `icon=` with the text inside the box instead of below"
+                ));
+            }
             out.push(d);
         }
     }
     titles_crossed(ctx, out);
+}
+
+/// Whether line `line` starts or ends on shape `shape`, nearer its bottom than its other sides.
+fn leaves_bottom(ctx: &Ctx, line: &str, shape: &str) -> bool {
+    let Some(l) = ctx.lines.iter().find(|l| l.line.id == line) else {
+        return false;
+    };
+    let Some(s) = ctx.shapes.iter().find(|s| s.shape.id == shape) else {
+        return false;
+    };
+    let r = s.shape.rect;
+    [l.start, l.end].into_iter().any(|p| {
+        let bottom = r.bottom() - p.y;
+        ctx.attached(p).contains(&shape)
+            && bottom < p.y - r.y
+            && bottom < p.x - r.x
+            && bottom < r.right() - p.x
+    })
 }
 
 /// Lines that cross a group's title text.
