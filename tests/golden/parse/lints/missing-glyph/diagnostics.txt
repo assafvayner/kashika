@@ -1,8 +1,8 @@
 warn[missing-glyph] 4:1-4:36: text of 'a' uses characters the bundled fonts cannot draw: '日', '本'
-  = help: they draw as an empty box; use characters from Latin, Greek or Cyrillic, or an `icon=`/`image`
+  = help: they draw as an empty box; use characters from Latin, Greek, Cyrillic, box drawing or emoji, or an `icon=`/`image`
   elements: [{"bbox":[[20,20],[220,100]],"id":"a","kind":"box","span":{"col":1,"end_col":36,"end_line":4,"line":4}}]
   facts: {"codepoints":["U+65E5","U+672C"]}
 warn[missing-glyph] 5:1-5:26: text 't' uses a character the bundled fonts cannot draw: '日'
-  = help: they draw as an empty box; use characters from Latin, Greek or Cyrillic, or an `icon=`/`image`
+  = help: they draw as an empty box; use characters from Latin, Greek, Cyrillic, box drawing or emoji, or an `icon=`/`image`
   elements: [{"bbox":[[5.4,111.25],[34.6,128.75]],"id":"t","kind":"text","span":{"col":1,"end_col":26,"end_line":5,"line":5}}]
   facts: {"codepoints":["U+65E5"]}

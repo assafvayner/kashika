@@ -91,5 +91,8 @@ fn default_ignorable_characters_are_zero_width_and_never_missing() {
 
 #[test]
 fn covered_scripts_come_from_the_fonts() {
-    assert_eq!(covered_scripts(), ["Latin", "Greek", "Cyrillic"]);
+    assert_eq!(
+        covered_scripts(),
+        ["Latin", "Greek", "Cyrillic", "box drawing", "emoji"]
+    );
 }

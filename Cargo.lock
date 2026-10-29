@@ -576,6 +576,7 @@ name = "kashika-text"
 version = "0.1.0"
 dependencies = [
  "kashika-geom",
+ "rustybuzz",
  "serde",
  "skrifa",
 ]

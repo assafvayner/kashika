@@ -8,3 +8,4 @@ license.workspace = true
 kashika-geom.workspace = true
 serde.workspace = true
 skrifa.workspace = true
+rustybuzz.workspace = true

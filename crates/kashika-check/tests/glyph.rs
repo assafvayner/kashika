@@ -29,8 +29,26 @@ fn missing_glyph_is_quiet_for_covered_text_and_tabs() {
             "missing-glyph",
             "box a \"Café Ünï Ωmega Привет\" at (20,20) size (240,60)\n\
              text t \"a\tb\" at (20,120)\n\
-             text u \"zero\u{200B}width\u{200D}join\u{FE0F}soft\u{00AD}hyphen\u{FEFF}\" at (20,160)\n",
+             text u \"zero\u{200B}width\u{200D}join\u{FE0F}soft\u{00AD}hyphen\u{FEFF}\" at (20,160)\n\
+             text e \"🚀 👍🏽 👩\u{200D}💻 🇺🇸 1\u{FE0F}\u{20E3} ✔\" at (20,200)\n\
+             text f \"`┌─┐` ┌─┐ **└┘**\" at (20,240)\n",
         )
         .is_empty()
+    );
+}
+
+#[test]
+fn missing_glyph_help_names_the_covered_sets() {
+    let d = lint("missing-glyph", "text t \"日 ✘\" at (20,20)\n");
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].facts["codepoints"],
+        serde_json::json!(["U+65E5", "U+2718"])
+    );
+    assert!(
+        d[0].help
+            .iter()
+            .any(|h| h.contains("Cyrillic, box drawing or emoji")),
+        "{d:#?}"
     );
 }
