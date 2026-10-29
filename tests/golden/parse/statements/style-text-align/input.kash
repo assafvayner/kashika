@@ -1,0 +1,11 @@
+// spec: 3
+// dump: scene
+// `text-align` and `text-valign` in a style: inline > style= > built-in default; a group takes the style's `text-align`.
+diagram "style text-align" size (520,240)
+style row { text-align=left text-valign=top }
+box plain "Plain" at (20,20) size (140,60)
+box styled "Styled" at (180,20) size (140,60) style=row
+box inline "Inline" at (340,20) size (140,60) style=row text-align=right text-valign=bottom
+style title { text-align=right }
+group g "Group" at (20,120) size (200,100) style=title {
+}

@@ -482,7 +482,7 @@ impl<'a> Resolver<'a> {
         for stmt in &file.stmts {
             let Stmt::Style(s) = stmt else { continue };
             let mut props = library::style_props(s, &mut self.diags);
-            library::boundary_size(&s.name, s, &mut props, &mut self.diags);
+            library::boundary_keys(&s.name, s, &mut props, &mut self.diags);
             if let Some(x) = library::style_attr(s, "shape") {
                 if library::style_shape(&s.name, x, &mut self.diags) {
                     props.shape = self.shape_attr(x);

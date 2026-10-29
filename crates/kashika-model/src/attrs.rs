@@ -1,7 +1,9 @@
 use kashika_diag::{Diagnostic, did_you_mean};
 use kashika_syntax::ast::{Attr, Size, Value};
+use kashika_text::VAlign;
 
 use crate::colors;
+use crate::scene::Align;
 use crate::style::{FontWeight, Padding, StrokeStyle, StyleProps};
 
 /// Attribute names written where another name is meant: (written, meant). Each is suggested
@@ -42,6 +44,10 @@ impl<'a> Attrs<'a> {
                 );
                 if let Some(h) = unknown_help(a, what, allowed) {
                     d = d.with_help(h);
+                }
+                if what == "style" {
+                    let keys: Vec<String> = allowed.iter().map(|k| format!("`{k}`")).collect();
+                    d = d.with_help(format!("style keys: {}", keys.join(", ")));
                 }
                 diags.push(d);
                 continue;
@@ -392,5 +398,19 @@ pub fn style_props(a: &Attrs, diags: &mut Vec<Diagnostic>) -> StyleProps {
     if let Some(x) = a.get("muted") {
         p.muted = color(x, diags);
     }
+    if let Some(x) = a.get("text-align") {
+        p.text_align = word(x, Align::NAMES, diags).and_then(Align::from_name);
+    }
+    if let Some(x) = a.get("text-valign") {
+        p.text_valign = valign(x, diags);
+    }
     p
+}
+
+pub fn valign(a: &Attr, diags: &mut Vec<Diagnostic>) -> Option<VAlign> {
+    match word(a, &["top", "middle", "bottom"], diags)? {
+        "top" => Some(VAlign::Top),
+        "bottom" => Some(VAlign::Bottom),
+        _ => Some(VAlign::Middle),
+    }
 }

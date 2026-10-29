@@ -1,5 +1,8 @@
 use kashika_syntax::ast::Size;
+use kashika_text::VAlign;
 use serde::{Serialize, Serializer};
+
+use crate::scene::Align;
 
 pub const STYLE_KEYS: &[&str] = &[
     "fill",
@@ -12,6 +15,8 @@ pub const STYLE_KEYS: &[&str] = &[
     "radius",
     "padding",
     "muted",
+    "text-align",
+    "text-valign",
 ];
 
 /// Keys a `style` definition takes: the style keys, `shape` and `size`.
@@ -178,6 +183,9 @@ pub struct StyleProps {
     pub radius: Option<f64>,
     pub padding: Option<Padding>,
     pub muted: Option<String>,
+    pub text_align: Option<Align>,
+    /// Boxes only.
+    pub text_valign: Option<VAlign>,
     /// The qualified shape name; boxes only.
     pub shape: Option<String>,
     /// Boxes and groups only.
@@ -198,6 +206,8 @@ impl StyleProps {
             radius: top.radius.or(self.radius),
             padding: top.padding.or(self.padding),
             muted: top.muted.clone().or_else(|| self.muted.clone()),
+            text_align: top.text_align.or(self.text_align),
+            text_valign: top.text_valign.or(self.text_valign),
             shape: top.shape.clone().or_else(|| self.shape.clone()),
             size: top.size.or(self.size),
         }

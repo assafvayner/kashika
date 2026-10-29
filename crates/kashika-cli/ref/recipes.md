@@ -111,19 +111,20 @@ line skip lc.top+(0,130) -> x ld.left end=arrow label@0.75="audit" label-side=ab
 line res act.bl+(0,-10) -> x lc.right end=arrow stroke-style=dashed label="reply" label-side=above
 ```
 
-**Table cards (ER diagrams).** A `layer=under` outline box, a header box, then one row box per column stacked with `at prev.bl`, each with `stroke=none padding=3 text-align=left`. `` `code` `` text is monospace and keeps its spaces, so pad the names to line the columns up. Draw relationships between row boxes (`orders_cust.right -> customers_id.left`) and offset a card's y so the two rows are level. Anchor at a row's center (`r2.right`, not `@0.2`): `near` measures a row's whole box even when it draws no border. Mark cardinality with crow's-foot ends: `start=many end=one` on a foreign key, `zero-one`/`zero-many` when optional, `one-many` for at least one. Two crow's feet on one side need 12px between them.
+**Table cards (ER diagrams).** A `layer=under` outline box, a header box, then one row box per column stacked with `at prev.bl`, each with a `row` style: `stroke=none padding=3 text-align=left` and the row's size. `` `code` `` text is monospace and keeps its spaces, so pad the names to line the columns up. Draw relationships between row boxes (`orders_cust.right -> customers_id.left`) and offset a card's y so the two rows are level. Anchor at a row's center (`r2.right`, not `@0.2`): `near` measures a row's whole box even when it draws no border. Mark cardinality with crow's-foot ends: `start=many end=one` on a foreign key, `zero-one`/`zero-many` when optional, `one-many` for at least one. Two crow's feet on one side need 12px between them.
 
 ```kash
 diagram "Tables" size (520,160) kashika="0.1.0"
+style row { stroke=none padding=3 text-align=left font-size=12 size=(200,22) }
 box orders at (20,20) size (200,96) stroke=#475569 layer=under
 box orders_h "**orders**" at orders.tl size (200,26) fill=#dbeafe stroke=none padding=4
-box orders_id "`id           uuid  PK`" at orders_h.bl size (200,22) stroke=none padding=3 text-align=left font-size=12
-box orders_cust "`customer_id  uuid  FK`" at orders_id.bl size (200,22) stroke=none padding=3 text-align=left font-size=12
-box orders_at "`created_at   tstz`" at orders_cust.bl size (200,22) stroke=none padding=3 text-align=left font-size=12
+box orders_id "`id           uuid  PK`" at orders_h.bl style=row
+box orders_cust "`customer_id  uuid  FK`" at orders_id.bl style=row
+box orders_at "`created_at   tstz`" at orders_cust.bl style=row
 box customers at (300,42) size (200,74) stroke=#475569 layer=under
 box customers_h "**customers**" at customers.tl size (200,26) fill=#dbeafe stroke=none padding=4
-box customers_id "`id     uuid  PK`" at customers_h.bl size (200,22) stroke=none padding=3 text-align=left font-size=12
-box customers_em "`email  text`" at customers_id.bl size (200,22) stroke=none padding=3 text-align=left font-size=12
+box customers_id "`id     uuid  PK`" at customers_h.bl style=row
+box customers_em "`email  text`" at customers_id.bl style=row
 line fk orders_cust.right -> customers_id.left start=many end=one
 ```
 

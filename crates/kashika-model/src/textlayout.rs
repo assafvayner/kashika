@@ -7,10 +7,10 @@ use serde::Serialize;
 use crate::attrs::{self, Attrs, LIMIT, Min};
 use crate::scene::{Align, Fit, ShapeKind};
 use crate::shapes;
-use crate::style::{FontWeight, Padding, Style};
+use crate::style::{FontWeight, Padding, Style, StyleProps};
 
 /// Attributes a box or group accepts for its text, besides the style keys.
-pub(crate) const SHAPE_TEXT_KEYS: &[&str] = &["sublabel", "text-align", "text-valign", "gap"];
+pub(crate) const SHAPE_TEXT_KEYS: &[&str] = &["sublabel", "gap"];
 pub(crate) const BLOCK_ITEM_KEYS: &[&str] =
     &["font-size", "text-align", "color", "muted", "size", "align"];
 const SUBLABEL_SCALE: f64 = 0.8;
@@ -59,24 +59,20 @@ impl Default for ShapeTextProps {
 
 pub(crate) fn shape_text_props(
     a: &Attrs,
+    style: &StyleProps,
     group: bool,
     diags: &mut Vec<Diagnostic>,
 ) -> ShapeTextProps {
     let sublabel = a
         .get("sublabel")
         .and_then(|x| attrs::text(x, diags).map(|s| (s, x.span)));
-    let align = match a
-        .get("text-align")
-        .and_then(|x| attrs::word(x, Align::NAMES, diags))
-        .and_then(Align::from_name)
-    {
+    let align = match style.text_align {
         Some(align) => align,
         None if group => Align::Left,
         None => Align::Center,
     };
-    let mut valign = if group { VAlign::Top } else { VAlign::Middle };
-    if let Some(x) = a.get("text-valign") {
-        if group {
+    let valign = if group {
+        if let Some(x) = a.get("text-valign") {
             diags.push(
                 Diagnostic::error(
                     "attr",
@@ -85,14 +81,11 @@ pub(crate) fn shape_text_props(
                 )
                 .with_help("remove `text-valign`"),
             );
-        } else {
-            valign = match attrs::word(x, &["top", "middle", "bottom"], diags) {
-                Some("top") => VAlign::Top,
-                Some("bottom") => VAlign::Bottom,
-                _ => VAlign::Middle,
-            };
         }
-    }
+        VAlign::Top
+    } else {
+        style.text_valign.unwrap_or(VAlign::Middle)
+    };
     let gap = a
         .get("gap")
         .and_then(|x| attrs::num_in(x, Min::NonNegative, diags))

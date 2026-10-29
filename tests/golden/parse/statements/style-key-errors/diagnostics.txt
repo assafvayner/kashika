@@ -1,5 +1,6 @@
 error[attr] 4:11-4:14: unknown attribute `fil` on style
   = help: did you mean `fill`?
+  = help: style keys: `fill`, `stroke`, `stroke-width`, `stroke-style`, `font-size`, `font-weight`, `color`, `radius`, `padding`, `muted`, `text-align`, `text-valign`, `shape`, `size`
 error[attr] 4:20-4:37: `stroke-style` expects one of: solid, dashed, dotted
 error[attr] 4:38-4:55: `font-weight` expects one of: normal, bold
 error[attr] 4:56-4:67: `font-size` must be greater than 0

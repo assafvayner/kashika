@@ -424,7 +424,7 @@ impl Library {
     ) {
         for &(k, s) in pending {
             let (name, props) = &mut self.styles[k];
-            boundary_size(name, s, props, diags);
+            boundary_keys(name, s, props, diags);
             let Some(a) = style_attr(s, "shape") else {
                 continue;
             };
@@ -545,27 +545,42 @@ pub(crate) fn style_attr<'s>(s: &'s ast::StyleDef, key: &str) -> Option<&'s ast:
         .find(|a| a.key.name == key && a.at_t.is_none())
 }
 
-/// Drops `size` from the style `name` when it is `boundary`, which every group starts from:
-/// a size there would size every group.
-pub(crate) fn boundary_size(
+/// Drops `size` and `text-valign` from the style `name` when it is `boundary`, which every
+/// group starts from: a size there would size every group, and a group's title always sits
+/// at the top.
+pub(crate) fn boundary_keys(
     name: &str,
     s: &ast::StyleDef,
     props: &mut StyleProps,
     diags: &mut Vec<Diagnostic>,
 ) {
-    if name != "boundary" || props.size.is_none() {
+    if name != "boundary" {
         return;
     }
-    let span = style_attr(s, "size").map_or(s.span, |a| a.span);
-    diags.push(
-        Diagnostic::error(
-            "attr",
-            span,
-            "the `boundary` style can't set `size`: every group starts from it",
-        )
-        .with_help("drop `size` here, and set it with another style or inline on the group"),
-    );
-    props.size = None;
+    if props.size.is_some() {
+        let span = style_attr(s, "size").map_or(s.span, |a| a.span);
+        diags.push(
+            Diagnostic::error(
+                "attr",
+                span,
+                "the `boundary` style can't set `size`: every group starts from it",
+            )
+            .with_help("drop `size` here, and set it with another style or inline on the group"),
+        );
+        props.size = None;
+    }
+    if props.text_valign.is_some() {
+        let span = style_attr(s, "text-valign").map_or(s.span, |a| a.span);
+        diags.push(
+            Diagnostic::error(
+                "attr",
+                span,
+                "the `boundary` style can't set `text-valign`: every group starts from it, and a group's title always sits at the top",
+            )
+            .with_help("drop `text-valign` here, and set it with another style or inline on the box"),
+        );
+        props.text_valign = None;
+    }
 }
 
 /// Whether the style `name` may take the `shape=` in `a`: every group draws with the

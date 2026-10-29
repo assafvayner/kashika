@@ -1,0 +1,6 @@
+error[attr] 4:18-4:33: the `boundary` style can't set `text-valign`: every group starts from it, and a group's title always sits at the top
+  = help: drop `text-valign` here, and set it with another style or inline on the box
+error[attr] 6:13-6:30: `text-align` expects one of: left, center, right
+  = help: did you mean `center`?
+error[attr] 7:39-7:48: this style sets `text-valign`, but a group's title always sits at the top
+  = help: use a style without `text-valign`, or drop `text-valign` from it

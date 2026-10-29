@@ -1,2 +1,3 @@
 error[attr] 4:8-4:21: in `lib/c1.kash` at 1:8: in `c2.kash` at 1:8: … 2 more imports …: in `c5.kash` at 1:11: unknown attribute `fil` on style
   = help: did you mean `fill`?
+  = help: style keys: `fill`, `stroke`, `stroke-width`, `stroke-style`, `font-size`, `font-weight`, `color`, `radius`, `padding`, `muted`, `text-align`, `text-valign`, `shape`, `size`

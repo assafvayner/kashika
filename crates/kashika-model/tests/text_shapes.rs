@@ -268,8 +268,8 @@ fn wrong_context_names_suggest_the_right_one() {
         ["did you mean `text-valign`?"]
     );
     assert_eq!(
-        help("style s { text-size=12 }\n"),
-        ["did you mean `font-size`?"]
+        help("style s { text-size=12 }\n")[0],
+        "did you mean `font-size`?"
     );
     assert_eq!(
         help("text \"t\" at (0,0) font-color=red\n"),

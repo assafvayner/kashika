@@ -111,6 +111,16 @@ impl<'a> Resolver<'a> {
                         .with_help("use a style without `shape`, or drop `shape` from it"),
                     );
                 }
+                if group && named.text_valign.is_some() {
+                    self.diags.push(
+                        Diagnostic::error(
+                            "attr",
+                            x.span,
+                            "this style sets `text-valign`, but a group's title always sits at the top",
+                        )
+                        .with_help("use a style without `text-valign`, or drop `text-valign` from it"),
+                    );
+                }
                 color = named.color.clone().or(color);
                 props = props.overlay(&named);
             }
@@ -136,7 +146,7 @@ impl<'a> Resolver<'a> {
             .get("pin")
             .and_then(|x| self.pin(x))
             .unwrap_or(("tl", None));
-        let text = textlayout::shape_text_props(&a, group, &mut self.diags);
+        let text = textlayout::shape_text_props(&a, &props, group, &mut self.diags);
         let (allow, reason) = self.allow_reason(&a);
         let style = props.resolve();
         let icon_color = color

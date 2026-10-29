@@ -1,0 +1,10 @@
+// spec: 3, 7
+// `text-valign` in `style boundary` and a group whose style sets `text-valign` are `attr` errors, as is a bad `text-align` value in a style.
+diagram "style text-valign errors" size (400,200)
+style boundary { text-valign=top }
+style low { text-valign=bottom }
+style odd { text-align=middle }
+group g "G" at (20,20) size (200,120) style=low {
+  box b "B" at (20,40) size (80,40) style=low
+}
+box c "C" at (260,20) size (80,40) style=odd
