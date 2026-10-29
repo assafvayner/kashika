@@ -857,10 +857,15 @@ impl Parser<'_> {
     }
 
     fn point(&mut self) -> PResult<Point> {
-        let start = self.span();
         if *self.tok() == Tok::LParen && self.paren_is_group() {
             return self.group();
         }
+        self.bare_point()
+    }
+
+    /// A literal, mixed or reference point, without grouping parentheses.
+    fn bare_point(&mut self) -> PResult<Point> {
+        let start = self.span();
         if *self.tok() == Tok::LParen {
             self.bump();
             let x = self.coord()?;
@@ -913,8 +918,11 @@ impl Parser<'_> {
     }
 
     fn group(&mut self) -> PResult<Point> {
+        if *self.tok_at(1) == Tok::LParen {
+            return self.nested_group();
+        }
         let open = self.bump();
-        let inner = self.point()?;
+        let inner = self.bare_point()?;
         if *self.tok() != Tok::RParen {
             let found = self.tok().describe();
             let written = self.source(open, inner.span());
@@ -965,6 +973,58 @@ impl Parser<'_> {
             inner: Box::new(inner),
             span,
         })
+    }
+
+    /// Reports a point in more than one set of parentheses in one pass, without recursing.
+    /// The help peels each leading `(` whose `)` sits right inside the enclosing one's.
+    fn nested_group(&mut self) -> PResult<Point> {
+        let start = self.pos;
+        let rest = &self.toks[start..];
+        let leading = rest.iter().take_while(|t| t.tok == Tok::LParen).count();
+        let mut close = vec![None; leading];
+        let mut depth = 0usize;
+        for (i, t) in rest.iter().enumerate() {
+            match t.tok {
+                Tok::LParen => depth += 1,
+                Tok::RParen => {
+                    depth -= 1;
+                    if let Some(c @ None) = close.get_mut(depth) {
+                        *c = Some(start + i);
+                    }
+                    if depth == 0 {
+                        break;
+                    }
+                }
+                Tok::Newline | Tok::Eof => break,
+                _ => {}
+            }
+        }
+        let mut k = 0;
+        while k + 1 < leading
+            && matches!((close[k], close[k + 1]), (Some(a), Some(b)) if b + 1 == a)
+        {
+            k += 1;
+        }
+        let help = match close[k] {
+            Some(end) if k > 0 && self.toks[start + k + 1].tok != Tok::LParen => format!(
+                "remove the extra parentheses: `{}`",
+                self.source(self.toks[start + k].span, self.toks[end].span)
+            ),
+            _ => "keep one set of parentheses around the point, e.g. `(db.center+(0,40))`".into(),
+        };
+        let span = match close[0] {
+            Some(end) => self.span().to(self.toks[end].span),
+            None => self.span(),
+        };
+        self.diags.push(
+            Diagnostic::error(
+                "parse",
+                span,
+                "a point takes at most one set of parentheses",
+            )
+            .with_help(help),
+        );
+        Err(())
     }
 
     fn coord(&mut self) -> PResult<Coord> {

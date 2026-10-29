@@ -5,7 +5,7 @@
   "clearance": 6,
   "grid": null,
   "junctions": [
-    {"at":{"x":180,"y":40},"dot":false,"id":"fan","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":35,"end_line":7,"line":7}}
+    {"at":{"x":180,"y":40},"dot":false,"id":"fan","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":33,"end_line":7,"line":7}}
   ],
   "lines": [
     {
@@ -81,11 +81,11 @@
           "pieces": [
             {"c1":{"x":140,"y":160},"c2":{"x":120,"y":180},"from":{"x":120,"y":160},"kind":"cubic","to":{"x":100,"y":160}}
           ],
-          "span": {"col":55,"end_col":114,"end_line":9,"line":9},
+          "span": {"col":55,"end_col":112,"end_line":9,"line":9},
           "to": {"x":100,"y":160}
         }
       ],
-      "span": {"col":1,"end_col":114,"end_line":9,"line":9},
+      "span": {"col":1,"end_col":112,"end_line":9,"line":9},
       "start": "none",
       "start_literal": false,
       "style": {"color":"#0f172a","fill":"#ffffff","font_size":12,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5}
@@ -100,16 +100,16 @@
     {"owner":"b","span":{"col":11,"end_col":26,"end_line":6,"line":6},"value":80,"what":"dy"},
     {"owner":"b","span":{"col":1,"end_col":40,"end_line":6,"line":6},"value":40,"what":"width"},
     {"owner":"b","span":{"col":1,"end_col":40,"end_line":6,"line":6},"value":40,"what":"height"},
-    {"owner":"fan","span":{"col":19,"end_col":33,"end_line":7,"line":7},"value":60,"what":"dx"},
-    {"owner":"fan","span":{"col":19,"end_col":33,"end_line":7,"line":7},"value":0,"what":"dy"},
+    {"owner":"fan","span":{"col":18,"end_col":32,"end_line":7,"line":7},"value":60,"what":"dx"},
+    {"owner":"fan","span":{"col":18,"end_col":32,"end_line":7,"line":7},"value":0,"what":"dy"},
     {"owner":"down","span":{"col":12,"end_col":27,"end_line":8,"line":8},"value":20,"what":"dx"},
     {"owner":"down","span":{"col":12,"end_col":27,"end_line":8,"line":8},"value":0,"what":"dy"},
     {"owner":"elbow","span":{"col":24,"end_col":35,"end_line":9,"line":9},"value":0,"what":"dx"},
     {"owner":"elbow","span":{"col":24,"end_col":35,"end_line":9,"line":9},"value":120,"what":"dy"},
     {"owner":"elbow","span":{"col":66,"end_col":81,"end_line":9,"line":9},"value":20,"what":"dx"},
     {"owner":"elbow","span":{"col":66,"end_col":81,"end_line":9,"line":9},"value":20,"what":"dy"},
-    {"owner":"elbow","span":{"col":85,"end_col":101,"end_line":9,"line":9},"value":20,"what":"dx"},
-    {"owner":"elbow","span":{"col":85,"end_col":101,"end_line":9,"line":9},"value":20,"what":"dy"}
+    {"owner":"elbow","span":{"col":84,"end_col":100,"end_line":9,"line":9},"value":20,"what":"dx"},
+    {"owner":"elbow","span":{"col":84,"end_col":100,"end_line":9,"line":9},"value":20,"what":"dy"}
   ],
   "placement": [{"from":"b","kind":"at","to":"a"},{"from":"fan","kind":"at","to":"a"}],
   "shapes": [

@@ -54,8 +54,8 @@ fn keeps_point_parentheses() {
         "box b at (a.center+(0,40)) size (1,1)\n"
     );
     assert_eq!(
-        fmt("line l ((a.bottom)) -> x ( c.left ) -> curve via (fan) ( b.top-(0,4) ) (d.left)\n"),
-        "line l ((a.bottom)) -> x (c.left) -> curve via (fan) (b.top-(0,4)) (d.left)\n"
+        fmt("line l (a.bottom) -> x ( c.left ) -> curve via (fan) ( b.top-(0,4) ) (d.left)\n"),
+        "line l (a.bottom) -> x (c.left) -> curve via (fan) (b.top-(0,4)) (d.left)\n"
     );
 }
 

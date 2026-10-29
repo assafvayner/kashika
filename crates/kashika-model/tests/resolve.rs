@@ -94,15 +94,12 @@ fn parenthesized_points_resolve_like_bare_ones() {
             p.to_string()
         }
     }));
-    let wraps: [fn(&str) -> String; 2] = [|p| format!("({p})"), |p| format!("(({p}))")];
-    for wrap in wraps {
-        let grouped = ok(&src(wrap));
-        for id in ["a", "g", "b"] {
-            assert_eq!(rect(&grouped, id), rect(&bare, id), "{id}");
-        }
-        assert_eq!(grouped.junctions[0].at, bare.junctions[0].at);
-        assert_eq!(pts(&grouped, "l"), pts(&bare, "l"));
+    let grouped = ok(&src(|p| format!("({p})")));
+    for id in ["a", "g", "b"] {
+        assert_eq!(rect(&grouped, id), rect(&bare, id), "{id}");
     }
+    assert_eq!(grouped.junctions[0].at, bare.junctions[0].at);
+    assert_eq!(pts(&grouped, "l"), pts(&bare, "l"));
 }
 
 #[test]

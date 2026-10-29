@@ -39,26 +39,20 @@ File {
             Junction {
                 id: Ident { name: "fan", span: 7:10-7:13 },
                 at: Group {
-                    inner: Group {
-                        inner: Ref {
-                            r: Ref {
-                                id: Ident { name: "a", span: 7:19-7:20 },
-                                anchor: Some(
-                                    Anchor {
-                                        name: Ident { name: "right", span: 7:21-7:26 },
-                                        t: None,
-                                    },
-                                ),
-                            },
-                            offset: Some(Offset { neg: false, dx: 60.0, dy: 0.0 }),
-                            span: 7:19-7:33,
+                    inner: Ref {
+                        r: Ref {
+                            id: Ident { name: "a", span: 7:18-7:19 },
+                            anchor: Some(
+                                Anchor { name: Ident { name: "right", span: 7:20-7:25 }, t: None },
+                            ),
                         },
-                        span: 7:18-7:34,
+                        offset: Some(Offset { neg: false, dx: 60.0, dy: 0.0 }),
+                        span: 7:18-7:32,
                     },
-                    span: 7:17-7:35,
+                    span: 7:17-7:33,
                 },
                 attrs: [],
-                span: 7:1-7:35,
+                span: 7:1-7:33,
             },
         ),
         Line(
@@ -183,46 +177,43 @@ File {
                                 span: 9:65-9:82,
                             },
                             c2: Group {
-                                inner: Group {
-                                    inner: Ref {
-                                        r: Ref {
-                                            id: Ident { name: "b", span: 9:85-9:86 },
-                                            anchor: Some(
-                                                Anchor {
-                                                    name: Ident { name: "bottom", span: 9:87-9:93 },
-                                                    t: None,
-                                                },
-                                            ),
-                                        },
-                                        offset: Some(Offset { neg: false, dx: 20.0, dy: 20.0 }),
-                                        span: 9:85-9:101,
+                                inner: Ref {
+                                    r: Ref {
+                                        id: Ident { name: "b", span: 9:84-9:85 },
+                                        anchor: Some(
+                                            Anchor {
+                                                name: Ident { name: "bottom", span: 9:86-9:92 },
+                                                t: None,
+                                            },
+                                        ),
                                     },
-                                    span: 9:84-9:102,
+                                    offset: Some(Offset { neg: false, dx: 20.0, dy: 20.0 }),
+                                    span: 9:84-9:100,
                                 },
-                                span: 9:83-9:103,
+                                span: 9:83-9:101,
                             },
                             to: Group {
                                 inner: Ref {
                                     r: Ref {
-                                        id: Ident { name: "b", span: 9:105-9:106 },
+                                        id: Ident { name: "b", span: 9:103-9:104 },
                                         anchor: Some(
                                             Anchor {
-                                                name: Ident { name: "bottom", span: 9:107-9:113 },
+                                                name: Ident { name: "bottom", span: 9:105-9:111 },
                                                 t: None,
                                             },
                                         ),
                                     },
                                     offset: None,
-                                    span: 9:105-9:113,
+                                    span: 9:103-9:111,
                                 },
-                                span: 9:104-9:114,
+                                span: 9:102-9:112,
                             },
                         },
-                        span: 9:55-9:114,
+                        span: 9:55-9:112,
                     },
                 ],
                 attrs: [],
-                span: 9:1-9:114,
+                span: 9:1-9:112,
             },
         ),
     ],

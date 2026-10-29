@@ -150,7 +150,7 @@ Library files may contain only `shape`, `style` and `import`; any other statemen
 ```
 point  := "(" coord "," coord ")"
         | ref [("+" | "-") "(" dx "," dy ")"]
-        | "(" point ")"                      // grouped: (db.center+(0,40)) is db.center+(0,40)
+        | "(" ref [("+" | "-") "(" dx "," dy ")"] ")"   // grouped: (db.center+(0,40)) is db.center+(0,40)
 ref    := <id> "." <anchor> | <junction-id>
 coord  := number                             // literal, in the current frame
         | ref ".x" | ref ".y"                // mixed: (db.left.x, lane1.y)
@@ -161,7 +161,7 @@ anchor := top | bottom | left | right | center
 
 - **Mixed points** take each axis from a different reference, so lanes can be expressed as relationships: `(app1.bottom.x, lane1.y)`. A `junction` without `dot` that no line ends at works as a named guide point.
 - `@t` and offsets compose: `db.left@0.25+(0,4)`, `db.left@0.25-(0,4)`.
-- **Parentheses** around a point group it and change nothing; they must be closed, and they may nest: `(db.center+(0,40))` and `((fan))`. After `(`, a number starts a literal point, a reference followed by `,` a mixed point, and anything else a grouped point. An offset goes inside the parentheses; `(db.center)+(0,40)` is a `parse` error.
+- **Parentheses** around a point group it and change nothing; they must be closed, and there is at most one set: `(db.center+(0,40))` and `(fan)`. After `(`, a number starts a literal point, a reference followed by `,` a mixed point, and anything else a grouped point. A grouped point holds a reference with an optional offset, so a second set of parentheses, as in `((fan))`, `((10,20))` or `((a.left.x, b.y))`, is a `parse` error. An offset goes inside the parentheses; `(db.center)+(0,40)` is a `parse` error.
 - **Groups have anchors** just like boxes, e.g. `k8s.top`.
 
 - `top@t`/`bottom@t` run left→right; `left@t`/`right@t` run top→bottom. `top` is the same as `top@0.5`.

@@ -6,3 +6,9 @@ error[parse] 7:17-7:18: expected `)` to close the `(` around the point, found `.
   = help: `.x`/`.y` take one axis of a mixed point, which needs both: `(a.left.x, other.y)`
 error[parse] 8:18-8:20: expected `)` to close the `(` around the point, found `->`
   = help: close it: `(a.bottom)`
+error[parse] 9:10-9:22: a point takes at most one set of parentheses
+  = help: remove the extra parentheses: `(a.center)`
+error[parse] 10:15-10:36: a point takes at most one set of parentheses
+  = help: remove the extra parentheses: `(a.left.x, a.top.y)`
+error[parse] 11:13-11:24: a point takes at most one set of parentheses
+  = help: remove the extra parentheses: `( 10,20 )`

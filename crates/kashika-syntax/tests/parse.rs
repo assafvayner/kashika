@@ -815,14 +815,9 @@ fn parenthesized_points_mean_the_bare_point() {
         ("(a.left@0.25+(4,0))", "a.left@0.25+(4,0)"),
         ("(fan)", "fan"),
         ("(fan+(0,10))", "fan+(0,10)"),
-        ("((a.center))", "a.center"),
-        ("((10,20))", "(10,20)"),
-        ("((a.left.x, lane.y))", "(a.left.x, lane.y)"),
     ] {
         let g = box_at(&format!("box b at {grouped} size (1,1)\n"));
-        let depth = grouped.find(|c| c != '(').unwrap() - bare.find(|c| c != '(').unwrap();
-        let pad = " ".repeat(depth);
-        let b = box_at(&format!("box b at {pad}{bare} size (1,1)\n"));
+        let b = box_at(&format!("box b at  {bare} size (1,1)\n"));
         assert!(matches!(g, Point::Group { .. }), "{grouped}");
         let strip = |p: &Point| match p {
             Point::Lit { x, y, .. } => format!("{x:?} {y:?}"),
@@ -834,19 +829,66 @@ fn parenthesized_points_mean_the_bare_point() {
 }
 
 #[test]
-fn nested_groups_keep_each_level() {
-    let Point::Group { inner, span } = box_at("box b at ((a.center)) size (1,1)\n") else {
+fn a_point_takes_one_set_of_parentheses() {
+    let Point::Group { inner, span } = box_at("box b at (a.center) size (1,1)\n") else {
         panic!("expected group")
     };
-    assert_eq!((span.col, span.end_col), (10, 22));
-    assert!(matches!(*inner, Point::Group { .. }));
+    assert_eq!((span.col, span.end_col), (10, 20));
+    assert!(matches!(*inner, Point::Ref { .. }));
+    for (src, help) in [
+        ("((a.center))", "remove the extra parentheses: `(a.center)`"),
+        (
+            "(((a.center)))",
+            "remove the extra parentheses: `(a.center)`",
+        ),
+        (
+            "((a.center+(0,4)))",
+            "remove the extra parentheses: `(a.center+(0,4))`",
+        ),
+        ("((10,20))", "remove the extra parentheses: `(10,20)`"),
+        ("(( 10,20 ))", "remove the extra parentheses: `( 10,20 )`"),
+        (
+            "((a.left.x, b.y))",
+            "remove the extra parentheses: `(a.left.x, b.y)`",
+        ),
+        (
+            "((a.center)+(0,4))",
+            "keep one set of parentheses around the point, e.g. `(db.center+(0,40))`",
+        ),
+        (
+            "((a.center)",
+            "keep one set of parentheses around the point, e.g. `(db.center+(0,40))`",
+        ),
+    ] {
+        let (_, d) = parse(&format!("box b at {src} size (1,1)\n"));
+        assert_eq!(d.len(), 1, "{src}: {d:#?}");
+        assert_eq!(d[0].code, "parse");
+        assert_eq!(d[0].message, "a point takes at most one set of parentheses");
+        assert_eq!(d[0].help, [help], "{src}");
+    }
+}
+
+#[test]
+fn deeply_nested_point_parentheses_are_one_error() {
+    for close in [false, true] {
+        let n = 5000;
+        let src = format!(
+            "box b at {}a.center{} size (1,1)\nbox c at (0,0) size (1,1)\n",
+            "(".repeat(n),
+            if close { ")".repeat(n) } else { String::new() }
+        );
+        let (f, d) = parse(&src);
+        assert_eq!(d.len(), 1, "{d:#?}");
+        assert_eq!(d[0].message, "a point takes at most one set of parentheses");
+        assert_eq!(f.stmts.len(), 1);
+    }
 }
 
 #[test]
 fn parenthesized_points_in_line_endpoints_and_segments() {
     let f = parse_ok(
         "line l (a.bottom) -> (b.top-(0,4)) -> x (c.left) -> y (lane) -> hv (d.top) \
-         -> vh (e.left) -> curve left 20 (f.top) -> curve via (g.center) ((h.center)) (i.right)\n",
+         -> vh (e.left) -> curve left 20 (f.top) -> curve via (g.center) (h.center) (i.right)\n",
     );
     let l = line_stmt(&f);
     assert!(matches!(l.start, Point::Group { .. }));
@@ -913,7 +955,7 @@ fn unclosed_point_paren_is_an_error_with_help() {
 
 #[test]
 fn offset_after_a_group_is_an_error_with_help() {
-    let (_, d) = parse("box b at ((a.center))+(0,4) size (1,1)\n");
+    let (_, d) = parse("box b at (a.center)+(0,4) size (1,1)\n");
     assert_eq!(d.len(), 1);
     assert_eq!(
         d[0].message,
