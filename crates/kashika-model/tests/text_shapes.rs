@@ -217,6 +217,67 @@ fn block_item_attributes_are_checked() {
 }
 
 #[test]
+fn text_takes_font_size_and_text_align_or_their_aliases() {
+    let s = ok("text a \"a\" at (100,100) font-size=20 text-align=left\n\
+         text b \"a\" at (100,200) size=20 align=left\n\
+         box bx at (300,100) size (200,100) {\n  text \"c\" font-size=10 text-align=right\n  text \"c\" size=10 align=right\n}\n");
+    let (a, b) = (&s.texts[0], &s.texts[1]);
+    assert_eq!(
+        (a.size, a.align, a.rect.x, a.rect.w),
+        (b.size, b.align, b.rect.x, b.rect.w)
+    );
+    assert_eq!(a.size, 20.0);
+    let x = shape(&s, "bx");
+    assert_eq!((x.text[0].size, x.text[1].size), (10.0, 10.0));
+    assert_eq!(x.text[0].rect.right(), x.text[1].rect.right());
+    let d = errors("text \"a\" at (0,0) size=12 font-size=14 align=left text-align=right\n");
+    assert_eq!(d.len(), 2, "{d:#?}");
+    assert!(d.iter().all(|d| d.code == "attr"));
+    assert_eq!(
+        d[0].message,
+        "duplicate attribute: `size` is another name for `font-size`"
+    );
+    assert_eq!(
+        d[0].help,
+        vec!["keep one of `size` and `font-size`".to_string()]
+    );
+    let d = errors("box a at (0,0) size (200,100) {\n  text \"x\" text-align=left align=left\n}\n");
+    assert_eq!(
+        d[0].message,
+        "duplicate attribute: `align` is another name for `text-align`"
+    );
+}
+
+#[test]
+fn wrong_context_names_suggest_the_right_one() {
+    let help = |src: &str| errors(src)[0].help.clone();
+    assert_eq!(
+        help("box a \"A\" at (0,0) size (90,40) align=left\n"),
+        ["did you mean `text-align`?"]
+    );
+    assert_eq!(
+        help("box a \"A\" at (0,0) size (90,40) size=12\n"),
+        ["did you mean `font-size`?"]
+    );
+    assert_eq!(
+        help("box a \"A\" at (0,0) size=(90,40)\n"),
+        ["`size` is a clause, not an attribute: write `size (w,h)`, without `=`"]
+    );
+    assert_eq!(
+        help("box a \"A\" at (0,0) size (90,40) valign=top\n"),
+        ["did you mean `text-valign`?"]
+    );
+    assert_eq!(
+        help("style s { text-size=12 }\n"),
+        ["did you mean `font-size`?"]
+    );
+    assert_eq!(
+        help("text \"t\" at (0,0) font-color=red\n"),
+        ["did you mean `color`?"]
+    );
+}
+
+#[test]
 fn text_attribute_values_are_checked() {
     assert_eq!(
         errors("box a at (0,0) size (9,9) text-align=middle\n")[0].code,

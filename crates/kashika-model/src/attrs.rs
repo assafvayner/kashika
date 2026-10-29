@@ -4,6 +4,19 @@ use kashika_syntax::ast::{Attr, Size, Value};
 use crate::colors;
 use crate::style::{FontWeight, Padding, StrokeStyle, StyleProps};
 
+/// Attribute names written where another name is meant: (written, meant). Each is suggested
+/// only where the meant name is allowed and the written one isn't.
+const MEANT: &[(&str, &str)] = &[
+    ("size", "font-size"),
+    ("text-size", "font-size"),
+    ("align", "text-align"),
+    ("valign", "text-valign"),
+    ("vertical-align", "text-valign"),
+    ("font-color", "color"),
+    ("text-color", "color"),
+    ("weight", "font-weight"),
+];
+
 /// Validated view over a statement's attributes: reports unknown keys (with suggestions),
 /// duplicates, and `@t` on keys other than `label`.
 pub struct Attrs<'a> {
@@ -27,8 +40,8 @@ impl<'a> Attrs<'a> {
                     a.key.span,
                     format!("unknown attribute `{key}` on {what}"),
                 );
-                if let Some(s) = did_you_mean(key, allowed.iter().copied()) {
-                    d = d.with_help(format!("did you mean `{s}`?"));
+                if let Some(h) = unknown_help(a, allowed) {
+                    d = d.with_help(h);
                 }
                 diags.push(d);
                 continue;
@@ -65,6 +78,55 @@ impl<'a> Attrs<'a> {
 
     pub fn all(&self, key: &'static str) -> impl Iterator<Item = &'a Attr> + '_ {
         self.list.iter().copied().filter(move |a| a.key.name == key)
+    }
+}
+
+/// The help for an attribute `allowed` doesn't take: `size (w,h)` for a `size=` pair, else the
+/// name meant in this context, else the nearest allowed name.
+fn unknown_help(a: &Attr, allowed: &[&str]) -> Option<String> {
+    let key = a.key.name.as_str();
+    if key == "size" && matches!(a.value, Value::Pair(..) | Value::Size(_)) {
+        return Some(
+            "`size` is a clause, not an attribute: write `size (w,h)`, without `=`".into(),
+        );
+    }
+    MEANT
+        .iter()
+        .find(|(written, meant)| *written == key && allowed.contains(meant))
+        .map(|(_, meant)| *meant)
+        .or_else(|| did_you_mean(key, allowed.iter().copied()))
+        .map(|s| format!("did you mean `{s}`?"))
+}
+
+/// The attribute set as `name` or as its `alias`. Setting both is a duplicate, reported at
+/// the later one; the earlier one is kept.
+pub fn aliased<'a>(
+    a: &Attrs<'a>,
+    name: &str,
+    alias: &str,
+    diags: &mut Vec<Diagnostic>,
+) -> Option<&'a Attr> {
+    match (a.get(name), a.get(alias)) {
+        (Some(x), Some(y)) => {
+            let (first, second) = if (y.span.line, y.span.col) < (x.span.line, x.span.col) {
+                (y, x)
+            } else {
+                (x, y)
+            };
+            diags.push(
+                Diagnostic::error(
+                    "attr",
+                    second.key.span,
+                    format!("duplicate attribute: `{alias}` is another name for `{name}`"),
+                )
+                .with_help(format!(
+                    "keep one of `{}` and `{}`",
+                    first.key.name, second.key.name
+                )),
+            );
+            Some(first)
+        }
+        (x, y) => x.or(y),
     }
 }
 

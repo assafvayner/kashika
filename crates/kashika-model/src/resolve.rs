@@ -48,7 +48,7 @@ const LINE_KEYS: &[&str] = &[
     "allow",
     "reason",
 ];
-const TEXT_KEYS: &[&str] = &["size", "color", "align", "muted"];
+const TEXT_KEYS: &[&str] = &["font-size", "text-align", "color", "muted", "size", "align"];
 const DIAGRAM_KEYS: &[&str] = &[
     "kashika",
     "grid",

@@ -1,0 +1,15 @@
+// spec: 3, 6, 7
+// Texts and block items take `font-size` and `text-align`, with `size` and `align` as aliases;
+// both names on one item is a duplicate. A name from the other context suggests the right one.
+diagram "names" size (500,300)
+text t1 "new names" at (20,20) font-size=12 text-align=left
+text t2 "aliases" at (20,50) size=12 align=left
+text t3 "both" at (20,80) size=12 font-size=14
+box a at (200,20) size (200,100) {
+  text "item" font-size=12 text-align=left
+  text "alias" size=12 align=left
+  text "both" text-align=left align=right
+}
+box b "B" at (20,150) size (90,40) align=left size=12
+box c "C" at (200,150) size=(90,40)
+box d "D" at (300,150) size (90,40) valign=top

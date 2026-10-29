@@ -1,0 +1,12 @@
+error[attr] 7:35-7:44: duplicate attribute: `size` is another name for `font-size`
+  = help: keep one of `size` and `font-size`
+error[attr] 11:31-11:36: duplicate attribute: `align` is another name for `text-align`
+  = help: keep one of `text-align` and `align`
+error[attr] 13:36-13:41: unknown attribute `align` on box
+  = help: did you mean `text-align`?
+error[attr] 13:47-13:51: unknown attribute `size` on box
+  = help: did you mean `font-size`?
+error[attr] 14:24-14:28: unknown attribute `size` on box
+  = help: `size` is a clause, not an attribute: write `size (w,h)`, without `=`
+error[attr] 15:37-15:43: unknown attribute `valign` on box
+  = help: did you mean `text-valign`?

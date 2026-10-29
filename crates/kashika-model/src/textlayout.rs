@@ -11,7 +11,7 @@ use crate::style::{FontWeight, Padding, Style};
 
 /// Attributes a box or group accepts for its text, besides the style keys.
 pub(crate) const SHAPE_TEXT_KEYS: &[&str] = &["sublabel", "text-align", "text-valign", "gap"];
-const BLOCK_ITEM_KEYS: &[&str] = &["size", "color", "align", "muted"];
+const BLOCK_ITEM_KEYS: &[&str] = &["font-size", "text-align", "color", "muted", "size", "align"];
 const SUBLABEL_SCALE: f64 = 0.8;
 const DEFAULT_GAP: f64 = 2.0;
 
@@ -161,7 +161,7 @@ pub(crate) fn measure_at(
         .ok()
 }
 
-/// A text `size=`: greater than 0 and at most `LIMIT`, else a `size` error.
+/// A text `font-size=` (or `size=`): greater than 0 and at most `LIMIT`, else a `size` error.
 pub(crate) fn text_size(x: &ast::Attr, diags: &mut Vec<Diagnostic>) -> Option<f64> {
     let v = attrs::num(x, diags)?;
     if v <= 0.0 || v > LIMIT {
@@ -438,8 +438,7 @@ fn block_item(
     diags: &mut Vec<Diagnostic>,
 ) -> Option<Pending> {
     let a = Attrs::new(&item.attrs, "text block item", BLOCK_ITEM_KEYS, diags);
-    let size = a
-        .get("size")
+    let size = attrs::aliased(&a, "font-size", "size", diags)
         .and_then(|x| text_size(x, diags))
         .unwrap_or(st.font_size);
     let muted = a.get("muted").is_some_and(|x| attrs::flag(x, diags));
@@ -453,8 +452,7 @@ fn block_item(
                 st.color.clone()
             }
         });
-    let align = match a
-        .get("align")
+    let align = match attrs::aliased(&a, "text-align", "align", diags)
         .and_then(|x| attrs::word(x, &["left", "center", "right"], diags))
     {
         Some("left") => Align::Left,

@@ -400,8 +400,7 @@ impl<'a> Resolver<'a> {
 
     pub(super) fn text_props(&mut self, t: &ast::Text) -> TextProps {
         let a = Attrs::new(&t.attrs, "text", TEXT_KEYS, &mut self.diags);
-        let size = a
-            .get("size")
+        let size = attrs::aliased(&a, "font-size", "size", &mut self.diags)
             .and_then(|x| textlayout::text_size(x, &mut self.diags))
             .unwrap_or(14.0);
         let muted = a
@@ -414,8 +413,7 @@ impl<'a> Resolver<'a> {
                 let d = Style::default();
                 if muted { d.muted } else { d.color }
             });
-        let align = match a
-            .get("align")
+        let align = match attrs::aliased(&a, "text-align", "align", &mut self.diags)
             .and_then(|x| attrs::word(x, &["left", "center", "right"], &mut self.diags))
         {
             Some("left") => Align::Left,

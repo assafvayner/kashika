@@ -3,11 +3,11 @@ import "net.kash" as net
 shape fw from "firewall.svg" text-area=below
 
 image logo "logo.svg" at (30,20) size (80,80)
-text "Acme Corp" at (30,112) size=12 align=left muted
+text "Acme Corp" at (30,112) font-size=12 text-align=left muted
 
 box inet "Internet" at (430,10) size (140,84) shape=cloud style=external
 box fwall at (450,130) size (100,70) shape=fw
-text "Firewall" at fwall.right+(10,35) align=left
+text "Firewall" at fwall.right+(10,35) text-align=left
 box rtr "Router" at (430,250) size (140,60) shape=net.router style=net.lan
 box core "Core switch" at (430,360) size (140,60) shape=net.switch style=net.lan
 box sw1 "Access switch A" at (150,490) size (160,60) shape=net.switch style=net.lan

@@ -60,7 +60,7 @@ group vpc "VPC" at (20,180) size (600,280) {  // children use vpc-relative coord
   box q "Jobs" at (300,60) size (160,60) icon="queue"  // icon-pos=left|top icon-size=24; bundled: server browser queue lock cloud person (use person for users); currentColor icons take the box's color=
 }
 junction fan at api.bottom+(0,40) dot  // a point lines meet at; draws nothing without `dot`
-text note1 "note" at (880,480) size=12 align=right muted  // the id is optional (a text is not a line endpoint); centered on `at` unless align=left|right
+text note1 "note" at (880,480) font-size=12 text-align=right muted  // the id is optional (a text is not a line endpoint); centered on `at` unless text-align=left|right
 image logo "assets/logo.png" at (780,20) size (80,80) fit=contain  // SVG/PNG/JPEG; fit=contain|cover|stretch
 box sq at (40,400) size (60,60) fill=#f0d9b5 stroke=none layer=under  // boxes and images: under paints first (inside a group: right after the group's fill), over paints last (rings, highlights); neither is an obstacle for overlap/through/near/label-collision
 ```
@@ -135,8 +135,8 @@ junction dev_lane at (0,140)
 junction c0 at (120,0)
 junction c1 at c0+(70,0)
 junction c2 at c1+(70,0)
-text "**main**" at (20, main_lane.y) align=left
-text "**develop**" at (20, dev_lane.y) align=left
+text "**main**" at (20, main_lane.y) text-align=left
+text "**develop**" at (20, dev_lane.y) text-align=left
 box m0 at (c0.x, main_lane.y) size (16,16) pin=center style=main
 box d1 at (c1.x, dev_lane.y) size (16,16) pin=center style=dev
 box m1 at (c2.x, main_lane.y) size (16,16) pin=center style=main
@@ -169,11 +169,11 @@ line fk orders_cust.right -> customers_id.left start=many end=one
   ```kash
   box api at (100,80) size (200,120) style=service text-align=left {
     text "**Payments API**"
-    text "v2.4.1" size=11 muted
-    text "• validates cards" size=12
+    text "v2.4.1" font-size=11 muted
+    text "• validates cards" font-size=12
   }
   ```
-  Items stack top to bottom. Each item takes `size`, `color`, `align` and `muted`. An item with `at (x,y)` is absolute, in box-local coordinates (`at` is its alignment point and vertical center), and leaves the stack. This is how to put text inside a shape: `text "x" at (100,60)` in the shape's block (a free `text` over a shape is `label-collision`). Don't combine `label`/`sublabel` with stacked items (`text-conflict`). Absolute items are fine.
+  Items stack top to bottom. Each item takes `font-size`, `color`, `text-align` and `muted`. An item with `at (x,y)` is absolute, in box-local coordinates (`at` is its alignment point and vertical center), and leaves the stack. This is how to put text inside a shape: `text "x" at (100,60)` in the shape's block (a free `text` over a shape is `label-collision`). Don't combine `label`/`sublabel` with stacked items (`text-conflict`). Absolute items are fine.
 
 Comments: `// to end of line` and `/* block */` (no nesting; an unclosed `/*` is a `parse` error). `#` is not a comment. After the id and label, `at`, `size` and attributes may come in any order. Long lines can continue on the next line by starting it with `->`; attributes and `ortho` may follow on their own line.
 

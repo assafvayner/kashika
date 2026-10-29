@@ -51,7 +51,7 @@ shape <name> { ... }  |  shape <name> from "<file.svg>" [...]   // §3a
 box   <id> ["<label>"] at <point> [size (w|auto, h|auto)] [pin=<anchor>] [shape=<shape>] [style=<name>] [layer=under|over] [allow=<code>[:<id>],...] [reason="..."] [attrs]
 group <id> ["<label>"] at <point> [size (w,h)] [pin=<anchor>] [style=<name>] [allow=<code>[:<id>],...] [reason="..."] { ... }
 junction <id> at <point> [dot]
-text  [<id>] "<content>" at <point> [size=N] [color=C] [align=left|center|right] [muted]
+text  [<id>] "<content>" at <point> [font-size=N] [color=C] [text-align=left|center|right] [muted]
 line  [<id>] <point> (-> <segment>)+ [attrs]
 arrow [<id>] <point> (-> <segment>)+ [attrs]   // a line with end=arrow (§5)
 image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stretch] [layer=under|over]   // §3a
@@ -63,7 +63,7 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
 - The `diagram` may leave out `size` too: the canvas then runs from `(0,0)` to the farthest right and bottom edge of everything painted, rounded up to whole pixels, plus a **margin** on the right and bottom. "Everything painted" is shapes and group borders (with half their stroke), their labels, sublabels, text blocks, icons and the labels under `text-area=below` shapes, junction dots, texts, and lines with half their stroke or their markers' half-width (whichever is wider) and their labels. `margin=N` sets the margin (default `20`, at least 0, else an `attr` error). `size (w, auto)` fixes the width and fits the height, and `size (auto, h)` the other way round; `margin=` applies to the fitted axes only, so on a diagram whose `size` has no `auto` axis it is an `attr` error. Content is never moved: anything at a negative coordinate still sticks out of the top or left edge, so `out-of-canvas` reports it there, and past a fixed axis; it never fires on the far side of a fitted axis. `render` (SVG and raster), the checks and `inspect` all use the fitted canvas.
 - `grid=N` makes `off-grid` check authored literals only, never resolved anchors. `clearance=N` (default `6`) is the minimum gap used by the `near` lint.
 - `background=C` paints the whole canvas in color `C` (the same color values as styles) under everything else. Without it, or with `background=none`, the canvas is transparent in SVG, PNG and WebP output; JPEG has no alpha, so it composites onto white (§8). Any other value is an `attr` error.
-- Numeric attributes must be in range, or they are `attr` errors: `font-size`, `stroke-width`, `icon-size` and `grid` must be greater than 0; `radius`, `padding`, `gap` and `clearance` must be at least 0. All of them must be at most 1,000,000. Each value of `padding=(x,y)` follows the `padding` rule; any other `padding` value is an `attr` error. A `text` `size=` outside that range is a `size` error.
+- Numeric attributes must be in range, or they are `attr` errors: `font-size`, `stroke-width`, `icon-size` and `grid` must be greater than 0; `radius`, `padding`, `gap` and `clearance` must be at least 0. All of them must be at most 1,000,000. Each value of `padding=(x,y)` follows the `padding` rule; any other `padding` value is an `attr` error. A `font-size=` on a `text` or a block item (§6) outside that range is a `size` error.
 - `style` keys:
   - `fill`, `stroke`, `stroke-width`, `stroke-style=solid|dashed|dotted`
   - `font-size`, `font-weight=normal|bold`, `color`
@@ -78,7 +78,8 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
 - `at` may reference other shapes, so boxes can be placed relative to each other. Placement references form a DAG; a cycle is an error that prints the cycle (the first few shapes and its length when it is long). A chain of more than 256 placement references is also a `placement-cycle` error, whatever the statement order; a shape inside a group counts a reference to the group, whose frame it uses.
 - `group`: children are `box`, `group`, `junction`, `text`, `line` (and `arrow`). `image` is top-level only; inside a group it is a `parse` error. Groups nest at most 64 deep; a deeper `group` is a `parse` error. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. Groups take no shape: a group's `style=` naming a style that sets `shape` is an `attr` error at that attribute (the rest of the style still applies), and `shape` in a `style boundary` definition is an `attr` error there and is dropped. The label sits inside the top-left corner, inset by `padding`, and its title band (`font line-height + padding`, using `y`) is reserved space. Children that intrude on the title band trigger `spill`.
 - `junction`: a zero-size named point that lines can start or end at. Lines meeting at a junction are connected, not crossing. `dot` draws a 6px dot there. Junctions model buses and fan-in/fan-out.
-- `text`: `at` is the anchor point for the alignment. `color=none` is an `attr` error. Vertically, `at` is the **center** of the text block, not the baseline.
+- `text`: `at` is the anchor point for the alignment (`text-align`). `color=none` is an `attr` error. Vertically, `at` is the **center** of the text block, not the baseline.
+- Text attribute names: free `text` statements and block items (§6) take `font-size` and `text-align`, the names boxes and styles use. `size` and `align` are accepted there as aliases, and giving both names on one item (`size=12 font-size=14`) is a duplicate-attribute `attr` error at the second, whose help says to keep one. `fmt` keeps whichever name is written. Where a name belongs to another context, the unknown-attribute error suggests the right one: `align=` on a box suggests `text-align`, `size=12` on a box suggests `font-size`, `valign=` suggests `text-valign`, and `size=(w,h)` suggests the `size (w,h)` clause.
 
 **Paint order is fixed:** `layer=under` boxes and images → groups → boxes and images → lines → line labels and texts → `layer=over` boxes and images. Groups paint in file order, so a group paints right after its parent and before any later sibling. `layer=under` is relative to the shape's parent: a top-level one paints before every group, and one inside a group paints right after that group's own fill and border, before the group's other children and any later group, so the group's fill never hides it. Within every layer, file order applies, so line labels and texts interleave by where their statements appear. Lines are never hidden by boxes, except by `layer=over` ones.
 
@@ -233,14 +234,14 @@ Unnamed lines are referred to as `line@L<n>`, where n is the source line of the 
   ```
   box api at (100,80) size (200,120) style=service text-align=left {
     text "**Payments API**"
-    text "v2.4.1" size=11 muted
-    text "• validates cards" size=12
-    text "• retries charges" size=12
+    text "v2.4.1" font-size=11 muted
+    text "• validates cards" font-size=12
+    text "• retries charges" font-size=12
   }
   ```
   - Block items **without `at` stack** top to bottom, separated by `gap` (box attribute, default 2), and aligned by the box's `text-align`/`text-valign`. No coordinates are needed.
   - Items **with `at`** are absolute, in the **box-local frame** (origin is the box's top-left). They leave the stack. This form is advanced.
-  - Block text items take no id.
+  - Block text items take no id. They take `font-size`, `color`, `text-align` and `muted`, like a `text` statement; `font-size` defaults to the box's, `color` to its style's (`muted` picks the muted color) and `text-align` to the box's `text-align`.
   - A block that `label`/`sublabel` would draw the same is the `block-reducible` warning (§7).
   - Using `label`/`sublabel` together with stacked block items is an error (`text-conflict`). It is allowed when every block item has its own `at`.
 - `ref` shows `sublabel` in the main example. The block is documented under "when sublabel is not enough", and absolute `at` comes last.

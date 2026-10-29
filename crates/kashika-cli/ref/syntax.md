@@ -6,7 +6,7 @@ style <name> { key=value ... }
 box   <id> ["<label>"] at <point> [size (w,h)] [pin=<anchor>] [shape=<shape>] [style=<name>] [layer=under|over] [sublabel="..."] [text-align=left|center|right] [text-valign=top|middle|bottom] [gap=N] [style keys] [{ text block }]
 group <id> ["<label>"] at <point> [size (w,h)] [pin=<anchor>] [style=<name>] [sublabel="..."] [text-align=...] [gap=N] { children }
 junction <id> at <point> [dot]
-text  [<id>] "<content>" at <point> [size=N] [color=C] [align=left|center|right] [muted]
+text  [<id>] "<content>" at <point> [font-size=N] [color=C] [text-align=left|center|right] [muted]
 line  [<id>] <point> -> <segment> [-> <segment> ...] [line attributes] [ortho]
 arrow [<id>] <point> -> <segment> [-> <segment> ...] [line attributes] [ortho]   // a line with end=arrow
 ```
@@ -16,9 +16,10 @@ arrow [<id>] <point> -> <segment> [-> <segment> ...] [line attributes] [ortho]  
 - Style keys: `fill`, `stroke`, `stroke-width`, `stroke-style=solid|dashed|dotted`, `font-size`, `font-weight=normal|bold`, `color`, `radius`, `padding`, `muted`. A `style` definition also takes `shape=` (boxes only) and `size=(w,h)` (boxes and groups without their own `size`; `kashika ref styles`). Precedence: inline > `style=` > built-in. Built-in styles: `service`, `datastore`, `external`, `queue`, `boundary`, `note`.
 - A box without `size` fits its text: it gets the size `label-overflow` would ask for (shape, padding, icon, sublabel and block included), rounded up to `grid=`. `size (w, auto)` or `size (auto, h)` fixes one axis and fits the other. A box with no text needs a `size` (its own or its style's), and so do groups and images.
 - `pin=<anchor>` puts that anchor of the new shape on `at` (default `tl`): `at api.right+(80,0) pin=left`. `side@t` works too: `pin=left@0.25`.
-- Text in boxes: `sublabel` is one muted line under the label. Markup works in labels and texts: `**bold**` and `` `code` ``; escape with `\*` and `` \` ``. For three or more lines, use a block, `{ text "..." [size=N] [muted] ... }`. Items without `at` stack `gap` apart. Don't combine `label` with stacked items (`text-conflict`). An item with `at (x,y)` is absolute, in box-local coordinates.
+- Text in boxes: `sublabel` is one muted line under the label. Markup works in labels and texts: `**bold**` and `` `code` ``; escape with `\*` and `` \` ``. For three or more lines, use a block, `{ text "..." [font-size=N] [text-align=...] [color=C] [muted] ... }`. Items without `at` stack `gap` apart. Don't combine `label` with stacked items (`text-conflict`). An item with `at (x,y)` is absolute, in box-local coordinates.
 - Groups hold `box`, `group`, `junction`, `text` and `line`, use the `boundary` style, and reserve a title band at the top. A group's `text-valign` is an error.
 - More shapes, `import`, `image` and `icon=`: `kashika ref shapes`.
+- `text` and block items take `font-size` and `text-align`, like boxes; `size` and `align` still work there as aliases. A name from the wrong context gets a did-you-mean (`align=` on a box: `text-align`).
 - `text` is centered vertically on `at`. Paint order: `layer=under` shapes, groups (file order), boxes, lines, labels and texts in file order, then `layer=over` shapes. A `layer=under` shape inside a group paints right after that group's fill, so the fill never hides it.
 - `layer=under|over` on a box or image (not a group) paints it first or last, with its own text. Layered shapes are backdrops and highlights, never obstacles: `overlap`, `through`, `near`, `label-collision`, `endpoint-off-edge`, `route` and `--corridors` ignore them; `spill`, `out-of-canvas` and their own text checks still apply.
 
@@ -35,7 +36,7 @@ diagram "Text" size (360,200)
 box pay "Payments API" at (20,20) sublabel="v2.4.1" style=service
 box api at (20,100) size (200,90) style=service text-align=left {
   text "**Payments API**"
-  text "`POST /charge`" size=12
-  text "• validates cards" size=12
+  text "`POST /charge`" font-size=12
+  text "• validates cards" font-size=12
 }
 ```

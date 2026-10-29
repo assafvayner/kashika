@@ -1,29 +1,29 @@
 diagram "Analytics data pipeline" size (1760,560) kashika="0.1.0"
 
-text "**Analytics data pipeline**" at (40,50) size=22 align=left
-text "Events to dashboards; `exactly-once` from Kafka onward" at (40,80) size=13 align=left muted
+text "**Analytics data pipeline**" at (40,50) font-size=22 text-align=left
+text "Events to dashboards; `exactly-once` from Kafka onward" at (40,80) font-size=13 text-align=left muted
 
 box src "Event sources" at (40,200) size (180,110) style=external sublabel="web, mobile; 50k ev/s"
 box kafka "Kafka ingestion" at src.tr+(70,0) size (180,110) pin=tl style=queue sublabel="Kafka 3.7, 12 partitions"
 box stream at kafka.tr+(70,0) size (180,110) pin=tl style=service text-align=left {
   text "**Stream processing**"
-  text "Flink 1.19, p99 < 2 s" size=11 muted
-  text "• `exactly-once` sinks" size=12
-  text "• 5 min windows" size=12
+  text "Flink 1.19, p99 < 2 s" font-size=11 muted
+  text "• `exactly-once` sinks" font-size=12
+  text "• 5 min windows" font-size=12
 }
 box lake at stream.tr+(70,0) size (180,110) pin=tl style=datastore text-align=left {
   text "**Raw data lake**"
-  text "S3 + Parquet, 11 nines" size=11 muted
-  text "• partitioned by `dt`" size=12
-  text "• 400 d retention" size=12
+  text "S3 + Parquet, 11 nines" font-size=11 muted
+  text "• partitioned by `dt`" font-size=12
+  text "• 400 d retention" font-size=12
 }
 box batch "Batch transforms" at lake.tr+(70,0) size (180,110) pin=tl style=service sublabel="dbt + Spark, hourly"
 box wh "Warehouse" at batch.tr+(70,0) size (180,110) pin=tl style=datastore sublabel="Snowflake, 15 min freshness"
 box bi "BI dashboards" at wh.tr+(70,0) size (180,110) pin=tl style=external sublabel="Looker, load < 3 s"
 box fs at lake.bl+(0,70) size (180,100) pin=tl style=datastore text-align=left {
   text "**ML feature store**"
-  text "Redis + Feast, p99 < 10 ms" size=11 muted
-  text "• online + offline" size=12
+  text "Redis + Feast, p99 < 10 ms" font-size=11 muted
+  text "• online + offline" font-size=12
 }
 
 line l_src src.right -> kafka.left end=arrow label="events"
