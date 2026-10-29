@@ -14,7 +14,7 @@ In dependency order (`crates/`):
 - `kashika-check`: warning lints (one file each under `src/lints/`), suppression, metrics, free intervals and ports, built on a shared `Ctx` of shape polygons and flattened line pieces. `Ctx::boxes()` is boxes and images: the opaque shapes lines must avoid.
 - `kashika-route`: `kashika route` path suggestions. Each candidate is compiled as a real `line` and scored with `kashika_check::check`, so it ranks by the `cross` plus `group-transit` findings (each counted alike, listed apart), then the `near`/`shared-segment` findings `check` reports (`through` drops it), then segments and length.
 - `kashika-render`: `Scene` to SVG, PNG, JPEG and WebP (resvg, jpeg-encoder, image-webp), with images and icons embedded as `data:` URIs, and the `render --force`/`--debug` overlay.
-- `kashika-cli`: the `kashika` binary (`check`, `render`, `inspect`, `route`, `measure`, `fmt`, `icons`, `ref`), text and JSON reports. `ref` pages are Markdown in `crates/kashika-cli/ref/`.
+- `kashika-cli`: the `kashika` package and binary (`check`, `render`, `inspect`, `route`, `measure`, `fmt`, `icons`, `ref`), text and JSON reports. `ref` pages are Markdown in `crates/kashika-cli/ref/`.
 
 ## Commands
 
@@ -22,22 +22,22 @@ In dependency order (`crates/`):
 cargo fmt --all        # stable rustfmt, never +nightly
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
-cargo test -p kashika-cli --test golden -- parse/lexical   # golden cases, filtered by path
-KASHIKA_BLESS=1 cargo test -p kashika-cli --test golden -- <case path>   # write expected files
-cargo run -p kashika-cli -- check examples/upload/upload.kash
-cargo run -p kashika-cli -- render examples/upload/upload.kash -o target/upload.svg
-cargo run -p kashika-cli -- measure "**Payments** API" --size 14
-cargo run -p kashika-cli -- inspect examples/upload/upload.kash --ports
-cargo run -p kashika-cli -- icons --search server
-cargo run -p kashika-cli -- fmt --check examples/upload/upload.kash
-cargo run -p kashika-cli -- route examples/upload/upload.kash --line api1_queue arc
-cargo run -p kashika-cli -- ref
+cargo test -p kashika --test golden -- parse/lexical   # golden cases, filtered by path
+KASHIKA_BLESS=1 cargo test -p kashika --test golden -- <case path>   # write expected files
+cargo run -p kashika -- check examples/upload/upload.kash
+cargo run -p kashika -- render examples/upload/upload.kash -o target/upload.svg
+cargo run -p kashika -- measure "**Payments** API" --size 14
+cargo run -p kashika -- inspect examples/upload/upload.kash --ports
+cargo run -p kashika -- icons --search server
+cargo run -p kashika -- fmt --check examples/upload/upload.kash
+cargo run -p kashika -- route examples/upload/upload.kash --line api1_queue arc
+cargo run -p kashika -- ref
 ```
 
 
 ## Adding a golden case
 
-`tests/golden/` holds data-driven cases, run by `cargo test -p kashika-cli --test golden` (harness in `crates/kashika-cli/tests/golden/`). Every directory with an `input.kash` is one test, named by its path:
+`tests/golden/` holds data-driven cases, run by `cargo test -p kashika --test golden` (harness in `crates/kashika-cli/tests/golden/`). Every directory with an `input.kash` is one test, named by its path:
 
 - `parse/<area>/<case>/` compiles and checks the input like `kashika check` and keeps `diagnostics.txt`, plus `ast.txt` and/or `scene.json` when the header says `// dump: ast, scene`. Use `ast` when the parse tree is under test, `scene` when resolution is, and neither for diagnostic-only cases.
 - `render/<area>/<case>/` runs `kashika render` in the case directory and keeps `out.svg` and `diagnostics.txt`, plus `out.png`/`out.jpg`/`out.webp` for `// raster: png jpg webp`.
@@ -55,8 +55,8 @@ diagram "not ortho" size (300,200)
 To add a case, create the directory and `input.kash`, then bless it and the coverage map:
 
 ```sh
-KASHIKA_BLESS=1 cargo test -p kashika-cli --test golden -- parse/lines/not-ortho
-KASHIKA_BLESS=1 cargo test -p kashika-cli --test golden -- coverage/map
+KASHIKA_BLESS=1 cargo test -p kashika --test golden -- parse/lines/not-ortho
+KASHIKA_BLESS=1 cargo test -p kashika --test golden -- coverage/map
 ```
 
 Review the new files (open `out.svg` in a browser) and commit them with `tests/golden/COVERAGE.md`. After an intended behavior change, bless the affected cases with a path filter and review `git diff tests/golden`. A mismatch prints a unified diff and saves the actual file under the cargo target directory's `tmp/golden-actual/`. When a render case mismatches or is blessed with a new `out.svg`, the run also writes `tmp/golden-review.html` there, showing each such case's expected and actual SVG side by side; open it to review. The `coverage/*` tests fail when a diagnostic code, spec section, built-in shape, bundled icon, attribute key (per statement), line end, `label-side` value or segment kind has no case, and when a code in `NOT_REPORTED` (`coverage.rs`) starts being reported.

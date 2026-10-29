@@ -469,20 +469,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a0370574b86f7eca156b9f298392b5e69a23f8c86f3f865add60bbc2e79467a6"
 
 [[package]]
-name = "kashika-check"
-version = "0.1.0"
-dependencies = [
- "kashika-diag",
- "kashika-geom",
- "kashika-model",
- "kashika-text",
- "serde",
- "serde_json",
- "tempfile",
-]
-
-[[package]]
-name = "kashika-cli"
+name = "kashika"
 version = "0.1.0"
 dependencies = [
  "assert_cmd",
@@ -502,6 +489,19 @@ dependencies = [
  "serde_json",
  "sha2",
  "similar",
+ "tempfile",
+]
+
+[[package]]
+name = "kashika-check"
+version = "0.1.0"
+dependencies = [
+ "kashika-diag",
+ "kashika-geom",
+ "kashika-model",
+ "kashika-text",
+ "serde",
+ "serde_json",
  "tempfile",
 ]
 

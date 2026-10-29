@@ -10,7 +10,7 @@ line api.right -> db.left end=arrow label="SQL"
 ```
 
 ```sh
-cargo install --path crates/kashika-cli
+cargo install kashika --version 0.1.0-dev0   # or, from a checkout: cargo install --path crates/kashika-cli
 kashika check hello.kash                 # diagnostics, exit 0/1/2
 kashika check hello.kash --format json   # machine-readable
 kashika render hello.kash -o hello.svg

@@ -204,7 +204,7 @@ fn check_outputs(case: &Case, outputs: &[Output]) -> Result<(), Failed> {
         return Ok(());
     }
     let hint = format!(
-        "if the change is intended, run: KASHIKA_BLESS=1 cargo test -p kashika-cli --test golden -- {}",
+        "if the change is intended, run: KASHIKA_BLESS=1 cargo test -p kashika --test golden -- {}",
         case.name
     );
     let mut problems = Vec::new();

@@ -36,7 +36,7 @@ fn example_renders_are_committed_and_current() {
         let dir = examples_dir().join(&name);
         let src = dir.join(format!("{name}.kash"));
         let regen = format!(
-            "regenerate with: for ext in svg png; do cargo run -p kashika-cli -- render examples/{name}/{name}.kash -o examples/{name}/{name}.$ext; done"
+            "regenerate with: for ext in svg png; do cargo run -p kashika -- render examples/{name}/{name}.kash -o examples/{name}/{name}.$ext; done"
         );
 
         let files: BTreeSet<String> = std::fs::read_dir(&dir)
