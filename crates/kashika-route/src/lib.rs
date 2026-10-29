@@ -1,19 +1,27 @@
 mod candidates;
 mod endpoint;
 mod score;
+mod source;
+#[cfg(test)]
+mod tests;
 mod text;
 
-use kashika_diag::{Diagnostic, Severity, Span};
+use std::collections::HashMap;
+
+use kashika_check::ctx::Ctx;
+use kashika_diag::{Diagnostic, Severity};
 use kashika_geom::{PathSeg, Pt, flatten};
 use kashika_model::{Line, Scene};
-use kashika_syntax::ast::{self, SegKind};
+use kashika_syntax::ast;
 use serde::Serialize;
 
-pub use candidates::{
-    Ctrl, DETOUR_LANES, Hop, Lane, MAX_DETOURS, Plan, corners, generate, generate_skipping,
-};
-pub use endpoint::{Endpoint, PROBE, Side, parse_ref, resolve_endpoints, resolve_endpoints_with};
-pub use text::{num, path_text, statement};
+use crate::candidates::{Plan, corners, generate, key};
+use crate::endpoint::{PROBE, end_point, resolve_endpoints};
+use crate::source::Source;
+use crate::text::{path_text, statement};
+
+pub use endpoint::{Endpoint, Side};
+pub use text::num;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -82,12 +90,15 @@ pub struct Request<'a> {
 }
 
 pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
+    let (file, _) = kashika_syntax::parse(req.src);
+    let (scene, _) = kashika_model::compile_with(req.src, req.opts);
+    let src = Source::new(req.src);
     let target = req
         .line
-        .map(|id| existing(req.src, id, req.opts))
+        .map(|id| existing(&file, &scene, &src, id))
         .transpose()?;
     let (from, to) = match (req.from, req.to, &target) {
-        (Some(f), Some(t), _) => endpoint::resolve_endpoints_with(req.src, f, t, req.opts)?,
+        (Some(f), Some(t), _) => resolve_endpoints(req.src, f, t, req.opts)?,
         (None, None, Some(t)) => (t.from.clone(), t.to.clone()),
         _ => {
             return Err(Error::Usage(
@@ -95,7 +106,6 @@ pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
             ));
         }
     };
-    let (scene, _) = kashika_model::compile_with(req.src, req.opts);
     let (id, attrs, frame) = match &target {
         Some(t) => (
             t.id.clone(),
@@ -111,49 +121,65 @@ pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
             Frame::default(),
         ),
     };
-    let existing_lines = if target.is_none() {
-        connecting_lines(req, &from, &to)
-    } else {
-        Vec::new()
+    let existing_lines = match target {
+        Some(_) => Vec::new(),
+        None => connecting_lines(&file, &scene, &from, &to),
     };
-    let mut s = rank(req, &scene, from, to, &id, &attrs, frame);
-    s.existing_lines = existing_lines;
-    Ok(s)
+    let candidates = rank(req, &scene, &src, (&from, &to), (&id, &attrs), frame);
+    Ok(Suggestion {
+        from,
+        to,
+        style: req.style,
+        candidates,
+        existing_lines,
+    })
 }
 
-fn connecting_lines(req: &Request, from: &Endpoint, to: &Endpoint) -> Vec<String> {
+/// Named lines that resolve and run between the owners of `from` and `to`, either way.
+fn connecting_lines(
+    file: &ast::File,
+    scene: &Scene,
+    from: &Endpoint,
+    to: &Endpoint,
+) -> Vec<String> {
     let (Some(a), Some(b)) = (&from.owner, &to.owner) else {
         return Vec::new();
     };
-    let (file, _) = kashika_syntax::parse(req.src);
-    let mut ids = Vec::new();
-    named_lines(&file.stmts, &mut ids);
-    ids.into_iter()
-        .filter(|id| {
-            existing(req.src, id, req.opts).is_ok_and(|t| match (&t.from.owner, &t.to.owner) {
-                (Some(x), Some(y)) => (x == a && y == b) || (x == b && y == a),
-                _ => false,
-            })
+    fn owner(p: Option<&ast::Point>) -> Option<&str> {
+        match p {
+            Some(ast::Point::Ref { r, .. }) => Some(r.id.name.as_str()),
+            _ => None,
+        }
+    }
+    let resolves = |id: &str| scene.lines.iter().any(|l| l.id == id && !l.path.is_empty());
+    ast_lines(&file.stmts)
+        .into_iter()
+        .filter_map(|l| {
+            let id = &l.id.as_ref()?.name;
+            let (x, y) = (owner(Some(&l.start))?, owner(end_point(l))?);
+            ((x == a && y == b || x == b && y == a) && resolves(id)).then(|| id.clone())
         })
         .collect()
 }
 
-fn named_lines(stmts: &[ast::Stmt], out: &mut Vec<String>) {
+fn ast_lines(stmts: &[ast::Stmt]) -> Vec<&ast::Line> {
+    let mut out = Vec::new();
     for s in stmts {
         match s {
-            ast::Stmt::Line(l) => out.extend(l.id.as_ref().map(|i| i.name.clone())),
-            ast::Stmt::Group(g) => named_lines(&g.children, out),
+            ast::Stmt::Line(l) => out.push(l),
+            ast::Stmt::Group(g) => out.extend(ast_lines(&g.children)),
             _ => {}
         }
     }
+    out
 }
 
 /// Where a candidate is written: the origin of its frame, and the source position right
-/// after which the probe goes, so its literals mean the same as in the final statement.
+/// after which the probes go, so their literals mean the same as in the final statement.
 #[derive(Default, Clone, Copy)]
 struct Frame {
     origin: Pt,
-    /// 1-based line and exclusive column; `None` appends the probe at the end of the file.
+    /// 1-based line and exclusive column; `None` appends the probes at the end of the file.
     after: Option<(u32, u32)>,
 }
 
@@ -168,163 +194,101 @@ struct Target {
     end: (u32, u32),
 }
 
-fn existing(src: &str, id: &str, opts: &kashika_model::Options) -> Result<Target, Error> {
-    let (file, _) = kashika_syntax::parse(src);
-    let ast_line = find_line(&file.stmts, id)
+fn existing(file: &ast::File, scene: &Scene, src: &Source, id: &str) -> Result<Target, Error> {
+    let ast_line = ast_lines(&file.stmts)
+        .into_iter()
+        .find(|l| l.id.as_ref().is_some_and(|i| i.name == id))
         .ok_or_else(|| Error::Usage(format!("no line `{id}` in the file")))?;
-    let (scene, _) = kashika_model::compile_with(src, opts);
     let line = scene.lines.iter().find(|l| l.id == id).ok_or_else(|| {
         Error::Usage(format!(
             "line `{id}` doesn't resolve; fix it with `kashika check` first"
         ))
     })?;
-    let origin = line
-        .parent
-        .as_ref()
-        .and_then(|p| scene.shapes.iter().find(|s| &s.id == p))
-        .map_or(Pt::default(), |g| g.rect.origin());
-    let lines = source_lines(src);
-    let written = |p: &ast::Point| match p {
-        ast::Point::Ref { span, .. } => Some(slice(&lines, *span)),
-        ast::Point::Lit { x, y, span } => {
-            let refers = |c: &ast::Coord| matches!(c, ast::Coord::Axis { .. });
-            (refers(x) || refers(y)).then(|| slice(&lines, *span))
-        }
-    };
-    let end = match ast_line.segs.last().map(|s| &s.kind) {
-        Some(
-            SegKind::To(p)
-            | SegKind::Hv(p)
-            | SegKind::Vh(p)
-            | SegKind::Curve { to: p, .. }
-            | SegKind::CurveVia { to: p, .. },
-        ) => written(p),
-        _ => None,
-    };
-    let endpoint = |expr: Option<String>, at: Pt| {
-        let (owner, side) = expr.as_deref().map_or((None, None), parse_ref);
-        Endpoint {
-            expr,
-            at,
-            owner,
-            side,
-        }
-    };
     let (Some(first), Some(last)) = (line.path.first(), line.path.last()) else {
         return Err(Error::Usage(format!("line `{id}` has no segments")));
     };
+    let endpoint = |p: Option<&ast::Point>, at: Pt| match p {
+        Some(p) => Endpoint::of(p, src.slice(p.span()), at),
+        None => Endpoint::literal(at),
+    };
     Ok(Target {
         id: id.to_string(),
-        from: endpoint(written(&ast_line.start), first.from()),
-        to: endpoint(end, last.to()),
-        attrs: ast_line
-            .attrs
-            .iter()
-            .map(|a| slice(&lines, a.span))
-            .collect(),
-        origin,
+        from: endpoint(Some(&ast_line.start), first.from()),
+        to: endpoint(end_point(ast_line), last.to()),
+        attrs: ast_line.attrs.iter().map(|a| src.slice(a.span)).collect(),
+        origin: line.origin,
         end: (ast_line.span.end_line, ast_line.span.end_col),
     })
 }
 
-fn find_line<'a>(stmts: &'a [ast::Stmt], id: &str) -> Option<&'a ast::Line> {
-    stmts.iter().find_map(|s| match s {
-        ast::Stmt::Line(l) if l.id.as_ref().is_some_and(|i| i.name == id) => Some(l),
-        ast::Stmt::Group(g) => find_line(&g.children, id),
-        _ => None,
-    })
+fn probe_id(i: usize) -> String {
+    format!("{PROBE}_{i}")
 }
 
-/// The source as the lexer counts it: lines of chars, without a leading BOM.
-fn source_lines(src: &str) -> Vec<Vec<char>> {
-    src.strip_prefix('\u{feff}')
-        .unwrap_or(src)
-        .split('\n')
-        .map(|l| l.chars().collect())
-        .collect()
-}
-
-/// Source text of a single-line span.
-fn slice(lines: &[Vec<char>], span: Span) -> String {
-    let line = &lines[span.line as usize - 1];
-    let end = if span.end_line == span.line {
-        span.end_col as usize - 1
-    } else {
-        line.len()
-    };
-    line[span.col as usize - 1..end].iter().collect()
-}
-
-/// `src` with `stmt` on a line of its own after `frame.after`, and the line number it lands on.
-fn with_probe(src: &str, frame: Frame, stmt: &str) -> (String, u32) {
-    let lines = source_lines(src);
-    let Some((line, col)) = frame.after else {
-        return (format!("{src}\n{stmt}\n"), lines.len() as u32 + 1);
-    };
-    let mut out = String::new();
-    for (i, l) in lines.iter().enumerate() {
-        if i > 0 {
-            out.push('\n');
-        }
-        if i + 1 == line as usize {
-            let at = (col as usize - 1).min(l.len());
-            out.extend(&l[..at]);
-            out.push('\n');
-            out.push_str(stmt);
-            out.push('\n');
-            out.extend(&l[at..]);
-        } else {
-            out.extend(l);
-        }
-    }
-    (out, line + 1)
-}
-
+/// Scores every plan as a real line. All probes are resolved in one compile, then each is
+/// checked on its own against the scene, in the place its statement would take.
 fn rank(
     req: &Request,
     scene: &Scene,
-    from: Endpoint,
-    to: Endpoint,
-    id: &str,
-    attrs: &str,
+    src: &Source,
+    (from, to): (&Endpoint, &Endpoint),
+    (id, attrs): (&str, &str),
     frame: Frame,
-) -> Suggestion {
-    let probe_attrs = if req.style == Style::Arc {
-        format!("radius={}", num(req.radius))
-    } else {
-        String::new()
+) -> Vec<Candidate> {
+    let ctx = Ctx::new(scene);
+    let skip: Vec<&str> = req.line.into_iter().collect();
+    let plans = generate(&ctx, from, to, req.style, &skip);
+    let paths: Vec<String> = plans
+        .iter()
+        .map(|p| path_text(from, to, p, frame.origin))
+        .collect();
+    let probes: Vec<String> = paths
+        .iter()
+        .enumerate()
+        .map(|(i, p)| statement(&probe_id(i), p, attrs))
+        .collect();
+    let (text, first) = src.with_lines(frame.after, &probes);
+    let (probed, diags) = kashika_model::compile_with(&text, req.opts);
+    let failed: Vec<u32> = diags
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .filter_map(|d| d.span.line.checked_sub(first))
+        .collect();
+    let Some(at) = probed.lines.iter().position(|l| l.id.starts_with(PROBE)) else {
+        return Vec::new();
     };
+    let resolved: HashMap<&str, &Line> = probed.lines[at..]
+        .iter()
+        .map(|l| (l.id.as_str(), l))
+        .collect();
+    let mut work = scene.clone();
     let mut seen: Vec<Vec<(i64, i64)>> = Vec::new();
     let mut candidates = Vec::new();
     let mut detour = Vec::new();
-    let skip: Vec<&str> = [PROBE].into_iter().chain(req.line).collect();
-    for plan in generate_skipping(scene, &from, &to, req.style, &skip[1..]) {
-        let path = path_text(&from, &to, &plan, frame.origin);
-        let (text, probe_line) = with_probe(req.src, frame, &statement(PROBE, &path, &probe_attrs));
-        let (probed, diags) = kashika_model::compile_with(&text, req.opts);
-        if diags
-            .iter()
-            .any(|d| d.severity == Severity::Error && d.span.line == probe_line)
-        {
+    for (i, (plan, path)) in plans.iter().zip(&paths).enumerate() {
+        if failed.contains(&(i as u32)) {
             continue;
         }
-        let Some(line) = probed.lines.iter().find(|l| l.id == PROBE) else {
+        let Some(&line) = resolved.get(probe_id(i).as_str()) else {
             continue;
         };
-        if !directions_ok(line, &from, &to, req.style) {
+        if !directions_ok(line, from, to, req.style) {
             continue;
         }
-        let Some(s) = score::score(&probed, line, req.line) else {
+        let shape = key(flatten(&line.path));
+        if seen.contains(&shape) {
+            continue;
+        }
+        seen.push(shape);
+        work.lines.insert(at, line.clone());
+        let s = score::score(&work, &work.lines[at], req.line);
+        work.lines.remove(at);
+        let Some(s) = s else {
             continue;
         };
-        let key = geometry_key(&line.path);
-        if seen.contains(&key) {
-            continue;
-        }
-        seen.push(key);
         let corridor = plan.lane.and_then(|(axis, v)| {
-            let span = lane_span(&from, &to, &plan, axis, v)?;
-            score::corridor(&probed, axis, v, span, &skip)
+            let span = lane_span(from, to, plan, axis, v)?;
+            score::corridor(&ctx, axis, v, span, &skip)
         });
         detour.push(plan.hops.len() >= 3);
         candidates.push(Candidate {
@@ -334,7 +298,7 @@ fn rank(
             segments: segments(&line.path, req.style),
             length: s.length.round(),
             corridor,
-            statement: statement(id, &path, attrs),
+            statement: statement(id, path, attrs),
         });
     }
     let simple: Vec<&Candidate> = candidates
@@ -355,13 +319,7 @@ fn rank(
             .then(a.length.total_cmp(&b.length))
     });
     candidates.truncate(req.max);
-    Suggestion {
-        from,
-        to,
-        style: req.style,
-        candidates,
-        existing_lines: Vec::new(),
-    }
+    candidates
 }
 
 /// A detour is dropped when a simpler candidate is at least as good on crossings, near-misses
@@ -383,7 +341,7 @@ fn lane_span(
     axis: &str,
     v: f64,
 ) -> Option<(f64, f64)> {
-    let pts = candidates::corners(from.at, to.at, plan)?;
+    let pts = corners(from.at, to.at, plan)?;
     pts.windows(2).find_map(|w| {
         let (p, q) = (w[0], w[1]);
         if axis == "x" && p.x == v && q.x == v {
@@ -421,26 +379,6 @@ fn directions_ok(line: &Line, from: &Endpoint, to: &Endpoint, style: Style) -> b
 /// Cosine of the largest angle, about 2.5°, between a path's end and a side's normal.
 pub(crate) const SQUARE: f64 = 0.999;
 
-/// The flattened path at 0.1px, without repeated points or points in the middle of a
-/// straight run, so paths that draw the same shape get the same key.
-fn geometry_key(path: &[PathSeg]) -> Vec<(i64, i64)> {
-    let mut key: Vec<(i64, i64)> = Vec::new();
-    for p in flatten(path) {
-        let q = ((p.x * 10.0).round() as i64, (p.y * 10.0).round() as i64);
-        if key.last() == Some(&q) {
-            continue;
-        }
-        if let [.., a, b] = key[..] {
-            let (u, v) = ((b.0 - a.0, b.1 - a.1), (q.0 - b.0, q.1 - b.1));
-            if u.0 * v.1 == u.1 * v.0 && u.0 * v.0 + u.1 * v.1 > 0 {
-                key.pop();
-            }
-        }
-        key.push(q);
-    }
-    key
-}
-
 fn segments(path: &[PathSeg], style: Style) -> usize {
     match style {
         Style::Arc => {
@@ -474,8 +412,8 @@ fn default_id(scene: &Scene, from: &Endpoint, to: &Endpoint) -> String {
         .expect("some suffix is free")
 }
 
-/// Attributes for the suggested statement: the rerouted line's own, minus `radius` (and
-/// `ortho` for curves), or `end=arrow` for a new line; `arc` adds `radius=N`.
+/// Attributes for the suggested statement, which the probes share: the rerouted line's own,
+/// minus `radius` (and `ortho` for curves), or `end=arrow` for a new line; `arc` adds `radius=N`.
 fn attrs(existing: Option<&[String]>, style: Style, radius: f64) -> String {
     let mut out: Vec<String> = match existing {
         Some(list) => list

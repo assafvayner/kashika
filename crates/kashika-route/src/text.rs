@@ -1,6 +1,7 @@
 use kashika_geom::Pt;
 
-use crate::{Endpoint, Hop, Plan};
+use crate::Endpoint;
+use crate::candidates::{Hop, Plan};
 
 /// A coordinate as a person would write it: at most two decimals, no `-0`.
 pub fn num(v: f64) -> String {
@@ -17,7 +18,7 @@ fn point(at: Pt, expr: &Option<String>, origin: Pt) -> String {
 
 /// The path part of a `line` statement. Literals are written relative to `origin`, the
 /// top-left of the group the line belongs to.
-pub fn path_text(from: &Endpoint, to: &Endpoint, plan: &Plan, origin: Pt) -> String {
+pub(crate) fn path_text(from: &Endpoint, to: &Endpoint, plan: &Plan, origin: Pt) -> String {
     let end = point(to.at, &to.expr, origin);
     let mut s = point(from.at, &from.expr, origin);
     for hop in &plan.hops {
@@ -50,7 +51,7 @@ pub fn path_text(from: &Endpoint, to: &Endpoint, plan: &Plan, origin: Pt) -> Str
     s
 }
 
-pub fn statement(id: &str, path: &str, attrs: &str) -> String {
+pub(crate) fn statement(id: &str, path: &str, attrs: &str) -> String {
     if attrs.is_empty() {
         format!("line {id} {path}")
     } else {

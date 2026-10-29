@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use kashika_check::ctx::Ctx;
 use kashika_check::free::{Axis, free_intervals};
 use kashika_geom::{Hit, Pt, Rect, TOLERANCE, dot, inside_runs, seg_hit};
@@ -7,26 +9,28 @@ use crate::text::num;
 use crate::{Endpoint, SQUARE, Style};
 
 /// Lanes per axis that detours pick from: those nearest either endpoint.
-pub const DETOUR_LANES: usize = 16;
+pub(crate) const DETOUR_LANES: usize = 16;
+/// One-lane plans scored with `kashika check`: the best of a geometric pre-pass.
+pub(crate) const MAX_LANE_PLANS: usize = 32;
 /// Detours scored with `kashika check`: the best of a geometric pre-pass.
-pub const MAX_DETOURS: usize = 32;
+pub(crate) const MAX_DETOURS: usize = 32;
 
 /// An `x` or `y` target: relative to a box corner where possible, otherwise a literal.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Lane {
-    pub value: f64,
-    pub expr: Option<String>,
+pub(crate) struct Lane {
+    pub(crate) value: f64,
+    pub(crate) expr: Option<String>,
 }
 
 /// A `curve via` control point.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Ctrl {
-    pub at: Pt,
-    pub expr: Option<String>,
+pub(crate) struct Ctrl {
+    pub(crate) at: Pt,
+    pub(crate) expr: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Hop {
+pub(crate) enum Hop {
     /// Straight to the end point.
     To,
     /// `hv <end>`
@@ -43,33 +47,45 @@ pub enum Hop {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Plan {
-    pub hops: Vec<Hop>,
+pub(crate) struct Plan {
+    pub(crate) hops: Vec<Hop>,
     /// The lane the path is routed along: `("x", v)` when a vertical segment runs at x=v. For
     /// a detour, its second lane.
-    pub lane: Option<(&'static str, f64)>,
+    pub(crate) lane: Option<(&'static str, f64)>,
 }
 
-pub fn generate(scene: &Scene, from: &Endpoint, to: &Endpoint, style: Style) -> Vec<Plan> {
-    generate_skipping(scene, from, to, style, &[])
-}
-
-/// Like [`generate`]; lines in `skip` aren't obstacles when picking detours.
-pub fn generate_skipping(
-    scene: &Scene,
+/// The plans worth scoring, without two that draw the same path. Lines in `skip` aren't
+/// obstacles when picking lanes.
+pub(crate) fn generate(
+    ctx: &Ctx,
     from: &Endpoint,
     to: &Endpoint,
     style: Style,
     skip: &[&str],
 ) -> Vec<Plan> {
-    match style {
+    let plans = match style {
         Style::Bezier => curves(from, to),
-        Style::Corner | Style::Arc => orthogonal(scene, from, to, skip),
-    }
+        Style::Corner | Style::Arc => orthogonal(ctx, from, to, skip),
+    };
+    let mut seen: Vec<Vec<(i64, i64)>> = Vec::new();
+    plans
+        .into_iter()
+        .filter(|p| match corners(from.at, to.at, p) {
+            Some(pts) => {
+                let k = key(pts);
+                let new = !seen.contains(&k);
+                if new {
+                    seen.push(k);
+                }
+                new
+            }
+            None => true,
+        })
+        .collect()
 }
 
 /// The corners of an orthogonal plan from `a` to `b`; `None` for curves.
-pub fn corners(a: Pt, b: Pt, plan: &Plan) -> Option<Vec<Pt>> {
+pub(crate) fn corners(a: Pt, b: Pt, plan: &Plan) -> Option<Vec<Pt>> {
     let mut pts = vec![a];
     for hop in &plan.hops {
         let at = pts[pts.len() - 1];
@@ -85,53 +101,76 @@ pub fn corners(a: Pt, b: Pt, plan: &Plan) -> Option<Vec<Pt>> {
     Some(pts)
 }
 
-fn orthogonal(scene: &Scene, a: &Endpoint, b: &Endpoint, skip: &[&str]) -> Vec<Plan> {
-    let simple = |hops: Vec<Hop>| Plan { hops, lane: None };
-    let mut out = Vec::new();
+/// Whether a path through `pts` has a zero-length segment or one that reverses the one before.
+pub(crate) fn doubles_back(pts: &[Pt]) -> bool {
+    pts.windows(2).any(|w| w[0].dist(w[1]) <= TOLERANCE)
+        || pts
+            .windows(3)
+            .any(|w| dot((w[1] - w[0]).norm(), (w[2] - w[1]).norm()) < -SQUARE)
+}
+
+/// Points at 0.1px, without repeats or points in the middle of a straight run, so paths that
+/// draw the same shape get the same key.
+pub(crate) fn key(pts: impl IntoIterator<Item = Pt>) -> Vec<(i64, i64)> {
+    let mut key: Vec<(i64, i64)> = Vec::new();
+    for p in pts {
+        let q = ((p.x * 10.0).round() as i64, (p.y * 10.0).round() as i64);
+        if key.last() == Some(&q) {
+            continue;
+        }
+        if let [.., a, b] = key[..] {
+            let (u, v) = ((b.0 - a.0, b.1 - a.1), (q.0 - b.0, q.1 - b.1));
+            if u.0 * v.1 == u.1 * v.0 && u.0 * v.0 + u.1 * v.1 > 0 {
+                key.pop();
+            }
+        }
+        key.push(q);
+    }
+    key
+}
+
+/// The straight path, `hv` and `vh`, the best [`MAX_LANE_PLANS`] one-lane plans and the best
+/// detours. Plans that double back are dropped.
+fn orthogonal(ctx: &Ctx, a: &Endpoint, b: &Endpoint, skip: &[&str]) -> Vec<Plan> {
+    let mut simple = Vec::new();
     if (a.at.x - b.at.x).abs() <= 0.5 || (a.at.y - b.at.y).abs() <= 0.5 {
-        out.push(simple(vec![Hop::To]));
+        simple.push(vec![Hop::To]);
     }
-    out.push(simple(vec![Hop::Hv]));
-    out.push(simple(vec![Hop::Vh]));
-    for lane in lanes(scene, a.at.x, b.at.x, "x") {
-        let v = lane.value;
-        out.push(Plan {
-            hops: vec![Hop::X(lane), Hop::Vh],
-            lane: Some(("x", v)),
-        });
+    simple.push(vec![Hop::Hv]);
+    simple.push(vec![Hop::Vh]);
+    let mut out: Vec<Plan> = simple
+        .into_iter()
+        .map(|hops| Plan { hops, lane: None })
+        .filter(|p| !corners(a.at, b.at, p).is_some_and(|pts| doubles_back(&pts)))
+        .collect();
+    let field = Field::new(ctx, a, b, skip);
+    let mut found = Vec::new();
+    for (axis, cross) in [(Axis::X, Hop::Vh), (Axis::Y, Hop::Hv)] {
+        for lane in lanes(ctx.scene, a, b, axis) {
+            let hops = vec![hop(axis.name(), &lane), cross.clone()];
+            field.consider(&mut found, hops, (axis.name(), lane.value));
+        }
     }
-    for lane in lanes(scene, a.at.y, b.at.y, "y") {
-        let v = lane.value;
-        out.push(Plan {
-            hops: vec![Hop::Y(lane), Hop::Hv],
-            lane: Some(("y", v)),
-        });
-    }
-    out.extend(detours(scene, a, b, skip));
+    out.extend(best(found, MAX_LANE_PLANS));
+    out.extend(detours(ctx, &field, a, b, skip));
     out
+}
+
+/// The `n` plans with the best estimates, in that order; ties keep the order they were found.
+fn best(mut found: Vec<(Estimate, Plan)>, n: usize) -> impl Iterator<Item = Plan> {
+    found.sort_by_key(|f| f.0);
+    found.into_iter().take(n).map(|(_, plan)| plan)
 }
 
 /// Three- and four-elbow plans through two or three lanes: `x -> y -> hv` and `y -> x -> vh`
 /// end on the other axis than they start, `x -> y -> x -> vh` and `y -> x -> y -> hv` on the
-/// same one. A geometric pre-pass drops paths that enter a box or leave or enter a side
-/// anchor the wrong way, and keeps the [`MAX_DETOURS`] best by estimated crossings,
+/// same one. A geometric pre-pass drops paths that enter a box, double back, or leave or enter
+/// a side anchor the wrong way, and keeps the [`MAX_DETOURS`] best by estimated crossings,
 /// near-misses, segments and length.
-fn detours(scene: &Scene, a: &Endpoint, b: &Endpoint, skip: &[&str]) -> Vec<Plan> {
-    let ctx = Ctx::new(scene);
-    let xs = detour_lanes(&ctx, a, b, Axis::X, skip);
-    let ys = detour_lanes(&ctx, a, b, Axis::Y, skip);
-    let field = Field::new(&ctx, a, b, skip);
+fn detours(ctx: &Ctx, field: &Field, a: &Endpoint, b: &Endpoint, skip: &[&str]) -> Vec<Plan> {
+    let xs = detour_lanes(ctx, a, b, Axis::X, skip);
+    let ys = detour_lanes(ctx, a, b, Axis::Y, skip);
     let mut found: Vec<(Estimate, Plan)> = Vec::new();
-    let mut consider = |hops: Vec<Hop>, lane: (&'static str, f64)| {
-        let plan = Plan {
-            hops,
-            lane: Some(lane),
-        };
-        let pts = corners(a.at, b.at, &plan).expect("orthogonal hops");
-        if let Some(e) = field.estimate(&pts) {
-            found.push((e, plan));
-        }
-    };
     for (lead, back) in [("x", "y"), ("y", "x")] {
         let (outer, inner) = if lead == "x" { (&xs, &ys) } else { (&ys, &xs) };
         let (cross, along) = if lead == "x" {
@@ -142,9 +181,14 @@ fn detours(scene: &Scene, a: &Endpoint, b: &Endpoint, skip: &[&str]) -> Vec<Plan
         for l1 in outer {
             for l2 in inner {
                 let lane = (back, l2.value);
-                consider(vec![hop(lead, l1), hop(back, l2), cross.clone()], lane);
+                field.consider(
+                    &mut found,
+                    vec![hop(lead, l1), hop(back, l2), cross.clone()],
+                    lane,
+                );
                 for l3 in outer {
-                    consider(
+                    field.consider(
+                        &mut found,
                         vec![hop(lead, l1), hop(back, l2), hop(lead, l3), along.clone()],
                         lane,
                     );
@@ -152,12 +196,7 @@ fn detours(scene: &Scene, a: &Endpoint, b: &Endpoint, skip: &[&str]) -> Vec<Plan
             }
         }
     }
-    found.sort_by_key(|f| f.0);
-    found
-        .into_iter()
-        .take(MAX_DETOURS)
-        .map(|(_, plan)| plan)
-        .collect()
+    best(found, MAX_DETOURS).collect()
 }
 
 fn hop(axis: &str, lane: &Lane) -> Hop {
@@ -177,7 +216,7 @@ fn detour_lanes(ctx: &Ctx, a: &Endpoint, b: &Endpoint, axis: Axis, skip: &[&str]
         Axis::X => (a.at.x, b.at.x, (a.at.y, b.at.y), scene.size.0),
         Axis::Y => (a.at.y, b.at.y, (a.at.x, b.at.x), scene.size.1),
     };
-    let mut pool = lanes(scene, pa, pb, axis.name());
+    let mut pool = lanes(scene, a, b, axis);
     for (lo, hi) in free_intervals(ctx, axis, band, (0.0, limit), skip) {
         if pool.iter().any(|l| lo <= l.value && l.value <= hi) {
             continue;
@@ -222,20 +261,20 @@ struct Estimate(usize, usize, usize, f64);
 impl Eq for Estimate {}
 
 impl PartialOrd for Estimate {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
 impl Ord for Estimate {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    fn cmp(&self, other: &Self) -> Ordering {
         (self.0, self.1, self.2)
             .cmp(&(other.0, other.1, other.2))
             .then(self.3.total_cmp(&other.3))
     }
 }
 
-/// The obstacles a detour's corners are measured against.
+/// The obstacles a plan's corners are measured against.
 struct Field<'a> {
     boxes: Vec<(&'a str, Rect, &'a [Pt])>,
     pieces: Vec<(Pt, Pt)>,
@@ -267,11 +306,28 @@ impl<'a> Field<'a> {
         }
     }
 
-    /// `None` when the path doubles back on a corner, leaves or enters a side anchor the wrong
-    /// way, or enters a box. The first and last segments may touch the boxes they attach to.
+    /// Adds `hops` to `found` with its estimate, unless [`Field::estimate`] rules it out.
+    fn consider(
+        &self,
+        found: &mut Vec<(Estimate, Plan)>,
+        hops: Vec<Hop>,
+        lane: (&'static str, f64),
+    ) {
+        let plan = Plan {
+            hops,
+            lane: Some(lane),
+        };
+        let pts = corners(self.from.at, self.to.at, &plan).expect("orthogonal hops");
+        if let Some(e) = self.estimate(&pts) {
+            found.push((e, plan));
+        }
+    }
+
+    /// `None` when the path doubles back, leaves or enters a side anchor the wrong way, or
+    /// enters a box. The first and last segments may touch the boxes they attach to.
     fn estimate(&self, pts: &[Pt]) -> Option<Estimate> {
         let n = pts.len() - 1;
-        if pts.windows(2).any(|w| w[0].dist(w[1]) <= TOLERANCE) {
+        if doubles_back(pts) {
             return None;
         }
         let dir = |i: usize| (pts[i + 1] - pts[i]).norm();
@@ -328,60 +384,105 @@ impl<'a> Field<'a> {
     }
 }
 
-/// Lane positions on one axis: the midpoint between the endpoints, and `2 × clearance`
-/// outside each box edge, written relative to the box's corner so the lane follows the box.
-fn lanes(scene: &Scene, a: f64, b: f64, axis: &str) -> Vec<Lane> {
+/// Lane positions on one axis, inside the canvas: the midpoint between the endpoints, and
+/// `2 × clearance` outside each box edge, written relative to the box's corner so the lane
+/// follows the box. Of lanes within 0.5px of each other only one is kept: one on a box the
+/// path starts or ends at, otherwise the box nearest the endpoints, before the midpoint. They
+/// come in that order of preference.
+fn lanes(scene: &Scene, a: &Endpoint, b: &Endpoint, axis: Axis) -> Vec<Lane> {
     let g = 2.0 * scene.clearance;
     let gap = num(g);
-    let limit = if axis == "x" {
-        scene.size.0
-    } else {
-        scene.size.1
+    let (pa, pb, limit) = match axis {
+        Axis::X => (a.at.x, b.at.x, scene.size.0),
+        Axis::Y => (a.at.y, b.at.y, scene.size.1),
     };
-    let mid = match scene.grid {
-        Some(grid) if grid > 0.0 => ((a + b) / 2.0 / grid).round() * grid,
-        _ => ((a + b) / 2.0).round(),
-    };
-    let mut out = vec![Lane {
-        value: mid,
-        expr: None,
-    }];
+    let ends = Rect::new(
+        a.at.x.min(b.at.x),
+        a.at.y.min(b.at.y),
+        (a.at.x - b.at.x).abs(),
+        (a.at.y - b.at.y).abs(),
+    );
+    let owns = |id: &str| [a, b].iter().any(|e| e.owner.as_deref() == Some(id));
+    let mut pool: Vec<(Rank, Lane)> = vec![(
+        Rank(true, true, 0.0),
+        Lane {
+            value: snap(scene, (pa + pb) / 2.0),
+            expr: None,
+        },
+    )];
     for s in scene
         .shapes
         .iter()
         .filter(|s| s.kind != ShapeKind::Group && s.layer.is_normal())
     {
         let (r, id) = (s.rect, &s.id);
-        if axis == "x" {
-            out.push(Lane {
-                value: r.x - g,
-                expr: Some(format!("{id}.tl+(-{gap},0)")),
-            });
-            out.push(Lane {
-                value: r.right() + g,
-                expr: Some(format!("{id}.tr+({gap},0)")),
-            });
-        } else {
-            out.push(Lane {
-                value: r.y - g,
-                expr: Some(format!("{id}.tl+(0,-{gap})")),
-            });
-            out.push(Lane {
-                value: r.bottom() + g,
-                expr: Some(format!("{id}.bl+(0,{gap})")),
-            });
+        let rank = Rank(false, !owns(id), gap_between(r, ends));
+        let (before, after) = match axis {
+            Axis::X => (
+                (r.x - g, format!("{id}.tl+(-{gap},0)")),
+                (r.right() + g, format!("{id}.tr+({gap},0)")),
+            ),
+            Axis::Y => (
+                (r.y - g, format!("{id}.tl+(0,-{gap})")),
+                (r.bottom() + g, format!("{id}.bl+(0,{gap})")),
+            ),
+        };
+        for (value, expr) in [before, after] {
+            pool.push((
+                rank,
+                Lane {
+                    value,
+                    expr: Some(expr),
+                },
+            ));
         }
     }
-    out.retain(|l| l.value > 0.0 && l.value < limit);
-    out
+    pool.retain(|(_, l)| l.value > 0.0 && l.value < limit);
+    pool.sort_by(|p, q| p.1.value.total_cmp(&q.1.value));
+    let mut kept: Vec<(Rank, Lane)> = Vec::new();
+    let mut first = f64::NEG_INFINITY;
+    for (rank, lane) in pool {
+        match kept.last_mut() {
+            Some(last) if lane.value - first <= 0.5 => {
+                if rank < last.0 {
+                    *last = (rank, lane);
+                }
+            }
+            _ => {
+                first = lane.value;
+                kept.push((rank, lane));
+            }
+        }
+    }
+    kept.sort_by(|p, q| p.0.partial_cmp(&q.0).unwrap_or(Ordering::Equal));
+    kept.into_iter().map(|(_, l)| l).collect()
+}
+
+/// How a lane ranks among lanes at the same position, lower first: whether it is a literal,
+/// whether it is on a box other than an endpoint's, and that box's distance from the endpoints.
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+struct Rank(bool, bool, f64);
+
+/// The distance between two rects, 0 when they touch or overlap.
+fn gap_between(r: Rect, s: Rect) -> f64 {
+    let dx = (s.x - r.right()).max(r.x - s.right()).max(0.0);
+    let dy = (s.y - r.bottom()).max(r.y - s.bottom()).max(0.0);
+    dx.hypot(dy)
 }
 
 fn curves(a: &Endpoint, b: &Endpoint) -> Vec<Plan> {
     let d = a.at.dist(b.at);
+    if d <= TOLERANCE {
+        return Vec::new();
+    }
     let mut out = Vec::new();
     for amount in [(d * 0.15).round(), (d * 0.3).round()] {
-        if amount >= 1.0 {
-            for left in [true, false] {
+        if amount < 1.0 {
+            continue;
+        }
+        for left in [true, false] {
+            let c = bulge(a.at, b.at, left, amount);
+            if square(a, b, c, c) {
                 out.push(Plan {
                     hops: vec![Hop::Curve { left, amount }],
                     lane: None,
@@ -399,8 +500,28 @@ fn curves(a: &Endpoint, b: &Endpoint) -> Vec<Plan> {
     out
 }
 
+/// The control point of `curve left|right <amount>` from `a` to `b`.
+fn bulge(a: Pt, b: Pt, left: bool, amount: f64) -> Pt {
+    let d = (b - a).norm();
+    let normal = if left {
+        Pt::new(d.y, -d.x)
+    } else {
+        Pt::new(-d.y, d.x)
+    };
+    a.lerp(b, 0.5) + normal * (2.0 * amount)
+}
+
+/// Whether a curve from `a` that leaves toward `c1` and reaches `b` from `c2` leaves and
+/// enters side anchors along their normals.
+fn square(a: &Endpoint, b: &Endpoint, c1: Pt, c2: Pt) -> bool {
+    a.side
+        .is_none_or(|s| dot((c1 - a.at).norm(), s.outward()) > SQUARE)
+        && b.side
+            .is_none_or(|s| dot((b.at - c2).norm(), s.outward()) < -SQUARE)
+}
+
 /// A control point `k` px out from an endpoint along its side's normal, written as an offset
-/// from the endpoint's reference when that reference has no offset of its own.
+/// from the endpoint's reference, folding in the reference's own offset.
 fn ctrl(e: &Endpoint, k: f64) -> Ctrl {
     let Some(side) = e.side else {
         return Ctrl {
@@ -409,11 +530,10 @@ fn ctrl(e: &Endpoint, k: f64) -> Ctrl {
         };
     };
     let off = side.outward() * k;
-    let expr = e
-        .expr
-        .as_ref()
-        .filter(|x| !x.contains('+') && !x.contains("-("))
-        .map(|x| format!("{x}+({},{})", num(off.x), num(off.y)));
+    let expr = e.anchor.as_ref().map(|(base, o)| {
+        let d = *o + off;
+        format!("{base}+({},{})", num(d.x), num(d.y))
+    });
     Ctrl {
         at: e.at + off,
         expr,

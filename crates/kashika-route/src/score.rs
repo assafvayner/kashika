@@ -8,16 +8,16 @@ use kashika_model::{Line, Scene};
 
 use crate::{Corridor, Crossing};
 
-pub struct Score {
-    pub crossed: Vec<Crossing>,
-    pub near: usize,
-    pub length: f64,
+pub(crate) struct Score {
+    pub(crate) crossed: Vec<Crossing>,
+    pub(crate) near: usize,
+    pub(crate) length: f64,
 }
 
 /// Scores `probe` with the findings `kashika check` reports for it, suppressed ones included.
 /// Findings that also name `ignore`, the line being rerouted, don't count. `None` means the
 /// probe enters a box.
-pub fn score(scene: &Scene, probe: &Line, ignore: Option<&str>) -> Option<Score> {
+pub(crate) fn score(scene: &Scene, probe: &Line, ignore: Option<&str>) -> Option<Score> {
     let mine: Vec<Diagnostic> = kashika_check::check_deferred(scene)
         .into_iter()
         .filter(|d| involves(d, &probe.id) && !ignore.is_some_and(|id| involves(d, id)))
@@ -65,19 +65,19 @@ fn at(d: &Diagnostic) -> Pt {
 /// The free interval, as `kashika inspect --corridors` reports it, that holds a lane at
 /// `value` running across `span`. Lines in `skip` aren't obstacles. `None` when the lane
 /// doesn't keep `clearance`.
-pub fn corridor(
-    scene: &Scene,
+pub(crate) fn corridor(
+    ctx: &Ctx,
     axis: &'static str,
     value: f64,
     span: (f64, f64),
     skip: &[&str],
 ) -> Option<Corridor> {
     let (free_axis, within) = if axis == "x" {
-        (Axis::X, (0.0, scene.size.0))
+        (Axis::X, (0.0, ctx.scene.size.0))
     } else {
-        (Axis::Y, (0.0, scene.size.1))
+        (Axis::Y, (0.0, ctx.scene.size.1))
     };
-    free_intervals(&Ctx::new(scene), free_axis, span, within, skip)
+    free_intervals(ctx, free_axis, span, within, skip)
         .into_iter()
         .find(|&(lo, hi)| lo - TOLERANCE <= value && value <= hi + TOLERANCE)
         .map(|(lo, hi)| Corridor {

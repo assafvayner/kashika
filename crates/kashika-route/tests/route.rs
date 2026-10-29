@@ -1,39 +1,10 @@
 use kashika_geom::Pt;
-use kashika_route::*;
+use kashika_route::{Corridor, Error, Request, Style, Suggestion, suggest};
 
 const WALL: &str = "diagram \"w\" size (460,240)\n\
 box a \"A\" at (20,100) size (100,40)\n\
 box wall \"W\" at (200,40) size (40,160)\n\
 box b \"B\" at (320,100) size (100,40)\n";
-
-#[test]
-fn parses_reference_owner_and_side() {
-    assert_eq!(
-        parse_ref("pg.left@0.25+(0,4)"),
-        (Some("pg".into()), Some(Side::Left))
-    );
-    assert_eq!(parse_ref("db.tl"), (Some("db".into()), None));
-    assert_eq!(parse_ref("fan"), (Some("fan".into()), None));
-    assert_eq!(parse_ref("(10,20)"), (None, None));
-}
-
-#[test]
-fn resolves_points_through_the_model() {
-    let (a, b) = resolve_endpoints(WALL, "a.top", "(300,20)").unwrap();
-    assert_eq!(a.at, Pt::new(70.0, 100.0));
-    assert_eq!(a.expr.as_deref(), Some("a.top"));
-    assert_eq!(a.side, Some(Side::Top));
-    assert_eq!(b.at, Pt::new(300.0, 20.0));
-    assert_eq!(b.expr, None);
-}
-
-#[test]
-fn bad_points_report_diagnostics() {
-    match resolve_endpoints(WALL, "a.tpo", "b.top") {
-        Err(Error::Diagnostics(d)) => assert_eq!(d[0].code, "unknown-anchor"),
-        other => panic!("{other:?}"),
-    }
-}
 
 fn scene(src: &str) -> kashika_model::Scene {
     let (s, d) = kashika_model::compile(src);
@@ -44,83 +15,6 @@ fn scene(src: &str) -> kashika_model::Scene {
 const DIAG: &str = "diagram \"c\" size (420,220)\n\
 box a at (20,20) size (100,40)\n\
 box b at (300,160) size (100,40)\n";
-
-#[test]
-fn orthogonal_plans_include_lanes_around_boxes() {
-    let s = scene(WALL);
-    let (a, b) = resolve_endpoints(WALL, "a.top", "b.top").unwrap();
-    let plans = generate(&s, &a, &b, Style::Corner);
-    let lane = Hop::Y(Lane {
-        value: 28.0,
-        expr: Some("wall.tl+(0,-12)".into()),
-    });
-    let over = plans
-        .iter()
-        .find(|p| p.hops.first() == Some(&lane))
-        .expect("a lane above the wall");
-    assert_eq!(
-        path_text(&a, &b, over, Pt::default()),
-        "a.top -> y wall.tl+(0,-12) -> hv b.top"
-    );
-    assert!(
-        plans.iter().any(|p| p.hops == vec![Hop::To]),
-        "aligned endpoints get a straight plan"
-    );
-}
-
-#[test]
-fn literals_are_written_in_the_line_frame() {
-    let from = Endpoint::new("(120,140)", Pt::new(120.0, 140.0));
-    let to = Endpoint::new("b.left", Pt::new(280.0, 160.0));
-    let plan = Plan {
-        hops: vec![
-            Hop::X(Lane {
-                value: 200.0,
-                expr: None,
-            }),
-            Hop::Vh,
-        ],
-        lane: Some(("x", 200.0)),
-    };
-    assert_eq!(
-        path_text(&from, &to, &plan, Pt::new(100.0, 100.0)),
-        "(20,40) -> x 100 -> vh b.left"
-    );
-}
-
-#[test]
-fn bezier_plans_curve_both_ways_and_via_the_sides() {
-    let s = scene(DIAG);
-    let (a, b) = resolve_endpoints(DIAG, "a.right", "b.left").unwrap();
-    let texts: Vec<String> = generate(&s, &a, &b, Style::Bezier)
-        .iter()
-        .map(|p| path_text(&a, &b, p, Pt::default()))
-        .collect();
-    assert!(
-        texts.contains(&"a.right -> curve left 34 b.left".to_string()),
-        "{texts:?}"
-    );
-    assert!(texts.contains(&"a.right -> curve right 68 b.left".to_string()));
-    assert!(
-        texts.contains(&"a.right -> curve via a.right+(76,0) b.left+(-76,0) b.left".to_string())
-    );
-}
-
-#[test]
-fn statements_and_numbers() {
-    assert_eq!(
-        statement("ab", "a.right -> b.left", "end=arrow"),
-        "line ab a.right -> b.left end=arrow"
-    );
-    assert_eq!(
-        statement("ab", "a.right -> b.left", ""),
-        "line ab a.right -> b.left"
-    );
-    assert_eq!(
-        (num(12.0), num(-0.0), num(0.256)),
-        ("12".into(), "0".into(), "0.26".into())
-    );
-}
 
 static OPTS: kashika_model::Options = kashika_model::Options {
     path: None,
@@ -272,17 +166,16 @@ fn grid(n: usize) -> String {
 }
 
 #[test]
-fn detour_search_stays_bounded_on_a_large_diagram() {
-    let src = grid(10);
-    let s = scene(&src);
-    let (a, b) = resolve_endpoints(&src, "b0_0.right", "b9_9.left").unwrap();
+fn route_stays_fast_on_a_large_diagram() {
+    let src = grid(20);
     let start = std::time::Instant::now();
-    let plans = generate(&s, &a, &b, Style::Corner);
+    let s = suggest(&req(&src, "b0_0.bottom", "b1_0.top", Style::Corner)).unwrap();
     let took = start.elapsed();
-    let detours = plans.iter().filter(|p| p.hops.len() >= 3).count();
-    assert!(detours > 0 && detours <= MAX_DETOURS, "{detours} detours");
-    assert!(plans.len() <= 3 + 2 * (2 * 100 + 1) + MAX_DETOURS);
-    assert!(took.as_secs() < 2, "generating plans took {took:?}");
+    assert_eq!(
+        s.candidates[0].statement,
+        "line b0_0_b1_0 b0_0.bottom -> b1_0.top end=arrow"
+    );
+    assert!(took.as_secs() < 10, "route took {took:?}");
 
     let src = grid(5);
     let mut r = req(&src, "b0_0.right", "b4_4.left", Style::Corner);
@@ -617,5 +510,95 @@ group g \"G\" at (60,60) size (480,300) {{\n\
             .filter(|d| d.code == "through")
             .count();
         assert_eq!(through, 0, "{}", c.statement);
+    }
+}
+
+#[test]
+fn crossings_name_unnamed_lines_as_check_does() {
+    let src = format!("{WALL}line ab a.top -> b.top\nline (160,10) -> (160,230)\n");
+    let s = reroute(&src, "ab", Style::Corner).unwrap();
+    let c = &s.candidates[0];
+    assert_eq!(c.crossings, 1, "{c:?}");
+    assert_eq!(c.crossed[0].line, "line@L6");
+    let replaced = src.replace("line ab a.top -> b.top", &c.statement);
+    let (scene, _) = kashika_model::compile(&replaced);
+    assert!(scene.lines.iter().any(|l| l.id == "line@L6"));
+}
+
+#[test]
+fn existing_lines_between_the_same_shapes_are_listed() {
+    let src = format!(
+        "{WALL}line ab a.top -> y 20 -> hv b.top\n\
+line ba b.bottom -> y 220 -> hv a.bottom\n\
+line aw a.right -> wall.left\n"
+    );
+    let s = suggest(&req(&src, "a.right", "b.left", Style::Corner)).unwrap();
+    assert_eq!(s.existing_lines, ["ab", "ba"]);
+    let s = reroute(&src, "ab", Style::Corner).unwrap();
+    assert!(s.existing_lines.is_empty());
+}
+
+#[test]
+fn mixed_points_from_the_command_line_keep_their_text() {
+    let s = suggest(&req(DIAG, "(a.right.x, 100)", "b.left", Style::Corner)).unwrap();
+    assert!(!s.candidates.is_empty());
+    for c in &s.candidates {
+        assert!(
+            c.statement.starts_with("line p_b (a.right.x, 100) -> "),
+            "{}",
+            c.statement
+        );
+    }
+    agrees_with_check(DIAG, &s);
+}
+
+#[test]
+fn control_points_follow_an_endpoint_written_with_spaces() {
+    let s = suggest(&req(DIAG, "a.right + (0, 4)", "b.left", Style::Bezier)).unwrap();
+    assert_eq!(
+        s.candidates[0].statement,
+        "line a_b a.right + (0, 4) -> curve via a.right+(75,4) b.left+(-75,0) b.left end=arrow"
+    );
+    agrees_with_check(DIAG, &s);
+}
+
+#[test]
+fn probes_carry_the_rerouted_line_attributes() {
+    let line = "line ab a.top -> b.top start=dot end=arrow label=\"x\" radius=4";
+    let src = format!("{WALL}{line}\nline blocker (160,10) -> (160,230)\n");
+    for style in [Style::Corner, Style::Arc] {
+        let s = suggest(&Request {
+            src: &src,
+            from: None,
+            to: None,
+            style,
+            line: Some("ab"),
+            radius: 6.0,
+            max: 10,
+            opts: &OPTS,
+        })
+        .unwrap();
+        assert!(!s.candidates.is_empty());
+        for c in &s.candidates {
+            assert!(
+                c.statement.contains("start=dot end=arrow label=\"x\""),
+                "{}",
+                c.statement
+            );
+            let (scene, diags) = kashika_model::compile(&src.replace(line, &c.statement));
+            assert!(diags.is_empty(), "{}: {diags:#?}", c.statement);
+            let mine: Vec<_> = kashika_check::check(&scene)
+                .into_iter()
+                .filter(|d| d.elements.iter().any(|e| e.id == "ab"))
+                .collect();
+            let count = |codes: &[&str]| mine.iter().filter(|d| codes.contains(&d.code)).count();
+            assert_eq!(count(&["cross"]), c.crossings, "{}", c.statement);
+            assert_eq!(
+                count(&["near", "shared-segment"]),
+                c.near,
+                "{}",
+                c.statement
+            );
+        }
     }
 }
