@@ -18,6 +18,8 @@ const MAX_IMPORT_DEPTH: usize = 32;
 const MAX_INSTANCES: usize = 1000;
 /// Largest library file read.
 const MAX_IMPORT_BYTES: u64 = 1024 * 1024;
+/// Keys a `shape <name> from "<file.svg>"` takes.
+pub(crate) const SHAPE_FROM_KEYS: &[&str] = &["outline", "text-area"];
 /// Import chains longer than this print only their first two and last hops.
 const HOPS_SHOWN: usize = 4;
 
@@ -682,7 +684,7 @@ fn svg_shape(
     dir: &Path,
     ctx: &mut Ctx,
 ) -> Option<SvgShape> {
-    let a = Attrs::new(list, "shape", &["outline", "text-area"], &mut ctx.diags);
+    let a = Attrs::new(list, "shape", SHAPE_FROM_KEYS, &mut ctx.diags);
     let hull = a
         .get("outline")
         .and_then(|x| attrs::word(x, &["bbox", "hull"], &mut ctx.diags))

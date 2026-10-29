@@ -1,0 +1,10 @@
+// spec: 3, 3a, 7
+// raster: png
+// Images take `layer=under|over` like boxes, and `allow=`/`reason=` suppress their findings.
+diagram "image layers" size (420,140) background=#ffffff
+image back "photo.png" at (10,38) size (128,64) layer=under
+box on_back "on top" at (40,50) size (60,40)
+box under_front "under" at (160,50) size (60,40)
+image front "photo.png" at (180,30) size (64,32) layer=over
+box beside "beside" at (300,50) size (80,40)
+image badge "photo.png" at (340,30) size (64,32) allow=overlap:beside reason="badge on the corner"

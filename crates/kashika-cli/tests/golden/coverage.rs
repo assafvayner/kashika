@@ -2,6 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use kashika_diag::{ERROR_CODES, LINT_CODES};
+use kashika_syntax::RESERVED_IDS;
+use kashika_syntax::ast::{Attr, SegKind, ShapeBody, Side, Stmt, Target, Value};
 use libtest_mimic::{Failed, Trial};
 
 use crate::case::{self, Case, Suite};
@@ -96,6 +98,7 @@ pub fn trials() -> Vec<Trial> {
             "coverage/builtin-shapes-and-icons",
             builtin_shapes_and_icons,
         ),
+        Trial::test("coverage/attributes-and-values", attributes_and_values),
         Trial::test("coverage/map", coverage_map),
     ]
 }
@@ -210,6 +213,171 @@ fn builtin_shapes_and_icons() -> Result<(), Failed> {
             .any(|c| c.src.contains(&format!("icon=\"{icon}\"")))
         {
             problems.push(format!("no render case draws bundled icon `{icon}`"));
+        }
+    }
+    done(problems)
+}
+
+/// What the golden inputs (and the libraries next to them) use: (statement, attribute key)
+/// pairs, `start=`/`end=` names, `label-side` values and segment kinds.
+#[derive(Default)]
+struct Usage {
+    keys: BTreeSet<(&'static str, String)>,
+    ends: BTreeSet<String>,
+    sides: BTreeSet<String>,
+    segments: BTreeSet<&'static str>,
+}
+
+/// Segment kinds as `segment_kind` names them; the exhaustive match keeps them in step with
+/// the parser, and `RESERVED_IDS` must each start one.
+const SEGMENT_KINDS: &[&str] = &[
+    "<point>",
+    "h",
+    "v",
+    "x <n>",
+    "x <point>",
+    "y <n>",
+    "y <point>",
+    "hv",
+    "vh",
+    "curve left",
+    "curve right",
+    "curve via",
+];
+
+fn segment_kind(k: &SegKind) -> &'static str {
+    match k {
+        SegKind::To(_) => "<point>",
+        SegKind::H(_) => "h",
+        SegKind::V(_) => "v",
+        SegKind::X(Target::Num(_)) => "x <n>",
+        SegKind::X(Target::Point(_)) => "x <point>",
+        SegKind::Y(Target::Num(_)) => "y <n>",
+        SegKind::Y(Target::Point(_)) => "y <point>",
+        SegKind::Hv(_) => "hv",
+        SegKind::Vh(_) => "vh",
+        SegKind::Curve {
+            side: Side::Left, ..
+        } => "curve left",
+        SegKind::Curve {
+            side: Side::Right, ..
+        } => "curve right",
+        SegKind::CurveVia { .. } => "curve via",
+    }
+}
+
+impl Usage {
+    fn attrs(&mut self, kind: &'static str, attrs: &[Attr]) {
+        for a in attrs {
+            self.keys.insert((kind, a.key.name.clone()));
+        }
+    }
+
+    fn stmts(&mut self, stmts: &[Stmt]) {
+        for stmt in stmts {
+            match stmt {
+                Stmt::Diagram(d) => self.attrs("diagram", &d.attrs),
+                Stmt::Style(s) => self.attrs("style", &s.attrs),
+                Stmt::Box(n) => {
+                    self.attrs("box", &n.attrs);
+                    for item in n.block.iter().flatten() {
+                        self.attrs("block text", &item.attrs);
+                    }
+                }
+                Stmt::Group(g) => {
+                    self.attrs("group", &g.node.attrs);
+                    self.stmts(&g.children);
+                }
+                Stmt::Junction(j) => self.attrs("junction", &j.attrs),
+                Stmt::Text(t) => self.attrs("text", &t.attrs),
+                Stmt::Image(i) => self.attrs("image", &i.attrs),
+                Stmt::Shape(s) => {
+                    if let ShapeBody::From { attrs, .. } = &s.body {
+                        self.attrs("shape from", attrs);
+                    }
+                }
+                Stmt::Line(l) => {
+                    self.attrs("line", &l.attrs);
+                    self.segments
+                        .extend(l.segs.iter().map(|s| segment_kind(&s.kind)));
+                    for a in &l.attrs {
+                        let Value::Word(w) = &a.value else { continue };
+                        match a.key.name.as_str() {
+                            "start" | "end" => self.ends.insert(w.clone()),
+                            "label-side" => self.sides.insert(w.clone()),
+                            _ => false,
+                        };
+                    }
+                }
+                Stmt::Import(_) => {}
+            }
+        }
+    }
+}
+
+/// Every `.kash` file in `dir` and below.
+fn kash_files(dir: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for e in entries.flatten() {
+        let p = e.path();
+        if p.is_dir() {
+            kash_files(&p, out);
+        } else if p.extension().is_some_and(|x| x == "kash") {
+            out.push(p);
+        }
+    }
+}
+
+fn usage() -> Usage {
+    let mut files = Vec::new();
+    kash_files(&case::golden_root(), &mut files);
+    let mut usage = Usage::default();
+    for f in files {
+        let src = std::fs::read_to_string(&f).unwrap_or_default();
+        usage.stmts(&kashika_syntax::parse(&src).0.stmts);
+    }
+    usage
+}
+
+fn attributes_and_values() -> Result<(), Failed> {
+    let usage = usage();
+    let mut problems = Vec::new();
+    for (kind, keys) in kashika_model::attribute_keys() {
+        for key in keys {
+            if !usage.keys.contains(&(kind, key.to_string())) {
+                problems.push(format!("no golden input writes `{key}=` on a `{kind}`"));
+            }
+        }
+    }
+    for (what, names, used) in [
+        ("line end", kashika_model::Marker::NAMES, &usage.ends),
+        (
+            "`label-side`",
+            kashika_model::LabelSide::NAMES,
+            &usage.sides,
+        ),
+    ] {
+        for name in names {
+            if !used.contains(*name) {
+                problems.push(format!("no golden input uses the {what} `{name}`"));
+            }
+        }
+    }
+    for kw in RESERVED_IDS {
+        if !SEGMENT_KINDS
+            .iter()
+            .any(|k| k.split(' ').next() == Some(kw))
+        {
+            problems.push(format!(
+                "segment keyword `{kw}` is missing from SEGMENT_KINDS in coverage.rs"
+            ));
+        }
+    }
+    for kind in SEGMENT_KINDS {
+        if !usage.segments.contains(kind) {
+            problems.push(format!("no golden input draws a `{kind}` segment"));
         }
     }
     done(problems)

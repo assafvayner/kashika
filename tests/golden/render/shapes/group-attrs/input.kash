@@ -1,0 +1,9 @@
+// spec: 3, 3a, 6, 7
+// raster: png
+// Style keys, `pin`, `gap`, `icon-size` and `allow`/`reason` on a group: a bold large title, a muted sublabel, a dashed rounded border.
+diagram "group attrs" size (420,240) background=#ffffff
+box anchor "Anchor" at (20,20) size (100,40)
+group g "Cluster" at anchor.bl+(0,20) pin=tl size (380,150) fill=#f0f9ff stroke=#0284c7 stroke-width=2 stroke-style=dashed radius=12 font-size=18 font-weight=bold color=#0c4a6e sublabel="three nodes" muted=#0369a1 gap=6 icon="server" icon-size=20 padding=10 allow=spill:edge reason="the edge node hangs over the border" {
+  box n1 "node 1" at (20,70) size (100,40)
+  box edge "edge" at (300,70) size (100,40)
+}

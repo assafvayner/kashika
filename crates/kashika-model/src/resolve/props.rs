@@ -8,12 +8,12 @@ use crate::library::{self, LibShape, SvgShape};
 use crate::markup;
 use crate::scene::*;
 use crate::shapes;
-use crate::style::{self, STYLE_KEYS, Style, StyleProps};
-use crate::textlayout::{self, SHAPE_TEXT_KEYS, ShapeInput, ShapeTextProps};
+use crate::style::{self, Style, StyleProps};
+use crate::textlayout::{self, ShapeInput, ShapeTextProps};
 
 use super::{
-    IMAGE_KEYS, IconPos, IconProps, ImageProps, Item, LINE_KEYS, LineProps, NODE_KEYS, NodeProps,
-    Resolver, TEXT_KEYS, TextProps,
+    IMAGE_KEYS, IconPos, IconProps, ImageProps, Item, JUNCTION_KEYS, LINE_KEYS, LineProps,
+    NodeProps, Resolver, TEXT_KEYS, TextProps, node_keys,
 };
 
 impl NodeProps {
@@ -63,7 +63,7 @@ impl<'a> Resolver<'a> {
                     self.nodes.insert(idx, p);
                 }
                 Item::Junction(j) => {
-                    let a = Attrs::new(&j.attrs, "junction", &["dot"], &mut self.diags);
+                    let a = Attrs::new(&j.attrs, "junction", JUNCTION_KEYS, &mut self.diags);
                     let dot = a
                         .get("dot")
                         .is_some_and(|x| attrs::flag(x, &mut self.diags));
@@ -96,14 +96,7 @@ impl<'a> Resolver<'a> {
 
     pub(super) fn node_props(&mut self, n: &ast::Node, group: bool) -> NodeProps {
         let what = if group { "group" } else { "box" };
-        let keys: Vec<&str> = NODE_KEYS
-            .iter()
-            .filter(|k| !group || !matches!(**k, "shape" | "layer"))
-            .chain(STYLE_KEYS)
-            .chain(SHAPE_TEXT_KEYS)
-            .copied()
-            .collect();
-        let a = Attrs::new(&n.attrs, what, &keys, &mut self.diags);
+        let a = Attrs::new(&n.attrs, what, &node_keys(group), &mut self.diags);
 
         let shape = a.get("shape").and_then(|x| self.shape_attr(x));
         let mut props = StyleProps::default();

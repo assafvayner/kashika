@@ -59,7 +59,7 @@ KASHIKA_BLESS=1 cargo test -p kashika-cli --test golden -- parse/lines/not-ortho
 KASHIKA_BLESS=1 cargo test -p kashika-cli --test golden -- coverage/map
 ```
 
-Review the new files (open `out.svg` in a browser) and commit them with `tests/golden/COVERAGE.md`. After an intended behavior change, bless the affected cases with a path filter and review `git diff tests/golden`. A mismatch prints a unified diff and saves the actual file under the cargo target directory's `tmp/golden-actual/`. The `coverage/*` tests fail when a diagnostic code, spec section, built-in shape or bundled icon has no case, and when a code in `NOT_REPORTED` (`coverage.rs`) starts being reported.
+Review the new files (open `out.svg` in a browser) and commit them with `tests/golden/COVERAGE.md`. After an intended behavior change, bless the affected cases with a path filter and review `git diff tests/golden`. A mismatch prints a unified diff and saves the actual file under the cargo target directory's `tmp/golden-actual/`. The `coverage/*` tests fail when a diagnostic code, spec section, built-in shape, bundled icon, attribute key (per statement), line end, `label-side` value or segment kind has no case, and when a code in `NOT_REPORTED` (`coverage.rs`) starts being reported.
 
 ## Invariants
 

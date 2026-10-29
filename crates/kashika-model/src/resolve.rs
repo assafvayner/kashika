@@ -10,8 +10,8 @@ use crate::library::{self, Ctx, Library};
 use crate::loader::{FileError, Loader, Options};
 use crate::markup;
 use crate::scene::*;
-use crate::style::{Style, StyleProps};
-use crate::textlayout::ShapeTextProps;
+use crate::style::{self, Style, StyleProps};
+use crate::textlayout::{self, ShapeTextProps};
 use crate::version;
 
 mod build;
@@ -60,6 +60,37 @@ const DIAGRAM_KEYS: &[&str] = &[
 ];
 /// Room a fitted canvas leaves to the right of and below the drawing, unless `margin=` sets it.
 const DEFAULT_MARGIN: f64 = 20.0;
+
+const JUNCTION_KEYS: &[&str] = &["dot"];
+
+/// The keys a `box` (or, with `group`, a `group`) takes.
+fn node_keys(group: bool) -> Vec<&'static str> {
+    NODE_KEYS
+        .iter()
+        .filter(|k| !group || !matches!(**k, "shape" | "layer"))
+        .chain(style::STYLE_KEYS)
+        .chain(textlayout::SHAPE_TEXT_KEYS)
+        .copied()
+        .collect()
+}
+
+/// Every attribute key, by the statement that takes it: `diagram`, `style`, `box`, `group`,
+/// `junction`, `text`, `line`, `image`, `shape from` and a text block's `text`.
+pub fn attribute_keys() -> Vec<(&'static str, Vec<&'static str>)> {
+    vec![
+        ("diagram", DIAGRAM_KEYS.to_vec()),
+        ("style", style::def_keys()),
+        ("box", node_keys(false)),
+        ("group", node_keys(true)),
+        ("junction", JUNCTION_KEYS.to_vec()),
+        ("text", TEXT_KEYS.to_vec()),
+        ("line", LINE_KEYS.to_vec()),
+        ("image", IMAGE_KEYS.to_vec()),
+        ("shape from", library::SHAPE_FROM_KEYS.to_vec()),
+        ("block text", textlayout::BLOCK_ITEM_KEYS.to_vec()),
+    ]
+}
+
 /// Longest chain of placement references, counting group frames.
 const MAX_PLACEMENT_DEPTH: usize = 256;
 /// Cycles longer than this print only their first few members.

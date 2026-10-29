@@ -9,4 +9,4 @@ line ack (340,170) -> v -140 end=arrow label="ack" label-side=right
 line short (100,180) -> h 40 end=arrow label="a much longer label" label-side=above
 line elbow (40,230) -> hv (200,300) end=arrow label@0.25="first hop" label-side=below
 line thick (260,250) -> h 180 end=arrow stroke-width=4 label="thick" label@0.2="**bold**" label-side=above
-line plain (40,330) -> h 400 end=arrow label="on the line"
+line plain (40,330) -> h 400 end=arrow label="on the line" label-side=on

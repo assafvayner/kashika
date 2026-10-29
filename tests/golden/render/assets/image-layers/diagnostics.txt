@@ -1,0 +1,4 @@
+warn[overlap] 10:1-10:99: image 'badge' overlaps box 'beside'
+  = suppressed: badge on the corner
+  elements: [{"bbox":[[340,30],[404,62]],"id":"badge","kind":"image","span":{"col":1,"end_col":99,"end_line":10,"line":10}},{"bbox":[[300,50],[380,90]],"id":"beside","kind":"box","span":{"col":1,"end_col":45,"end_line":9,"line":9}}]
+  facts: {"intersection":[[340,50],[380,62]]}

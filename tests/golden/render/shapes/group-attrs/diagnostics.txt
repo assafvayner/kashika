@@ -1,0 +1,5 @@
+warn[spill] 8:3-8:44: box 'edge' extends outside group 'g' (right by 20px)
+  = help: enlarge 'g' or move the child inside it
+  = suppressed: the edge node hangs over the border
+  elements: [{"bbox":[[320,150],[420,190]],"frame":"g","id":"edge","kind":"box","local_bbox":[[300,70],[400,110]],"span":{"col":3,"end_col":44,"end_line":8,"line":8}},{"bbox":[[20,80],[400,230]],"id":"g","kind":"group","span":{"col":1,"end_col":320,"end_line":6,"line":6}}]
+  facts: {"overflow":{"right":20}}
