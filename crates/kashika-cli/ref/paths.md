@@ -6,7 +6,7 @@ A line is `start -> segment -> segment ...`. Each segment ends at a point, which
 |---|---|
 | `<point>` | straight to the point |
 | `h dx` / `v dy` | move by dx / dy; negative goes left / up |
-| `x X` / `y Y` | move to x=X / y=Y; X or Y is a number or a point (`y db.top`) |
+| `x X` / `y Y` | move to x=X / y=Y; X or Y is a number or a point (`y db.top`, not `y db.top.y`) |
 | `hv <point>` | horizontal, then vertical: one elbow |
 | `vh <point>` | vertical, then horizontal |
 | `vhv <point>` / `hvh <point>` | vertical, horizontal halfway, vertical (or the other way round): two elbows; `vhv@t` puts the middle run `t` of the way (`0 < t < 1`); straight when the point is level |

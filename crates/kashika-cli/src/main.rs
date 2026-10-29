@@ -55,7 +55,7 @@ enum Cmd {
     /// Print the language reference, or one topic of it
     #[command(visible_aliases = ["references", "docs"])]
     Ref {
-        /// syntax, anchors, paths, shapes, styles, metrics, lints, examples, cli, or a diagnostic code
+        /// A topic (rules, syntax, anchors, paths, sizing, text, shapes, styles, recipes, examples, lints, metrics, cli, limits) or a diagnostic code; without one, the core guide
         topic: Option<String>,
         /// Wrap the page in a JSON envelope
         #[arg(long)]

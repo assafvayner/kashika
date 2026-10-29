@@ -1,6 +1,4 @@
-## Limits of a clean check
-
-A clean check covers only the geometry in the diagnostics table. It doesn't prove that arrows point the right way, that the right boxes are connected, or that the labels say what you mean.
+# Limits
 
 ## Raster size
 
@@ -14,4 +12,4 @@ An image or SVG file (`image`, `icon=`, `shape ... from`) may be at most 16 MiB 
 
 ## Not supported in this build
 
-- Never in v1: auto-layout, `fix`, arithmetic in literals, named guides, remote URLs, themes, text wrapping (use `\n`).
+- Never in v1: auto-layout, `fix`, arithmetic in literals, named guides (use junctions without `dot`), remote URLs, themes, text wrapping (use `\n`).

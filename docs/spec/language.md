@@ -259,7 +259,7 @@ Unnamed lines are referred to as `line@L<n>`, where n is the source line of the 
   - Block text items take no id. They take `font-size`, `color`, `text-align` and `muted`, like a `text` statement; `font-size` defaults to the box's, `color` to its style's (`muted` picks the muted color) and `text-align` to the box's `text-align`.
   - A block that `label`/`sublabel` would draw the same is the `block-reducible` warning (§7).
   - Using `label`/`sublabel` together with stacked block items is an error (`text-conflict`). It is allowed when every block item has its own `at`.
-- `ref` shows `sublabel` in the main example. The block is documented under "when sublabel is not enough", and absolute `at` comes last.
+- `ref text` shows `sublabel` in its example. The block is documented under "when sublabel is not enough", and absolute `at` comes last.
 
 ### Fonts and metrics
 
@@ -359,7 +359,7 @@ kashika fmt     <file|-> [--check] [--stdin-name <name>]  // `-` formats stdin t
 kashika measure "<text>"... [--size N] [--weight bold]
 kashika route   <file|-> <from> <to> [corner|arc|bezier] [--line <id>]
 kashika icons   [dir...] [--search <term>]     // list built-in shapes, bundled icons and importable files: name, path, natural size, library; --search matches names and built-in keywords ("user" finds person)
-kashika ref     [topic] [--json]          // topics: syntax anchors paths shapes styles metrics lints <lint-code> examples cli
+kashika ref     [topic] [--json]          // no topic: the core guide; topics: rules syntax anchors paths sizing text shapes styles recipes examples lints metrics cli limits, or a diagnostic code
 kashika --version
 ```
 
@@ -487,22 +487,14 @@ A detour lists its second lane as its corridor. When no candidate is clear of ev
 
 ### ref
 
-`ref` is embedded in the binary and matches its version. The default page is about 2,000–2,500 words. It contains:
-- the five non-obvious rules (y-down; the frame rule; ids are global; anchors resolve absolutely; what `allow` hides)
-- a compact grammar
-- the anchor, segment and attribute tables, with defaults
-- the lint table, with a one-line fix for each code
-- routing recipes:
-  - staircase
-  - wrap over the top
-  - gap corridor
-  - outside margin
-  - fan-out via a junction
-  - the comb: N sources into one edge, with nested lanes and staggered landings
-  - unavoidable crossings, i.e. non-planar graphs
-- a complete worked example
-- an explicit "not supported" list
-- the limits of a clean check
+`ref` is embedded in the binary and matches its version. With no topic it prints the core guide, at most about 2,500 words, which an agent reads first:
+- the loop: write, `check`, fix errors then warnings from their help, `inspect`/`route` for coordinates, `render` and look
+- the rules people get wrong (y-down; the frame rule, including the literal axis of a mixed point; ids are global; prefer relationships; the last segment sets the arrow direction; spacing labeled lines; text inside shapes; what `allow` hides; what a clean check doesn't prove)
+- the grammar, and the anchor, segment and line attribute tables, with defaults
+- the fixes for the diagnostics met most
+- the list of topics, each with one line on what it covers
+
+`ref <topic>` prints one topic: `rules`, `syntax`, `anchors` and `paths` (also on the default page), `sizing`, `text`, `shapes`, `styles`, `recipes` (the routing recipes: staircase, wrap over the top, gap corridor, outside margin, the comb, unavoidable crossings; and diagram recipes: fan-out via a junction, two lines on one side, self-loops, sequence diagrams, ER table cards, guides, graphs and timelines), `examples` (a complete worked example), `lints` (the diagnostics table, with a one-line fix for each code, and suppression), `metrics`, `cli` and `limits` (raster and file limits, and an explicit "not supported" list). `ref <code>` prints one diagnostic's row. An unknown topic is a usage error (exit 3) with a did-you-mean and the list of topics.
 
 All examples in `ref` are tested fixtures.
 
@@ -511,7 +503,7 @@ All examples in `ref` are tested fixtures.
 - `fix` (auto-applying suggestions)
 - `diff --geometry`
 - arithmetic expressions in literals
-- named guides
+- named guides (use junctions without `dot`)
 - remote URLs for images and imports
 - recoloring icons beyond `currentColor` (§3a)
 - font files supplied by the user

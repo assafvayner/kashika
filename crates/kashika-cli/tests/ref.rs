@@ -2,7 +2,8 @@ use assert_cmd::Command;
 use predicates::prelude::*;
 
 const TOPICS: &[&str] = &[
-    "syntax", "anchors", "paths", "shapes", "styles", "metrics", "lints", "examples", "cli",
+    "rules", "syntax", "anchors", "paths", "sizing", "text", "shapes", "styles", "recipes",
+    "examples", "lints", "metrics", "cli", "limits",
 ];
 
 fn kashika() -> Command {
@@ -29,37 +30,49 @@ fn references_and_docs_are_aliases_of_ref() {
 fn default_page_has_the_required_parts_and_length() {
     let p = page(&[]);
     for heading in [
-        "## Five rules people get wrong",
+        "## The loop",
+        "## Rules people get wrong",
         "## Syntax",
         "## Anchors and points",
         "## Line paths",
-        "## Diagnostics",
-        "## Routing recipes",
-        "## Worked example",
-        "## Limits of a clean check",
-        "## Not supported in this build",
+        "## Fixing diagnostics",
+        "## Topics",
     ] {
         assert!(p.contains(heading), "missing {heading}");
     }
-    for recipe in [
-        "Staircase",
-        "Wrap over the top",
-        "Gap corridor",
-        "Outside margin",
-        "Fan-out via a junction",
-        "The comb",
-        "Unavoidable crossings",
-    ] {
-        assert!(p.contains(recipe), "missing recipe {recipe}");
+    for t in TOPICS {
+        assert!(p.contains(&format!("| `{t}` |")), "topic list misses {t}");
     }
     let words = p
         .split_whitespace()
         .filter(|w| w.chars().any(char::is_alphanumeric))
         .count();
     assert!(
-        (1500..=3200).contains(&words),
+        (1500..=2500).contains(&words),
         "default page has {words} words"
     );
+}
+
+#[test]
+fn recipes_page_has_every_recipe() {
+    let p = page(&["recipes"]);
+    for recipe in [
+        "Staircase",
+        "Wrap over the top",
+        "Gap corridor",
+        "Outside margin",
+        "The comb",
+        "Unavoidable crossings",
+        "Fan-out via a junction",
+        "Two lines on one side",
+        "Self-loop",
+        "Sequence diagrams",
+        "Table cards",
+        "Guides for rows and columns",
+        "Graphs and timelines",
+    ] {
+        assert!(p.contains(recipe), "missing recipe {recipe}");
+    }
 }
 
 #[test]
@@ -124,6 +137,12 @@ fn unknown_topic_is_a_usage_error_with_a_suggestion() {
         .assert()
         .code(3)
         .stderr(predicate::str::contains("did you mean `anchors`?"));
+    let out = kashika().args(["ref", "nope"]).output().unwrap();
+    assert_eq!(out.status.code(), Some(3));
+    let err = String::from_utf8(out.stderr).unwrap();
+    for t in TOPICS {
+        assert!(err.contains(&format!("\n  {t} ")), "{err}");
+    }
 }
 
 #[test]
@@ -177,7 +196,7 @@ fn skill_examples_check_clean_and_are_formatted() {
     ))
     .unwrap();
     let blocks = kash_blocks(&skill);
-    assert!(blocks.len() >= 2, "found {} blocks", blocks.len());
+    assert!(!blocks.is_empty(), "SKILL.md should have an example");
     assert_blocks_clean_and_formatted(blocks);
 }
 
@@ -264,7 +283,10 @@ fn code_tokens(md: &str) -> std::collections::BTreeSet<&str> {
 }
 
 #[test]
-fn skill_and_spec_name_every_builtin_asset() {
+/// The spec and the `ref` pages name every built-in asset, so an agent that reads the topics
+/// finds each one. The skill is a short entry point that sends agents to `kashika ref`, so it
+/// lists none of them.
+fn spec_and_ref_name_every_builtin_asset() {
     let shapes = kashika_model::shape_names().map(|n| ("shape", n));
     let icons = kashika_model::BUNDLED_ICONS
         .iter()
@@ -274,9 +296,13 @@ fn skill_and_spec_name_every_builtin_asset() {
         .iter()
         .map(|n| ("line end", *n));
     let all: Vec<(&str, &str)> = shapes.chain(icons).chain(styles).chain(markers).collect();
-    for doc in ["skills/kashika/SKILL.md", "docs/spec/language.md"] {
-        let text =
-            std::fs::read_to_string(format!("{}/../../{doc}", env!("CARGO_MANIFEST_DIR"))).unwrap();
+    let spec = std::fs::read_to_string(format!(
+        "{}/../../docs/spec/language.md",
+        env!("CARGO_MANIFEST_DIR")
+    ))
+    .unwrap();
+    let pages: String = TOPICS.iter().map(|t| page(&[*t])).collect();
+    for (doc, text) in [("docs/spec/language.md", spec), ("`kashika ref`", pages)] {
         let tokens = code_tokens(&text);
         for (kind, name) in &all {
             assert!(

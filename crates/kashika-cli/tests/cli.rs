@@ -917,7 +917,7 @@ fn ref_unknown_topic_separates_the_topic_list() {
     let (code, _, err) = run_ok(&["ref", "zzzzzz"], "");
     assert_eq!(code, 3);
     assert!(
-        err.contains("`zzzzzz`; Topics:") || err.contains("`zzzzzz`; topics:"),
+        err.contains("`zzzzzz`; pass a diagnostic code or one of these topics:\n  rules "),
         "{err}"
     );
 }

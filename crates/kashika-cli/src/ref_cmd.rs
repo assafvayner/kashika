@@ -5,7 +5,11 @@ use kashika_model::StrokeStyle;
 
 use crate::Format;
 
+const INTRO: &str = include_str!("../ref/intro.md");
 const RULES: &str = include_str!("../ref/rules.md");
+const FIXES: &str = include_str!("../ref/fixes.md");
+const SIZING: &str = include_str!("../ref/sizing.md");
+const TEXT: &str = include_str!("../ref/text.md");
 const SYNTAX: &str = include_str!("../ref/syntax.md");
 const ANCHORS: &str = include_str!("../ref/anchors.md");
 const PATHS: &str = include_str!("../ref/paths.md");
@@ -21,12 +25,56 @@ const CLI: &str = include_str!("../ref/cli.md");
 
 pub const SCHEMA: &str = "kashika.ref/1";
 
-pub const TOPICS: &[&str] = &[
-    "syntax", "anchors", "paths", "shapes", "styles", "metrics", "lints", "examples", "cli",
+/// Every topic, with what it covers, in the order the topic list shows them. The first four
+/// are also on the default page.
+pub const TOPICS: &[(&str, &str)] = &[
+    ("rules", "the rules people get wrong"),
+    (
+        "syntax",
+        "every statement and its clauses, groups, junctions and layers",
+    ),
+    ("anchors", "anchors, `@t`, offsets and mixed points"),
+    ("paths", "segments, line ends, labels and `ortho`"),
+    (
+        "sizing",
+        "fitted boxes, and how big each shape must be for its text",
+    ),
+    ("text", "markup, sublabels, alignment and text blocks"),
+    (
+        "shapes",
+        "built-in and custom shapes, SVG shapes, images, icons and imports",
+    ),
+    ("styles", "style keys, colors and the built-in styles"),
+    (
+        "recipes",
+        "routing patterns, fan-out, self-loops, sequence diagrams, ER tables, guides and graphs",
+    ),
+    ("examples", "a complete worked diagram"),
+    (
+        "lints",
+        "every diagnostic code with its trigger and fix, and how to suppress one",
+    ),
+    ("metrics", "font metrics and average character widths"),
+    (
+        "cli",
+        "every command and flag: check, render, inspect, route, measure, fmt, icons and ref",
+    ),
+    (
+        "limits",
+        "raster and file limits, and what is not supported",
+    ),
 ];
 
+fn topic_table() -> String {
+    let mut t = String::from("| topic | covers |\n|---|---|\n");
+    for (name, about) in TOPICS {
+        t.push_str(&format!("| `{name}` | {about} |\n"));
+    }
+    t
+}
+
 fn examples() -> String {
-    format!("{RECIPES}\n{EXAMPLE}\n```kash\n{UPLOAD}```\n")
+    format!("{EXAMPLE}\n```kash\n{UPLOAD}```\n")
 }
 
 fn shapes() -> String {
@@ -125,11 +173,19 @@ pub fn page(topic: Option<&str>) -> Result<String, String> {
 
 fn raw_page(topic: Option<&str>) -> Result<String, String> {
     let Some(topic) = topic else {
-        let ex = examples();
-        return Ok([RULES, SYNTAX, ANCHORS, PATHS, LINTS, ex.as_str(), LIMITS].join("\n"));
+        let topics = format!(
+            "## Topics\n\n`kashika ref <topic>` prints one of these; `kashika ref <code>` explains a diagnostic.\n\n{}",
+            topic_table()
+        );
+        return Ok([INTRO, RULES, SYNTAX, ANCHORS, PATHS, FIXES, topics.as_str()].join("\n"));
     };
     Ok(match topic {
+        "rules" => RULES.into(),
         "syntax" => SYNTAX.into(),
+        "sizing" => SIZING.into(),
+        "text" => TEXT.into(),
+        "recipes" => RECIPES.into(),
+        "limits" => LIMITS.into(),
         "anchors" => ANCHORS.into(),
         "paths" => PATHS.into(),
         "shapes" => shapes(),
@@ -161,18 +217,18 @@ fn lint(code: &str) -> Option<String> {
 fn unknown(topic: &str) -> String {
     let codes: Vec<&str> = rows().map(|r| r[0].trim_matches('`')).collect();
     let mut msg = format!("unknown ref topic `{topic}`");
-    let all = TOPICS.iter().copied().chain(codes.iter().copied());
+    let all = TOPICS.iter().map(|(t, _)| *t).chain(codes.iter().copied());
     let sep = match did_you_mean(topic, all) {
         Some(s) => {
             msg.push_str(&format!("; did you mean `{s}`?"));
-            " "
+            " Pass"
         }
-        None => "; ",
+        None => "; pass",
     };
-    msg.push_str(&format!(
-        "{sep}Topics: {}, or a diagnostic code",
-        TOPICS.join(", ")
-    ));
+    msg.push_str(&format!("{sep} a diagnostic code or one of these topics:"));
+    for (name, about) in TOPICS {
+        msg.push_str(&format!("\n  {name:<9} {about}"));
+    }
     msg
 }
 
@@ -187,7 +243,7 @@ pub fn run(topic: Option<&str>, json: bool) -> ExitCode {
                     "schema": SCHEMA,
                     "tool": env!("CARGO_PKG_VERSION"),
                     "topic": topic,
-                    "topics": TOPICS,
+                    "topics": TOPICS.iter().map(|(t, _)| *t).collect::<Vec<_>>(),
                     "markdown": md,
                 })
             );

@@ -1,6 +1,12 @@
-## Diagnostics
+# Diagnostics
 
-Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` suppresses them. `kashika ref <code>` shows one row.
+Errors stop `render` unless `--force`; warnings exit 1. `kashika ref <code>` shows one row, and the core guide (`kashika ref`) has the fixes needed most.
+
+## Suppressing a finding
+
+If a warning is intentional, suppress it narrowly on the line or shape: `allow=cross:other_line reason="..."`. Prefer `code:id`; for a crossing, name the other line. Several codes share one reason: `allow=overlap:b,overlap:c reason="..."`. On the `diagram` line, `allow=<code>,...` silences a code everywhere. Suppressed findings still count in the summary, and `check --show-suppressed` lists them. Don't add a broad `allow=` while you're still laying out: it hides new findings too.
+
+## Codes
 
 | code | severity | trigger | fix |
 |---|---|---|---|
@@ -26,7 +32,7 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `cross` | warn | two lines intersect away from a shared endpoint | reroute via a free interval |
 | `shared-segment` | warn | two lines overlap collinearly over 1px | move one to the free lane |
 | `through` | warn | a line enters a box or image (not `layer=under`/`over`), including its own endpoint box: reaching an edge anchor from inside the box is flagged; only the run from an interior anchor like `center` to the outline is exempt | route around it; for its own endpoint box, keep the last corner outside so a `left`/`right` end is reached horizontally (`vh`, `x …`) and a `top`/`bottom` end vertically (`hv`, `y …`) |
-| `near` | warn | a line within `clearance` of a box, a parallel line or along a group border | move it `clearance` away |
+| `near` | warn | a line within `clearance` of a box, a parallel line or along a group border | move it `clearance` away; along its own endpoint box, fix the elbow the help names |
 | `overlap` | warn | two shapes overlap, unless a group contains the other | move one, or use a group |
 | `spill` | warn | a child leaves its group or enters its title band | grow the group |
 | `diagonal-tail` | warn | the last segment is diagonal and every other straight segment is horizontal or vertical (at least one) | end with `hv`/`vh` |
@@ -36,7 +42,7 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `port-crowding` | warn | two endpoints on a shape within 8px (12px for two crow's feet) | spread them with `side@t` |
 | `group-transit` | warn | a line crosses a group it doesn't connect to (a junction on it that taps into the group counts as connecting) | route around the group |
 | `low-contrast` | warn | text contrast below 3:1, or a `currentColor` icon (every bundled icon) against the fill under it | change the color or fill; an icon follows the shape's `color` |
-| `label-collision` | warn | a label or text overlaps another element, a group's title or border, or a label its own line's marker (or its own line, with `label-side`); or a line crosses a group's title | move it; the help lists clear `t` or the title's extent |
+| `label-collision` | warn | a label or text overlaps another element, a group's title or border, or a label its own line's marker (or its own line, with `label-side`); or a line crosses a group's title | move it; the help lists clear `t`, the run a label needs, or the title's extent; put text over a box in its block |
 | `out-of-canvas` | warn | an element extends past `size`, or above or left of `(0,0)` (children of a group that itself extends past it aren't reported again) | move it, grow `size`, or leave `size` out to fit the canvas |
 | `off-grid` | warn | a literal is not a multiple of `grid` | round it |
 | `block-reducible` | warn | a block of 1–2 items in one style | use the rewrite in the help line |

@@ -1,11 +1,11 @@
-# Kashika reference
-
-Kashika draws technical diagrams from `.kash` files. There is no auto-layout: you place every box and route every line, and `kashika check` reports what is wrong with the geometry. More detail: `kashika ref <topic>` with `syntax`, `anchors`, `paths`, `shapes`, `styles`, `metrics`, `lints`, any diagnostic code, `examples` or `cli`.
-
-## Five rules people get wrong
+## Rules people get wrong
 
 1. **y grows down.** `(0,0)` is the top-left corner of the canvas, and `v -40` moves up.
-2. **Literal coordinates are in the frame of the enclosing group.** `at (10,20)` inside `group vpc at (100,100) ...` lands at canvas `(110,120)`. Anchors, `h`/`v` moves and `+(dx,dy)` offsets are the same in every frame.
-3. **Ids are global and bare.** Boxes, groups, images, junctions, lines and texts share one namespace. Write `db.left`, never `vpc.db.left`.
-4. **Anchors resolve to the shape's true position**, wherever you write them. Prefer anchors, `x`/`y` targets and `hv`/`vh` elbows to literal points: they keep working when a box moves.
-5. **`allow=` hides findings; it doesn't fix them.** `allow=cross:l2` silences crossings with `l2` only. Suppressed findings still count in the summary.
+2. **Literal coordinates are in the frame of the enclosing group.** `at (10,20)` inside `group vpc at (100,100) ...` lands at canvas `(110,120)`. Anchors, `h`/`v` moves and `+(dx,dy)` offsets are the same in every frame. In a mixed point only the literal axis is group-relative: `(a.left.x, 60)` in a group at y=100 resolves to y=160. `kashika inspect file.kash <id>` prints a child's absolute box.
+3. **Ids are global and bare.** Boxes, groups, images, junctions, lines and texts share one namespace, so a line can't be named after a box. Write `db.left`, never `vpc.db.left`. The segment keywords `h v x y hv vh vhv hvh curve` and `arrow` can't be ids.
+4. **Prefer relationships to numbers.** `at api.right+(80,0) pin=left`, `-> hv db.top`, `-> y queue.left`, `junction j at stock.bottom+(0,50)`. They keep working when a box moves; literals don't.
+5. **The last segment sets the arrow direction.** Enter a `left`/`right` side horizontally and a `top`/`bottom` side vertically: `a.right -> hv b.top`, `a.top -> vh b.left`, or for a longer detour `a.right -> x 360 -> y b.left -> b.left`. `check` doesn't flag a diagonal, since some diagrams want them; put `ortho` on lines meant to run at right angles (boxes-and-arrows architecture, flowcharts) so any diagonal is an error.
+6. **Space labeled lines.** `check` flags a label that hits a box or an arrowhead, not one that merely has no margin. Leave the label's `kashika measure` width plus about 30px between the boxes it sits between, or move it with `label@t` or `label-side=above`.
+7. **Text inside a shape goes in its text block.** A free `text` over a box is a `label-collision`; put it in the box's `{ }` block with `at (x,y)` in box-local coordinates (`kashika ref text`).
+8. **`allow=` hides findings; it doesn't fix them.** Suppress narrowly and only once the layout settles: `allow=cross:l2 reason="non-planar"` silences crossings with `l2` only. Suppressed findings still count in the summary.
+9. **`check` covers geometry only:** crossings, overlaps, near-misses, boxes in the way, crowded ports, contrast, labels on things, the canvas and the grid. It doesn't prove that arrows point the right way, that the right boxes are connected, or that the labels say what you mean.
