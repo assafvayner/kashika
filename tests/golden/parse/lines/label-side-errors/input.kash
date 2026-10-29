@@ -1,0 +1,9 @@
+// spec: 5, 7
+// dump: scene
+// `label-side` beside a vertical, diagonal or curved segment, or with an unknown value, is an `attr` error and the label stays on the line; at a vertex either adjoining segment fits.
+diagram "label side errors" size (400,240)
+line vert (40,20) -> v 160 label="up" label-side=above
+line diag (80,20) -> (200,160) label@0.25="d" label-side=left
+line arc (220,40) -> curve left 30 (360,40) label="c" label-side=below
+line bad (40,210) -> h 100 label="x" label-side=top
+line corner (240,120) -> h 80 -> v 80 label="corner" label-side=right

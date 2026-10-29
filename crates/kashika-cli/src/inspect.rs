@@ -5,7 +5,7 @@ use kashika_check::free::corridors as free_corridors;
 use kashika_check::ports::ports as find_ports;
 use kashika_diag::{Diagnostic, Severity};
 use kashika_geom::{Pt, Rect, length, point_at};
-use kashika_model::{EdgeKind, Fit, Scene, SegmentKind};
+use kashika_model::{EdgeKind, Fit, LabelSide, Scene, SegmentKind};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
@@ -128,6 +128,8 @@ struct LabelInfo {
     t: f64,
     text: String,
     at: P,
+    #[serde(skip_serializing_if = "LabelSide::is_on")]
+    side: LabelSide,
     bbox: [P; 2],
 }
 
@@ -268,6 +270,7 @@ pub fn build(
                         t: lab.t,
                         text: lab.text.clone(),
                         at: p(point_at(&l.path, lab.t)),
+                        side: lab.side,
                         bbox: bbox(lab.rect),
                     })
                     .collect(),
@@ -455,8 +458,13 @@ pub fn text(i: &Inspect) -> String {
             ));
         }
         for lab in &l.labels {
+            let side = if lab.side.is_on() {
+                String::new()
+            } else {
+                format!(" {}", lab.side.name())
+            };
             out.push_str(&format!(
-                "  label@{} {:?} at {} bbox {}\n",
+                "  label@{} {:?} at {}{side} bbox {}\n",
                 lab.t,
                 lab.text,
                 pt(&lab.at),

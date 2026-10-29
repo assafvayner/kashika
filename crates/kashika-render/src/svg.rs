@@ -194,15 +194,17 @@ fn ends(l: &Line) -> Vec<(Marker, Pt, Pt, ErParts)> {
     ]
 }
 
-/// Opens a group masked so the line and its markers are cut out under its own labels and
-/// inside the open circles of its `zero-*` ends, leaving whatever is beneath visible.
+/// Opens a group masked so the line and its markers are cut out under its own labels that
+/// sit on it (not beside it) and inside the open circles of its `zero-*` ends, leaving
+/// whatever is beneath visible.
 /// Returns whether a group was opened.
 fn line_mask(out: &mut String, l: &Line, i: usize, (w, h): (f64, f64), id: &str) -> bool {
     let circles: Vec<(Pt, f64)> = ends(l)
         .into_iter()
         .filter_map(|(.., parts)| parts.circle)
         .collect();
-    if l.labels.is_empty() && circles.is_empty() {
+    let masked: Vec<&Label> = l.labels.iter().filter(|lab| lab.side.is_on()).collect();
+    if masked.is_empty() && circles.is_empty() {
         return false;
     }
     let id = format!("kashika-{id}-mask-{i}");
@@ -211,7 +213,7 @@ fn line_mask(out: &mut String, l: &Line, i: usize, (w, h): (f64, f64), id: &str)
         n(w),
         n(h)
     ));
-    for lab in &l.labels {
+    for lab in masked {
         out.push_str(&format!(
             "<rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"#000\"/>",
             n(lab.rect.x),

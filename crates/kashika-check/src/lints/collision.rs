@@ -27,7 +27,12 @@ pub fn label_collision(ctx: &Ctx, out: &mut Sink) {
     let subjects = subjects(ctx);
     let grid = Grid::new(&subjects.iter().map(|s| s.rect).collect::<Vec<_>>());
     for (i, s) in subjects.iter().enumerate() {
-        let mut hits = obstacles(ctx, s.rect, s.label.map(|(li, _)| li), s.shape);
+        let mut hits = obstacles(
+            ctx,
+            s.rect,
+            s.label.map(|(li, lab)| (li, !lab.side.is_on())),
+            s.shape,
+        );
         for o in grid
             .near(s.rect, 1.0)
             .into_iter()
@@ -163,12 +168,13 @@ fn subjects<'c>(ctx: &'c Ctx) -> Vec<Subject<'c>> {
     out
 }
 
-/// Boxes, images, group titles, lines (except line `own` and shape `own_shape`) and the
-/// markers of line `own` that `rect` intersects.
+/// Boxes, images, group titles, lines (except shape `own_shape`, and line `own` unless its
+/// label sits beside it) and the markers of line `own` that `rect` intersects. `own` is the
+/// line's index and whether the label sits beside the line rather than on it.
 fn obstacles(
     ctx: &Ctx,
     rect: Rect,
-    own: Option<usize>,
+    own: Option<(usize, bool)>,
     own_shape: Option<&str>,
 ) -> Vec<(String, Element)> {
     let poly = rect_polygon(rect);
@@ -197,7 +203,7 @@ fn obstacles(
     }
     for i in ctx.lines_near(rect, 0.0) {
         let l = &ctx.lines[i];
-        if own != Some(i)
+        if own != Some((i, false))
             && l.pieces
                 .iter()
                 .any(|&(p, q, _)| !inside_runs(p, q, &poly).is_empty())
@@ -205,7 +211,7 @@ fn obstacles(
             out.push((format!("line {}", l.line.id), line_el(l.line, None)));
         }
     }
-    if let Some(l) = own.map(|i| &ctx.lines[i]) {
+    if let Some(l) = own.map(|(i, _)| &ctx.lines[i]) {
         for (end, name, marker) in markers(l.line) {
             if polygons_overlap(&poly, &marker) {
                 let seg = if end == "start" { 0 } else { l.last_segment() };
@@ -255,7 +261,8 @@ fn markers(l: &kashika_model::Line) -> Vec<(&'static str, &'static str, Vec<Pt>)
     .collect()
 }
 
-/// `t` values (steps of 0.05) where label `i` on line `li` would collide with nothing.
+/// `t` values (steps of 0.05) where label `i` on line `li` would collide with nothing and,
+/// for a label beside its line, where that side fits the segment.
 fn clear_positions(
     ctx: &Ctx,
     subjects: &[Subject],
@@ -268,8 +275,11 @@ fn clear_positions(
     (1..20)
         .map(|k| f64::from(k) / 20.0)
         .filter(|&t| {
+            if label.side.fits(&l.line.path, t).is_err() {
+                return false;
+            }
             let r = label_box_at(label, point_at(&l.line.path, t));
-            obstacles(ctx, r, Some(li), None).is_empty()
+            obstacles(ctx, r, Some((li, !label.side.is_on())), None).is_empty()
                 && grid
                     .near(r, 1.0)
                     .into_iter()

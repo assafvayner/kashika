@@ -1,0 +1,11 @@
+// spec: 5
+// raster: png
+// `label-side` puts labels above or below horizontal segments and left or right of vertical ones, unmasked; a long label overhangs a short line.
+diagram "label side" size (480,320) background=#f8fafc
+line req (40,50) -> h 180 end=arrow label="request" label-side=above
+line resp (220,100) -> h -180 end=arrow stroke-style=dashed label="response" label-side=below
+line push (300,30) -> v 140 end=arrow label="push" label-side=left
+line ack (340,170) -> v -140 end=arrow label="ack" label-side=right
+line short (100,180) -> h 40 end=arrow label="a much longer label" label-side=above
+line elbow (40,230) -> hv (200,300) end=arrow label@0.25="first hop" label-side=below
+line thick (260,250) -> h 180 end=arrow stroke-width=4 label="thick" label@0.2="**bold**" label-side=above

@@ -1,5 +1,5 @@
 use kashika_diag::Span;
-use kashika_geom::{PathSeg, Pt, Rect, convex_hull};
+use kashika_geom::{PathSeg, Pt, Rect, TOLERANCE, convex_hull};
 use kashika_text::PlacedLine;
 use serde::Serialize;
 
@@ -348,14 +348,152 @@ impl ErParts {
     }
 }
 
+/// Where a line's labels sit: on the line, masking it, or beside it (`label-side=`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum LabelSide {
+    #[default]
+    On,
+    Above,
+    Below,
+    Left,
+    Right,
+}
+
+/// The direction of the path piece under a label's point.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Orientation {
+    Horizontal,
+    Vertical,
+    Diagonal,
+    Curve,
+}
+
+impl Orientation {
+    pub fn name(self) -> &'static str {
+        match self {
+            Orientation::Horizontal => "horizontal",
+            Orientation::Vertical => "vertical",
+            Orientation::Diagonal => "diagonal",
+            Orientation::Curve => "curved",
+        }
+    }
+
+    fn of(seg: &PathSeg) -> Orientation {
+        match *seg {
+            PathSeg::Line { from, to } if (from.y - to.y).abs() <= TOLERANCE => {
+                Orientation::Horizontal
+            }
+            PathSeg::Line { from, to } if (from.x - to.x).abs() <= TOLERANCE => {
+                Orientation::Vertical
+            }
+            PathSeg::Line { .. } => Orientation::Diagonal,
+            _ => Orientation::Curve,
+        }
+    }
+}
+
+/// The orientations of the path pieces at fraction `t` of the arc length: one, or two
+/// at a vertex.
+pub fn orientations_at(path: &[PathSeg], t: f64) -> Vec<Orientation> {
+    let lens: Vec<f64> = path.iter().map(PathSeg::length).collect();
+    let target = lens.iter().sum::<f64>() * t.clamp(0.0, 1.0);
+    let mut start = 0.0;
+    let mut out = Vec::new();
+    for (seg, len) in path.iter().zip(lens) {
+        if target >= start - TOLERANCE && target <= start + len + TOLERANCE {
+            out.push(Orientation::of(seg));
+        }
+        start += len;
+    }
+    out
+}
+
+impl LabelSide {
+    pub const NAMES: &'static [&'static str] = &["on", "above", "below", "left", "right"];
+
+    pub fn from_name(name: &str) -> Option<LabelSide> {
+        [
+            LabelSide::On,
+            LabelSide::Above,
+            LabelSide::Below,
+            LabelSide::Left,
+            LabelSide::Right,
+        ]
+        .into_iter()
+        .find(|s| s.name() == name)
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            LabelSide::On => "on",
+            LabelSide::Above => "above",
+            LabelSide::Below => "below",
+            LabelSide::Left => "left",
+            LabelSide::Right => "right",
+        }
+    }
+
+    pub fn is_on(&self) -> bool {
+        *self == LabelSide::On
+    }
+
+    /// The segment orientation this side needs; `None` for `on`, which fits anywhere.
+    pub fn needs(self) -> Option<Orientation> {
+        match self {
+            LabelSide::On => None,
+            LabelSide::Above | LabelSide::Below => Some(Orientation::Horizontal),
+            LabelSide::Left | LabelSide::Right => Some(Orientation::Vertical),
+        }
+    }
+
+    /// Checks that a label at fraction `t` of `path` can sit on this side. On a mismatch,
+    /// returns the orientation of the piece under the point (an axis-aligned one at a vertex).
+    pub fn fits(self, path: &[PathSeg], t: f64) -> Result<(), Orientation> {
+        let Some(need) = self.needs() else {
+            return Ok(());
+        };
+        let found = orientations_at(path, t);
+        if found.contains(&need) {
+            return Ok(());
+        }
+        Err(found
+            .iter()
+            .copied()
+            .find(|o| matches!(o, Orientation::Horizontal | Orientation::Vertical))
+            .or(found.first().copied())
+            .unwrap_or(Orientation::Curve))
+    }
+
+    /// From the point on the line to the center of a `w`×`h` label on this side: its near
+    /// edge sits `stroke_width / 2 + 4` from the line.
+    pub fn offset(self, w: f64, h: f64, stroke_width: f64) -> Pt {
+        let gap = stroke_width / 2.0 + LABEL_GAP;
+        match self {
+            LabelSide::On => Pt::new(0.0, 0.0),
+            LabelSide::Above => Pt::new(0.0, -(gap + h / 2.0)),
+            LabelSide::Below => Pt::new(0.0, gap + h / 2.0),
+            LabelSide::Left => Pt::new(-(gap + w / 2.0), 0.0),
+            LabelSide::Right => Pt::new(gap + w / 2.0, 0.0),
+        }
+    }
+}
+
+/// The space between a line's stroke and a label placed beside it.
+pub const LABEL_GAP: f64 = 4.0;
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Label {
     pub t: f64,
     pub text: String,
-    /// The point on the path at `t`; the label's center.
+    /// The point on the path at `t`; the label's center when it sits on the line.
     pub at: Pt,
     pub rect: Rect,
     pub lines: Vec<PlacedLine>,
+    /// Where this label sits: the line's `label-side`, or `on` when that side does not
+    /// fit the segment under `at`.
+    #[serde(skip_serializing_if = "LabelSide::is_on")]
+    pub side: LabelSide,
     pub span: Span,
 }
 
@@ -383,6 +521,8 @@ pub struct Line {
     pub end: Marker,
     pub style: Style,
     pub labels: Vec<Label>,
+    #[serde(skip_serializing_if = "LabelSide::is_on")]
+    pub label_side: LabelSide,
     pub ortho: bool,
     pub allow: Vec<Allow>,
     pub reason: Option<String>,

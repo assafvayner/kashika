@@ -206,6 +206,7 @@ Line attributes:
 - `stroke-style=solid|dashed|dotted`, `stroke`, `stroke-width`, `style=`. On lines, a style applies only its `stroke*` and font keys.
 - `radius=N` rounds every polyline corner. The radius is clamped to half the shorter adjacent segment.
 - `label="..."` is the same as `label@0.5="..."`. `label@t="..."` is repeatable. `t` is the fraction of the final rendered path's **arc length**. Labels are horizontal, centered on the point, and cut their own line (stroke and markers) out of the label's rect, so whatever is beneath (the canvas, a group or box fill) shows between and around the words. Other lines are not cut; a line crossing another line's label is `label-collision`.
+- `label-side=on|above|below|left|right` (default `on`) sets where every label of the line sits; `label@t` still picks the point. `on` is the placement above. `above`/`below` need the point on a horizontal segment: the label stays centered on the point horizontally and moves up or down so its near edge is `stroke-width / 2 + 4` from the line. `left`/`right` need a vertical segment and move the label sideways the same distance, centered on the point vertically. At a vertex either adjoining segment may supply the orientation. A label beside its line does not cut the line, and its own line counts against it in `label-collision` like any other. A side that does not match the segment under the point (`above` on a vertical segment, any side but `on` on a diagonal or curve) is an `attr` error at the attribute that names the label and the segment's orientation; that label falls back to `on`.
 - `ortho`: asserts that every segment is horizontal or vertical. Any other segment is an error.
 - `allow=<code>[:<other-id>],...` and optional `reason="..."` (see §7).
 
@@ -272,7 +273,7 @@ These block output unless `--force` is given:
 | `not-ortho` | A segment is diagonal on a line marked `ortho` |
 | `degenerate-curve` | A zero-length curve or a negative curve amount |
 | `zero-length` | A line whose segments all have zero length |
-| `attr` | Unknown, duplicate, mistyped (including an unknown color name) or out-of-range attribute (§3), a duplicate label position, or a style `shape` that reaches a group (§3) |
+| `attr` | Unknown, duplicate, mistyped (including an unknown color name) or out-of-range attribute (§3), a duplicate label position, a `label-side` that does not match the segment under a label (§5), or a style `shape` that reaches a group (§3) |
 | `unknown-style` | `style=` names no built-in or user style |
 | `unknown-shape` | `shape=`, on a box or in a `style`, names no built-in, defined or imported shape. Includes did-you-mean |
 | `size` | A non-positive size, or one larger than 1,000,000 |
@@ -301,7 +302,7 @@ These block output unless `--force` is given:
 | `text-outside-shape` | An absolute block item lies outside the shape's text area (§6), or outside the band under a `text-area=below` shape. The help line gives the text area in the box-local frame |
 | `image-distort` | `fit=stretch` changes an image's aspect ratio by more than 5% |
 | `missing-glyph` | A text, label, sublabel, block item or line label contains a character none of the bundled fonts has a glyph for (§6). It is drawn as the font's empty-box `.notdef` glyph, with that glyph's width. The facts list the code points |
-| `label-collision` | A label or text box intersects a box, another label or text, a group title, a group's border (it straddles the group's rectangle: partly inside, partly outside), or a line other than its own. A line label also must not cover its own line's markers (arrowheads, diamonds, dots, and crow's-foot ends from the endpoint to their farthest bar, prong or circle); sitting on its own stroke is fine. A line that crosses the box of a group's title text is also reported, naming the line and the group, with the title's extent and the bottom of its title band in the help, and the group `text-align` that moves the title to the side away from where the line enters it |
+| `label-collision` | A label or text box intersects a box, another label or text, a group title, a group's border (it straddles the group's rectangle: partly inside, partly outside), or a line other than its own (its own line too, for a label beside it with `label-side`). A line label also must not cover its own line's markers (arrowheads, diamonds, dots, and crow's-foot ends from the endpoint to their farthest bar, prong or circle); sitting on its own stroke is fine. A line that crosses the box of a group's title text is also reported, naming the line and the group, with the title's extent and the bottom of its title band in the help, and the group `text-align` that moves the title to the side away from where the line enters it |
 | `out-of-canvas` | An element extends beyond the diagram size; children of a group that itself extends beyond it are not reported again |
 | `off-grid` | An authored literal is not a multiple of `grid` |
 

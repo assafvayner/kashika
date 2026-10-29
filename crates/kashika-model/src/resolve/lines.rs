@@ -1,4 +1,4 @@
-use kashika_diag::Diagnostic;
+use kashika_diag::{Diagnostic, Span};
 use kashika_geom::{PathSeg, Pt, TOLERANCE, point_at, round_corners_tagged};
 use kashika_syntax::ast::{self, Axis, SegKind, Side, Target};
 
@@ -93,8 +93,20 @@ impl<'a> Resolver<'a> {
                 return false;
             };
             lab.at = point_at(&path, lab.t);
+            lab.side = match p.label_side.fits(&path, lab.t) {
+                Ok(()) => p.label_side,
+                Err(found) => {
+                    self.diags
+                        .push(side_mismatch(p.label_side, found, lab, p.label_side_span));
+                    LabelSide::On
+                }
+            };
+            let center = lab.at
+                + lab
+                    .side
+                    .offset(block.width(), block.height(), p.style.stroke_width);
             (lab.lines, lab.rect) =
-                block.place_at(lab.at.x, lab.at.y, kashika_text::HAlign::Center);
+                block.place_at(center.x, center.y, kashika_text::HAlign::Center);
             true
         });
         let (id, named) = match &l.id {
@@ -114,6 +126,7 @@ impl<'a> Resolver<'a> {
             end: p.end,
             style: p.style,
             labels,
+            label_side: p.label_side,
             ortho: p.ortho,
             allow: p.allow,
             reason: p.reason,
@@ -245,4 +258,27 @@ impl<'a> Resolver<'a> {
             }
         })
     }
+}
+
+fn side_mismatch(side: LabelSide, found: Orientation, lab: &Label, span: Span) -> Diagnostic {
+    let need = side.needs().map_or("", Orientation::name);
+    let help = match found {
+        Orientation::Horizontal => "use `label-side=above` or `label-side=below`".to_string(),
+        Orientation::Vertical => "use `label-side=left` or `label-side=right`".to_string(),
+        Orientation::Diagonal | Orientation::Curve => {
+            format!("use `label-side=on`, or move `label@t` onto a straight {need} segment")
+        }
+    };
+    Diagnostic::error(
+        "attr",
+        span,
+        format!(
+            "`label-side={}` needs a {need} segment, but the label \"{}\" at t={} sits on a {} segment",
+            side.name(),
+            lab.text,
+            lab.t,
+            found.name()
+        ),
+    )
+    .with_help(help)
 }

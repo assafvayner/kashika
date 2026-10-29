@@ -1,0 +1,7 @@
+error[attr] 5:39-5:55: `label-side=above` needs a horizontal segment, but the label "up" at t=0.5 sits on a vertical segment
+  = help: use `label-side=left` or `label-side=right`
+error[attr] 6:47-6:62: `label-side=left` needs a vertical segment, but the label "d" at t=0.25 sits on a diagonal segment
+  = help: use `label-side=on`, or move `label@t` onto a straight vertical segment
+error[attr] 7:55-7:71: `label-side=below` needs a horizontal segment, but the label "c" at t=0.5 sits on a curved segment
+  = help: use `label-side=on`, or move `label@t` onto a straight horizontal segment
+error[attr] 8:38-8:52: `label-side` expects one of: on, above, below, left, right

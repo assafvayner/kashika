@@ -398,10 +398,16 @@ impl<'a> Resolver<'a> {
                     at: Pt::default(),
                     rect: Rect::default(),
                     lines: Vec::new(),
+                    side: LabelSide::On,
                     span: x.span,
                 });
             }
         }
+        let side_attr = a.get("label-side");
+        let label_side = side_attr
+            .and_then(|x| attrs::word(x, LabelSide::NAMES, &mut self.diags))
+            .and_then(LabelSide::from_name)
+            .unwrap_or_default();
         let ortho = a
             .get("ortho")
             .is_some_and(|x| attrs::flag(x, &mut self.diags));
@@ -412,6 +418,8 @@ impl<'a> Resolver<'a> {
             end,
             style: props.resolve(),
             labels,
+            label_side,
+            label_side_span: side_attr.map_or(l.span, |x| x.span),
             ortho,
             allow,
             reason,

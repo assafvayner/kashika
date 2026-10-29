@@ -84,6 +84,31 @@ fn label_over_its_own_arrowhead() {
 }
 
 #[test]
+fn label_beside_its_line_clears_the_arrowhead() {
+    assert!(
+        lint(
+            "label-collision",
+            "line l (20,100) -> h 40 end=arrow label=\"hello\" label-side=above\n",
+        )
+        .is_empty()
+    );
+}
+
+#[test]
+fn label_beside_its_line_collides_with_its_other_segments() {
+    let d = lint(
+        "label-collision",
+        "line l (20,100) -> h 100 -> v -100 label@0.45=\"hello\" label-side=above\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].message, "label \"hello\" of l collides with line l");
+    assert_eq!(
+        d[0].help,
+        vec!["clear label positions on l: label@0.05..0.4".to_string()]
+    );
+}
+
+#[test]
 fn label_on_its_own_stroke_away_from_markers() {
     assert!(lint(
         "label-collision",

@@ -84,14 +84,14 @@ Segments after `->`:
 | `curve left 30 db.top` | the curve's midpoint bulges 30px off the straight chord, left/right as seen walking along the line |
 | `curve via (c1) (c2) db.top` | explicit cubic |
 
-Line attributes: `start=`/`end=` (`arrow open diamond dot none`, plus the crow's-foot ER ends `one many one-many zero-one zero-many`, which sit on the line untrimmed), `stroke-style=dashed|dotted`, `stroke-width=2`, `radius=8` (rounded corners), `label="x"`, `label@0.25="x"` (`t` is the fraction of the whole path length, across all segments; a label masks the line under it), `ortho`. A line may start or end at a junction, with or without an arrow.
+Line attributes: `start=`/`end=` (`arrow open diamond dot none`, plus the crow's-foot ER ends `one many one-many zero-one zero-many`, which sit on the line untrimmed), `stroke-style=dashed|dotted`, `stroke-width=2`, `radius=8` (rounded corners), `label="x"`, `label@0.25="x"` (`t` is the fraction of the whole path length, across all segments; a label masks the line under it), `label-side=above|below` (horizontal segment) or `left|right` (vertical) to put every label of the line beside it instead, unmasked, `ortho`. A line may start or end at a junction, with or without an arrow.
 
 ## Line recipes
 
 - **Fan-out without `shared-segment`:** one line into a junction, then one line per child into its `top` (`hv` when it's off to the side). When two branches leave the junction the same way, run the trunk to the farthest child and put a second junction on it for the nearer one (`mid` below). A trunk that taps a child through a junction counts as connecting into that child's group, so it is no `group-transit`.
 - **Two lines on one side** of a box: spread them with `side@t` (`core.right@0.3`, `core.right@0.7`) to avoid `port-crowding`/`shared-segment`.
 - **Self-loop:** `curve via` from `top@0.8` back to `top@0.2`, with control points above the box. `out-of-canvas` measures a curve's true extent, labels included, so leave room.
-- **Sequence diagram:** lifelines are 2px-wide dashed boxes under each participant, with `layer=under` so messages that skip past them raise no `through`/`near`/`label-collision`. An activation bar is a narrow white box on the lifeline, also `layer=under`, written after the lifeline so it paints on top. Place each message at an absolute height with an offset from the lifeline's top (`lc.top+(0,30) -> x ls.left`) and point it at the bar's side while active. A label sits at the middle of the line; on a message that skips lifelines, pick a `label@t` between two of them. Space lifelines by label width + ~30px.
+- **Sequence diagram:** lifelines are 2px-wide dashed boxes under each participant, with `layer=under` so messages that skip past them raise no `through`/`near`/`label-collision`. An activation bar is a narrow white box on the lifeline, also `layer=under`, written after the lifeline so it paints on top. Place each message at an absolute height with an offset from the lifeline's top (`lc.top+(0,30) -> x ls.left`) and point it at the bar's side while active. Give messages `label-side=above` so the label sits over the arrow; on a message that skips lifelines, pick a `label@t` between two of them. Space lifelines by label width + ~30px.
 - **Table cards (ER diagrams):** a `layer=under` outline box, a header box, then one row box per column stacked with `at prev.bl`, each with `stroke=none padding=3 text-align=left`. `` `code` `` text is monospace and keeps its spaces, so pad the names to line the columns up. Draw relationships between row boxes (`orders_cust.right -> customers_id.left`); offset a card's y so the two rows are level. Anchor at a row's center (`r2.right`, not `@0.2`): `near` measures a row's whole box even when it draws no border, so an off-center anchor runs close to the next row. Mark cardinality with crow's-foot ends: `start=many end=one` on a foreign key, `zero-one`/`zero-many` when optional, `one-many` for at least one. Two crow's feet on one side need 12px between them.
 - **Guides for rows and columns:** a junction without `dot` draws nothing, so use junctions as named lanes and columns, chained so they move together, and place shapes on them with mixed points. Moving a lane or the first column is then a one-line edit. Put repeated looks, `shape=` included, in a `style` (see below).
 - **Graphs and timelines** (commit graphs, state dots): place small markers with `pin=center` on guide columns and lanes, leave `grid=` off, and give hollow markers `fill=white`. Lines to a diamond's `left`/`right` meet its tips. Diagonal and curved edges are fine here; leave `ortho` off.
@@ -120,10 +120,10 @@ box lc at c.bottom size (2,160) pin=top stroke-style=dashed layer=under
 box ls at s.bottom size (2,160) pin=top stroke-style=dashed layer=under
 box ld at d.bottom size (2,160) pin=top stroke-style=dashed layer=under
 box act at ls.top+(0,40) size (10,80) pin=top fill=white layer=under
-line req lc.top+(0,30) -> x act.left end=arrow label="request"
-line q act.tr+(0,20) -> x ld.left end=arrow label="query"
-line skip lc.top+(0,130) -> x ld.left end=arrow label@0.75="audit"
-line res act.bl+(0,-10) -> x lc.right end=arrow stroke-style=dashed label="reply"
+line req lc.top+(0,30) -> x act.left end=arrow label="request" label-side=above
+line q act.tr+(0,20) -> x ld.left end=arrow label="query" label-side=above
+line skip lc.top+(0,130) -> x ld.left end=arrow label@0.75="audit" label-side=above
+line res act.bl+(0,-10) -> x lc.right end=arrow stroke-style=dashed label="reply" label-side=above
 ```
 
 ```kash

@@ -1,6 +1,8 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::{PathSeg, Pt, Rect};
-use kashika_model::{EdgeKind, Padding, PlacementEdge, Scene, SegmentKind, StrokeStyle, compile};
+use kashika_model::{
+    EdgeKind, LabelSide, Padding, PlacementEdge, Scene, SegmentKind, StrokeStyle, compile,
+};
 
 const HEAD: &str = "diagram \"t\" size (800,600)\n";
 
@@ -444,6 +446,68 @@ fn duplicate_label_positions() {
     ));
     assert_eq!(s.lines[0].labels.len(), 1);
     assert_eq!(s.lines[0].labels[0].text, "a");
+}
+
+#[test]
+fn label_side_shifts_the_rect_off_the_line() {
+    let gap = 1.5 / 2.0 + 4.0;
+    let s = ok("line l (0,100) -> h 200 label=\"a\" label-side=above\n");
+    let lab = &s.lines[0].labels[0];
+    assert_eq!(lab.side, LabelSide::Above);
+    assert_eq!(lab.at, Pt::new(100.0, 100.0));
+    assert!((lab.rect.bottom() - (100.0 - gap)).abs() < 1e-9);
+    assert!((lab.rect.center().x - 100.0).abs() < 1e-9);
+
+    let s = ok("line l (0,100) -> h 200 stroke-width=4 label=\"a\" label-side=below\n");
+    assert!((s.lines[0].labels[0].rect.y - 106.0).abs() < 1e-9);
+
+    let s = ok("line l (100,0) -> v 200 label=\"a\" label-side=left\n");
+    let r = s.lines[0].labels[0].rect;
+    assert!((r.right() - (100.0 - gap)).abs() < 1e-9);
+    assert!((r.center().y - 100.0).abs() < 1e-9);
+
+    let s = ok("line l (100,0) -> v 200 label=\"a\" label-side=right\n");
+    assert!((s.lines[0].labels[0].rect.x - (100.0 + gap)).abs() < 1e-9);
+}
+
+#[test]
+fn label_side_at_a_vertex_uses_the_matching_segment() {
+    let s = ok("line l (0,0) -> h 100 -> v 100 label=\"a\" label-side=right\n");
+    assert_eq!(s.lines[0].labels[0].side, LabelSide::Right);
+    let s = ok("line l (0,0) -> h 100 -> v 100 label=\"a\" label-side=below\n");
+    assert_eq!(s.lines[0].labels[0].side, LabelSide::Below);
+}
+
+#[test]
+fn label_side_mismatch_falls_back_to_on() {
+    let body = "line l (100,0) -> v 200 label=\"a\" label-side=above\n";
+    let d = errors(body);
+    assert_eq!(d.len(), 1);
+    assert_eq!(d[0].code, "attr");
+    assert!(
+        d[0].message.contains("vertical segment"),
+        "{}",
+        d[0].message
+    );
+    assert_eq!(d[0].help, ["use `label-side=left` or `label-side=right`"]);
+    let (s, _) = compile(&format!("{HEAD}{body}"));
+    let lab = &s.lines[0].labels[0];
+    assert_eq!(lab.side, LabelSide::On);
+    assert!((lab.rect.center().y - 100.0).abs() < 1e-9);
+    assert_eq!(s.lines[0].label_side, LabelSide::Above);
+
+    for body in [
+        "line l (0,0) -> (100,100) label=\"a\" label-side=left\n",
+        "line l (0,0) -> curve left 20 (100,0) label=\"a\" label-side=above\n",
+    ] {
+        let d = errors(body);
+        assert_eq!(d.len(), 1, "{d:#?}");
+        assert!(d[0].help[0].starts_with("use `label-side=on`"), "{d:#?}");
+    }
+    assert_eq!(
+        errors("line l (0,0) -> h 100 label=\"a\" label-side=top\n")[0].code,
+        "attr"
+    );
 }
 
 #[test]
