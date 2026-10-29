@@ -13,8 +13,8 @@ fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-const MESSY: &str = "diagram  \"d\" size (200,100)\nbox a at ( 10,10 ) size (40,20)   // a box\n\n\n\nbox b at a.right+( 40 ,0) size (40,20) pin=left\n";
-const CLEAN: &str = "diagram \"d\" size (200,100)\nbox a at (10,10) size (40,20)  // a box\n\nbox b at a.right+(40,0) size (40,20) pin=left\n";
+const MESSY: &str = "diagram  \"d\" size (200, 100)\nbox a at ( 10,10 ) size (40, 20)   // a box\n\n\n\nbox b at a.right+( 40 ,0) size (40, 20) pin=left\n";
+const CLEAN: &str = "diagram \"d\" size (200, 100)\nbox a at (10, 10) size (40, 20)  // a box\n\nbox b at a.right+(40, 0) size (40, 20) pin=left\n";
 
 #[test]
 fn rewrites_file_in_place() {
@@ -84,7 +84,7 @@ fn stdin_name_names_stdin_in_reports() {
         .stdout(predicate::str::contains("<stdin>").not());
     kashika()
         .args(["fmt", "-", "--check", "--stdin-name", "draft.kash"])
-        .write_stdin("diagram \"d\" size (100,100)\nbox  a at (0,0) size (10,10)\n")
+        .write_stdin("diagram \"d\" size (100, 100)\nbox  a at (0, 0) size (10, 10)\n")
         .assert()
         .code(1)
         .stdout("draft.kash: not formatted\n");
@@ -145,7 +145,7 @@ fn corpus_round_trips() {
 
 #[test]
 fn pin_with_position_round_trips() {
-    let src = "diagram \"d\" size (200,100)\nbox a at (10,10) size (40,20) pin=left@0.25\n";
+    let src = "diagram \"d\" size (200, 100)\nbox a at (10, 10) size (40, 20) pin=left@0.25\n";
     let dir = tempfile::tempdir().unwrap();
     let f = dir.path().join("d.kash");
     std::fs::write(&f, src).unwrap();
@@ -165,7 +165,7 @@ fn pin_with_position_round_trips() {
 fn color_names_round_trip() {
     let dir = tempfile::tempdir().unwrap();
     let f = dir.path().join("d.kash");
-    let src = "diagram \"d\" size (200,100) background=Ivory\nbox a at (10,10) size (40,20) fill=SteelBlue color=white\n";
+    let src = "diagram \"d\" size (200, 100) background=Ivory\nbox a at (10, 10) size (40, 20) fill=SteelBlue color=white\n";
     std::fs::write(&f, src).unwrap();
     kashika()
         .args(["fmt", f.to_str().unwrap(), "--check"])

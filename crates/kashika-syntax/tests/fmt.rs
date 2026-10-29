@@ -26,67 +26,67 @@ fn fmt(src: &str) -> String {
 #[test]
 fn normalizes_token_spacing() {
     assert_eq!(
-        fmt("box  a \"A\" at ( 10 , 20 ) size (1,1)   fill = #fff\n"),
-        "box a \"A\" at (10,20) size (1,1) fill=#fff\n"
+        fmt("box  a \"A\" at ( 10 , 20 ) size (1, 1)   fill = #fff\n"),
+        "box a \"A\" at (10, 20) size (1, 1) fill=#fff\n"
     );
     assert_eq!(
         fmt("line l  db.top + ( -10 , 0 ) -> h 20 label @ 0.5 = \"x\"\n"),
-        "line l db.top+(-10,0) -> h 20 label@0.5=\"x\"\n"
+        "line l db.top+(-10, 0) -> h 20 label@0.5=\"x\"\n"
     );
     assert_eq!(
-        fmt("line l db.top - ( -10 , 0 ) -> b.left@0.25 -(0,4)\n"),
-        "line l db.top-(-10,0) -> b.left@0.25-(0,4)\n"
+        fmt("line l db.top - ( -10 , 0 ) -> b.left@0.25 -(0, 4)\n"),
+        "line l db.top-(-10, 0) -> b.left@0.25-(0, 4)\n"
     );
     assert_eq!(
         fmt("line l a.top -> curve  left   30 b.top allow = cross : m , near\n"),
         "line l a.top -> curve left 30 b.top allow=cross:m,near\n"
     );
     assert_eq!(
-        fmt("junction j at (a.bottom.x,130)\nline l (j.x , 10) -> ( 5 , 6 )\n"),
-        "junction j at (a.bottom.x, 130)\nline l (j.x, 10) -> (5,6)\n"
+        fmt("junction j at (a.bottom.x, 130)\nline l (j.x , 10) -> ( 5 , 6 )\n"),
+        "junction j at (a.bottom.x, 130)\nline l (j.x, 10) -> (5, 6)\n"
     );
 }
 
 #[test]
 fn keeps_point_parentheses() {
     assert_eq!(
-        fmt("box b at ( a.center + ( 0 , 40 ) ) size (1,1)\n"),
-        "box b at (a.center+(0,40)) size (1,1)\n"
+        fmt("box b at ( a.center + ( 0 , 40 ) ) size (1, 1)\n"),
+        "box b at (a.center+(0, 40)) size (1, 1)\n"
     );
     assert_eq!(
-        fmt("line l (a.bottom) -> x ( c.left ) -> curve via (fan) ( b.top-(0,4) ) (d.left)\n"),
-        "line l (a.bottom) -> x (c.left) -> curve via (fan) (b.top-(0,4)) (d.left)\n"
+        fmt("line l (a.bottom) -> x ( c.left ) -> curve via (fan) ( b.top-(0, 4) ) (d.left)\n"),
+        "line l (a.bottom) -> x (c.left) -> curve via (fan) (b.top-(0, 4)) (d.left)\n"
     );
     assert_eq!(
-        fmt("box b at ( ( a.left.x ,b.y ) + ( 0 , 4 ) ) - (1, 1) size (1,1)\n"),
-        "box b at ((a.left.x, b.y)+(0,4))-(1,1) size (1,1)\n"
+        fmt("box b at ( ( a.left.x ,b.y ) + ( 0 , 4 ) ) - (1, 1) size (1, 1)\n"),
+        "box b at ((a.left.x, b.y)+(0, 4))-(1, 1) size (1, 1)\n"
     );
     assert_eq!(
-        fmt("line l (10,20) + (5,0) -> a.c + (1,2) + (3,4) -> (a.c)-(1,1)\n"),
-        "line l (10,20)+(5,0) -> a.c+(1,2)+(3,4) -> (a.c)-(1,1)\n"
+        fmt("line l (10, 20) + (5, 0) -> a.c + (1, 2) + (3, 4) -> (a.c)-(1, 1)\n"),
+        "line l (10, 20)+(5, 0) -> a.c+(1, 2)+(3, 4) -> (a.c)-(1, 1)\n"
     );
 }
 
 #[test]
 fn keeps_number_and_string_spelling() {
     assert_eq!(
-        fmt("box a \"a\\*b \\\"q\\\"\" at (10.50,020) size (1,1)\n"),
-        "box a \"a\\*b \\\"q\\\"\" at (10.50,020) size (1,1)\n"
+        fmt("box a \"a\\*b \\\"q\\\"\" at (10.50, 020) size (1, 1)\n"),
+        "box a \"a\\*b \\\"q\\\"\" at (10.50, 020) size (1, 1)\n"
     );
 }
 
 #[test]
 fn indents_blocks_and_continuations() {
-    let src = "diagram \"d\" size (100,100)\n\
-group g at (0,0) size (100,100) {\n\
-box a at (10,30) size (20,20)\n\
+    let src = "diagram \"d\" size (100, 100)\n\
+group g at (0, 0) size (100, 100) {\n\
+box a at (10, 30) size (20, 20)\n\
     line l a.right\n\
   -> h 20\n\
         end=arrow\n\
 }\n";
-    let want = "diagram \"d\" size (100,100)\n\
-group g at (0,0) size (100,100) {\n\
-\x20 box a at (10,30) size (20,20)\n\
+    let want = "diagram \"d\" size (100, 100)\n\
+group g at (0, 0) size (100, 100) {\n\
+\x20 box a at (10, 30) size (20, 20)\n\
 \x20 line l a.right\n\
 \x20   -> h 20\n\
 \x20   end=arrow\n\
@@ -105,8 +105,8 @@ fn style_block_lines_are_not_continuations() {
 
 #[test]
 fn keeps_comments_and_collapses_blank_lines() {
-    let src = "\n\n// header\n\n\nbox a at (0,0) size (1,1)    // trailing\n/* block\n   comment */\ngroup g at (0,0) size (9,9) {\n\n    // inside\nbox b at (1,1) size (1,1)\n\n}\n\n\n";
-    let want = "// header\n\nbox a at (0,0) size (1,1)  // trailing\n/* block\n   comment */\ngroup g at (0,0) size (9,9) {\n  // inside\n  box b at (1,1) size (1,1)\n}\n";
+    let src = "\n\n// header\n\n\nbox a at (0, 0) size (1, 1)    // trailing\n/* block\n   comment */\ngroup g at (0, 0) size (9, 9) {\n\n    // inside\nbox b at (1, 1) size (1, 1)\n\n}\n\n\n";
+    let want = "// header\n\nbox a at (0, 0) size (1, 1)  // trailing\n/* block\n   comment */\ngroup g at (0, 0) size (9, 9) {\n  // inside\n  box b at (1, 1) size (1, 1)\n}\n";
     assert_eq!(fmt(src), want);
 }
 
@@ -122,15 +122,15 @@ fn formats_statements_the_parser_does_not_build_yet() {
 fn formats_future_blocks_without_knowing_their_grammar() {
     assert_eq!(
         fmt(
-            "box api at (100,80) size (200,120) text-align=left {\ntext \"**Payments API**\"\n      text \"v2.4.1\" size=11 muted\n}\n"
+            "box api at (100, 80) size (200, 120) text-align=left {\ntext \"**Payments API**\"\n      text \"v2.4.1\" size=11 muted\n}\n"
         ),
-        "box api at (100,80) size (200,120) text-align=left {\n  text \"**Payments API**\"\n  text \"v2.4.1\" size=11 muted\n}\n"
+        "box api at (100, 80) size (200, 120) text-align=left {\n  text \"**Payments API**\"\n  text \"v2.4.1\" size=11 muted\n}\n"
     );
     assert_eq!(
         fmt(
             "shape lb_icon {\npath \"M 0 0.5 L 1 0.5\"\n    outline 1\ntext-area ( 0.2,0.3 ,0.6,0.4)\n}\n"
         ),
-        "shape lb_icon {\n  path \"M 0 0.5 L 1 0.5\"\n  outline 1\n  text-area (0.2,0.3,0.6,0.4)\n}\n"
+        "shape lb_icon {\n  path \"M 0 0.5 L 1 0.5\"\n  outline 1\n  text-area (0.2, 0.3, 0.6, 0.4)\n}\n"
     );
 }
 
@@ -143,8 +143,8 @@ fn refuses_parse_errors() {
 #[test]
 fn drops_a_byte_order_mark() {
     assert_eq!(
-        fmt("\u{feff}box a at (1,2) size (3,4)\n"),
-        "box a at (1,2) size (3,4)\n"
+        fmt("\u{feff}box a at (1, 2) size (3, 4)\n"),
+        "box a at (1, 2) size (3, 4)\n"
     );
 }
 
@@ -156,22 +156,23 @@ fn empty_input_stays_empty() {
 
 #[test]
 fn version_attribute_round_trips() {
-    let src = "diagram \"t\" size (1,1) kashika=\"0.1.0\"\n";
+    let src = "diagram \"t\" size (1, 1) kashika=\"0.1.0\"\n";
     assert_eq!(fmt(src), src);
 }
 
 #[test]
 fn keeps_at_size_and_attribute_order() {
     assert_eq!(
-        fmt("box  a \"A\" style=service size ( 9 , 9 )  at (1,2)\njunction j dot  at (0,0)\n"),
-        "box a \"A\" style=service size (9,9) at (1,2)\njunction j dot at (0,0)\n"
+        fmt("box  a \"A\" style=service size ( 9 , 9 )  at (1, 2)\njunction j dot  at (0, 0)\n"),
+        "box a \"A\" style=service size (9, 9) at (1, 2)\njunction j dot at (0, 0)\n"
     );
 }
 
 #[test]
 fn crlf_is_normalized_inside_block_comments() {
-    let out = format("box a at (1,1) size (1,1)\r\n/* x\r\n y */\r\nbox b at (5,5) size (1,1)\r\n")
-        .unwrap();
+    let out =
+        format("box a at (1, 1) size (1, 1)\r\n/* x\r\n y */\r\nbox b at (5, 5) size (1, 1)\r\n")
+            .unwrap();
     assert!(!out.contains('\r'), "{out:?}");
     assert_eq!(format(&out).unwrap(), out);
 }
@@ -228,7 +229,37 @@ fn truncated_examples_never_panic_and_format_idempotently() {
 #[test]
 fn keeps_keywords_and_attribute_names_as_written() {
     assert_eq!(
-        fmt("arrow  ab a.right ->  b.left\n  end=none\nbox  a \"A\" at (0,0) size ( auto , 40 )\n"),
-        "arrow ab a.right -> b.left\n  end=none\nbox a \"A\" at (0,0) size (auto, 40)\n"
+        fmt(
+            "arrow  ab a.right ->  b.left\n  end=none\nbox  a \"A\" at (0, 0) size ( auto , 40 )\n"
+        ),
+        "arrow ab a.right -> b.left\n  end=none\nbox a \"A\" at (0, 0) size (auto, 40)\n"
+    );
+}
+
+#[test]
+fn spaces_every_comma_inside_parentheses_once() {
+    assert_eq!(
+        fmt("diagram \"d\" size (140,auto)\n"),
+        "diagram \"d\" size (140, auto)\n"
+    );
+    assert_eq!(
+        fmt("box a at (10,20) size (140,60) padding=(8 ,4)\nbox b at a.right+(40,-4) pin=left\n"),
+        "box a at (10, 20) size (140, 60) padding=(8, 4)\nbox b at a.right+(40, -4) pin=left\n"
+    );
+    assert_eq!(
+        fmt("box c at (a.x,b.y)-( 1,2 ) size (1,1)\n"),
+        "box c at (a.x, b.y)-(1, 2) size (1, 1)\n"
+    );
+    assert_eq!(
+        fmt("style s {\nsize=(140,auto) padding=(6,  2)\n}\n"),
+        "style s {\n  size=(140, auto) padding=(6, 2)\n}\n"
+    );
+    assert_eq!(
+        fmt("shape t {\npath \"M 0 0 L 1 1\"\ntext-area (0.2,0.3,0.6,0.4)\n}\n"),
+        "shape t {\n  path \"M 0 0 L 1 1\"\n  text-area (0.2, 0.3, 0.6, 0.4)\n}\n"
+    );
+    assert_eq!(
+        fmt("line l (0,0) -> h 5 allow=cross:m,near\n"),
+        "line l (0, 0) -> h 5 allow=cross:m,near\n"
     );
 }

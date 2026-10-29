@@ -210,10 +210,7 @@ fn space(row: &[Item], i: usize, in_parens: bool) -> bool {
         return false;
     }
     match p {
-        Tok::Comma => {
-            let ident = |t: Option<&Tok>| matches!(t, Some(Tok::Ident(_)));
-            in_parens && ((i >= 2 && ident(row[i - 2].tok.as_ref())) || ident(Some(n)))
-        }
+        Tok::Comma => in_parens,
         Tok::LParen | Tok::Dot | Tok::At | Tok::Eq | Tok::Plus | Tok::Minus | Tok::Colon => false,
         _ => true,
     }

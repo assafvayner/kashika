@@ -865,16 +865,19 @@ fn numeric_arguments_are_validated() {
 
 #[test]
 fn fmt_reads_stdin_and_writes_stdout() {
-    let (code, out, _) = run_ok(&["fmt", "-"], "box a at (10,10)   size (100,60)\n");
+    let (code, out, _) = run_ok(&["fmt", "-"], "box a at (10, 10)   size (100, 60)\n");
     assert_eq!(code, 0);
-    assert_eq!(out, "box a at (10,10) size (100,60)\n");
+    assert_eq!(out, "box a at (10, 10) size (100, 60)\n");
     let (code, out, _) = run_ok(
         &["fmt", "-", "--check"],
-        "box a at (10,10)   size (100,60)\n",
+        "box a at (10, 10)   size (100, 60)\n",
     );
     assert_eq!(code, 1);
     assert!(out.contains("not formatted"), "{out}");
-    let (code, out, _) = run_ok(&["fmt", "-", "--check"], "box a at (10,10) size (100,60)\n");
+    let (code, out, _) = run_ok(
+        &["fmt", "-", "--check"],
+        "box a at (10, 10) size (100, 60)\n",
+    );
     assert_eq!((code, out.as_str()), (0, ""));
     assert_eq!(run_ok(&["fmt", "-"], "box a at (\n").0, 2);
 }
