@@ -221,8 +221,10 @@ fn interior_samples(poly: &[Pt]) -> impl Iterator<Item = Pt> + '_ {
                 .map(|(p, q)| p.x + (y - p.y) * (q.x - p.x) / (q.y - p.y))
                 .collect();
             xs.sort_by(f64::total_cmp);
-            xs.chunks_exact(2)
-                .map(|c| Pt::new((c[0] + c[1]) / 2.0, y))
+            xs.as_chunks::<2>()
+                .0
+                .iter()
+                .map(|[a, b]| Pt::new((a + b) / 2.0, y))
                 .collect::<Vec<_>>()
         })
 }
