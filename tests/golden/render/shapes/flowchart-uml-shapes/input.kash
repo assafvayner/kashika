@@ -1,0 +1,16 @@
+// spec: 3a, 6
+// raster: png
+// The flowchart and UML built-in shapes, labeled, wide and tall.
+diagram "flowchart shapes" size (700,390)
+box p1 "parallelogram" at (20,20) size (160,70) shape=parallelogram
+box p2 "predefined" at (200,20) size (140,70) shape=predefined-process
+box p3 "stadium" at (360,20) size (140,70) shape=stadium
+box p4 "triangle" at (520,20) size (160,90) shape=triangle
+box p5 "octagon" at (20,140) size (120,90) shape=octagon
+box p6 "note" at (160,140) size (120,90) shape=note
+box p7 "package" at (300,140) size (120,90) shape=package
+box p8 "queue" at (440,140) size (140,60) shape=queue
+box t1 "tall" at (20,250) size (90,120) shape=stadium
+box t2 "Jobs" at (120,280) shape=queue
+box t3 "Start" at (240,280) shape=stadium
+box t4 "Read input" at (340,280) shape=parallelogram

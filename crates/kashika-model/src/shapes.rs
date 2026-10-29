@@ -75,6 +75,54 @@ pub const SHAPES: &[BuiltinShape] = &[
         source: Some(person),
         hidden_outline: true,
     },
+    BuiltinShape {
+        name: "parallelogram",
+        keywords: &["io", "input", "output", "data"],
+        source: Some(parallelogram),
+        hidden_outline: false,
+    },
+    BuiltinShape {
+        name: "predefined-process",
+        keywords: &["subroutine", "subprocess", "procedure", "function", "call"],
+        source: Some(predefined_process),
+        hidden_outline: false,
+    },
+    BuiltinShape {
+        name: "stadium",
+        keywords: &["terminator", "terminal", "start", "end", "pill", "capsule"],
+        source: Some(stadium),
+        hidden_outline: false,
+    },
+    BuiltinShape {
+        name: "triangle",
+        keywords: &["warning", "delta", "pyramid"],
+        source: Some(triangle),
+        hidden_outline: false,
+    },
+    BuiltinShape {
+        name: "octagon",
+        keywords: &["stop", "halt", "block"],
+        source: Some(octagon),
+        hidden_outline: false,
+    },
+    BuiltinShape {
+        name: "note",
+        keywords: &["comment", "annotation", "memo", "sticky"],
+        source: Some(note),
+        hidden_outline: false,
+    },
+    BuiltinShape {
+        name: "package",
+        keywords: &["folder", "module", "namespace"],
+        source: Some(package),
+        hidden_outline: false,
+    },
+    BuiltinShape {
+        name: "queue",
+        keywords: &["fifo", "mq", "buffer", "pipe", "topic"],
+        source: Some(queue),
+        hidden_outline: false,
+    },
 ];
 
 /// The built-in shape called `name`.
@@ -95,6 +143,18 @@ const WAVE: f64 = 12.0;
 const BUMP: f64 = 24.0;
 /// Largest `person` head radius in px.
 const HEAD: f64 = 18.0;
+/// Largest `parallelogram` slant in px.
+const SLANT: f64 = 24.0;
+/// Largest `predefined-process` bar inset in px.
+const BAR: f64 = 12.0;
+/// Largest `octagon` corner cut in px.
+const CUT: f64 = 24.0;
+/// Largest `note` fold in px.
+const FOLD: f64 = 16.0;
+/// Largest `package` tab height and width in px.
+const TAB: (f64, f64) = (12.0, 56.0);
+/// Largest `queue` cap width in px.
+const SIDE_CAP: f64 = 12.0;
 
 /// A shape in unit coordinates, stretched onto each box.
 #[derive(Debug, Clone, PartialEq)]
@@ -242,6 +302,161 @@ fn person(w: f64, h: f64) -> (String, usize, Rect) {
     let i = 0.3 * k;
     let area = Rect::new(i / w, (top + i) / h, 1.0 - 2.0 * i / w, (h - top - i) / h);
     (d, 3, area)
+}
+
+/// Formats a px point on a `w`×`h` box as a unit-path point.
+fn px(w: f64, h: f64) -> impl Fn(f64, f64) -> String {
+    move |x, y| format!("{} {}", x / w, y / h)
+}
+
+/// A px rect on a `w`×`h` box as a unit rect.
+fn unit_rect(w: f64, h: f64, r: Rect) -> Rect {
+    Rect::new(r.x / w, r.y / h, r.w / w, r.h / h)
+}
+
+fn parallelogram(w: f64, h: f64) -> (String, usize, Rect) {
+    let p = px(w, h);
+    let s = SLANT.min(h / 2.0).min(w / 4.0);
+    let d = format!(
+        "M {} L {} L {} L {} Z",
+        p(s, 0.0),
+        p(w, 0.0),
+        p(w - s, h),
+        p(0.0, h)
+    );
+    (d, 1, unit_rect(w, h, Rect::new(s, 0.0, w - 2.0 * s, h)))
+}
+
+fn predefined_process(w: f64, _h: f64) -> (String, usize, Rect) {
+    let i = BAR.min(w / 8.0) / w;
+    let m = 1.0 - i;
+    (
+        format!("M 0 0 L 1 0 L 1 1 L 0 1 Z M {i} 0 L {i} 1 M {m} 0 L {m} 1"),
+        1,
+        Rect::new(i, 0.0, 1.0 - 2.0 * i, 1.0),
+    )
+}
+
+/// A rect whose corner radius `r` is half its shorter side. The text area's corners lie on
+/// the corner circles, `0.1 × r` in from the top and bottom.
+fn stadium(w: f64, h: f64) -> (String, usize, Rect) {
+    let p = px(w, h);
+    let r = w.min(h) / 2.0;
+    let arc = |x: f64, y: f64| format!(" A {} {} 0 0 1 {}", r / w, r / h, p(x, y));
+    let mut d = format!("M {}", p(r, 0.0));
+    let wide = w - r > r;
+    let tall = h - r > r;
+    if wide {
+        d += &format!(" L {}", p(w - r, 0.0));
+    }
+    d += &arc(w, r);
+    if tall {
+        d += &format!(" L {}", p(w, h - r));
+    }
+    d += &arc(w - r, h);
+    if wide {
+        d += &format!(" L {}", p(r, h));
+    }
+    d += &arc(0.0, h - r);
+    if tall {
+        d += &format!(" L {}", p(0.0, r));
+    }
+    d += &arc(r, 0.0);
+    d += " Z";
+    let (a, b) = (0.57 * r, 0.1 * r);
+    (
+        d,
+        1,
+        unit_rect(w, h, Rect::new(a, b, w - 2.0 * a, h - 2.0 * b)),
+    )
+}
+
+fn triangle(_w: f64, _h: f64) -> (String, usize, Rect) {
+    (
+        "M 0.5 0 L 1 1 L 0 1 Z".into(),
+        1,
+        Rect::new(0.25, 0.5, 0.5, 0.5),
+    )
+}
+
+fn octagon(w: f64, h: f64) -> (String, usize, Rect) {
+    let p = px(w, h);
+    let c = CUT.min(0.29 * w.min(h));
+    let d = format!(
+        "M {} L {} L {} L {} L {} L {} L {} L {} Z",
+        p(c, 0.0),
+        p(w - c, 0.0),
+        p(w, c),
+        p(w, h - c),
+        p(w - c, h),
+        p(c, h),
+        p(0.0, h - c),
+        p(0.0, c)
+    );
+    (
+        d,
+        1,
+        unit_rect(w, h, Rect::new(c / 2.0, c / 2.0, w - c, h - c)),
+    )
+}
+
+/// A sheet with its top-right corner folded down; the fold is the second subpath.
+fn note(w: f64, h: f64) -> (String, usize, Rect) {
+    let p = px(w, h);
+    let f = FOLD.min(w / 4.0).min(h / 4.0);
+    let d = format!(
+        "M {} L {} L {} L {} L {} Z M {} L {} L {}",
+        p(0.0, 0.0),
+        p(w - f, 0.0),
+        p(w, f),
+        p(w, h),
+        p(0.0, h),
+        p(w - f, 0.0),
+        p(w - f, f),
+        p(w, f)
+    );
+    (
+        d,
+        1,
+        unit_rect(w, h, Rect::new(0.0, f / 2.0, w - f / 2.0, h - f / 2.0)),
+    )
+}
+
+/// A folder: a tab on the top left over the body, which holds the text.
+fn package(w: f64, h: f64) -> (String, usize, Rect) {
+    let p = px(w, h);
+    let t = TAB.0.min(h / 5.0);
+    let tw = TAB.1.min(0.4 * w);
+    let d = format!(
+        "M {} L {} L {} L {} L {} L {} Z M {} L {}",
+        p(0.0, 0.0),
+        p(tw, 0.0),
+        p(tw, t),
+        p(w, t),
+        p(w, h),
+        p(0.0, h),
+        p(0.0, t),
+        p(tw, t)
+    );
+    (d, 1, unit_rect(w, h, Rect::new(0.0, t, w, h - t)))
+}
+
+/// A cylinder on its side: caps `min(SIDE_CAP, h/5, w/4)` px wide, the right one drawn whole.
+fn queue(w: f64, h: f64) -> (String, usize, Rect) {
+    let p = px(w, h);
+    let c = SIDE_CAP.min(h / 5.0).min(w / 4.0);
+    let rad = format!("{} 0.5", c / w);
+    let d = format!(
+        "M {} L {} A {rad} 0 0 1 {} L {} A {rad} 0 0 1 {} Z M {} A {rad} 0 0 0 {}",
+        p(c, 0.0),
+        p(w - c, 0.0),
+        p(w - c, h),
+        p(c, h),
+        p(c, 0.0),
+        p(w - c, 0.0),
+        p(w - c, h)
+    );
+    (d, 1, unit_rect(w, h, Rect::new(c, 0.0, w - 3.0 * c, h)))
 }
 
 pub(crate) fn builtin(name: &str, w: f64, h: f64) -> Option<UnitShape> {

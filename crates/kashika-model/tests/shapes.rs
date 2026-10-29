@@ -277,6 +277,29 @@ fn pixel_features_do_not_stretch() {
     );
 }
 
+#[test]
+fn flowchart_and_uml_features_are_capped_in_pixels() {
+    for (name, want) in [
+        ("parallelogram", Rect::new(24.0, 0.0, 352.0, 300.0)),
+        ("predefined-process", Rect::new(12.0, 0.0, 376.0, 300.0)),
+        ("octagon", Rect::new(12.0, 12.0, 376.0, 276.0)),
+        ("note", Rect::new(0.0, 8.0, 392.0, 292.0)),
+        ("package", Rect::new(0.0, 12.0, 400.0, 288.0)),
+        ("queue", Rect::new(12.0, 0.0, 364.0, 300.0)),
+        ("stadium", Rect::new(85.5, 15.0, 229.0, 270.0)),
+    ] {
+        let s = ok(&format!(
+            "box a at (0,0) size (400,300) shape={name} padding=0\n"
+        ));
+        let t = shape(&s, "a").text_area;
+        assert!(
+            close(Pt::new(t.x, t.y), Pt::new(want.x, want.y))
+                && close(Pt::new(t.w, t.h), Pt::new(want.w, want.h)),
+            "{name}: {t:?}"
+        );
+    }
+}
+
 const BIG: &str = "diagram \"t\" size (4000,4000)\n";
 
 #[test]

@@ -74,7 +74,7 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
   - `padding=N` insets the text area by `N` on every side; `padding=(x,y)` insets it by `x` on the left and right and `y` on the top and bottom. Below, "`padding`" means `x` for horizontal distances and `y` for vertical ones.
 
   Built-in styles: `service`, `datastore`, `external`, `queue`, `boundary`, `note`. A user style with a built-in's name overrides it **key by key**, and so does a style a library defines under that name when it is imported without `as` (imported `as aws`, it is `aws.service`, a separate style). Precedence: inline attribute > `style=` > built-in default; for `shape`, inline `shape=` > the style's `shape` > `rect`; for `size`, inline `size` > the style's `size` > fitted to the text (boxes) or to the children (groups). Built-in styles set no shape or size; a user override of one may (except `boundary`'s size).
-- `box` shapes: built-in `rect` (default), `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`, or any `shape` that is defined or imported (§3a). Any other `shape=` name is an `unknown-shape` error.
+- `box` shapes: built-in `rect` (default), `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`, `parallelogram`, `predefined-process`, `stadium`, `triangle`, `octagon`, `note`, `package`, `queue`, or any `shape` that is defined or imported (§3a). Any other `shape=` name is an `unknown-shape` error.
 - `pin=<anchor>` picks which anchor of the new shape lands on `at` (default `tl`). Any anchor works, including `side@t`: `pin=left@0.25`. For example, `box cache at db.right+(60,0) size (120,60) pin=left` vertically centers `cache` beside `db`.
 - `at` may reference other shapes, so boxes can be placed relative to each other. Placement references form a DAG; a cycle is an error that prints the cycle (the first few shapes and its length when it is long). A chain of more than 256 placement references is also a `placement-cycle` error, whatever the statement order; a shape inside a group counts a reference to the group, whose frame it uses.
 - `group`: children are `box`, `group`, `junction`, `text`, `line` (and `arrow`). `image` is top-level only; inside a group it is a `parse` error. Groups nest at most 64 deep; a deeper `group` is a `parse` error. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. Groups take no shape: a group's `style=` naming a style that sets `shape` is an `attr` error at that attribute (the rest of the style still applies), and `shape` in a `style boundary` definition is an `attr` error there and is dropped. The label sits inside the top-left corner, inset by `padding`, and its title band (`font line-height + padding`, using `y`) is reserved space. Children that intrude on the title band trigger `spill`.
@@ -102,6 +102,7 @@ box lb "LB" at (100,80) size (120,80) shape=lb_icon
 ```
 - All built-in shapes except `rect` and `rounded` are defined this way in a standard library. `ref shapes` prints those definitions. `rect` and `rounded` keep native outlines, because a corner `radius` is in pixels.
 - `cylinder`, `hexagon`, `doc`, `cloud` and `person` have features measured in pixels, so stretching a box does not distort them: the cylinder's cap height is `min(20, h/4)`, the hexagon's side inset is `min(h/4, w/4)`, the doc's wave depth is `min(12, 0.15 × h)`, the cloud's bumps are `min(24, 0.3 × h, 0.175 × w)` high and repeat along the top and sides (a wider or taller cloud gets more of them), and the person's head is a circle of radius `r = min(18, 0.2 × h, 0.22 × w)` at the top, `max(3, r/4)` above a full-width body whose shoulders are rounded with radius `min(0.6 × body height, 1.6 × r)`. Their unit paths are therefore computed for each box size; `ref shapes` prints them for one example size. The person's head and body are drawn as separate subpaths; its outline is a third, undrawn subpath that joins them with a neck, so `top` is the top of the head.
+- The flowchart and UML shapes cap their features in pixels too: the `parallelogram`'s slant is `min(24, h/2, w/4)`, the `predefined-process`'s side bars are inset `min(12, w/8)`, the `octagon`'s corner cut is `min(24, 0.29 × min(w, h))`, the `note`'s folded corner is `min(16, w/4, h/4)`, the `package`'s tab is `min(12, h/5)` tall and `min(56, 0.4 × w)` wide, and the `queue` (a cylinder on its side) has caps `min(12, h/5, w/4)` wide. A `stadium`'s ends are round, with radius half its shorter side, and a `triangle` points up. The bars, fold, tab edge and the queue's front cap are drawn as extra subpaths; the outline is the outer shape.
 - Shape names can't reuse a built-in shape name, and defining a name twice is a `duplicate-style` error.
 - Checks use the outline, flattened into straight segments.
 
@@ -276,6 +277,14 @@ Unnamed lines are referred to as `line@L<n>`, where n is the source line of the 
   | doc | above the wave |
   | cloud | inside the bumps: inset by the side bump depth on the left and right, the bump height on top and half of it at the bottom |
   | person | the body, inset by 0.3 × the shoulder radius on the top, left and right |
+  | parallelogram | horizontally inset by the slant |
+  | predefined-process | between the side bars |
+  | stadium | inset `0.57 × r` on the left and right and `0.1 × r` on the top and bottom, where `r` is the end radius |
+  | triangle | the middle half of the lower half |
+  | octagon | inset by half the corner cut |
+  | note | inset by half the fold on the top and right |
+  | package | the body below the tab |
+  | queue | between the left cap and the front cap |
   | rounded | same as `rect` |
 
   Every text area lies inside the shape's outline, except that a cylinder's runs down to the bottom of the box. The fitted size (§3) is found numerically from the shape's text area, so it is the smallest whole-pixel size whose text area holds the text.

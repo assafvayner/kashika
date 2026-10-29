@@ -9,4 +9,4 @@ error[duplicate-style] 21:7-21:12: `cloud` is a built-in shape
   = help: pick another name
 error[duplicate-style] 23:7-23:10: shape `dup` is defined twice
 error[unknown-shape] 24:31-24:43: unknown shape `nosuch`
-  = help: built-in shapes: `rect`, `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`
+  = help: built-in shapes: `rect`, `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`, `parallelogram`, `predefined-process`, `stadium`, `triangle`, `octagon`, `note`, `package`, `queue`

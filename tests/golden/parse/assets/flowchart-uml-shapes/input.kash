@@ -1,0 +1,12 @@
+// spec: 3a
+// dump: scene
+// The flowchart and UML built-in shapes: outline, drawing and text area.
+diagram "shapes" size (900,120)
+box s1 at (10,20) size (100,80) shape=parallelogram
+box s2 at (120,20) size (100,80) shape=predefined-process
+box s3 at (230,20) size (100,80) shape=stadium
+box s4 at (340,20) size (100,80) shape=triangle
+box s5 at (450,20) size (100,80) shape=octagon
+box s6 at (560,20) size (100,80) shape=note
+box s7 at (670,20) size (100,80) shape=package
+box s8 at (780,20) size (100,80) shape=queue
