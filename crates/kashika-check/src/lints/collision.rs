@@ -362,14 +362,15 @@ fn no_clear_position(
     );
     if !shape_hit {
         let side = [
-            (kashika_model::LabelSide::Above, "above"),
-            (kashika_model::LabelSide::Left, "left"),
+            kashika_model::LabelSide::Above,
+            kashika_model::LabelSide::Left,
         ]
         .into_iter()
-        .find(|(s, _)| s.fits(&l.path, label.t).is_ok());
-        if let Some((_, side)) = side {
+        .find(|s| s.fits(&l.path, label.t).is_ok());
+        if let Some(side) = side {
             help.push_str(&format!(
-                ", or put it beside the line with `label-side={side}`"
+                ", or put it beside the line with `label-side={}`",
+                side.name()
             ));
         }
     }

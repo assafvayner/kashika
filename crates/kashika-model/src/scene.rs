@@ -235,6 +235,24 @@ pub enum Align {
     Right,
 }
 
+impl Align {
+    pub const NAMES: &'static [&'static str] = &["left", "center", "right"];
+
+    pub fn from_name(name: &str) -> Option<Align> {
+        [Align::Left, Align::Center, Align::Right]
+            .into_iter()
+            .find(|x| x.name() == name)
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Align::Left => "left",
+            Align::Center => "center",
+            Align::Right => "right",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct Text {
     pub id: Option<String>,
@@ -737,6 +755,24 @@ pub enum Fit {
     Contain,
     Cover,
     Stretch,
+}
+
+impl Fit {
+    pub const NAMES: &'static [&'static str] = &["contain", "cover", "stretch"];
+
+    pub fn from_name(name: &str) -> Option<Fit> {
+        [Fit::Contain, Fit::Cover, Fit::Stretch]
+            .into_iter()
+            .find(|x| x.name() == name)
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Fit::Contain => "contain",
+            Fit::Cover => "cover",
+            Fit::Stretch => "stretch",
+        }
+    }
 }
 
 /// A placed asset: which file, where, and how it fills its rect.

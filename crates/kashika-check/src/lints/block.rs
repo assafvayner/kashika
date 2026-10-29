@@ -1,6 +1,6 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::{Rect, TOLERANCE};
-use kashika_model::{Shape, ShapeKind, TextItem, TextRole};
+use kashika_model::{Align, Shape, ShapeKind, TextItem, TextRole};
 
 use crate::ctx::Ctx;
 use crate::element::{kind_name, shape_el};
@@ -8,13 +8,6 @@ use crate::sink::Sink;
 
 /// Size of a `sublabel` relative to the label.
 const SUBLABEL_SCALE: f64 = 0.8;
-
-#[derive(Clone, Copy, PartialEq)]
-enum Align {
-    Left,
-    Center,
-    Right,
-}
 
 /// `block-reducible`: a text block of 1–2 stacked items that a `label`, optionally with a
 /// `sublabel` or a second line, would draw the same way.
@@ -79,12 +72,7 @@ fn rewrite(s: &Shape) -> Option<String> {
         Align::Center
     };
     if align != default {
-        let name = match align {
-            Align::Left => "left",
-            Align::Center => "center",
-            Align::Right => "right",
-        };
-        text = format!("{text} text-align={name}");
+        text = format!("{text} text-align={}", align.name());
     }
     Some(text)
 }

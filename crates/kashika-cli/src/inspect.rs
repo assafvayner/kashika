@@ -339,14 +339,6 @@ pub fn build(
     }
 }
 
-fn fit_name(f: Fit) -> &'static str {
-    match f {
-        Fit::Contain => "contain",
-        Fit::Cover => "cover",
-        Fit::Stretch => "stretch",
-    }
-}
-
 fn pt(q: &P) -> String {
     format!("({},{})", q[0], q[1])
 }
@@ -411,7 +403,7 @@ pub fn text(i: &Inspect) -> String {
                 img.natural[0],
                 img.natural[1],
                 img.aspect,
-                fit_name(img.fit)
+                img.fit.name()
             ));
         }
         if s.parent.is_some() {

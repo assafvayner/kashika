@@ -80,6 +80,24 @@ pub enum StrokeStyle {
     Dotted,
 }
 
+impl StrokeStyle {
+    pub const NAMES: &'static [&'static str] = &["solid", "dashed", "dotted"];
+
+    pub fn from_name(name: &str) -> Option<StrokeStyle> {
+        [StrokeStyle::Solid, StrokeStyle::Dashed, StrokeStyle::Dotted]
+            .into_iter()
+            .find(|x| x.name() == name)
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            StrokeStyle::Solid => "solid",
+            StrokeStyle::Dashed => "dashed",
+            StrokeStyle::Dotted => "dotted",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum FontWeight {

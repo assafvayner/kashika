@@ -14,14 +14,6 @@ fn aspect(fit: Fit) -> &'static str {
     }
 }
 
-fn fit_name(fit: Fit) -> &'static str {
-    match fit {
-        Fit::Contain => "contain",
-        Fit::Cover => "cover",
-        Fit::Stretch => "stretch",
-    }
-}
-
 fn data_uri(a: &Asset) -> String {
     let data = base64::engine::general_purpose::STANDARD.encode(&a.bytes);
     format!("data:{};base64,{data}", a.mime)
@@ -52,7 +44,7 @@ impl<'a> Defs<'a> {
                         .get(*i)
                         .is_some_and(|a| a.natural.0 > 0.0 && a.natural.1 > 0.0)
             })
-            .map(|(i, v)| (i, v.into_iter().map(fit_name).collect()))
+            .map(|(i, v)| (i, v.into_iter().map(Fit::name).collect()))
             .collect();
         Defs {
             id,
@@ -66,7 +58,7 @@ impl<'a> Defs<'a> {
     }
 
     fn symbol_id(&self, asset: usize, fit: Fit) -> String {
-        format!("kashika-{}-asset-{asset}-{}", self.id, fit_name(fit))
+        format!("kashika-{}-asset-{asset}-{}", self.id, fit.name())
     }
 
     pub(crate) fn write(&self, out: &mut String) {
@@ -83,7 +75,7 @@ impl<'a> Defs<'a> {
                 data_uri(a)
             ));
             for fit in [Fit::Contain, Fit::Cover, Fit::Stretch] {
-                if fits.contains(fit_name(fit)) {
+                if fits.contains(fit.name()) {
                     out.push_str(&format!(
                         "<symbol id=\"{}\" viewBox=\"0 0 {w} {h}\" preserveAspectRatio=\"{}\"><use href=\"#kashika-{}-asset-{i}\"/></symbol>\n",
                         self.symbol_id(i, fit),

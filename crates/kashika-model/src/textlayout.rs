@@ -67,11 +67,10 @@ pub(crate) fn shape_text_props(
         .and_then(|x| attrs::text(x, diags).map(|s| (s, x.span)));
     let align = match a
         .get("text-align")
-        .and_then(|x| attrs::word(x, &["left", "center", "right"], diags))
+        .and_then(|x| attrs::word(x, Align::NAMES, diags))
+        .and_then(Align::from_name)
     {
-        Some("left") => Align::Left,
-        Some("right") => Align::Right,
-        Some(_) => Align::Center,
+        Some(align) => align,
         None if group => Align::Left,
         None => Align::Center,
     };
@@ -447,14 +446,10 @@ fn block_item(
                 st.color.clone()
             }
         });
-    let align = match attrs::aliased(&a, "text-align", "align", diags)
-        .and_then(|x| attrs::word(x, &["left", "center", "right"], diags))
-    {
-        Some("left") => Align::Left,
-        Some("right") => Align::Right,
-        Some(_) => Align::Center,
-        None => align,
-    };
+    let align = attrs::aliased(&a, "text-align", "align", diags)
+        .and_then(|x| attrs::word(x, Align::NAMES, diags))
+        .and_then(Align::from_name)
+        .unwrap_or(align);
     let bold = st.font_weight == FontWeight::Bold;
     let block = measure_at(&item.content, size, bold, item.span, diags)?;
     Some(Pending {

@@ -113,7 +113,7 @@ fn unknown_help(a: &Attr, what: &str, allowed: &[&str]) -> Option<String> {
     if matches!(key, "width" | "height" | "w" | "h") && matches!(what, "box" | "group" | "image") {
         return Some("the size is a clause: write `size (w,h)`, without `=`".into());
     }
-    if matches!(key, "dashed" | "dotted" | "solid") && allowed.contains(&"stroke-style") {
+    if StrokeStyle::NAMES.contains(&key) && allowed.contains(&"stroke-style") {
         return Some(format!("write `stroke-style={key}`"));
     }
     MEANT
@@ -366,11 +366,7 @@ pub fn style_props(a: &Attrs, diags: &mut Vec<Diagnostic>) -> StyleProps {
         p.stroke_width = num_in(x, Min::Positive, diags);
     }
     if let Some(x) = a.get("stroke-style") {
-        p.stroke_style = word(x, &["solid", "dashed", "dotted"], diags).map(|w| match w {
-            "dashed" => StrokeStyle::Dashed,
-            "dotted" => StrokeStyle::Dotted,
-            _ => StrokeStyle::Solid,
-        });
+        p.stroke_style = word(x, StrokeStyle::NAMES, diags).and_then(StrokeStyle::from_name);
     }
     if let Some(x) = a.get("font-size") {
         p.font_size = num_in(x, Min::Positive, diags);

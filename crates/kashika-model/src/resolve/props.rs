@@ -9,7 +9,7 @@ use crate::library::{self, LibShape, SvgShape};
 use crate::markup;
 use crate::scene::*;
 use crate::shapes;
-use crate::style::{self, Style, StyleProps};
+use crate::style::{self, StrokeStyle, Style, StyleProps};
 use crate::textlayout::{self, ShapeInput, ShapeTextProps};
 
 use super::{
@@ -329,14 +329,11 @@ impl<'a> Resolver<'a> {
             .get("pin")
             .and_then(|x| self.pin(x))
             .unwrap_or(("tl", None));
-        let fit = match a
+        let fit = a
             .get("fit")
-            .and_then(|x| attrs::word(x, &["contain", "cover", "stretch"], &mut self.diags))
-        {
-            Some("cover") => Fit::Cover,
-            Some("stretch") => Fit::Stretch,
-            _ => Fit::Contain,
-        };
+            .and_then(|x| attrs::word(x, Fit::NAMES, &mut self.diags))
+            .and_then(Fit::from_name)
+            .unwrap_or(Fit::Contain);
         let (allow, reason) = self.allow_reason(&a);
         let layer = self.layer(&a);
         let asset = self.load_asset(&i.file, i.file_span);
@@ -404,7 +401,7 @@ impl<'a> Resolver<'a> {
                 .collect();
             let mut d =
                 Diagnostic::error("unknown-style", a.span, format!("unknown style `{name}`"));
-            if matches!(name.as_str(), "dashed" | "dotted" | "solid") {
+            if StrokeStyle::NAMES.contains(&name.as_str()) {
                 d = d.with_help(format!("a stroke pattern is `stroke-style={name}`"));
             } else if let Some(s) = did_you_mean(name, names) {
                 d = d.with_help(format!("did you mean `{s}`?"));
@@ -434,13 +431,10 @@ impl<'a> Resolver<'a> {
                 let d = Style::default();
                 if muted { d.muted } else { d.color }
             });
-        let align = match attrs::aliased(&a, "text-align", "align", &mut self.diags)
-            .and_then(|x| attrs::word(x, &["left", "center", "right"], &mut self.diags))
-        {
-            Some("left") => Align::Left,
-            Some("right") => Align::Right,
-            _ => Align::Center,
-        };
+        let align = attrs::aliased(&a, "text-align", "align", &mut self.diags)
+            .and_then(|x| attrs::word(x, Align::NAMES, &mut self.diags))
+            .and_then(Align::from_name)
+            .unwrap_or(Align::Center);
         let content = t.content.clone();
         TextProps {
             content,
