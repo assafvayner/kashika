@@ -394,6 +394,28 @@ fn bezier_suggestions_are_curves_that_leave_and_enter_square() {
 }
 
 #[test]
+fn routes_under_a_diagram_ortho_check_clean() {
+    let src = DIAG.replacen("size (420,220)", "size (420,220) ortho", 1);
+    let s = suggest(&req(&src, "a.right", "b.left", Style::Bezier)).unwrap();
+    assert!(
+        s.candidates[0]
+            .statement
+            .ends_with(" end=arrow ortho=false")
+    );
+    agrees_with_check(&src, &s);
+    let s = suggest(&req(&src, "a.right", "b.left", Style::Corner)).unwrap();
+    assert!(!s.candidates[0].statement.contains("ortho"));
+    agrees_with_check(&src, &s);
+    let line = format!("{src}arrow ab a.right -> b.left ortho=false\n");
+    let s = reroute(&line, "ab", Style::Bezier).unwrap();
+    assert!(s.candidates[0].statement.ends_with(" ortho=false"));
+    assert_eq!(s.candidates[0].statement.matches("ortho").count(), 1);
+    let line = DIAG.to_string() + "arrow ab a.right -> vh b.left ortho\n";
+    let s = reroute(&line, "ab", Style::Bezier).unwrap();
+    assert!(!s.candidates[0].statement.contains("ortho"));
+}
+
+#[test]
 fn collinear_lanes_merge_into_the_straight_path() {
     let src = "diagram \"s\" size (300,120)\n\
 box a at (20,20) size (40,40)\n\

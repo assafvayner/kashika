@@ -124,7 +124,7 @@ pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
     let (id, attrs, frame) = match &target {
         Some(t) => (
             t.id.clone(),
-            attrs(Some(&t.attrs), req.style, req.radius),
+            attrs(Some(&t.attrs), req.style, req.radius, scene.ortho),
             Frame {
                 origin: t.origin,
                 after: Some(t.end),
@@ -132,7 +132,7 @@ pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
         ),
         None => (
             default_id(&scene, &from, &to),
-            attrs(None, req.style, req.radius),
+            attrs(None, req.style, req.radius, scene.ortho),
             Frame::default(),
         ),
     };
@@ -465,7 +465,8 @@ struct Written {
 }
 
 /// Attributes for the suggested statement: the rerouted line's own, minus `radius` (and
-/// `ortho` for curves), or `end=arrow` for a new line; `arc` adds `radius=N`.
+/// `ortho` for curves), or `end=arrow` for a new line; `arc` adds `radius=N`, and a curve
+/// under the diagram's `ortho` adds `ortho=false`.
 struct Attrs(Vec<Written>);
 
 impl Attrs {
@@ -500,7 +501,8 @@ impl Attrs {
     }
 }
 
-fn attrs(existing: Option<&[Written]>, style: Style, radius: f64) -> Attrs {
+fn attrs(existing: Option<&[Written]>, style: Style, radius: f64, diagram_ortho: bool) -> Attrs {
+    let curve = style == Style::Bezier;
     let written = |text: String| Written {
         key: String::new(),
         text,
@@ -509,13 +511,16 @@ fn attrs(existing: Option<&[Written]>, style: Style, radius: f64) -> Attrs {
     let mut out: Vec<Written> = match existing {
         Some(list) => list
             .iter()
-            .filter(|a| a.key != "radius" && !(style == Style::Bezier && a.key == "ortho"))
+            .filter(|a| a.key != "radius" && !(curve && a.key == "ortho"))
             .cloned()
             .collect(),
         None => vec![written("end=arrow".into())],
     };
     if style == Style::Arc {
         out.push(written(format!("radius={}", fmt_num(radius))));
+    }
+    if curve && diagram_ortho {
+        out.push(written("ortho=false".into()));
     }
     Attrs(out)
 }

@@ -1,0 +1,9 @@
+// spec: 3, 5
+// dump: scene
+// `ortho=false` opts a line out of the diagram's `ortho`, so its diagonal and curve are fine.
+diagram "ortho opt-out" size (320, 240) ortho
+box a "A" at (20, 20) size (80, 40)
+box b "B" at (200, 140) size (80, 40)
+arrow diag a.right -> b.left ortho=false
+arrow bent a.bottom -> curve left 30 (60, 200)
+  ortho=false

@@ -1190,6 +1190,40 @@ fn label_position_must_be_in_range() {
 }
 
 #[test]
+fn diagram_ortho_applies_to_every_line_unless_it_opts_out() {
+    let src = |line: &str| format!("diagram \"t\" size (800,600) ortho\n{line}\n");
+    let d = compile(&src("line l (0,0) -> (10,10)")).1;
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "not-ortho");
+    assert_eq!(
+        d[0].message,
+        "segment is not horizontal or vertical, and the diagram sets `ortho`"
+    );
+    assert_eq!(
+        compile(&src("arrow l (0,0) -> curve left 10 (100,0)")).1[0].code,
+        "not-ortho"
+    );
+    let (s, d) = compile(&src("line l (0,0) -> (10,10) ortho=false"));
+    assert!(d.is_empty(), "{d:#?}");
+    assert!(s.ortho && !s.lines[0].ortho);
+    let (s, d) = compile(&src("line l (0,0) -> h 10 ortho"));
+    assert!(d.is_empty() && s.lines[0].ortho, "{d:#?}");
+    let (s, d) = compile("diagram \"t\" size (800,600)\nline l (0,0) -> (10,10) ortho=false\n");
+    assert!(d.is_empty() && !s.ortho && !s.lines[0].ortho, "{d:#?}");
+}
+
+#[test]
+fn ortho_values_are_checked() {
+    let d = errors("line l (0,0) -> h 10 ortho=true\n");
+    assert_eq!(
+        d[0].message,
+        "`ortho` is a flag; the only value it takes is `false`"
+    );
+    let d = compile("diagram \"t\" size (800,600) ortho=false\n").1;
+    assert_eq!(d[0].message, "`ortho` takes no value");
+}
+
+#[test]
 fn ortho_rejects_curves() {
     let d = errors("line l (0,0) -> curve left 10 (100,0) ortho\n");
     assert_eq!(d[0].code, "not-ortho");

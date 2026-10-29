@@ -1,0 +1,4 @@
+error[not-ortho] 6:23-6:29: segment is not horizontal or vertical, and the diagram sets `ortho`
+  = help: use `hv`/`vh` elbows or `x`/`y` targets, or `ortho=false` on this line for a deliberate diagonal or curve
+error[not-ortho] 7:24-7:47: segment is not horizontal or vertical, and the diagram sets `ortho`
+  = help: use `hv`/`vh` elbows or `x`/`y` targets, or `ortho=false` on this line for a deliberate diagonal or curve

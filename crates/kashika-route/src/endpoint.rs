@@ -146,7 +146,11 @@ pub(crate) fn resolve_endpoints(
     let (scene, diags) = kashika_model::compile_with(&format!("{src}\n{stmt}\n"), opts);
     let errors: Vec<Diagnostic> = diags
         .into_iter()
-        .filter(|d| d.severity == Severity::Error && d.span.line >= first_probe_line)
+        .filter(|d| {
+            d.severity == Severity::Error
+                && d.span.line >= first_probe_line
+                && d.code != "not-ortho"
+        })
         .collect();
     if !errors.is_empty() {
         return Err(Error::Diagnostics(errors));

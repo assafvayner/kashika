@@ -1,7 +1,7 @@
 ## Syntax
 
 ```text
-diagram "<title>" [size (w,h)] [margin=N] [kashika="0.1.0"] [grid=N] [clearance=N] [background=C] [icons="<dir>"] [allow=<code>,...]
+diagram "<title>" [size (w,h)] [margin=N] [kashika="0.1.0"] [grid=N] [clearance=N] [background=C] [icons="<dir>"] [allow=<code>,...] [ortho]
 import "<file.kash>" [as <ns>]
 style <name> { key=value ... }
 shape <name> { path "..." } | shape <name> from "<file.svg>"

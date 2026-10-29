@@ -1,0 +1,6 @@
+// spec: 3, 5, 7
+// `ortho` takes no value on the diagram, and only `false` on a line; `ortho=false` without a diagram `ortho` has no effect.
+diagram "ortho errors" size (320, 240) ortho=false
+box a "A" at (20, 20) size (80, 40)
+line t a.right -> h 40 ortho=true
+line plain a.bottom -> (120, 200) ortho=false

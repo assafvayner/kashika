@@ -29,6 +29,9 @@ pub struct Scene {
     /// Whether each canvas axis was fitted to the drawing rather than given in `size`.
     #[serde(skip)]
     pub fitted: (bool, bool),
+    /// `diagram … ortho`: lines are `ortho` unless they say `ortho=false`.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub ortho: bool,
 }
 
 impl Scene {

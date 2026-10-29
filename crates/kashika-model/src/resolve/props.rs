@@ -520,9 +520,25 @@ impl<'a> Resolver<'a> {
             .and_then(|x| attrs::word(x, LabelSide::NAMES, &mut self.diags))
             .and_then(LabelSide::from_name)
             .unwrap_or_default();
-        let ortho = a
-            .get("ortho")
-            .is_some_and(|x| attrs::flag(x, &mut self.diags));
+        let ortho = match a.get("ortho") {
+            None => self.ortho,
+            Some(x) => {
+                match &x.value {
+                    ast::Value::Flag => true,
+                    ast::Value::Word(w) if w == "false" => false,
+                    _ => {
+                        self.diags.push(
+                        Diagnostic::error("attr", x.span, "`ortho` is a flag; the only value it takes is `false`")
+                            .with_help(
+                                "write `ortho`, or `ortho=false` to opt out of the diagram's `ortho`",
+                            ),
+                    );
+                        self.ortho
+                    }
+                }
+            }
+        };
+        let ortho_inherited = ortho && a.get("ortho").is_none();
         let (allow, reason) = self.allow_reason(&a);
         let radius = props.radius.unwrap_or(0.0);
         LineProps {
@@ -533,6 +549,7 @@ impl<'a> Resolver<'a> {
             label_side,
             label_side_span: side_attr.map_or(l.span, |x| x.span),
             ortho,
+            ortho_inherited,
             allow,
             reason,
             radius,

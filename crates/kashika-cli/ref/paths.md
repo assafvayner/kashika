@@ -21,7 +21,7 @@ A line is `start -> segment -> segment ...`. Each segment ends at a point, which
 | `label-side=` | `on` | `on` centers labels on the line and cuts it out under them; `above`/`below` (horizontal segment) or `left`/`right` (vertical) put them beside it, 4px off the stroke, unmasked |
 | `radius=N` | `0` | rounds every corner |
 | `stroke` `stroke-width` `stroke-style` `style=` | style | a style applies only its stroke and font keys |
-| `ortho` | off | any diagonal segment is an error |
+| `ortho` | off (on under `diagram … ortho`) | any diagonal or curved segment is an error; `ortho=false` opts a line out of the diagram's `ortho` |
 | `allow=<code>[:<id>],...` `reason="..."` | | suppress findings |
 
 **The last segment sets the arrow direction.** Enter `left`/`right` with a horizontal hop (`vh`, `hvh`, or `x`/`y` and then the anchor) and `top`/`bottom` with a vertical one (`hv`, `vhv`). Name your lines; unnamed ones are `line@L<n>`.

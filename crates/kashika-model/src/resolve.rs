@@ -57,6 +57,7 @@ const DIAGRAM_KEYS: &[&str] = &[
     "icons",
     "allow",
     "margin",
+    "ortho",
 ];
 /// Room a fitted canvas leaves to the right of and below the drawing, unless `margin=` sets it.
 const DEFAULT_MARGIN: f64 = 20.0;
@@ -245,6 +246,8 @@ struct LineProps {
     label_side: LabelSide,
     label_side_span: Span,
     ortho: bool,
+    /// `ortho` comes from the diagram rather than the line.
+    ortho_inherited: bool,
     allow: Vec<Allow>,
     reason: Option<String>,
     radius: f64,
@@ -280,6 +283,7 @@ pub fn resolve_with(file: &ast::File, opts: &Options) -> (Scene, Vec<Diagnostic>
         grid: None,
         canvas_fit: (false, false),
         margin: DEFAULT_MARGIN,
+        ortho: false,
         diags: Vec::new(),
     };
     r.icons_dir(file);
@@ -351,6 +355,8 @@ struct Resolver<'a> {
     canvas_fit: (bool, bool),
     /// The diagram's `margin=`, added after the drawing on a fitted axis.
     margin: f64,
+    /// The diagram's `ortho`: every line is `ortho` unless it says `ortho=false`.
+    ortho: bool,
     diags: Vec<Diagnostic>,
 }
 
@@ -394,6 +400,7 @@ impl<'a> Resolver<'a> {
             placement: Vec::new(),
             literals: Vec::new(),
             fitted: (false, false),
+            ortho: false,
         };
         let mut seen = false;
         for stmt in &file.stmts {
@@ -449,6 +456,10 @@ impl<'a> Resolver<'a> {
             }
             if let Some(x) = a.get("allow") {
                 scene.allow = self.allow_list(x, false);
+            }
+            if let Some(x) = a.get("ortho") {
+                self.ortho = attrs::flag(x, &mut self.diags);
+                scene.ortho = self.ortho;
             }
             if let Some(x) = a.get("margin") {
                 if w.is_some() && h.is_some() {

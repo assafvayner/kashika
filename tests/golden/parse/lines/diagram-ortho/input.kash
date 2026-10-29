@@ -1,0 +1,9 @@
+// spec: 3, 5, 7
+// `diagram … ortho` makes every line `ortho`: a diagonal and a curve are errors, and a line's own `ortho` is redundant but fine.
+diagram "diagram ortho" size (320, 240) ortho
+box a "A" at (20, 20) size (80, 40)
+box b "B" at (200, 140) size (80, 40)
+arrow diag a.right -> b.left
+arrow bent a.bottom -> curve left 30 (60, 200)
+arrow elbow a.right -> hv b.top
+line again a.top -> v -10 ortho

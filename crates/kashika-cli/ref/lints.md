@@ -18,7 +18,7 @@ If a warning is intentional, suppress it narrowly on the line or shape: `allow=c
 | `placement-cycle` | error | `at` references form a cycle, or a chain of more than 256 | give one shape literal coordinates |
 | `label-overflow` | error | text doesn't fit the text area | use the size in the help line or shorten the text |
 | `text-conflict` | error | `label` or `sublabel` plus stacked block items | move them into the block, or give every item an `at` |
-| `not-ortho` | error | diagonal segment on an `ortho` line | use `hv`/`vh` or `x`/`y` |
+| `not-ortho` | error | diagonal or curved segment on an `ortho` line (or any line under `diagram … ortho`) | use `hv`/`vh` or `x`/`y`, or `ortho=false` for a deliberate one |
 | `degenerate-curve` | error | zero-size curve or negative amount | fix its points or amount |
 | `zero-length` | error | every segment has zero length | fix the endpoints |
 | `attr` | error | unknown, duplicate, mistyped or out-of-range attribute | apply the did-you-mean suggestion |

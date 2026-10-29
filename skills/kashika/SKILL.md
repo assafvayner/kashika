@@ -24,7 +24,7 @@ arrow web_api web.right -> api.left label="HTTPS" ortho
 arrow api_db api.bottom -> db.top ortho
 ```
 
-The diagram has no `size`, so the canvas fits the drawing. `arrow` is a `line` with an arrowhead at the end, and `ortho` makes any diagonal hop an error.
+The diagram has no `size`, so the canvas fits the drawing. `arrow` is a `line` with an arrowhead at the end, and `ortho` makes any diagonal hop an error (`diagram … ortho` sets it for every line).
 
 ## The loop
 

@@ -63,14 +63,22 @@ impl<'a> Resolver<'a> {
         if p.ortho {
             for (s, i) in &raw {
                 if !s.is_axis_aligned() {
-                    self.diags.push(
+                    let d = if p.ortho_inherited {
+                        Diagnostic::error(
+                            "not-ortho",
+                            segments[*i].span,
+                            "segment is not horizontal or vertical, and the diagram sets `ortho`",
+                        )
+                        .with_help("use `hv`/`vh` elbows or `x`/`y` targets, or `ortho=false` on this line for a deliberate diagonal or curve")
+                    } else {
                         Diagnostic::error(
                             "not-ortho",
                             segments[*i].span,
                             "segment is not horizontal or vertical on a line marked `ortho`",
                         )
-                        .with_help("use `hv`/`vh` elbows or `x`/`y` targets"),
-                    );
+                        .with_help("use `hv`/`vh` elbows or `x`/`y` targets")
+                    };
+                    self.diags.push(d);
                 }
             }
         }
