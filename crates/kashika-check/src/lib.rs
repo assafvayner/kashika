@@ -13,7 +13,7 @@ use kashika_diag::{Diagnostic, code};
 use kashika_model::Scene;
 use serde::Serialize;
 
-pub use free::{Deferred, DeferredKind, deferred};
+pub use free::{Deferred, DeferredKind, Finding};
 pub use sink::{Bounded, Omitted};
 pub use suppress::suppress;
 
@@ -26,15 +26,19 @@ pub struct Metrics {
 /// Runs every warning lint on the scene and marks the suppressed findings.
 pub fn check(scene: &Scene) -> Vec<Diagnostic> {
     let ctx = ctx::Ctx::new(scene);
-    let mut out = lint(&ctx, sink::Sink::new(scene, usize::MAX, None)).diags;
-    for d in &mut out {
-        free::resolve(&ctx, d);
-    }
-    out
+    let found = lint(&ctx, sink::Sink::new(scene, usize::MAX, None));
+    found
+        .diags
+        .into_iter()
+        .zip(found.deferred)
+        .map(|(mut d, deferred)| {
+            free::resolve(&ctx, &mut d, deferred);
+            d
+        })
+        .collect()
 }
 
-/// Like `check`, but leaves costly help pending (see `deferred`); `resolve` fills it in for
-/// the diagnostics that are shown.
+/// Like `check`, but without the costly help that `check_bounded` defers.
 pub fn check_deferred(scene: &Scene) -> Vec<Diagnostic> {
     lint(
         &ctx::Ctx::new(scene),
@@ -43,30 +47,13 @@ pub fn check_deferred(scene: &Scene) -> Vec<Diagnostic> {
     .diags
 }
 
-/// Like `check_deferred`, with memory bounded for scenes with huge numbers of findings. Only
-/// findings that pass `filter` are reported. Of those with the same code and suppression, the
-/// first `keep` in `kashika_diag::sort` order are kept and the rest only counted in `omitted`.
-/// Kept findings come in the order `check_deferred` reports them.
-pub fn check_bounded(scene: &Scene, keep: usize, filter: &dyn Fn(&Diagnostic) -> bool) -> Bounded {
-    lint(
-        &ctx::Ctx::new(scene),
-        sink::Sink::new(scene, keep, Some(filter)),
-    )
-}
-
-/// Fills in the help and facts `check_deferred` left pending in `diags`.
-pub fn resolve<'a>(scene: &Scene, diags: impl IntoIterator<Item = &'a mut Diagnostic>) {
-    let mut diags = diags
-        .into_iter()
-        .filter(|d| !d.pending.is_empty())
-        .peekable();
-    if diags.peek().is_none() {
-        return;
-    }
-    let ctx = ctx::Ctx::new(scene);
-    for d in diags {
-        free::resolve(&ctx, d);
-    }
+/// Like `check`, with memory bounded for scenes with huge numbers of findings and the costly
+/// help left in `Bounded::deferred`, for `free::resolve` to work out for the diagnostics that
+/// are shown. Only findings that pass `filter` are reported. Of those with the same code and
+/// suppression, the first `keep` in `kashika_diag::sort` order are kept and the rest only
+/// counted in `omitted`. Kept findings come in the order `check_deferred` reports them.
+pub fn check_bounded(ctx: &ctx::Ctx, keep: usize, filter: &dyn Fn(&Diagnostic) -> bool) -> Bounded {
+    lint(ctx, sink::Sink::new(ctx.scene, keep, Some(filter)))
 }
 
 fn lint(ctx: &ctx::Ctx, mut sink: sink::Sink) -> Bounded {

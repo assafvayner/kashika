@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_check::ctx::Ctx;
 use kashika_check::{Omitted, check_bounded, check_deferred};
 use kashika_diag::Diagnostic;
 use kashika_model::Scene;
@@ -23,7 +24,7 @@ fn all(_: &Diagnostic) -> bool {
 #[test]
 fn a_roomy_limit_reports_what_check_deferred_does() {
     let s = grid();
-    let b = check_bounded(&s, 1000, &all);
+    let b = check_bounded(&Ctx::new(&s), 1000, &all);
     assert!(b.omitted.is_empty());
     assert_eq!(b.diags, check_deferred(&s));
     assert_eq!(b.metrics(&s), kashika_check::metrics(&s, &b.diags));
@@ -32,7 +33,7 @@ fn a_roomy_limit_reports_what_check_deferred_does() {
 #[test]
 fn past_the_limit_findings_are_counted_and_the_first_in_order_kept() {
     let s = grid();
-    let b = check_bounded(&s, 2, &all);
+    let b = check_bounded(&Ctx::new(&s), 2, &all);
     let mut crosses: Vec<Diagnostic> = check_deferred(&s)
         .into_iter()
         .filter(|d| d.code == "cross")
@@ -57,7 +58,7 @@ fn past_the_limit_findings_are_counted_and_the_first_in_order_kept() {
 #[test]
 fn a_zero_limit_only_counts() {
     let s = grid();
-    let b = check_bounded(&s, 0, &all);
+    let b = check_bounded(&Ctx::new(&s), 0, &all);
     assert!(b.diags.is_empty());
     let total: usize = b.omitted.iter().map(|o| o.count).sum();
     assert_eq!(total, check_deferred(&s).len());
@@ -67,7 +68,7 @@ fn a_zero_limit_only_counts() {
 fn the_filter_drops_findings_before_the_limit_but_metrics_count_them() {
     let s = grid();
     let only_h0 = |d: &Diagnostic| d.elements.iter().any(|e| e.id == "h0");
-    let b = check_bounded(&s, 1000, &only_h0);
+    let b = check_bounded(&Ctx::new(&s), 1000, &only_h0);
     assert_eq!(b.diags.len(), 5, "{:#?}", b.diags);
     assert!(b.diags.iter().all(only_h0));
     assert_eq!(b.metrics(&s).crossings, 25);
@@ -79,7 +80,7 @@ fn suppressed_findings_have_their_own_limit() {
         "line a (0,50) -> h 100 allow=cross\nline b (50,0) -> v 100\nline c (60,0) -> v 100\n\
          line d (0,80) -> h 100\n",
     );
-    let b = check_bounded(&s, 1, &all);
+    let b = check_bounded(&Ctx::new(&s), 1, &all);
     let kept: Vec<bool> = b
         .diags
         .iter()

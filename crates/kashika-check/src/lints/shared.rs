@@ -3,7 +3,7 @@ use kashika_geom::{Hit, Pt, TOLERANCE, fmt_num, round2, seg_hit};
 
 use crate::ctx::{Ctx, LineGeom, fmt_pt};
 use crate::element::{arr, line_el};
-use crate::free::{DeferredKind, with_deferred};
+use crate::free::{DeferredKind, Finding, with_deferred};
 use crate::sink::Sink;
 
 /// `shared-segment`: two lines overlap collinearly for more than 1px. Only straight pieces
@@ -41,7 +41,7 @@ fn report(
     oi: usize,
     (p, q): (Pt, Pt),
     total: f64,
-) -> Diagnostic {
+) -> Finding {
     let id = l.line.id.as_str();
     let d = Diagnostic::warn(
         code::SHARED_SEGMENT,

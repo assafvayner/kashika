@@ -17,7 +17,7 @@ pub fn run(file: &str, check: bool, stdin_name: Option<&str>) -> ExitCode {
                 show_suppressed: false,
                 summary: false,
                 metrics: None,
-                scene: None,
+                deferred: None,
                 omitted: &[],
             };
             print!(

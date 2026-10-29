@@ -3,7 +3,7 @@ use kashika_geom::{Hit, Pt, TOLERANCE, dist_point_seg, seg_hit};
 
 use crate::ctx::{Ctx, LineGeom, fmt_pt};
 use crate::element::{arr, line_el};
-use crate::free::with_free;
+use crate::free::{Finding, with_free};
 use crate::sink::Sink;
 
 /// `cross`: two lines meet at a point that is neither a shared endpoint nor a junction.
@@ -70,7 +70,7 @@ fn crossings(ctx: &Ctx, a: &LineGeom, b: &LineGeom) -> Vec<(usize, usize, Pt)> {
         .collect()
 }
 
-fn report(l: &LineGeom, li: usize, other: &LineGeom, oi: usize, p: Pt) -> Diagnostic {
+fn report(l: &LineGeom, li: usize, other: &LineGeom, oi: usize, p: Pt) -> Finding {
     let (id, oid) = (l.line.id.as_str(), other.line.id.as_str());
     let d = Diagnostic::warn(
         code::CROSS,

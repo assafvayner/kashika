@@ -122,15 +122,14 @@ fn with_free_adds_a_fact_and_help_for_straight_pieces() {
     let s = scene("box a at (100,110) size (80,60)\nline l (50,150) -> h 250 -> v 100\n");
     let ctx = Ctx::new(&s);
     let l = ctx.line("l").unwrap();
-    let mut d = with_free(
+    let f = with_free(
         Diagnostic::warn("through", Span::default(), "x"),
         l,
         0,
         &["l"],
     );
-    assert!(d.help.is_empty() && kashika_check::deferred(&d).len() == 1);
-    resolve(&ctx, &mut d);
-    assert!(d.pending.is_empty());
+    assert!(f.diag.help.is_empty() && f.deferred.len() == 1);
+    let d = f.resolved(&ctx);
     assert_eq!(
         d.help,
         ["segment 1 runs at y=150; free y-intervals across x 50..300: 0..104, 176..600"]
@@ -155,37 +154,48 @@ fn deferred_help_resolves_to_what_check_reports() {
          line n (0,163) -> h 150\n",
     );
     let eager = kashika_check::check(&s);
-    let mut lazy = kashika_check::check_deferred(&s);
-    let codes: Vec<&str> = lazy
-        .iter()
-        .filter(|d| !d.pending.is_empty())
-        .map(|d| d.code)
-        .collect();
+    let ctx = Ctx::new(&s);
+    let lazy = kashika_check::check_bounded(&ctx, usize::MAX, &|_| true);
+    assert_eq!(lazy.diags, kashika_check::check_deferred(&s));
+    let pending = || {
+        lazy.diags
+            .iter()
+            .zip(&lazy.deferred)
+            .filter(|(_, x)| !x.is_empty())
+    };
+    let codes: Vec<&str> = pending().map(|(d, _)| d.code).collect();
     for code in ["cross", "through", "shared-segment", "near"] {
         assert!(codes.contains(&code), "{code} not deferred: {codes:?}");
     }
     assert!(
-        lazy.iter().any(|d| d.suppressed && !d.pending.is_empty()),
-        "no suppressed finding with pending help"
+        pending().any(|(d, _)| d.suppressed),
+        "no suppressed finding with deferred help"
     );
-    assert_ne!(lazy, eager);
-    kashika_check::resolve(&s, &mut lazy);
-    assert_eq!(lazy, eager);
-    assert!(eager.iter().all(|d| d.pending.is_empty()));
+    assert_ne!(lazy.diags, eager);
+    let resolved: Vec<Diagnostic> = lazy
+        .diags
+        .into_iter()
+        .zip(lazy.deferred)
+        .map(|(mut d, x)| {
+            resolve(&ctx, &mut d, x);
+            d
+        })
+        .collect();
+    assert_eq!(resolved, eager);
 }
 
 #[test]
 fn a_lane_with_nowhere_free_lists_no_lane() {
     let s = scene("box wall at (0,0) size (800,600)\n");
     let ctx = Ctx::new(&s);
-    let mut d = with_deferred(
+    let d = with_deferred(
         Diagnostic::warn("shared-segment", Span::default(), "x"),
         DeferredKind::Lane,
         Pt::new(100.0, 300.0),
         Pt::new(200.0, 300.0),
         &[],
-    );
-    resolve(&ctx, &mut d);
+    )
+    .resolved(&ctx);
     assert_eq!(d.help, ["free y-intervals across x 100..200: none"]);
     assert!(!d.facts.contains_key("lane"));
     assert_eq!(d.facts["free"]["intervals"], serde_json::json!([]));
@@ -198,7 +208,7 @@ fn two_deferred_entries_keep_their_place_in_the_help() {
     let l = ctx.line("l").unwrap();
     let d = Diagnostic::warn("through", Span::default(), "x").with_help("first");
     let d = with_free(d, l, 0, &["l"]).with_help("second");
-    let mut d = with_deferred(
+    let f = with_deferred(
         d,
         DeferredKind::Lane,
         Pt::new(50.0, 150.0),
@@ -206,8 +216,8 @@ fn two_deferred_entries_keep_their_place_in_the_help() {
         &["l"],
     )
     .with_help("third");
-    assert_eq!(kashika_check::deferred(&d).len(), 2);
-    resolve(&ctx, &mut d);
+    assert_eq!(f.deferred.len(), 2);
+    let d = f.resolved(&ctx);
     assert_eq!(
         d.help,
         [

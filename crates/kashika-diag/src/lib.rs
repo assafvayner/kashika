@@ -1,7 +1,4 @@
-use std::any::Any;
 use std::cmp::Ordering;
-use std::fmt;
-use std::sync::Arc;
 
 use serde::Serialize;
 
@@ -171,52 +168,6 @@ pub struct Diagnostic {
     pub suppressed: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
-    /// Work a later pass still has to do, such as the costly help `kashika_check::resolve`
-    /// fills in only for the diagnostics that are shown.
-    #[serde(skip)]
-    pub pending: Pending,
-}
-
-/// Opaque work attached to a diagnostic by the pass that made it and taken back by a later
-/// one. It takes no part in equality or serialization.
-#[derive(Clone, Default)]
-pub struct Pending(Option<Arc<dyn Any + Send + Sync>>);
-
-impl Pending {
-    pub fn new<T: Any + Send + Sync>(value: T) -> Self {
-        Self(Some(Arc::new(value)))
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.0.is_none()
-    }
-
-    pub fn get<T: Any>(&self) -> Option<&T> {
-        self.0.as_deref()?.downcast_ref()
-    }
-
-    /// Takes the value out when it is a `T`, leaving the slot empty; otherwise changes nothing.
-    pub fn take<T: Any + Send + Sync + Clone>(&mut self) -> Option<T> {
-        self.get::<T>()?;
-        let v = self.0.take()?.downcast::<T>().ok()?;
-        Some(Arc::unwrap_or_clone(v))
-    }
-}
-
-impl PartialEq for Pending {
-    fn eq(&self, _: &Self) -> bool {
-        true
-    }
-}
-
-impl fmt::Debug for Pending {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(if self.is_empty() {
-            "Pending"
-        } else {
-            "Pending(..)"
-        })
-    }
 }
 
 impl Diagnostic {
@@ -232,7 +183,6 @@ impl Diagnostic {
             suggestions: Vec::new(),
             suppressed: false,
             reason: None,
-            pending: Pending::default(),
         }
     }
 
@@ -430,17 +380,6 @@ mod tests {
                 ("near", "b")
             ]
         );
-    }
-
-    #[test]
-    fn pending_work_is_ignored_by_equality() {
-        let mut a = Diagnostic::warn("near", Span::default(), "x");
-        let b = a.clone();
-        a.pending = Pending::new(vec![1u8]);
-        assert_eq!(a, b);
-        assert_eq!(a.pending.take::<String>(), None);
-        assert_eq!(a.pending.take::<Vec<u8>>(), Some(vec![1]));
-        assert!(a.pending.is_empty());
     }
 
     #[test]

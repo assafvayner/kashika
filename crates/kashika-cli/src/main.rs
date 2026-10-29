@@ -150,7 +150,7 @@ impl Common {
     fn report_opts<'a>(
         &self,
         metrics: Option<kashika_check::Metrics>,
-        scene: Option<&'a Scene>,
+        deferred: Option<report::Deferrals<'a>>,
         omitted: &'a [kashika_check::Omitted],
     ) -> report::Opts<'a> {
         report::Opts {
@@ -158,7 +158,7 @@ impl Common {
             show_suppressed: self.show_suppressed,
             summary: self.summary,
             metrics,
-            scene,
+            deferred,
             omitted,
         }
     }
@@ -289,10 +289,16 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
     let focus = |d: &kashika_diag::Diagnostic| {
         c.focus.is_empty() || d.elements.iter().any(|e| c.focus.contains(&e.id))
     };
-    let found = kashika_check::check_bounded(&scene, c.max.max(report::KEEP), &focus);
+    let ctx = kashika_check::ctx::Ctx::new(&scene);
+    let found = kashika_check::check_bounded(&ctx, c.max.max(report::KEEP), &focus);
     let metrics = found.metrics(&scene);
-    diags.extend(found.diags);
-    kashika_diag::sort(&mut diags);
+    let mut all: Vec<(kashika_diag::Diagnostic, Vec<kashika_check::Deferred>)> = diags
+        .into_iter()
+        .map(|d| (d, Vec::new()))
+        .chain(found.diags.into_iter().zip(found.deferred))
+        .collect();
+    all.sort_by(|a, b| kashika_diag::order(&a.0, &b.0));
+    let (mut diags, deferred): (Vec<_>, Vec<_>) = all.into_iter().unzip();
     let omitted = found.omitted;
     let report::Counts { errors, warns, .. } = report::counts(&diags, &omitted);
     let output = match &render {
@@ -323,7 +329,7 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
             })
         }
     };
-    let opts = c.report_opts(Some(metrics), Some(&scene), &omitted);
+    let opts = c.report_opts(Some(metrics), Some((&ctx, &deferred)), &omitted);
     let report = match c.format {
         Format::Text => report::text(&name, &src, &mut diags, &opts, output.as_ref()),
         Format::Json => report::json(&name, &src, &mut diags, &opts, output.as_ref()),
@@ -382,7 +388,8 @@ fn run_inspect(a: &InspectArgs) -> ExitCode {
     };
     let (scene, mut diags) = kashika_model::compile_with(&src, &opts);
     diags.retain(|d| !d.suppressed);
-    let lints: usize = kashika_check::check_bounded(&scene, 0, &|d| !d.suppressed)
+    let ctx = kashika_check::ctx::Ctx::new(&scene);
+    let lints: usize = kashika_check::check_bounded(&ctx, 0, &|d| !d.suppressed)
         .omitted
         .iter()
         .map(|o| o.count)

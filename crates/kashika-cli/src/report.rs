@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
-use kashika_check::{Metrics, Omitted};
+use kashika_check::ctx::Ctx;
+use kashika_check::{Deferred, Metrics, Omitted};
 use kashika_diag::{Diagnostic, Severity};
-use kashika_model::Scene;
 use sha2::{Digest, Sha256};
 
 use crate::term;
@@ -19,11 +19,14 @@ pub struct Opts<'a> {
     pub show_suppressed: bool,
     pub summary: bool,
     pub metrics: Option<Metrics>,
-    /// The scene the diagnostics' deferred help is resolved against.
-    pub scene: Option<&'a Scene>,
+    pub deferred: Option<Deferrals<'a>>,
     /// Warnings counted but not kept, past `KEEP` (or `max`) per code.
     pub omitted: &'a [Omitted],
 }
+
+/// The help `check` deferred for each diagnostic, in the same order, and the context it is
+/// worked out in.
+pub type Deferrals<'a> = (&'a Ctx<'a>, &'a [Vec<Deferred>]);
 
 /// How many warnings per code `check` keeps at least, so that memory stays bounded; the
 /// rest are only counted.
@@ -148,19 +151,12 @@ fn select(diags: &mut [Diagnostic], opts: &Opts) -> Selection {
     idx.sort_by_key(|&i| diags[i].severity != Severity::Error);
     let shown: Vec<&Diagnostic> = idx.iter().map(|&i| &diags[i]).collect();
     let plan = plan(&shown, opts.max);
-    if let Some(scene) = opts.scene {
-        let mut print = vec![false; diags.len()];
+    if let Some((ctx, deferred)) = opts.deferred {
         for (&i, &s) in idx.iter().zip(&plan) {
-            print[i] = s == Show::Print;
+            if s == Show::Print {
+                kashika_check::free::resolve(ctx, &mut diags[i], deferred[i].clone());
+            }
         }
-        kashika_check::resolve(
-            scene,
-            diags
-                .iter_mut()
-                .zip(print)
-                .filter(|(_, p)| *p)
-                .map(|(d, _)| d),
-        );
     }
     Selection { idx, plan }
 }

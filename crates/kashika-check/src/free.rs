@@ -1,4 +1,4 @@
-use kashika_diag::{Diagnostic, Pending};
+use kashika_diag::Diagnostic;
 use kashika_geom::{Pt, Rect, TOLERANCE, fmt_num, round2};
 use kashika_model::Scene;
 use serde::Serialize;
@@ -179,7 +179,7 @@ impl Free {
 }
 
 /// Help that is costly to work out, so it is filled in only for diagnostics that are shown.
-/// A diagnostic carries its entries in `Diagnostic::pending`.
+/// A `Finding` carries its entries beside its diagnostic.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Deferred {
     /// Where in `help` its lines go.
@@ -200,45 +200,69 @@ pub enum DeferredKind {
     Lane,
 }
 
-/// The help and facts still to be worked out for `d`, in the order they were deferred.
-pub fn deferred(d: &Diagnostic) -> &[Deferred] {
-    d.pending.get::<Vec<Deferred>>().map_or(&[], Vec::as_slice)
+/// A diagnostic and the help still to be worked out for it, which `resolve` fills in.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Finding {
+    pub diag: Diagnostic,
+    /// In the order it was deferred.
+    pub deferred: Vec<Deferred>,
+}
+
+impl From<Diagnostic> for Finding {
+    fn from(diag: Diagnostic) -> Self {
+        Finding {
+            diag,
+            deferred: Vec::new(),
+        }
+    }
+}
+
+impl Finding {
+    pub fn with_help(mut self, help: impl Into<String>) -> Self {
+        self.diag.help.push(help.into());
+        self
+    }
+
+    /// The diagnostic with its deferred help worked out.
+    pub fn resolved(self, ctx: &Ctx) -> Diagnostic {
+        let mut d = self.diag;
+        resolve(ctx, &mut d, self.deferred);
+        d
+    }
 }
 
 /// Defers help of `kind` around the straight run `from`..`to` to `resolve`; its lines go after
-/// the help `d` has so far.
+/// the help `f` has so far.
 pub fn with_deferred(
-    mut d: Diagnostic,
+    f: impl Into<Finding>,
     kind: DeferredKind,
     from: Pt,
     to: Pt,
     skip: &[&str],
-) -> Diagnostic {
-    let mut all: Vec<Deferred> = d.pending.take().unwrap_or_default();
-    all.push(Deferred {
-        help_at: d.help.len(),
+) -> Finding {
+    let mut f = f.into();
+    f.deferred.push(Deferred {
+        help_at: f.diag.help.len(),
         kind,
         from: [from.x, from.y],
         to: [to.x, to.y],
         skip: skip.iter().map(|s| s.to_string()).collect(),
     });
-    d.pending = Pending::new(all);
-    d
+    f
 }
 
 /// Defers the `free` fact and a "segment N runs at ..." help line for `path[k]` of `l`, when it
 /// is straight, to `resolve`.
-pub fn with_free(d: Diagnostic, l: &LineGeom, k: usize, skip: &[&str]) -> Diagnostic {
+pub fn with_free(f: impl Into<Finding>, l: &LineGeom, k: usize, skip: &[&str]) -> Finding {
     match l.straight_ends(k) {
-        Some((p, q)) => with_deferred(d, DeferredKind::Segment(l.segment(k)), p, q, skip),
-        None => d,
+        Some((p, q)) => with_deferred(f, DeferredKind::Segment(l.segment(k)), p, q, skip),
+        None => f.into(),
     }
 }
 
-/// Works out the help and facts `d` deferred.
-pub fn resolve(ctx: &Ctx, d: &mut Diagnostic) {
-    let all: Vec<Deferred> = d.pending.take().unwrap_or_default();
-    for x in all.into_iter().rev() {
+/// Works out the help and facts `deferred` for `d`.
+pub fn resolve(ctx: &Ctx, d: &mut Diagnostic, deferred: Vec<Deferred>) {
+    for x in deferred.into_iter().rev() {
         let skip: Vec<&str> = x.skip.iter().map(String::as_str).collect();
         let pt = |a: [f64; 2]| Pt::new(a[0], a[1]);
         let Some(f) = free_around(ctx, pt(x.from), pt(x.to), &skip) else {
