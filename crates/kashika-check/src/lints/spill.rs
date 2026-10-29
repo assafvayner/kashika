@@ -2,8 +2,8 @@ use kashika_diag::{Diagnostic, Element, Span};
 use kashika_geom::{Pt, Rect, fmt_num, inside_runs, rect_polygon};
 
 use crate::ctx::{
-    Ctx, bbox, describe_overflow, intersection, junction_el, kind_name, line_bbox, line_el,
-    overflow, overflow_fact, shape_el, text_el, text_id,
+    Ctx, bbox, describe_overflow, junction_el, kind_name, line_bbox, line_el, overflow,
+    overflow_fact, shape_el, text_el, text_id,
 };
 use crate::sink::Sink;
 use crate::text_box::{below_box, text_box, title_band};
@@ -47,7 +47,7 @@ pub fn spill(ctx: &Ctx, out: &mut Sink) {
             let intrudes = if c.point {
                 false
             } else if c.pieces.is_empty() {
-                intersection(b, c.extent).is_some()
+                b.intersect(c.extent).is_some()
             } else {
                 let poly = rect_polygon(b);
                 c.pieces

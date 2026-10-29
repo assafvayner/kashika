@@ -24,7 +24,7 @@ pub fn below_box(s: &Shape) -> Option<Rect> {
         .iter()
         .filter(|t| t.role != TextRole::Absolute)
         .map(|t| t.rect)
-        .reduce(union)
+        .reduce(Rect::union)
 }
 
 /// The reserved band at the top of a group with a title: padding plus the title's height.
@@ -42,11 +42,5 @@ pub fn title_box(g: &Shape) -> Option<Rect> {
         .iter()
         .filter(|t| t.role != TextRole::Absolute)
         .map(|t| t.rect)
-        .reduce(union)
-}
-
-fn union(a: Rect, b: Rect) -> Rect {
-    let (x0, y0) = (a.x.min(b.x), a.y.min(b.y));
-    let (x1, y1) = (a.right().max(b.right()), a.bottom().max(b.bottom()));
-    Rect::new(x0, y0, x1 - x0, y1 - y0)
+        .reduce(Rect::union)
 }

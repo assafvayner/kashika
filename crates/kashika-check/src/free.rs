@@ -76,12 +76,7 @@ pub fn free_intervals(
             continue;
         }
         for &(p, q, _) in &l.pieces {
-            block(Rect::new(
-                p.x.min(q.x),
-                p.y.min(q.y),
-                (p.x - q.x).abs(),
-                (p.y - q.y).abs(),
-            ));
+            block(Rect::from_points(p, q));
         }
     }
     for m in ctx.marks_near(strip, c) {

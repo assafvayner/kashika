@@ -361,45 +361,17 @@ pub fn text_el(t: &Text) -> Element {
     e
 }
 
-/// Whether `inner` lies within `outer`, touching allowed.
-pub fn contains(outer: Rect, inner: Rect) -> bool {
-    inner.x >= outer.x - TOLERANCE
-        && inner.y >= outer.y - TOLERANCE
-        && inner.right() <= outer.right() + TOLERANCE
-        && inner.bottom() <= outer.bottom() + TOLERANCE
-}
-
-/// The overlap of two rects, when it is more than TOLERANCE in both directions.
-pub fn intersection(a: Rect, b: Rect) -> Option<Rect> {
-    let (x0, y0) = (a.x.max(b.x), a.y.max(b.y));
-    let (x1, y1) = (a.right().min(b.right()), a.bottom().min(b.bottom()));
-    (x1 - x0 > TOLERANCE && y1 - y0 > TOLERANCE).then(|| Rect::new(x0, y0, x1 - x0, y1 - y0))
-}
-
-pub fn points_bbox(pts: impl IntoIterator<Item = Pt>) -> Rect {
-    let mut it = pts.into_iter();
-    let Some(first) = it.next() else {
-        return Rect::default();
-    };
-    let (mut lo, mut hi) = (first, first);
-    for p in it {
-        lo = Pt::new(lo.x.min(p.x), lo.y.min(p.y));
-        hi = Pt::new(hi.x.max(p.x), hi.y.max(p.y));
-    }
-    Rect::new(lo.x, lo.y, hi.x - lo.x, hi.y - lo.y)
-}
-
 /// The bounding box of `pts`, or a NaN box when any of them is not finite.
 fn extent(pts: impl Iterator<Item = Pt> + Clone) -> Rect {
     if pts.clone().all(|p| p.x.is_finite() && p.y.is_finite()) {
-        points_bbox(pts)
+        Rect::bounding(pts)
     } else {
         Rect::new(f64::NAN, f64::NAN, 0.0, 0.0)
     }
 }
 
 pub fn line_bbox(l: &LineGeom) -> Rect {
-    points_bbox(l.pieces.iter().flat_map(|&(p, q, _)| [p, q]))
+    Rect::bounding(l.pieces.iter().flat_map(|&(p, q, _)| [p, q]))
 }
 
 /// How far `inner` sticks out of `outer` on each side, ignoring anything within TOLERANCE.

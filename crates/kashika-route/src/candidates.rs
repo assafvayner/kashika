@@ -467,12 +467,7 @@ fn lanes(scene: &Scene, a: &Endpoint, b: &Endpoint, axis: Axis) -> Vec<Lane> {
         Axis::X => (a.at.x, b.at.x, scene.size.0),
         Axis::Y => (a.at.y, b.at.y, scene.size.1),
     };
-    let ends = Rect::new(
-        a.at.x.min(b.at.x),
-        a.at.y.min(b.at.y),
-        (a.at.x - b.at.x).abs(),
-        (a.at.y - b.at.y).abs(),
-    );
+    let ends = Rect::from_points(a.at, b.at);
     let owns = |id: &str| [a, b].iter().any(|e| e.owner.as_deref() == Some(id));
     let mut pool: Vec<(Rank, Lane)> = vec![(
         Rank(true, true, 0.0),

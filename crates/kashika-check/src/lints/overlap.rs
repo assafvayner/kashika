@@ -2,7 +2,7 @@ use kashika_diag::Diagnostic;
 use kashika_geom::{TOLERANCE, polygons_overlap};
 use kashika_model::ShapeKind;
 
-use crate::ctx::{Ctx, bbox, contains, intersection, kind_name, shape_el};
+use crate::ctx::{Ctx, bbox, kind_name, shape_el};
 use crate::sink::Sink;
 
 /// `overlap`: two shapes have intersecting interiors and neither is a group that contains the other.
@@ -23,7 +23,7 @@ pub fn overlap(ctx: &Ctx, out: &mut Sink) {
                 continue;
             }
             let group_holds = |outer: &kashika_model::Shape, inner: &kashika_model::Shape| {
-                outer.kind == ShapeKind::Group && contains(outer.rect, inner.rect)
+                outer.kind == ShapeKind::Group && outer.rect.contains_rect(inner.rect)
             };
             if group_holds(sa, sb) || group_holds(sb, sa) || !polygons_overlap(&a.poly, &b.poly) {
                 continue;
@@ -41,10 +41,10 @@ pub fn overlap(ctx: &Ctx, out: &mut Sink) {
             )
             .with_element(shape_el(sb))
             .with_element(shape_el(sa));
-            if let Some(r) = intersection(sa.rect, sb.rect) {
+            if let Some(r) = sa.rect.intersect(sb.rect) {
                 d = d.with_fact("intersection", bbox(r));
             }
-            if contains(sa.rect, sb.rect) || contains(sb.rect, sa.rect) {
+            if sa.rect.contains_rect(sb.rect) || sb.rect.contains_rect(sa.rect) {
                 d = d.with_help("only a group may contain another shape; make the outer one a `group` or move the inner one out");
             }
             out.push(d);

@@ -4,9 +4,7 @@ use kashika_geom::{
 };
 use kashika_model::Marker;
 
-use crate::ctx::{
-    Ctx, arr, bbox, contains, intersection, kind_name, line_el, shape_el, text_el, text_id,
-};
+use crate::ctx::{Ctx, arr, bbox, kind_name, line_el, shape_el, text_el, text_id};
 use crate::index::Grid;
 use crate::sink::Sink;
 use crate::text_box::{below_box, label_box, label_box_at, text_box, title_band, title_box};
@@ -43,7 +41,7 @@ pub fn label_collision(ctx: &Ctx, out: &mut Sink) {
             .take_while(|&j| j < i)
             .map(|j| &subjects[j])
         {
-            if intersection(s.rect, o.rect).is_some() {
+            if s.rect.intersect(o.rect).is_some() {
                 hits.push((o.what.clone(), o.el.clone()));
             }
         }
@@ -208,13 +206,13 @@ fn obstacles(
         }
     }
     for g in ctx.groups_near(rect, 0.0) {
-        if title_box(g.shape).is_some_and(|t| intersection(rect, t).is_some()) {
+        if title_box(g.shape).is_some_and(|t| rect.intersect(t).is_some()) {
             out.push((
                 format!("the title of group '{}'", g.shape.id),
                 shape_el(g.shape),
             ));
         }
-        if intersection(rect, g.shape.rect).is_some() && !contains(g.shape.rect, rect) {
+        if rect.intersect(g.shape.rect).is_some() && !g.shape.rect.contains_rect(rect) {
             out.push((
                 format!("the border of group '{}'", g.shape.id),
                 shape_el(g.shape),
@@ -297,7 +295,7 @@ fn clear_positions(
                 && grid
                     .near(r, 1.0)
                     .into_iter()
-                    .all(|j| j == i || intersection(r, subjects[j].rect).is_none())
+                    .all(|j| j == i || r.intersect(subjects[j].rect).is_none())
         })
         .collect()
 }
@@ -306,9 +304,9 @@ fn clear_positions(
 /// text into that box's block, in box-local coordinates.
 fn text_in_box(ctx: &Ctx, t: &kashika_model::Text) -> Option<(String, String)> {
     let at = Rect::new(t.at.x, t.at.y, 0.0, 0.0);
-    let s = ctx
-        .boxes_near(at, 0.0)
-        .find(|s| s.shape.kind == kashika_model::ShapeKind::Box && contains(s.shape.rect, at))?;
+    let s = ctx.boxes_near(at, 0.0).find(|s| {
+        s.shape.kind == kashika_model::ShapeKind::Box && s.shape.rect.contains_rect(at)
+    })?;
     let r = s.shape.rect;
     let id = &s.shape.id;
     let help = format!(
