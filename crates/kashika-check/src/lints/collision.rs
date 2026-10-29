@@ -81,6 +81,11 @@ fn titles_crossed(ctx: &Ctx, out: &mut Sink) {
             let seg = l.segment(k);
             let span = l.line.segments.get(seg).map_or(l.line.span, |s| s.span);
             let band = title_band(g.shape).map_or(t.bottom(), |b| b.bottom());
+            let side = if entry.x < g.shape.rect.center().x {
+                "right"
+            } else {
+                "left"
+            };
             out.push(
                 Diagnostic::warn(
                     "label-collision",
@@ -103,6 +108,10 @@ fn titles_crossed(ctx: &Ctx, out: &mut Sink) {
                     fmt_num(t.bottom()),
                     l.line.id,
                     fmt_num(band)
+                ))
+                .with_help(format!(
+                    "or move the title away from the line: `text-align={side}` on '{}'",
+                    g.shape.id
                 )),
             );
         }

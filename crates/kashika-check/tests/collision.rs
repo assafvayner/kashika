@@ -159,6 +159,20 @@ fn lines_crossing_group_titles() {
         "{:?}",
         d[0].help
     );
+    assert_eq!(
+        d[0].help[1],
+        "or move the title away from the line: `text-align=right` on 'pub'"
+    );
+    assert!(
+        lint(
+            "label-collision",
+            &format!(
+                "{}line l nat.top -> y -40\n",
+                group.replacen("size (300,200)", "size (300,200) text-align=right", 1)
+            ),
+        )
+        .is_empty()
+    );
     assert!(
         lint(
             "label-collision",

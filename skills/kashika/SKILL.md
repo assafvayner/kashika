@@ -185,7 +185,7 @@ Comments: `// to end of line` and `/* block */` (no nesting; an unclosed `/*` is
 - `cross` / `through` / `near`: move the segment to a lane from the `free` help; `allow=cross:<other>` only for a non-planar graph.
 - `shared-segment` / `port-crowding`: spread ports with `side@t`, or fan out from a `junction`.
 - `not-ortho` / `diagonal-tail`: finish with `hv`/`vh` or `x`/`y`.
-- `label-collision` on a group border or title: move the label to a `label@t` from the help, and route lines below a group's title band, not through its title.
+- `label-collision` on a group border or title: move the label to a `label@t` from the help, and route lines below a group's title band, not through its title, or move the title out of the way with `text-align=right` (or `center`) on the group.
 - `near-axis`: a straight hop within 5° of horizontal/vertical (two anchors a few px apart) renders slanted; use the level anchor from the help (`cdn.left@0.42`) or `hv`/`vh`.
 - `missing-glyph`: the bundled fonts cover Latin, Greek and Cyrillic only; replace CJK, emoji and similar characters with an `icon=` or `image`. A tab in text is four spaces.
 - `text-conflict`: move `label`/`sublabel` into the block as its first items, or give every block item an `at`.
