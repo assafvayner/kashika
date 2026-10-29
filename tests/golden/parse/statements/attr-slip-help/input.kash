@@ -8,7 +8,7 @@ group g at (300,200) size (150,80) label="G" {
 }
 box d "D" at (160,100) width=100 height=40
 box e "E" at (20,200) size (100,40) icon=server
-box f "F" at (160,200) size (100,40) icon="database"
+box f "F" at (160,200) size (100,40) icon="oval"
 box hh "H" at (380,20) size (60,40) pin=middle
 line l1 a.right -> b.left arrow=end
 line l2 b.right -> h 40 arrow=both

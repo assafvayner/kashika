@@ -240,8 +240,10 @@ fn icons_search_matches_keywords() {
         .output()
         .unwrap();
     let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
-    assert_eq!(v["icons"][0]["name"], "cylinder");
+    assert_eq!(v["icons"][0]["name"], "database");
     assert_eq!(v["icons"][0]["matched_keyword"], "db");
+    assert_eq!(v["icons"][1]["name"], "cylinder");
+    assert_eq!(v["icons"][1]["matched_keyword"], "db");
     kashika()
         .args(["icons", "--search", "zzznomatch"])
         .assert()

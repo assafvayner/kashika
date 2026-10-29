@@ -2018,8 +2018,8 @@ fn common_attribute_slips_get_the_fix_as_help() {
             "did you mean `center`?",
         ),
         (
-            "box c \"C\" at (0,0) icon=\"database\"\n".to_string(),
-            "no icon is called `database`; the built-in shape `cylinder` matches it: `shape=cylinder`",
+            "box c \"C\" at (0,0) icon=\"oval\"\n".to_string(),
+            "no icon is called `oval`; the built-in shape `ellipse` matches it: `shape=ellipse`",
         ),
     ] {
         let d = errors(&body);
@@ -2032,7 +2032,8 @@ fn common_attribute_slips_get_the_fix_as_help() {
 fn unknown_shape_suggests_by_keyword_and_lists_the_builtins() {
     let d = errors("box a \"A\" at (0,0) shape=database\n");
     assert_eq!(d[0].help[0], "did you mean `cylinder`?", "{d:#?}");
-    assert!(d[0].help[1].starts_with("built-in shapes: `rect`, `rounded`, `cylinder`"));
+    assert!(d[0].help[1].starts_with("`database` is a bundled icon"));
+    assert!(d[0].help[2].starts_with("built-in shapes: `rect`, `rounded`, `cylinder`"));
     let d = errors("box a \"A\" at (0,0) shape=server\n");
     assert_eq!(d[0].help.len(), 2, "{d:#?}");
     assert!(

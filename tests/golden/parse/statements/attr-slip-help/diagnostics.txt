@@ -8,8 +8,8 @@ error[attr] 9:34-9:40: unknown attribute `height` on box
   = help: the size is a clause: write `size (w,h)`, without `=`
 error[attr] 10:37-10:48: `icon` expects a string
   = help: quote it: `icon="server"`
-error[file] 11:38-11:53: file `database` not found
-  = help: no icon is called `database`; the built-in shape `cylinder` matches it: `shape=cylinder`
+error[file] 11:38-11:49: file `oval` not found
+  = help: no icon is called `oval`; the built-in shape `ellipse` matches it: `shape=ellipse`
 error[attr] 12:37-12:47: `pin` expects one of: top, bottom, left, right, center, tl, tr, bl, br, top-left, top-right, bottom-left, bottom-right
   = help: did you mean `center`?
 error[attr] 13:27-13:32: unknown attribute `arrow` on line

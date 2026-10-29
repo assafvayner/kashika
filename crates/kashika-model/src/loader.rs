@@ -324,7 +324,7 @@ mod tests {
         assert_eq!(e.message, "`icons` is a directory, not a file");
         let e = l.find(l.root(), "icon").unwrap_err();
         assert_eq!(e.message, "file `icon` not found");
-        assert_eq!(e.help, None);
+        assert!(!e.help.unwrap_or_default().contains("`icons`"));
     }
 
     #[test]

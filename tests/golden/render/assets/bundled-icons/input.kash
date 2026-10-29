@@ -1,0 +1,38 @@
+// spec: 3a
+// raster: png
+// Every bundled icon on a light and a dark box, at the default size and at 32.
+diagram "bundled icons" size (660,470)
+box i0 "server" at (20,20) size (150,40) icon="server"
+box i1 "browser" at (180,20) size (150,40) icon="browser" fill=#1e293b color=white
+box i2 "queue" at (340,20) size (150,40) icon="queue"
+box i3 "lock" at (500,20) size (150,40) icon="lock" fill=#1e293b color=white
+box i4 "cloud" at (20,70) size (150,40) icon="cloud" fill=#1e293b color=white
+box i5 "person" at (180,70) size (150,40) icon="person"
+box i6 "database" at (340,70) size (150,40) icon="database" fill=#1e293b color=white
+box i7 "bucket" at (500,70) size (150,40) icon="bucket"
+box i8 "function" at (20,120) size (150,40) icon="function" icon-size=32 padding=(8,4)
+box i9 "load-balancer" at (180,120) size (150,40) icon="load-balancer" fill=#1e293b color=white icon-size=32 padding=(8,4)
+box i10 "gateway" at (340,120) size (150,40) icon="gateway" icon-size=32 padding=(8,4)
+box i11 "container" at (500,120) size (150,40) icon="container" fill=#1e293b color=white icon-size=32 padding=(8,4)
+box i12 "cluster" at (20,170) size (150,40) icon="cluster" fill=#1e293b color=white
+box i13 "cache" at (180,170) size (150,40) icon="cache"
+box i14 "users" at (340,170) size (150,40) icon="users" fill=#1e293b color=white
+box i15 "mobile" at (500,170) size (150,40) icon="mobile"
+box i16 "desktop" at (20,220) size (150,40) icon="desktop"
+box i17 "key" at (180,220) size (150,40) icon="key" fill=#1e293b color=white
+box i18 "gear" at (340,220) size (150,40) icon="gear"
+box i19 "mail" at (500,220) size (150,40) icon="mail" fill=#1e293b color=white
+box i20 "metrics" at (20,270) size (150,40) icon="metrics" fill=#1e293b color=white icon-size=32 padding=(8,4)
+box i21 "log" at (180,270) size (150,40) icon="log" icon-size=32 padding=(8,4)
+box i22 "file" at (340,270) size (150,40) icon="file" fill=#1e293b color=white icon-size=32 padding=(8,4)
+box i23 "folder" at (500,270) size (150,40) icon="folder" icon-size=32 padding=(8,4)
+box i24 "network" at (20,320) size (150,40) icon="network"
+box i25 "firewall" at (180,320) size (150,40) icon="firewall" fill=#1e293b color=white
+box i26 "cdn" at (340,320) size (150,40) icon="cdn"
+box i27 "globe" at (500,320) size (150,40) icon="globe" fill=#1e293b color=white
+box i28 "git" at (20,370) size (150,40) icon="git" fill=#1e293b color=white
+box i29 "ml" at (180,370) size (150,40) icon="ml"
+box i30 "gpu" at (340,370) size (150,40) icon="gpu" fill=#1e293b color=white
+box i31 "search" at (500,370) size (150,40) icon="search"
+box i32 "bell" at (20,420) size (150,40) icon="bell" icon-size=32 padding=(8,4)
+box i33 "clock" at (180,420) size (150,40) icon="clock" fill=#1e293b color=white icon-size=32 padding=(8,4)

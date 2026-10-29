@@ -1,5 +1,6 @@
 error[unknown-shape] 4:38-4:52: unknown shape `database`
   = help: did you mean `cylinder`?
+  = help: `database` is a bundled icon: put it on a box with `icon="database"`, or draw the box as it with `shape database from "database"`
   = help: built-in shapes: `rect`, `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`, `parallelogram`, `predefined-process`, `stadium`, `triangle`, `octagon`, `note`, `package`, `queue`
 error[unknown-shape] 5:37-5:51: unknown shape `Decision`
   = help: did you mean `diamond`?
