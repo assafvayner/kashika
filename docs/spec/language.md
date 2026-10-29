@@ -337,6 +337,7 @@ Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`
 - Suppressed findings are excluded from `warn` and from the exit code, and counted in `suppressed`. `crossings` in the metrics counts every crossing, suppressed or not, and is computed before `--focus` filtering.
 - `check` on a library file (§3a) reports only the errors in its definitions and prints no metrics; `render` on one is a usage error (exit 3).
 - `inspect` never fails on errors in the file; it exits 0 except on usage or I/O errors.
+- `format` is an alias of `fmt`, and `references` and `docs` are aliases of `ref`.
 - `fmt` exits 2 on a parse error. `icons --search` with no match exits 1 and a directory argument that isn't one exits 3. `measure` takes several texts; one gives a single result, several give one each. Numeric options (`--radius`, `route --max`, `--corridors`) reject non-finite or out-of-range values with exit 3.
 - A JSON tool error (exit 3) carries the schema of the command that failed.
 

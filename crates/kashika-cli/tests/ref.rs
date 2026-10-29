@@ -16,6 +16,16 @@ fn page(args: &[&str]) -> String {
 }
 
 #[test]
+fn references_and_docs_are_aliases_of_ref() {
+    let p = page(&["cli"]);
+    for alias in ["references", "docs"] {
+        let out = kashika().args([alias, "cli"]).output().unwrap();
+        assert_eq!(out.status.code(), Some(0), "{alias}");
+        assert_eq!(String::from_utf8(out.stdout).unwrap(), p, "{alias}");
+    }
+}
+
+#[test]
 fn default_page_has_the_required_parts_and_length() {
     let p = page(&[]);
     for heading in [

@@ -49,6 +49,18 @@ fn check_reports_without_writing() {
 }
 
 #[test]
+fn format_is_an_alias_of_fmt() {
+    let dir = tempfile::tempdir().unwrap();
+    let f = dir.path().join("d.kash");
+    std::fs::write(&f, MESSY).unwrap();
+    kashika()
+        .args(["format", f.to_str().unwrap()])
+        .assert()
+        .code(0);
+    assert_eq!(std::fs::read_to_string(&f).unwrap(), CLEAN);
+}
+
+#[test]
 fn parse_errors_exit_two_and_leave_the_file() {
     let dir = tempfile::tempdir().unwrap();
     let f = dir.path().join("bad.kash");

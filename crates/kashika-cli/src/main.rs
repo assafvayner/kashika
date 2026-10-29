@@ -53,6 +53,7 @@ enum Cmd {
     /// Print the exact width and height of a label, with markup applied
     Measure(measure::MeasureArgs),
     /// Print the language reference, or one topic of it
+    #[command(visible_aliases = ["references", "docs"])]
     Ref {
         /// syntax, anchors, paths, shapes, styles, metrics, lints, examples, cli, or a diagnostic code
         topic: Option<String>,
@@ -65,6 +66,7 @@ enum Cmd {
     /// Print the resolved geometry: shapes, anchors, lines, labels and the placement graph
     Inspect(InspectArgs),
     /// Rewrite a .kash file in canonical layout (whitespace only)
+    #[command(visible_alias = "format")]
     Fmt {
         /// The .kash file to format, or `-` to format stdin to stdout
         file: String,
