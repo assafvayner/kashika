@@ -59,17 +59,18 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
 
 - `grid=N` makes `off-grid` check authored literals only, never resolved anchors. `clearance=N` (default `6`) is the minimum gap used by the `near` lint.
 - `background=C` paints the whole canvas in color `C` (the same color values as styles) under everything else. Without it, or with `background=none`, the canvas is transparent in SVG, PNG and WebP output; JPEG has no alpha, so it composites onto white (§8). Any other value is an `attr` error.
-- Numeric attributes must be in range, or they are `attr` errors: `font-size`, `stroke-width`, `icon-size` and `grid` must be greater than 0; `radius`, `padding`, `gap` and `clearance` must be at least 0. All of them must be at most 1,000,000. A `text` `size=` outside that range is a `size` error.
+- Numeric attributes must be in range, or they are `attr` errors: `font-size`, `stroke-width`, `icon-size` and `grid` must be greater than 0; `radius`, `padding`, `gap` and `clearance` must be at least 0. All of them must be at most 1,000,000. Each value of `padding=(x,y)` follows the `padding` rule; any other `padding` value is an `attr` error. A `text` `size=` outside that range is a `size` error.
 - `style` keys:
   - `fill`, `stroke`, `stroke-width`, `stroke-style=solid|dashed|dotted`
   - `font-size`, `font-weight=normal|bold`, `color`
   - `radius`, `padding`, `muted` (the color for sublabels and `muted` text)
+  - `padding=N` insets the text area by `N` on every side; `padding=(x,y)` insets it by `x` on the left and right and `y` on the top and bottom. Below, "`padding`" means `x` for horizontal distances and `y` for vertical ones.
 
   Built-in styles: `service`, `datastore`, `external`, `queue`, `boundary`, `note`. A user style with a built-in's name overrides it **key by key**. Precedence: inline attribute > `style=` > built-in default.
 - `box` shapes: built-in `rect` (default), `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`, or any `shape` that is defined or imported (§3a). Any other `shape=` name is an `unknown-shape` error.
 - `pin=<anchor>` picks which anchor of the new shape lands on `at` (default `tl`). Any anchor works, including `side@t`: `pin=left@0.25`. For example, `box cache at db.right+(60,0) size (120,60) pin=left` vertically centers `cache` beside `db`.
 - `at` may reference other shapes, so boxes can be placed relative to each other. Placement references form a DAG; a cycle is an error that prints the cycle (the first few shapes and its length when it is long). A chain of more than 256 placement references is also a `placement-cycle` error, whatever the statement order; a shape inside a group counts a reference to the group, whose frame it uses.
-- `group`: children are `box`, `group`, `junction`, `text`, `line`. `image` is top-level only; inside a group it is a `parse` error. Groups nest at most 64 deep; a deeper `group` is a `parse` error. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. The label sits inside the top-left corner, and its title band (`font line-height + padding`) is reserved space. Children that intrude on the title band trigger `spill`.
+- `group`: children are `box`, `group`, `junction`, `text`, `line`. `image` is top-level only; inside a group it is a `parse` error. Groups nest at most 64 deep; a deeper `group` is a `parse` error. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. The label sits inside the top-left corner, inset by `padding`, and its title band (`font line-height + padding`, using `y`) is reserved space. Children that intrude on the title band trigger `spill`.
 - `junction`: a zero-size named point that lines can start or end at. Lines meeting at a junction are connected, not crossing. `dot` draws a 6px dot there. Junctions model buses and fan-in/fan-out.
 - `text`: `at` is the anchor point for the alignment. `color=none` is an `attr` error. Vertically, `at` is the **center** of the text block, not the baseline.
 
@@ -103,7 +104,7 @@ shape s3 from "icons/aws/s3.svg" [outline=bbox|hull] [text-area=below|inside]
 ```
 - The SVG's drawing is scaled to the box.
 - Anchors and checks use the bounding box (default) or the convex hull of the drawing.
-- `text-area=below` puts the label under the icon, the usual style in architecture diagrams. The label sits in a band `padding` under the box, as tall as the text and at least as wide as the box.
+- `text-area=below` puts the label under the icon, the usual style in architecture diagrams. The label sits in a band `padding` (`y`) under the box, as tall as the text and at least as wide as the box.
 - Anchors, `through`, `near` and `overlap` use the shape's outline only, never the label under it. `out-of-canvas`, `spill`, `label-collision` and `low-contrast` check that label where it sits, against the canvas or whatever is drawn behind it.
 - The SVG's drawing replaces the style's fill and stroke, so the shape adds no fill behind text for `low-contrast`.
 
@@ -114,7 +115,7 @@ image logo "assets/hf.png" at (20,20) size (80,80) [fit=contain|cover|stretch]
 ```
 - Formats: SVG, PNG, JPEG.
 - `fit` defaults to `contain`. Images take `pin=`, can be anchored to like boxes, and paint with the boxes in file order.
-- `icon-pos` defaults to `left` and `icon-size` to 24. A `left` icon sits `padding` from the left edge, vertically centered; a `top` icon sits `padding` from the top edge, horizontally centered. The text area shrinks by `icon-size + padding` on that side. On a group, the icon sits in the title band before the title, its size defaults to the title's line height (`1.25 × font-size`), and `icon-pos=top` is an `attr` error. `icon-pos` or `icon-size` without `icon=` is an `attr` error.
+- `icon-pos` defaults to `left` and `icon-size` to 24. A `left` icon sits `padding` (`x`) from the left edge, vertically centered; a `top` icon sits `padding` (`y`) from the top edge, horizontally centered. The text area shrinks by `icon-size + padding` on that side. On a group, the icon sits in the title band before the title, its size defaults to the title's line height (`1.25 × font-size`), and `icon-pos=top` is an `attr` error. `icon-pos` or `icon-size` without `icon=` is an `attr` error.
 - The checker treats an image as an opaque rectangle: lines are checked against it like a box, and it takes part in `overlap`, `spill` and `out-of-canvas`. It adds no fill behind text for `low-contrast`.
 - `inspect` reports each image's natural size and aspect ratio.
 
@@ -228,7 +229,7 @@ Unnamed lines are referred to as `line@L<n>`, where n is the source line of the 
 
 - Kashika bundles Inter (Regular and Bold) and JetBrains Mono (for `` `code` ``), so measurements are identical on every machine.
 - Defaults: `font-size=14`, line height `1.25 × font-size`, `padding=8`.
-- A box's **text area** is the shape's own text area (the whole box for `rect` and `rounded`, otherwise as below) inset by `padding` on every side:
+- A box's **text area** is the shape's own text area (the whole box for `rect` and `rounded`, otherwise as below) inset by `padding` on every side (`x` on the left and right, `y` on the top and bottom with `padding=(x,y)`):
 
   | shape | text area |
   |---|---|

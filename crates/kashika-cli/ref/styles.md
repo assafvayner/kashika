@@ -15,7 +15,7 @@ box api "API" at (40,40) size (140,60) style=service fill=#ffffff
 | `font-weight` | `normal` | `normal`, `bold` |
 | `color` | `#0f172a` | text color |
 | `radius` | `0` | corner radius; `shape=rounded` defaults to 8 |
-| `padding` | `8` | inset of the text area |
+| `padding` | `8` | inset of the text area; `(x,y)` sets left/right and top/bottom |
 | `muted` | `#64748b` | color of sublabels and muted text |
 
 The canvas is transparent by default (JPEG: white). `background=C` on the `diagram` line paints it, and `background=none` keeps it transparent. `low-contrast` checks canvas text against `background=`, or white. Line labels cut only their own line, so the fill beneath shows between the words.

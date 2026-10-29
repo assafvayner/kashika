@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 
 pub const STYLE_KEYS: &[&str] = &[
     "fill",
@@ -37,6 +37,30 @@ pub enum FontWeight {
     Bold,
 }
 
+/// The text area inset: `x` on the left and right, `y` on the top and bottom.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Padding {
+    pub x: f64,
+    pub y: f64,
+}
+
+impl Padding {
+    pub fn uniform(v: f64) -> Self {
+        Padding { x: v, y: v }
+    }
+}
+
+/// One number when both axes match, otherwise `[x, y]`.
+impl Serialize for Padding {
+    fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        if self.x == self.y {
+            s.serialize_f64(self.x)
+        } else {
+            (self.x, self.y).serialize(s)
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Style {
     pub fill: String,
@@ -47,7 +71,7 @@ pub struct Style {
     pub font_weight: FontWeight,
     pub color: String,
     pub radius: f64,
-    pub padding: f64,
+    pub padding: Padding,
     pub muted: String,
 }
 
@@ -62,7 +86,7 @@ impl Default for Style {
             font_weight: FontWeight::Normal,
             color: "#0f172a".into(),
             radius: 0.0,
-            padding: 8.0,
+            padding: Padding::uniform(8.0),
             muted: "#64748b".into(),
         }
     }
@@ -79,7 +103,7 @@ pub struct StyleProps {
     pub font_weight: Option<FontWeight>,
     pub color: Option<String>,
     pub radius: Option<f64>,
-    pub padding: Option<f64>,
+    pub padding: Option<Padding>,
     pub muted: Option<String>,
 }
 

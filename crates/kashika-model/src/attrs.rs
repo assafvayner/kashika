@@ -2,7 +2,7 @@ use kashika_diag::{Diagnostic, did_you_mean};
 use kashika_syntax::ast::{Attr, Value};
 
 use crate::colors;
-use crate::style::{FontWeight, StrokeStyle, StyleProps};
+use crate::style::{FontWeight, Padding, StrokeStyle, StyleProps};
 
 /// Validated view over a statement's attributes: reports unknown keys (with suggestions),
 /// duplicates, and `@t` on keys other than `label`.
@@ -109,6 +109,35 @@ pub fn num_in(a: &Attr, min: Min, diags: &mut Vec<Diagnostic>) -> Option<f64> {
     };
     diags.push(Diagnostic::error("attr", a.span, msg));
     None
+}
+
+/// `padding=N` or `padding=(x,y)`, each value in `0..=LIMIT`.
+fn padding(a: &Attr, diags: &mut Vec<Diagnostic>) -> Option<Padding> {
+    match a.value {
+        Value::Num(_) => num_in(a, Min::NonNegative, diags).map(Padding::uniform),
+        Value::Pair(x, y) => {
+            let bad = |v: f64| !(0.0..=LIMIT).contains(&v);
+            if bad(x) || bad(y) {
+                diags.push(
+                    Diagnostic::error(
+                        "attr",
+                        a.span,
+                        format!("`padding` values must be at least 0 and at most {LIMIT}"),
+                    )
+                    .with_help("write `padding=(x,y)` with x and y between 0 and 1000000"),
+                );
+                return None;
+            }
+            Some(Padding { x, y })
+        }
+        _ => {
+            diags.push(
+                type_err(a, "a number or a pair `(x,y)`")
+                    .with_help("write `padding=8` for every side, or `padding=(x,y)` for left/right and top/bottom"),
+            );
+            None
+        }
+    }
 }
 
 pub fn text(a: &Attr, diags: &mut Vec<Diagnostic>) -> Option<String> {
@@ -219,7 +248,7 @@ pub fn style_props(a: &Attrs, diags: &mut Vec<Diagnostic>) -> StyleProps {
         p.radius = num_in(x, Min::NonNegative, diags);
     }
     if let Some(x) = a.get("padding") {
-        p.padding = num_in(x, Min::NonNegative, diags);
+        p.padding = padding(x, diags);
     }
     if let Some(x) = a.get("muted") {
         p.muted = color(x, diags);

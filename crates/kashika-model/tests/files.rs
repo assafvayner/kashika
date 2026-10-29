@@ -141,6 +141,24 @@ fn svg_shapes_use_bbox_or_hull() {
 }
 
 #[test]
+fn text_below_uses_the_vertical_padding() {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "t.svg", SVG.as_bytes());
+    let (s, d) = run(
+        dir.path(),
+        &format!(
+            "{HEAD}shape th from \"t.svg\" text-area=below\n\
+             box b \"B\" at (300,100) size (80,40) shape=th padding=(20,6)\n"
+        ),
+    );
+    assert!(d.is_empty(), "{d:#?}");
+    assert_eq!(
+        shape(&s, "b").text_area,
+        Rect::new(300.0, 146.0, 80.0, 17.5)
+    );
+}
+
+#[test]
 fn svg_shape_file_errors() {
     let dir = tempfile::tempdir().unwrap();
     write(dir.path(), "icons/s3.svg", SVG.as_bytes());
@@ -681,6 +699,38 @@ fn icons_shrink_the_text_area() {
     );
     assert_eq!(g.text_area, Rect::new(333.5, 8.0, 158.5, 84.0));
     assert_eq!(s.assets.len(), 1, "one bundled icon, loaded once");
+}
+
+#[test]
+fn icons_use_the_padding_axis_of_their_side() {
+    let dir = tempfile::tempdir().unwrap();
+    let (s, d) = run(
+        dir.path(),
+        &format!(
+            "{HEAD}box a \"A\" at (0,0) size (200,60) icon=\"server\" padding=(4,2)\n\
+             box b \"B\" at (0,100) size (100,100) icon=\"server\" icon-pos=top icon-size=32 padding=(4,2)\n\
+             group g \"G\" at (300,0) size (200,100) icon=\"server\" padding=(4,2) {{\n}}\n"
+        ),
+    );
+    assert!(d.is_empty(), "{d:#?}");
+    let a = shape(&s, "a");
+    assert_eq!(
+        a.icon.as_ref().unwrap().rect,
+        Rect::new(4.0, 18.0, 24.0, 24.0)
+    );
+    assert_eq!(a.text_area, Rect::new(32.0, 2.0, 164.0, 56.0));
+    let b = shape(&s, "b");
+    assert_eq!(
+        b.icon.as_ref().unwrap().rect,
+        Rect::new(34.0, 102.0, 32.0, 32.0)
+    );
+    assert_eq!(b.text_area, Rect::new(4.0, 136.0, 92.0, 62.0));
+    let g = shape(&s, "g");
+    assert_eq!(
+        g.icon.as_ref().unwrap().rect,
+        Rect::new(304.0, 2.0, 17.5, 17.5)
+    );
+    assert_eq!(g.text_area, Rect::new(325.5, 2.0, 170.5, 96.0));
 }
 
 #[test]

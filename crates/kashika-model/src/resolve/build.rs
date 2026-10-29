@@ -122,11 +122,11 @@ impl<'a> Resolver<'a> {
         let svg = self.svg_shape(&shape);
         let icon = p.icon;
         let icon_inset = icon.map_or((0.0, 0.0), |ic| {
-            let d = ic.size + p.style.padding;
+            let pad = p.style.padding;
             if kind == ShapeKind::Group || ic.pos == IconPos::Left {
-                (d, 0.0)
+                (ic.size + pad.x, 0.0)
             } else {
-                (0.0, d)
+                (0.0, ic.size + pad.y)
             }
         });
         let text = textlayout::layout_shape(
@@ -162,10 +162,12 @@ impl<'a> Resolver<'a> {
                 let lh = p.style.font_size * 1.25;
                 let r = match (kind, ic.pos) {
                     (ShapeKind::Group, _) => {
-                        Rect::new(rect.x + pad, rect.y + pad + (lh - s) / 2.0, s, s)
+                        Rect::new(rect.x + pad.x, rect.y + pad.y + (lh - s) / 2.0, s, s)
                     }
-                    (_, IconPos::Left) => Rect::new(rect.x + pad, rect.center().y - s / 2.0, s, s),
-                    (_, IconPos::Top) => Rect::new(rect.center().x - s / 2.0, rect.y + pad, s, s),
+                    (_, IconPos::Left) => {
+                        Rect::new(rect.x + pad.x, rect.center().y - s / 2.0, s, s)
+                    }
+                    (_, IconPos::Top) => Rect::new(rect.center().x - s / 2.0, rect.y + pad.y, s, s),
                 };
                 ImageRef {
                     asset: ic.asset,

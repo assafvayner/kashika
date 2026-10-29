@@ -7,7 +7,7 @@ use serde::Serialize;
 use crate::attrs::{self, Attrs, LIMIT, Min};
 use crate::scene::{Align, ShapeKind};
 use crate::shapes;
-use crate::style::{FontWeight, Style};
+use crate::style::{FontWeight, Padding, Style};
 
 /// Attributes a box or group accepts for its text, besides the style keys.
 pub(crate) const SHAPE_TEXT_KEYS: &[&str] = &["sublabel", "text-align", "text-valign", "gap"];
@@ -107,14 +107,14 @@ pub(crate) fn shape_text_props(
 
 /// A shape's text area (§6): the shape's own text area (the whole box for `rect` and
 /// `rounded`) inset by `padding`.
-pub(crate) fn text_area(shape: &str, custom: Option<Rect>, rect: Rect, padding: f64) -> Rect {
+pub(crate) fn text_area(shape: &str, custom: Option<Rect>, rect: Rect, padding: Padding) -> Rect {
     let unit = custom.or_else(|| shapes::unit_text_area(shape, rect.w, rect.h));
     let r = unit.map_or(rect, |u| rect.map_rect(u));
     Rect::new(
-        r.x + padding,
-        r.y + padding,
-        (r.w - 2.0 * padding).max(0.0),
-        (r.h - 2.0 * padding).max(0.0),
+        r.x + padding.x,
+        r.y + padding.y,
+        (r.w - 2.0 * padding.x).max(0.0),
+        (r.h - 2.0 * padding.y).max(0.0),
     )
 }
 
@@ -123,13 +123,13 @@ fn required_size(
     shape: &str,
     custom: Option<Rect>,
     need: (f64, f64),
-    padding: f64,
+    padding: Padding,
     rect: Rect,
 ) -> (f64, f64) {
     let (w, h) = shapes::required_size(
         shape,
         custom,
-        (need.0 + 2.0 * padding, need.1 + 2.0 * padding),
+        (need.0 + 2.0 * padding.x, need.1 + 2.0 * padding.y),
         rect,
     );
     (w.max(rect.w), h.max(rect.h))
@@ -318,7 +318,7 @@ pub(crate) fn layout_shape(s: &ShapeInput, diags: &mut Vec<Diagnostic>) -> Shape
             items.push(item(x, rect, lines));
         }
         if s.kind == ShapeKind::Group {
-            title_band = st.padding + need.1;
+            title_band = st.padding.y + need.1;
         }
     }
     for (x, at) in &absolute {
@@ -349,7 +349,7 @@ fn below_area(rect: Rect, flow: &[Pending], st: &Style, gap: f64) -> Rect {
     let w = w.max(rect.w);
     Rect::new(
         rect.x + (rect.w - w) / 2.0,
-        rect.bottom() + st.padding,
+        rect.bottom() + st.padding.y,
         w,
         h,
     )

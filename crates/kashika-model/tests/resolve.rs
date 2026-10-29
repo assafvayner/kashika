@@ -1,6 +1,6 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::{PathSeg, Pt, Rect};
-use kashika_model::{EdgeKind, PlacementEdge, Scene, SegmentKind, StrokeStyle, compile};
+use kashika_model::{EdgeKind, Padding, PlacementEdge, Scene, SegmentKind, StrokeStyle, compile};
 
 const HEAD: &str = "diagram \"t\" size (800,600)\n";
 
@@ -826,6 +826,51 @@ fn every_style_key_is_accepted() {
     );
     let d = errors("style s { fil=#fff }\n");
     assert_eq!(d[0].code, "attr");
+}
+
+#[test]
+fn padding_pair_follows_style_precedence() {
+    let s = ok("style s { padding=(2,4) }\n\
+         box a at (0,0) size (10,10) style=s\n\
+         box b at (0,20) size (10,10) style=s padding=6\n\
+         box c at (0,40) size (10,10) style=s padding=(1,0)\n\
+         box d at (0,60) size (10,10) style=service\n");
+    let pad = |i: usize| s.shapes[i].style.padding;
+    assert_eq!(pad(0), Padding { x: 2.0, y: 4.0 });
+    assert_eq!(pad(1), Padding::uniform(6.0));
+    assert_eq!(pad(2), Padding { x: 1.0, y: 0.0 });
+    assert_eq!(pad(3), Padding::uniform(8.0));
+}
+
+#[test]
+fn padding_pair_errors() {
+    for (body, msg) in [
+        (
+            "box a at (0,0) size (10,10) padding=(-1,2)\n",
+            "`padding` values must be at least 0 and at most 1000000",
+        ),
+        (
+            "box a at (0,0) size (10,10) padding=(1,2000000)\n",
+            "`padding` values must be at least 0 and at most 1000000",
+        ),
+        (
+            "style s { padding=(0,-3) }\n",
+            "`padding` values must be at least 0 and at most 1000000",
+        ),
+        (
+            "box a at (0,0) size (10,10) padding=wide\n",
+            "`padding` expects a number or a pair `(x,y)`",
+        ),
+        (
+            "box a at (0,0) size (10,10) padding=\"8\"\n",
+            "`padding` expects a number or a pair `(x,y)`",
+        ),
+    ] {
+        let d = errors(body);
+        assert_eq!(codes_of(&d), vec!["attr"], "{body}: {d:#?}");
+        assert_eq!(d[0].message, msg);
+        assert_eq!(d[0].help.len(), 1);
+    }
 }
 
 #[test]

@@ -24,7 +24,7 @@ pub use loader::Options;
 pub use resolve::{resolve, resolve_library_with, resolve_with};
 pub use scene::*;
 pub use shapes::{BUILTIN_SHAPES, builtin_source};
-pub use style::{FontWeight, StrokeStyle, Style};
+pub use style::{FontWeight, Padding, StrokeStyle, Style};
 pub use textlayout::{TextItem, TextRole};
 
 /// Parses and resolves a source file. Always returns a (possibly partial) scene, so tools

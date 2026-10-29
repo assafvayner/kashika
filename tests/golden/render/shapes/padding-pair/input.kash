@@ -1,0 +1,11 @@
+// spec: 3, 3a, 6
+// raster: png
+// `padding=(x,y)` on a box, through a style, on a group title and with a left icon.
+diagram "padding pair" size (420,200)
+style tight { padding=(8,3) }
+box a "Tight box" at (10,10) size (120,26) padding=(8,3)
+box b "Styled" at (150,10) size (120,26) style=tight
+group g "Group" at (10,60) size (400,130) padding=(8,3) icon="server" {
+  box c "Left icon" at (10,40) size (160,40) icon="server" padding=(8,3)
+  box d "Uniform" at (200,40) size (160,40) padding=8
+}

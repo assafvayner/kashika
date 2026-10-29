@@ -127,10 +127,10 @@ fn group_title_band_and_box() {
     let g = &s.shapes[0];
     let band = title_band(g).unwrap();
     assert_eq!(band, Rect::new(0.0, 100.0, 200.0, g.title_band));
-    assert!(g.title_band > g.style.padding);
+    assert!(g.title_band > g.style.padding.y);
     let title = title_box(g).unwrap();
     assert!(title.x >= band.x && title.bottom() <= band.bottom() + 1e-9);
-    assert_eq!(title.y, 100.0 + g.style.padding);
+    assert_eq!(title.y, 100.0 + g.style.padding.y);
     assert_eq!(title_band(&s.shapes[1]), None);
     assert_eq!(title_box(&s.shapes[1]), None);
     assert_eq!(title_band(&s.shapes[2]), None);

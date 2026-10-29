@@ -1,0 +1,7 @@
+// spec: 3, 7
+// Out-of-range and mistyped `padding=(x,y)` values, inline and in a style.
+diagram "padding errors" size (300,120)
+style s { padding=(0,-3) }
+box a at (10,10) size (60,40) padding=(-1,2)
+box b at (80,10) size (60,40) padding=(4,2000000)
+box c at (150,10) size (60,40) padding=wide

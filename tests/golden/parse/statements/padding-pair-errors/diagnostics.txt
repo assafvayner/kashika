@@ -1,0 +1,8 @@
+error[attr] 4:11-4:25: `padding` values must be at least 0 and at most 1000000
+  = help: write `padding=(x,y)` with x and y between 0 and 1000000
+error[attr] 5:31-5:45: `padding` values must be at least 0 and at most 1000000
+  = help: write `padding=(x,y)` with x and y between 0 and 1000000
+error[attr] 6:31-6:50: `padding` values must be at least 0 and at most 1000000
+  = help: write `padding=(x,y)` with x and y between 0 and 1000000
+error[attr] 7:32-7:44: `padding` expects a number or a pair `(x,y)`
+  = help: write `padding=8` for every side, or `padding=(x,y)` for left/right and top/bottom

@@ -115,6 +115,26 @@ fn padding_changes_the_text_area() {
 }
 
 #[test]
+fn padding_pair_insets_each_axis() {
+    let s = ok("box a \"A\" at (0,0) size (40,40) padding=(10,3)\n");
+    assert_eq!(shape(&s, "a").text_area, Rect::new(10.0, 3.0, 20.0, 34.0));
+    let s = ok("group g \"G\" at (100,100) size (200,100) padding=(4,10) {\n}\n");
+    let g = shape(&s, "g");
+    assert_eq!(g.text_area, Rect::new(104.0, 110.0, 192.0, 80.0));
+    assert_eq!(g.text[0].rect.x, 104.0);
+    assert!(close(g.title_band, 27.5), "{}", g.title_band);
+}
+
+#[test]
+fn padding_pair_sets_the_overflow_size() {
+    let d = errors("box a \"Payments API\" at (0,0) size (50,10) padding=(4,2)\n");
+    assert_eq!(
+        d[0].help,
+        vec!["make `a` at least size (100,22), or shorten the text".to_string()]
+    );
+}
+
+#[test]
 fn stacked_block_items() {
     let s = ok(
         "box api at (100,80) size (200,120) text-align=left {\n  text \"**Payments API**\"\n  text \"v2.4.1\" size=11 muted\n  text \"• validates cards\" size=12 align=right\n}\n",
