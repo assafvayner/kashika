@@ -84,3 +84,9 @@ Release branches as a commit graph: guide junctions (no `dot`) for lanes and col
 Billing classes in UML: a `package` shape as a `layer=under` backdrop, class boxes as text blocks, a `triangle` generalization through a junction, a `hollow-diamond` aggregation and a `note` attached with a dotted line.
 
 ![class-diagram](class-diagram/class-diagram.svg)
+
+## gantt
+
+Roadmap with a month header and milestone guide junctions (no `dot`): bars sit on mixed points like `(m2.x, r3.y)` with widths that span whole months between guides, per-workstream styles, ortho dependency arrows between bars, a dashed "today" line and a milestone diamond.
+
+![gantt](gantt/gantt.svg)

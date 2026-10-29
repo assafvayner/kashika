@@ -2,6 +2,8 @@
 
 Leave `size` out and a box fits its text: it gets the smallest size whose text area holds the label, sublabel, block and icon, rounded up to `grid=`. `size (140, auto)` fixes the width and fits the height. `kashika inspect file.kash <id>` shows the size it got. A box with no text still needs a `size`.
 
+To span two points, put the box at the first and set `size` to the difference: width = `b.x - a.x`, height = `b.y - a.y`. Name the spanned points with `junction`s so you subtract once, and read absolute coordinates with `kashika inspect file.kash <ids>`. For a backdrop, use `layer=under`, or a `group` without `size`, which fits its children. `examples/gantt` shows bars between milestone guides.
+
 When you give a size, write a guess, run `kashika check`, and take the size from the `label-overflow` help. To work it out up front:
 
 - `kashika measure "Payments API"` prints the exact width and height of a text (quote it; `\n` for more lines; several arguments give one result each). Add `--size N` and `--weight bold` to match the style; `**` markup is applied as in a label. `kashika ref metrics` has average character widths.

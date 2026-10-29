@@ -1,0 +1,49 @@
+diagram "Product roadmap" background=#f8fafc kashika="0.1.0"
+
+style design { fill=#dbeafe stroke=#2563eb font-size=12 padding=3 radius=4 }
+style build { fill=#dcfce7 stroke=#16a34a font-size=12 padding=3 radius=4 }
+style launch { fill=#fef3c7 stroke=#d97706 font-size=12 padding=3 radius=4 }
+style month { fill=#e2e8f0 stroke=#94a3b8 font-size=12 padding=3 }
+
+junction m0 at (160, 0)
+junction m1 at m0+(100, 0)
+junction m2 at m1+(100, 0)
+junction m3 at m2+(100, 0)
+junction m4 at m3+(100, 0)
+junction m5 at m4+(100, 0)
+junction m6 at m5+(100, 0)
+
+junction head at (0, 20)
+junction r1 at head+(0, 70)
+junction r2 at r1+(0, 40)
+junction r3 at r2+(0, 60)
+junction r4 at r3+(0, 40)
+junction r5 at r4+(0, 60)
+junction now at (m3.x, head.y)+(-40, 30)
+junction ga_x at m6+(20, 0)
+
+box jan "Jan" at (m0.x, head.y) size (100, 24) style=month
+box feb "Feb" at (m1.x, head.y) size (100, 24) style=month
+box mar "Mar" at (m2.x, head.y) size (100, 24) style=month
+box apr "Apr" at (m3.x, head.y) size (100, 24) style=month
+box may "May" at (m4.x, head.y) size (100, 24) style=month
+box jun "Jun" at (m5.x, head.y) size (100, 24) style=month
+
+text "**Design**" at (20, r1.y) text-align=left color=#1d4ed8
+text "**Build**" at (20, r3.y) text-align=left color=#15803d
+text "**Launch**" at (20, r5.y) text-align=left color=#b45309
+
+line today now -> v 262 stroke=#dc2626 stroke-style=dashed allow=through:ux,through:api reason="marker spans the bars in progress"
+text "Today" at now+(0, 276) color=#dc2626 font-size=12
+
+box research "Research" at (m0.x, r1.y) size (200, 26) pin=left style=design
+box ux "UX design" at (m2.x, r2.y) size (100, 26) pin=left style=design
+box api "API" at (m2.x, r3.y) size (200, 26) pin=left style=build
+box web "Web app" at (m3.x, r4.y) size (200, 26) pin=left style=build
+box beta "Beta" at (m5.x, r5.y) size (100, 26) pin=left style=launch
+box ga at (ga_x.x, r5.y) size (24, 24) pin=center shape=diamond fill=#d97706 stroke=#b45309
+text "GA" at ga.bottom+(0, 8) font-size=12
+
+arrow research.right -> hv ux.top stroke=#475569 ortho
+arrow web.right -> hv beta.top stroke=#475569 ortho
+arrow beta.right -> ga.left stroke=#475569 ortho
