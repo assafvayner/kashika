@@ -12,7 +12,7 @@ const STATEMENTS: &[&str] = &[
 ];
 const LINE_FLAGS: &[&str] = &["ortho"];
 /// Segment keywords; an id with one of these names could not be a bare segment target.
-const RESERVED_IDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve"];
+pub const RESERVED_IDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve"];
 const MAX_GROUP_DEPTH: usize = 64;
 
 pub fn parse(src: &str) -> (File, Vec<Diagnostic>) {

@@ -1,0 +1,6 @@
+// spec: 2, 7
+// A reference to a reserved id says so instead of guessing a similar id.
+diagram "reference" size (300,200)
+box h at (20,20) size (100,40)
+box h2 at (160,20) size (100,40)
+box b at h.bl size (100,40)

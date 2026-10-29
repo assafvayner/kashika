@@ -1,4 +1,5 @@
 use kashika_diag::{Diagnostic, LINT_CODES, Span, did_you_mean};
+use kashika_syntax::RESERVED_IDS;
 use kashika_syntax::ast::{self};
 
 use crate::attrs::{self, LIMIT};
@@ -101,7 +102,11 @@ impl<'a> Resolver<'a> {
 
     pub(super) fn unknown_id(&self, name: &str, span: Span) -> Diagnostic {
         let mut d = Diagnostic::error("unknown-id", span, format!("unknown id `{name}`"));
-        if let Some(s) = did_you_mean(name, self.ids.keys().map(String::as_str)) {
+        if RESERVED_IDS.contains(&name) {
+            d = d.with_help(format!(
+                "`{name}` is a reserved word, so nothing can have that id; rename the shape it refers to"
+            ));
+        } else if let Some(s) = did_you_mean(name, self.ids.keys().map(String::as_str)) {
             d = d.with_help(format!("did you mean `{s}`?"));
         }
         d
