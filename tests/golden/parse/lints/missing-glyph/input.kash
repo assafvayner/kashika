@@ -1,0 +1,5 @@
+// spec: 7, 6
+// Characters outside the bundled fonts are reported.
+diagram "glyph" size (300,200)
+box a "日本" at (20,20) size (200,80)
+text t "ok 日" at (20,120)

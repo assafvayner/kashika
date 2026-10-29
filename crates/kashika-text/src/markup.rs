@@ -32,8 +32,13 @@ enum Mode {
     Code,
 }
 
+/// Width of a tab, in spaces. A tab has no glyph in the bundled fonts, so `parse_markup`
+/// replaces each one with this many spaces.
+pub const TAB_WIDTH: usize = 4;
+
 /// Splits `s` into lines of styled runs. `**bold**` and `` `code` `` don't nest: inside one,
 /// the other marker is literal text. `\*` and `` \` `` are literal markers.
+/// A tab becomes `TAB_WIDTH` spaces; there are no tab stops.
 pub fn parse_markup(s: &str, bold: bool) -> Result<Vec<Vec<Run>>, MarkupError> {
     let plain = if bold { Font::Bold } else { Font::Regular };
     let font = |m: Mode| match m {
@@ -69,6 +74,7 @@ pub fn parse_markup(s: &str, bold: bool) -> Result<Vec<Vec<Run>>, MarkupError> {
                 i += 2;
                 continue;
             }
+            '\t' => buf.push_str(&" ".repeat(TAB_WIDTH)),
             '\n' => {
                 flush(&mut lines, &mut buf, font(mode));
                 lines.push(Vec::new());

@@ -1,7 +1,7 @@
 use kashika_geom::Rect;
 use serde::Serialize;
 
-use crate::font::{LINE_HEIGHT, baseline_offset, run_width};
+use crate::font::{LINE_HEIGHT, baseline_offset, missing_glyphs, run_width};
 use crate::markup::{MarkupError, Run, parse_markup};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -27,10 +27,10 @@ pub struct MeasuredLine {
 /// One measured paragraph: a string split on `\n`, with markup applied, at one size.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Block {
-    pub lines: Vec<MeasuredLine>,
-    pub size: f64,
-    pub width: f64,
-    pub height: f64,
+    lines: Vec<MeasuredLine>,
+    size: f64,
+    width: f64,
+    height: f64,
 }
 
 /// A line positioned on the canvas. The pen starts at `(x, baseline)`.
@@ -61,6 +61,29 @@ pub fn measure(text: &str, size: f64, bold: bool) -> Result<Block, MarkupError> 
 }
 
 impl Block {
+    pub fn lines(&self) -> &[MeasuredLine] {
+        &self.lines
+    }
+
+    pub fn size(&self) -> f64 {
+        self.size
+    }
+
+    pub fn width(&self) -> f64 {
+        self.width
+    }
+
+    pub fn height(&self) -> f64 {
+        self.height
+    }
+
+    /// The distinct characters, in order of first appearance, that the bundled fonts have
+    /// no glyph for. They are drawn as the font's `.notdef` shape.
+    pub fn missing_glyphs(&self) -> Vec<char> {
+        let runs: Vec<&Run> = self.lines.iter().flat_map(|l| &l.runs).collect();
+        missing_glyphs(runs)
+    }
+
     /// Places the lines top-down from `top`, each aligned within `[left, left + width]`.
     /// Returns the lines and their bounding box.
     pub fn place(&self, left: f64, width: f64, top: f64, align: HAlign) -> (Vec<PlacedLine>, Rect) {
@@ -102,9 +125,9 @@ impl Block {
 
 /// Width and height of blocks stacked top to bottom with `gap` between them.
 pub fn stack_size(blocks: &[&Block], gap: f64) -> (f64, f64) {
-    let w = blocks.iter().map(|b| b.width).fold(0.0, f64::max);
-    let h: f64 =
-        blocks.iter().map(|b| b.height).sum::<f64>() + gap * blocks.len().saturating_sub(1) as f64;
+    let w = blocks.iter().map(|b| b.width()).fold(0.0, f64::max);
+    let h: f64 = blocks.iter().map(|b| b.height()).sum::<f64>()
+        + gap * blocks.len().saturating_sub(1) as f64;
     (w, h)
 }
 
@@ -126,7 +149,7 @@ pub fn stack(
     let mut out = Vec::new();
     for (b, align) in items {
         out.push(b.place(area.x, area.w, top, *align));
-        top += b.height + gap;
+        top += b.height() + gap;
     }
     out
 }

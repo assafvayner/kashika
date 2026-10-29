@@ -5,7 +5,7 @@ use kashika_text::{HAlign, VAlign, measure, stack, stack_size};
 fn place_at_centers_vertically() {
     let b = measure("API", 14.0, false).unwrap();
     let (lines, r) = b.place_at(100.0, 50.0, HAlign::Center);
-    assert!((r.x - (100.0 - b.width / 2.0)).abs() < 1e-9);
+    assert!((r.x - (100.0 - b.width() / 2.0)).abs() < 1e-9);
     assert_eq!(r.y, 41.25);
     assert_eq!(r.h, 17.5);
     assert!(
@@ -30,7 +30,7 @@ fn multi_line_blocks_align_each_line() {
     assert!((lines[0].x + lines[0].width - 100.0).abs() < 1e-9);
     assert!((lines[1].x + lines[1].width - 100.0).abs() < 1e-9);
     assert_eq!(lines[1].baseline - lines[0].baseline, 17.5);
-    assert!((r.w - b.width).abs() < 1e-9);
+    assert!((r.w - b.width()).abs() < 1e-9);
     assert_eq!(r.h, 35.0);
 }
 

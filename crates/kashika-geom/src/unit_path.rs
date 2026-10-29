@@ -30,6 +30,18 @@ fn tokens(d: &str) -> Result<Vec<PTok>, String> {
         while i < cs.len() && (cs[i].is_ascii_digit() || cs[i] == '.') {
             i += 1;
         }
+        if i > start && matches!(cs.get(i), Some('e' | 'E')) {
+            let mut j = i + 1;
+            if matches!(cs.get(j), Some('-' | '+')) {
+                j += 1;
+            }
+            if cs.get(j).is_some_and(char::is_ascii_digit) {
+                while cs.get(j).is_some_and(char::is_ascii_digit) {
+                    j += 1;
+                }
+                i = j;
+            }
+        }
         let s: String = cs[start..i.max(start + 1)].iter().collect();
         let n: f64 = s.parse().map_err(|_| format!("bad number `{s}` in path"))?;
         out.push(PTok::Num(n));
@@ -74,7 +86,8 @@ fn flag(v: f64) -> Result<bool, String> {
 }
 
 /// Parses a unit-coordinate path (`M L H V C Q A Z`, absolute only) into subpaths.
-/// Arcs become cubic Béziers; `Z` adds the closing line when the subpath isn't closed.
+/// Subpaths with no segments (a lone `M`) are dropped, and a path with none left is an
+/// error. Arcs become cubic Béziers; `Z` adds the closing line when the subpath isn't closed.
 pub fn parse_unit_path(d: &str) -> Result<Vec<Vec<PathSeg>>, String> {
     let toks = tokens(d)?;
     let mut subs: Vec<Vec<PathSeg>> = Vec::new();
@@ -178,6 +191,7 @@ pub fn parse_unit_path(d: &str) -> Result<Vec<Vec<PathSeg>>, String> {
         }
         subs.last_mut().expect("`M` opened a subpath").extend(segs);
     }
+    subs.retain(|s| !s.is_empty());
     if subs.is_empty() {
         return Err("empty path".into());
     }

@@ -454,6 +454,7 @@ dependencies = [
  "kashika-diag",
  "kashika-geom",
  "kashika-model",
+ "kashika-text",
  "serde",
  "serde_json",
  "tempfile",

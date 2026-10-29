@@ -44,6 +44,7 @@ pub fn horizontal_hits(poly: &[Pt], y: f64) -> Vec<f64> {
     hits(poly, y, |p| (p.y, p.x))
 }
 
+/// Sorted, with hits closer than 1e-9 merged, so a cut through a vertex reports it once.
 /// `axes` returns (coordinate along the cut, coordinate reported) for a point.
 fn hits(poly: &[Pt], at: f64, axes: impl Fn(Pt) -> (f64, f64)) -> Vec<f64> {
     let mut out = Vec::new();
@@ -60,5 +61,7 @@ fn hits(poly: &[Pt], at: f64, axes: impl Fn(Pt) -> (f64, f64)) -> Vec<f64> {
             out.push(a1 + (b1 - a1) * (at - a0) / (b0 - a0));
         }
     }
+    out.sort_by(f64::total_cmp);
+    out.dedup_by(|a, b| (*a - *b).abs() < 1e-9);
     out
 }

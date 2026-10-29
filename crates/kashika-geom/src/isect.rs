@@ -10,6 +10,11 @@ pub fn dot(a: Pt, b: Pt) -> f64 {
     a.x * b.x + a.y * b.y
 }
 
+/// Segments shorter than this are points.
+const DEGENERATE: f64 = 1e-9;
+/// Slack on the segment parameters, so endpoints that meet up to float error still hit.
+const PARAM_EPS: f64 = 1e-12;
+
 /// How two straight segments meet.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Hit {
@@ -22,7 +27,7 @@ pub enum Hit {
 pub fn closest_on_seg(p: Pt, a: Pt, b: Pt) -> Pt {
     let d = b - a;
     let l2 = dot(d, d);
-    if l2 <= 1e-18 {
+    if l2 <= DEGENERATE * DEGENERATE {
         return a;
     }
     a + d * (dot(p - a, d) / l2).clamp(0.0, 1.0)
@@ -35,10 +40,11 @@ pub fn dist_point_seg(p: Pt, a: Pt, b: Pt) -> f64 {
 /// Where segments `a0a1` and `b0b1` meet. Points within `eps` of the other segment count
 /// as touching, and segments within `eps` of being collinear count as overlapping.
 pub fn seg_hit(a0: Pt, a1: Pt, b0: Pt, b1: Pt, eps: f64) -> Option<Hit> {
+    let eps = eps.max(0.0);
     let (da, db) = (a1 - a0, b1 - b0);
     let (la, lb) = (da.length(), db.length());
-    if la <= 1e-12 || lb <= 1e-12 {
-        let (p, q0, q1) = if la <= 1e-12 {
+    if la <= DEGENERATE || lb <= DEGENERATE {
+        let (p, q0, q1) = if la <= DEGENERATE {
             (a0, b0, b1)
         } else {
             (b0, a0, a1)
@@ -64,8 +70,9 @@ pub fn seg_hit(a0: Pt, a1: Pt, b0: Pt, b1: Pt, eps: f64) -> Option<Hit> {
     }
     let t = cross(b0 - a0, db) / denom;
     let s = cross(b0 - a0, da) / denom;
-    if (0.0..=1.0).contains(&t) && (0.0..=1.0).contains(&s) {
-        return Some(Hit::Point(a0 + da * t));
+    let in_range = |v: f64| (-PARAM_EPS..=1.0 + PARAM_EPS).contains(&v);
+    if in_range(t) && in_range(s) {
+        return Some(Hit::Point(a0 + da * t.clamp(0.0, 1.0)));
     }
     [(a0, b0, b1), (a1, b0, b1), (b0, a0, a1), (b1, a0, a1)]
         .into_iter()
@@ -130,7 +137,7 @@ pub fn strictly_inside(p: Pt, poly: &[Pt]) -> bool {
 pub fn inside_runs(a: Pt, b: Pt, poly: &[Pt]) -> Vec<(Pt, Pt)> {
     let d = b - a;
     let l2 = dot(d, d);
-    if l2 <= 1e-18 {
+    if l2 <= DEGENERATE * DEGENERATE {
         return Vec::new();
     }
     let param = |p: Pt| (dot(p - a, d) / l2).clamp(0.0, 1.0);
@@ -166,12 +173,58 @@ pub fn centroid(poly: &[Pt]) -> Pt {
     poly.iter().fold(Pt::default(), |s, p| s + *p) * (1.0 / n)
 }
 
-/// Whether two polygons' interiors share area. Touching edges don't count.
+/// Whether two polygons' interiors share area. Touching edges don't count. Either polygon
+/// may be non-convex.
 pub fn polygons_overlap(a: &[Pt], b: &[Pt]) -> bool {
+    if a.len() < 3 || b.len() < 3 || !bounds_overlap(a, b) {
+        return false;
+    }
     edges(a).any(|(p, q)| !inside_runs(p, q, b).is_empty())
         || edges(b).any(|(p, q)| !inside_runs(p, q, a).is_empty())
-        || strictly_inside(centroid(a), b)
-        || strictly_inside(centroid(b), a)
+        || interior_samples(a).any(|p| strictly_inside(p, b))
+        || interior_samples(b).any(|p| strictly_inside(p, a))
+}
+
+fn bounds(poly: &[Pt]) -> (Pt, Pt) {
+    poly.iter().fold(
+        (
+            Pt::new(f64::INFINITY, f64::INFINITY),
+            Pt::new(f64::NEG_INFINITY, f64::NEG_INFINITY),
+        ),
+        |(lo, hi), p| {
+            (
+                Pt::new(lo.x.min(p.x), lo.y.min(p.y)),
+                Pt::new(hi.x.max(p.x), hi.y.max(p.y)),
+            )
+        },
+    )
+}
+
+fn bounds_overlap(a: &[Pt], b: &[Pt]) -> bool {
+    let ((alo, ahi), (blo, bhi)) = (bounds(a), bounds(b));
+    alo.x < bhi.x && blo.x < ahi.x && alo.y < bhi.y && blo.y < ahi.y
+}
+
+/// Points inside the polygon: the midpoint of every interior span of a horizontal scan
+/// through the middle of each band between consecutive vertex heights.
+fn interior_samples(poly: &[Pt]) -> impl Iterator<Item = Pt> + '_ {
+    let mut ys: Vec<f64> = poly.iter().map(|p| p.y).collect();
+    ys.sort_by(f64::total_cmp);
+    ys.dedup();
+    ys.windows(2)
+        .map(|w| (w[0] + w[1]) / 2.0)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .flat_map(move |y| {
+            let mut xs: Vec<f64> = edges(poly)
+                .filter(|(p, q)| (p.y > y) != (q.y > y))
+                .map(|(p, q)| p.x + (y - p.y) * (q.x - p.x) / (q.y - p.y))
+                .collect();
+            xs.sort_by(f64::total_cmp);
+            xs.chunks_exact(2)
+                .map(|c| Pt::new((c[0] + c[1]) / 2.0, y))
+                .collect::<Vec<_>>()
+        })
 }
 
 /// Splits a path into straight pieces (curves flattened within FLATTEN_TOLERANCE),

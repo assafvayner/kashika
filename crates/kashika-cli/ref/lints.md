@@ -41,3 +41,4 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `block-reducible` | warn | a block of 1–2 items in one style | use the rewrite in the help line |
 | `text-outside-shape` | warn | an absolute block item outside the text area | move it inside the range in the help line |
 | `image-distort` | warn | `fit=stretch` distorts by over 5% | use `fit=contain` |
+| `missing-glyph` | warn | text has a character the bundled fonts cannot draw | use Latin, Greek or Cyrillic, or an `icon=`/`image` |

@@ -7,6 +7,7 @@ mod cross;
 mod crowding;
 mod diagonal;
 mod endpoint;
+mod glyph;
 mod grid;
 mod image;
 mod near;
@@ -32,6 +33,7 @@ pub const ALL: &[Lint] = &[
     crowding::port_crowding,
     diagonal::diagonal_tail,
     endpoint::endpoint_off_edge,
+    glyph::missing_glyph,
     grid::off_grid,
     image::image_distort,
     near::near,

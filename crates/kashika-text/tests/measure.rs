@@ -3,29 +3,29 @@ use kashika_text::{measure, outline, parse_markup};
 #[test]
 fn widths_come_from_the_bundled_fonts() {
     let b = measure("API", 14.0, false).unwrap();
-    assert!((b.width - 22.3604).abs() < 1e-3, "{}", b.width);
-    assert_eq!(b.height, 17.5);
+    assert!((b.width() - 22.3604).abs() < 1e-3, "{}", b.width());
+    assert_eq!(b.height(), 17.5);
     let bold = measure("API", 14.0, true).unwrap();
-    assert!((bold.width - 23.4541).abs() < 1e-3, "{}", bold.width);
+    assert!((bold.width() - 23.4541).abs() < 1e-3, "{}", bold.width());
     let code = measure("`API`", 14.0, false).unwrap();
-    assert!((code.width - 25.2).abs() < 1e-9, "{}", code.width);
+    assert!((code.width() - 25.2).abs() < 1e-9, "{}", code.width());
 }
 
 #[test]
 fn width_scales_with_size_and_lines_stack() {
     let a = measure("Postgres", 14.0, false).unwrap();
     let b = measure("Postgres", 28.0, false).unwrap();
-    assert!((b.width - 2.0 * a.width).abs() < 1e-9);
+    assert!((b.width() - 2.0 * a.width()).abs() < 1e-9);
     let two = measure("Postgres\nAPI", 12.0, false).unwrap();
-    assert!((two.width - 50.3262).abs() < 1e-3);
-    assert_eq!(two.height, 30.0);
-    assert_eq!(two.lines.len(), 2);
+    assert!((two.width() - 50.3262).abs() < 1e-3);
+    assert_eq!(two.height(), 30.0);
+    assert_eq!(two.lines().len(), 2);
 }
 
 #[test]
 fn missing_glyphs_use_notdef_width() {
     let b = measure("\u{10FFFD}", 14.0, false).unwrap();
-    assert!((b.width - 1344.0 * 14.0 / 2048.0).abs() < 1e-9);
+    assert!((b.width() - 1344.0 * 14.0 / 2048.0).abs() < 1e-9);
 }
 
 #[test]
@@ -41,4 +41,24 @@ fn outline_is_deterministic_path_data() {
     assert!(d.contains('Z'));
     assert_eq!(d, outline(&runs, 14.0, 10.0, 20.0));
     assert!(outline(&parse_markup(" ", false).unwrap()[0], 14.0, 0.0, 0.0).is_empty());
+}
+
+#[test]
+fn missing_glyphs_lists_each_character_once_in_order() {
+    let b = measure("a 日 **本日** `é`", 14.0, false).unwrap();
+    assert_eq!(b.missing_glyphs(), vec!['日', '本']);
+    assert!(
+        measure("plain é ü", 14.0, false)
+            .unwrap()
+            .missing_glyphs()
+            .is_empty()
+    );
+}
+
+#[test]
+fn tabs_measure_as_four_spaces_and_are_not_missing() {
+    let t = measure("a\tb", 14.0, false).unwrap();
+    let s = measure("a    b", 14.0, false).unwrap();
+    assert_eq!(t.width(), s.width());
+    assert!(t.missing_glyphs().is_empty());
 }

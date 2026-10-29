@@ -14,11 +14,23 @@ static INTER_REGULAR: &[u8] = include_bytes!("../fonts/Inter-Regular.ttf");
 static INTER_BOLD: &[u8] = include_bytes!("../fonts/Inter-Bold.ttf");
 static JETBRAINS_MONO: &[u8] = include_bytes!("../fonts/JetBrainsMono-Regular.ttf");
 
-fn face(font: Font) -> &'static FontRef<'static> {
-    static FACES: OnceLock<[FontRef<'static>; 3]> = OnceLock::new();
+/// A bundled font, parsed once, with the metrics every measurement needs.
+struct Face {
+    font: FontRef<'static>,
+    units_per_em: f64,
+}
+
+fn face(font: Font) -> &'static Face {
+    static FACES: OnceLock<[Face; 3]> = OnceLock::new();
     let faces = FACES.get_or_init(|| {
-        [INTER_REGULAR, INTER_BOLD, JETBRAINS_MONO]
-            .map(|data| FontRef::new(data).expect("bundled font parses"))
+        [INTER_REGULAR, INTER_BOLD, JETBRAINS_MONO].map(|data| {
+            let font = FontRef::new(data).expect("bundled font parses");
+            let units_per_em = f64::from(
+                font.metrics(Size::unscaled(), LocationRef::default())
+                    .units_per_em,
+            );
+            Face { font, units_per_em }
+        })
     });
     match font {
         Font::Regular => &faces[0],
@@ -37,29 +49,39 @@ fn advance(f: &FontRef, g: GlyphId) -> f32 {
         .unwrap_or(0.0)
 }
 
-fn units_per_em(f: &FontRef) -> f64 {
-    f64::from(
-        f.metrics(Size::unscaled(), LocationRef::default())
-            .units_per_em,
-    )
+/// The distinct characters, in order of first appearance, that the run's font has no glyph
+/// for. Drawing and measuring use the font's `.notdef` glyph for them.
+pub fn missing_glyphs<'a>(runs: impl IntoIterator<Item = &'a Run>) -> Vec<char> {
+    let mut out = Vec::new();
+    for run in runs {
+        let f = &face(run.font).font;
+        for c in run.text.chars() {
+            if f.charmap().map(c).is_none() && !out.contains(&c) {
+                out.push(c);
+            }
+        }
+    }
+    out
 }
 
 /// Advance width of a run in pixels. No kerning or shaping: the sum of glyph advances.
 pub(crate) fn run_width(run: &Run, size: f64) -> f64 {
-    let f = face(run.font);
+    let face = face(run.font);
+    let f = &face.font;
     let units: f64 = run
         .text
         .chars()
         .map(|c| f64::from(advance(f, glyph(f, c))))
         .sum();
-    units * size / units_per_em(f)
+    units * size / face.units_per_em
 }
 
 /// Distance from the top of a line box to its baseline. Inter's ascender-to-descender
 /// range is centered in the line box, and every font shares that baseline.
 pub(crate) fn baseline_offset(size: f64) -> f64 {
-    let f = face(Font::Regular);
-    let m = f.metrics(Size::unscaled(), LocationRef::default());
+    let m = face(Font::Regular)
+        .font
+        .metrics(Size::unscaled(), LocationRef::default());
     let em = f64::from(m.units_per_em);
     let asc = f64::from(m.ascent) / em;
     let desc = f64::from(m.descent) / em;
@@ -130,8 +152,9 @@ pub fn outline(runs: &[Run], size: f64, x: f64, baseline: f64) -> String {
     let mut out = String::new();
     let mut pen = x;
     for run in runs {
-        let f = face(run.font);
-        let scale = size / units_per_em(f);
+        let face = face(run.font);
+        let f = &face.font;
+        let scale = size / face.units_per_em;
         let glyphs = f.outline_glyphs();
         for c in run.text.chars() {
             let g = glyph(f, c);

@@ -47,6 +47,7 @@ pub const LINT_CODES: &[&str] = &[
     "block-reducible",
     "text-outside-shape",
     "image-distort",
+    "missing-glyph",
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]

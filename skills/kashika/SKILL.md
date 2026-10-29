@@ -145,6 +145,7 @@ Comments: `// to end of line` and `/* block */` (no nesting; an unclosed `/*` is
 - `not-ortho` / `diagonal-tail`: finish with `hv`/`vh` or `x`/`y`.
 - `label-collision` on a group border or title: move the label to a `label@t` from the help, and route lines below a group's title band, not through its title.
 - `near-axis`: a straight hop within 5° of horizontal/vertical (two anchors a few px apart) renders slanted; use the level anchor from the help (`cdn.left@0.42`) or `hv`/`vh`.
+- `missing-glyph`: the bundled fonts cover Latin, Greek and Cyrillic only; replace CJK, emoji and similar characters with an `icon=` or `image`. A tab in text is four spaces.
 - `text-conflict`: move `label`/`sublabel` into the block as its first items, or give every block item an `at`.
 
 Exit codes: `0` clean, `1` warnings, `2` errors, `3` tool/usage failure. `render` writes nothing on errors unless `--force` is given (it then marks each error in red). `render -o file.png` writes PNG; raster output (png/jpg/webp) is capped at 16,384 px per side and 100,000,000 px in total (use `.svg` beyond that); attached PNG/JPEG images are limited to 8,192 px per side and 32,000,000 px in total; `--debug` overlays rulers, ids and anchor dots to help you locate problems.

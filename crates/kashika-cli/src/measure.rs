@@ -68,9 +68,9 @@ pub fn run(a: &MeasureArgs) -> ExitCode {
     let failed = results.iter().any(Result::is_err);
     let entry = |r: &Result<kashika_text::Block, kashika_text::MarkupError>| match r {
         Ok(b) => serde_json::json!({
-            "width": round(b.width),
-            "height": round(b.height),
-            "lines": b.lines.len(),
+            "width": round(b.width()),
+            "height": round(b.height()),
+            "lines": b.lines().len(),
         }),
         Err(e) => serde_json::json!({ "error": { "code": "parse", "message": e.to_string() } }),
     };
@@ -80,9 +80,9 @@ pub fn run(a: &MeasureArgs) -> ExitCode {
                 match r {
                     Ok(b) => println!(
                         "width={} height={} lines={}",
-                        round(b.width),
-                        round(b.height),
-                        b.lines.len()
+                        round(b.width()),
+                        round(b.height()),
+                        b.lines().len()
                     ),
                     Err(e) => println!("error[parse]: {}", crate::term::line(&e.to_string())),
                 }

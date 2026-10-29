@@ -322,7 +322,7 @@ pub(crate) fn layout_shape(s: &ShapeInput, diags: &mut Vec<Diagnostic>) -> Shape
         }
     }
     for (x, at) in &absolute {
-        let need = (x.block.width, x.block.height);
+        let need = (x.block.width(), x.block.height());
         if need.0 > area.w + TOLERANCE || need.1 > area.h + TOLERANCE {
             diags.push(overflow(s, "a block item", need, area, x.span));
         }
@@ -359,7 +359,7 @@ fn item(x: &Pending, rect: Rect, lines: Vec<PlacedLine>) -> TextItem {
     TextItem {
         role: x.role,
         content: x.content.clone(),
-        size: x.block.size,
+        size: x.block.size(),
         color: x.color.clone(),
         bold: x.bold,
         rect,

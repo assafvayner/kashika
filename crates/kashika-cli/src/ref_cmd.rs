@@ -56,7 +56,7 @@ fn metrics() -> String {
     const SAMPLE: &str = "The quick brown fox jumps over the lazy dog 0123456789";
     let n = SAMPLE.chars().count() as f64;
     let width = |size: f64, bold: bool| {
-        kashika_text::measure(SAMPLE, size, bold).map_or(0.0, |b| b.width) / n
+        kashika_text::measure(SAMPLE, size, bold).map_or(0.0, |b| b.width()) / n
     };
     let mut s = String::from(METRICS);
     s.push_str("\n| font-size | regular | bold | line height |\n|---|---|---|---|\n");
