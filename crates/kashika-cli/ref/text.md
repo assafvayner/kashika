@@ -14,9 +14,9 @@
 For three or more lines, bullets or mixed sizes, give the box a block instead of a `label`:
 
 ```kash
-diagram "Text" size (360,200)
-box pay "Payments API" at (20,20) sublabel="v2.4.1" style=service
-box api at (20,100) size (200,90) style=service text-align=left {
+diagram "Text" size (360, 200)
+box pay "Payments API" at (20, 20) sublabel="v2.4.1" style=service
+box api at (20, 100) size (200, 90) style=service text-align=left {
   text "**Payments API**"
   text "`POST /charge`" font-size=12
   text "• validates cards" font-size=12

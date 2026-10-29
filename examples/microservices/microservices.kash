@@ -1,20 +1,20 @@
 diagram "E-commerce microservices" kashika="0.1.0"
 
-box web "Browser" at (20,150) size (130,60) style=external icon="browser"
-box mobile "Mobile app" at (20,330) size (130,60) style=external icon="mobile"
+box web "Browser" at (20, 150) size (130, 60) style=external icon="browser"
+box mobile "Mobile app" at (20, 330) size (130, 60) style=external icon="mobile"
 
-group vpc "VPC" at (250,20) {
-  group pub "Public subnet" at (20,50) size (200,500) {
-    box lb "Load balancer" at (20,120) size (160,60) style=service icon="load-balancer"
-    box gw "API gateway" at (20,320) size (160,60) style=service icon="gateway"
+group vpc "VPC" at (250, 20) {
+  group pub "Public subnet" at (20, 50) size (200, 500) {
+    box lb "Load balancer" at (20, 120) size (160, 60) style=service icon="load-balancer"
+    box gw "API gateway" at (20, 320) size (160, 60) style=service icon="gateway"
   }
-  group priv "Private subnet" at (270,50) size (490,500) {
-    box orders "Orders" at (30,100) size (130,60) style=service icon="server"
-    box payments "Payments" at (30,220) size (130,60) style=service icon="lock"
-    box inventory "Inventory" at (30,340) size (130,60) style=service icon="server"
-    box queue "Message queue" at (230,100) size (170,60) style=queue icon="queue"
-    box cache "Redis cache" at (230,340) size (150,60) style=datastore icon="cache"
-    box db "Postgres" at (370,200) size (100,100) shape=cylinder style=datastore
+  group priv "Private subnet" at (270, 50) size (490, 500) {
+    box orders "Orders" at (30, 100) size (130, 60) style=service icon="server"
+    box payments "Payments" at (30, 220) size (130, 60) style=service icon="lock"
+    box inventory "Inventory" at (30, 340) size (130, 60) style=service icon="server"
+    box queue "Message queue" at (230, 100) size (170, 60) style=queue icon="queue"
+    box cache "Redis cache" at (230, 340) size (150, 60) style=datastore icon="cache"
+    box db "Postgres" at (370, 200) size (100, 100) shape=cylinder style=datastore
   }
 }
 

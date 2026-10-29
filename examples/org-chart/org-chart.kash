@@ -1,25 +1,25 @@
 diagram "Engineering Org Chart" kashika="0.1.0" grid=10
 
-box vp "VP of Engineering" at (750,20) size (200,40) pin=top style=service
+box vp "VP of Engineering" at (750, 20) size (200, 40) pin=top style=service
 
 junction vbus at (vp.bottom.x, 100) dot
 
-box d1 "Director, Platform" at (280,140) size (180,40) pin=top style=service
-box d2 "Director, Product" at (750,140) size (180,40) pin=top style=service
-box d3 "Director, Data" at (1220,140) size (180,40) pin=top style=service
+box d1 "Director, Platform" at (280, 140) size (180, 40) pin=top style=service
+box d2 "Director, Product" at (750, 140) size (180, 40) pin=top style=service
+box d3 "Director, Data" at (1220, 140) size (180, 40) pin=top style=service
 
 junction b1 at (d1.bottom.x, 220) dot
 junction b2 at (d2.bottom.x, 220) dot
 junction b3 at (d3.bottom.x, 220) dot
 
-box storage "Lead, Storage" at (20,260) size (160,40)
-box networking "Lead, Networking" at storage.right+(20,0) size (160,40) pin=left
-box tooling "Lead, Tooling" at networking.right+(20,0) size (160,40) pin=left
-box web "Lead, Web" at tooling.right+(40,0) size (160,40) pin=left
-box mobile "Lead, Mobile" at web.right+(20,0) size (160,40) pin=left
-box pipelines "Lead, Pipelines" at mobile.right+(40,0) size (160,40) pin=left
-box analytics "Lead, Analytics" at pipelines.right+(20,0) size (160,40) pin=left
-box ml "Lead, ML Systems" at analytics.right+(20,0) size (160,40) pin=left
+box storage "Lead, Storage" at (20, 260) size (160, 40)
+box networking "Lead, Networking" at storage.right+(20, 0) size (160, 40) pin=left
+box tooling "Lead, Tooling" at networking.right+(20, 0) size (160, 40) pin=left
+box web "Lead, Web" at tooling.right+(40, 0) size (160, 40) pin=left
+box mobile "Lead, Mobile" at web.right+(20, 0) size (160, 40) pin=left
+box pipelines "Lead, Pipelines" at mobile.right+(40, 0) size (160, 40) pin=left
+box analytics "Lead, Analytics" at pipelines.right+(20, 0) size (160, 40) pin=left
+box ml "Lead, ML Systems" at analytics.right+(20, 0) size (160, 40) pin=left
 
 line vp_bus vp.bottom -> vbus
 arrow vb_d1 vbus -> hv d1.top

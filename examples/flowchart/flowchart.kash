@@ -1,13 +1,13 @@
 diagram "Order checkout flow" kashika="0.1.0"
-box start "Start" at (290,20) size (120,40) shape=stadium style=external
-box validate "Validate cart" at start.bottom+(0,40) size (160,50) pin=top style=service
-box stock "In stock?" at validate.bottom+(0,40) size (160,90) pin=top shape=diamond
-box charge "Charge card" at stock.bottom+(0,80) size (160,50) pin=top style=service
-box pay "Payment ok?" at charge.bottom+(0,40) size (210,90) pin=top shape=diamond
-box ship "Ship order" at pay.bottom+(0,50) size (160,50) pin=top style=service
-box done "End" at ship.bottom+(0,70) size (120,40) pin=top shape=stadium style=external
-box notify "Notify customer" at stock.right+(70,0) size (160,50) pin=left style=service
-box retry "Retry payment" at pay.left+(-70,0) size (160,50) pin=right style=service
+box start "Start" at (290, 20) size (120, 40) shape=stadium style=external
+box validate "Validate cart" at start.bottom+(0, 40) size (160, 50) pin=top style=service
+box stock "In stock?" at validate.bottom+(0, 40) size (160, 90) pin=top shape=diamond
+box charge "Charge card" at stock.bottom+(0, 80) size (160, 50) pin=top style=service
+box pay "Payment ok?" at charge.bottom+(0, 40) size (210, 90) pin=top shape=diamond
+box ship "Ship order" at pay.bottom+(0, 50) size (160, 50) pin=top style=service
+box done "End" at ship.bottom+(0, 70) size (120, 40) pin=top shape=stadium style=external
+box notify "Notify customer" at stock.right+(70, 0) size (160, 50) pin=left style=service
+box retry "Retry payment" at pay.left+(-70, 0) size (160, 50) pin=right style=service
 junction j1 at (stock.bottom.x, 330) dot
 junction j2 at (ship.bottom.x, 690) dot
 arrow l1 start.bottom -> validate.top

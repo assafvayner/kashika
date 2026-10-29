@@ -1,14 +1,14 @@
 diagram "Upload path" kashika="0.1.0"
 
-box client "Browser" at (40,40) size (140,60) style=external
-box lb "Load balancer" at client.right+(80,0) size (160,60) pin=left style=service
+box client "Browser" at (40, 40) size (140, 60) style=external
+box lb "Load balancer" at client.right+(80, 0) size (160, 60) pin=left style=service
 
-group vpc "VPC" at (40,160) {
-  box api1 "API 1" at (60,50) size (140,60) style=service
-  box api2 "API 2" at api1.right+(60,0) size (140,60) pin=left style=service
-  box db "Postgres" at (560,50) size (180,60) shape=rounded style=datastore
-  box queue "Upload queue" at (160,200) size (180,60) style=queue
-  box worker "Worker" at queue.right+(140,0) size (140,60) pin=left style=service
+group vpc "VPC" at (40, 160) {
+  box api1 "API 1" at (60, 50) size (140, 60) style=service
+  box api2 "API 2" at api1.right+(60, 0) size (140, 60) pin=left style=service
+  box db "Postgres" at (560, 50) size (180, 60) shape=rounded style=datastore
+  box queue "Upload queue" at (160, 200) size (180, 60) style=queue
+  box worker "Worker" at queue.right+(140, 0) size (140, 60) pin=left style=service
 }
 
 arrow client_lb client.right -> lb.left label="HTTPS" label-side=above

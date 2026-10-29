@@ -14,13 +14,13 @@ The other built-ins are unit paths (0..1, stretched onto the box). The text area
 ## Custom shapes
 
 ```kash
-diagram "Custom" size (400,140)
+diagram "Custom" size (400, 140)
 shape tri {
   path "M 0.5 0 L 1 1 L 0 1 Z"
-  text-area (0.25,0.5,0.5,0.5)
+  text-area (0.25, 0.5, 0.5, 0.5)
 }
-box a "A" at (20,30) size (120,80) shape=cylinder style=datastore
-box t "Go" at (240,20) size (120,100) shape=tri
+box a "A" at (20, 30) size (120, 80) shape=cylinder style=datastore
+box t "Go" at (240, 20) size (120, 100) shape=tri
 line l a.right -> t.left end=arrow
 ```
 
@@ -31,11 +31,11 @@ line l a.right -> t.left end=arrow
 ## SVG files, images and icons
 
 ```kash
-diagram "Assets" size (400,200)
+diagram "Assets" size (400, 200)
 shape srv from "server" text-area=below
-box s "API" at (20,20) size (60,60) shape=srv
-box q "Jobs" at (140,20) size (140,60) icon="queue" style=queue
-image logo "browser" at (20,120) size (60,60)
+box s "API" at (20, 20) size (60, 60) shape=srv
+box q "Jobs" at (140, 20) size (140, 60) icon="queue" style=queue
+image logo "browser" at (20, 120) size (60, 60)
 ```
 
 - `shape <name> from "<file.svg>" [outline=bbox|hull] [text-area=below|inside] [fit=contain|cover|stretch]` draws the SVG instead of a fill and stroke. `fit` defaults to `contain`: the drawing keeps its aspect ratio, centered in the box. `cover` fills the box and crops; `stretch` fills it distorted (over 5% is `image-distort`). Anchors, the text area and checks use the drawing as placed, not the box's empty margins: its rect, or its convex hull with `outline=hull`. `pin` still places the box. A box without `size` takes the drawing's aspect ratio. `text-area=below` puts the label `padding` under the drawing; checks look for it there.

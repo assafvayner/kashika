@@ -25,9 +25,9 @@ arrow [<id>] <point> -> <segment> [-> <segment> ...] [line attributes] [ortho]  
 - `layer=under|over` on a box or image (not a group) paints it first or last. Layered shapes are backdrops and highlights, never obstacles: `overlap`, `through`, `near`, `label-collision`, `endpoint-off-edge`, `route` and `--corridors` ignore them; `spill`, `out-of-canvas` and their own text checks still apply. A `layer=under` shape inside a group paints right after that group's fill. Otherwise shapes paint in file order, then lines, then labels and texts.
 
 ```kash
-diagram "Board" size (200,120)
-box a1 at (20,20) size (80,80) fill=#b58863 stroke=none layer=under
-box b1 at (100,20) size (80,80) fill=#f0d9b5 stroke=none layer=under
-box k "K" at (40,40) size (40,40)
-box ring at (36,36) size (48,48) fill=none stroke=#dd3333 radius=24 layer=over
+diagram "Board" size (200, 120)
+box a1 at (20, 20) size (80, 80) fill=#b58863 stroke=none layer=under
+box b1 at (100, 20) size (80, 80) fill=#f0d9b5 stroke=none layer=under
+box k "K" at (40, 40) size (40, 40)
+box ring at (36, 36) size (48, 48) fill=none stroke=#dd3333 radius=24 layer=over
 ```

@@ -17,9 +17,9 @@ Kashika is a text-to-diagram language with **no auto-layout**. You place every b
 
 ```kash
 diagram "Checkout"
-box web "Web" at (20,20) style=service
-box api "Payments API" at web.right+(100,0) pin=left style=service
-box db "Orders DB" at api.bottom+(0,60) pin=top shape=cylinder style=datastore
+box web "Web" at (20, 20) style=service
+box api "Payments API" at web.right+(100, 0) pin=left style=service
+box db "Orders DB" at api.bottom+(0, 60) pin=top shape=cylinder style=datastore
 arrow web_api web.right -> api.left label="HTTPS" ortho
 arrow api_db api.bottom -> db.top ortho
 ```

@@ -1,27 +1,27 @@
 diagram "Checkout sequence" kashika="0.1.0"
 
-style participant { size=(120,40) fill=#e8f0fe stroke=#1a73e8 font-weight=bold }
-style lifeline { size=(2,320) stroke=#94a3b8 stroke-style=dashed }
+style participant { size=(120, 40) fill=#e8f0fe stroke=#1a73e8 font-weight=bold }
+style lifeline { size=(2, 320) stroke=#94a3b8 stroke-style=dashed }
 style active { fill=white stroke=#1a73e8 }
 style reply { stroke-style=dashed }
 
-box browser "🌐 Browser" at (20,20) style=participant
-box api "API" at browser.right+(60,0) pin=left style=participant
-box pay "💳 Payments" at api.right+(60,0) pin=left style=participant
-box db "DB" at pay.right+(60,0) pin=left style=participant
+box browser "🌐 Browser" at (20, 20) style=participant
+box api "API" at browser.right+(60, 0) pin=left style=participant
+box pay "💳 Payments" at api.right+(60, 0) pin=left style=participant
+box db "DB" at pay.right+(60, 0) pin=left style=participant
 
 box l_browser at browser.bottom pin=top style=lifeline layer=under
 box l_api at api.bottom pin=top style=lifeline layer=under
 box l_pay at pay.bottom pin=top style=lifeline layer=under
 box l_db at db.bottom pin=top style=lifeline layer=under
 
-box a_api at l_api.top+(0,30) size (10,250) pin=top style=active layer=under
-box a_db at l_db.top+(0,70) size (10,50) pin=top style=active layer=under
-box a_pay at l_pay.top+(0,150) size (10,80) pin=top style=active layer=under
+box a_api at l_api.top+(0, 30) size (10, 250) pin=top style=active layer=under
+box a_db at l_db.top+(0, 70) size (10, 50) pin=top style=active layer=under
+box a_pay at l_pay.top+(0, 150) size (10, 80) pin=top style=active layer=under
 
-arrow checkout l_browser.top+(0,40) -> x a_api.left label="POST /checkout" label-side=above
-arrow reserve a_api.tr+(0,50) -> x a_db.left label@0.75="reserve stock" label-side=above
-arrow held a_db.bl+(0,-10) -> x a_api.right style=reply end=open label@0.25="stock held" label-side=above
-arrow charge a_api.tr+(0,130) -> x a_pay.left label="charge card" label-side=above
-arrow authorized a_pay.bl+(0,-10) -> x a_api.right style=reply end=open label="authorized" label-side=above
-arrow created a_api.bl+(0,-10) -> x l_browser.right style=reply end=open label="201 Created" label-side=above
+arrow checkout l_browser.top+(0, 40) -> x a_api.left label="POST /checkout" label-side=above
+arrow reserve a_api.tr+(0, 50) -> x a_db.left label@0.75="reserve stock" label-side=above
+arrow held a_db.bl+(0, -10) -> x a_api.right style=reply end=open label@0.25="stock held" label-side=above
+arrow charge a_api.tr+(0, 130) -> x a_pay.left label="charge card" label-side=above
+arrow authorized a_pay.bl+(0, -10) -> x a_api.right style=reply end=open label="authorized" label-side=above
+arrow created a_api.bl+(0, -10) -> x l_browser.right style=reply end=open label="201 Created" label-side=above

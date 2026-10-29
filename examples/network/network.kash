@@ -1,22 +1,22 @@
 diagram "Office network" kashika="0.1.0"
 import "net.kash" as net
 
-image logo "logo.svg" at (30,20) size (80,80)
-text "Acme Corp" at (30,112) font-size=12 text-align=left muted
+image logo "logo.svg" at (30, 20) size (80, 80)
+text "Acme Corp" at (30, 112) font-size=12 text-align=left muted
 
-box inet "Internet" at (430,10) size (140,84) shape=cloud style=external
-box fwall "Firewall" at inet.bottom+(0,40) pin=top size (140, auto) icon="firewall.svg" icon-pos=top icon-size=36 fill=#fde8e8 stroke=#c0392b
-box rtr "Router" at (430,250) size (140,60) shape=net.router style=net.lan
-box core "Core switch" at (430,360) size (140,60) shape=net.switch style=net.lan
-box sw1 "Access switch A" at (150,490) size (160,60) shape=net.switch style=net.lan
-box sw2 "Access switch B" at (690,490) size (160,60) shape=net.switch style=net.lan
-box ap "Wifi AP" at (430,490) size (140,60) shape=ellipse style=service
-box nas "NAS" at (810,355) size (120,70) shape=cylinder style=datastore
-box ws1 "Workstation 1" at (60,620) size (130,50)
-box ws2 "Workstation 2" at (270,620) size (130,50)
-box srv "App server" at (620,620) size (130,50) style=service
-box ws3 "Workstation 3" at (790,620) size (130,50)
-box lap "Laptop" at (435,620) size (130,50)
+box inet "Internet" at (430, 10) size (140, 84) shape=cloud style=external
+box fwall "Firewall" at inet.bottom+(0, 40) pin=top size (140, auto) icon="firewall.svg" icon-pos=top icon-size=36 fill=#fde8e8 stroke=#c0392b
+box rtr "Router" at (430, 250) size (140, 60) shape=net.router style=net.lan
+box core "Core switch" at (430, 360) size (140, 60) shape=net.switch style=net.lan
+box sw1 "Access switch A" at (150, 490) size (160, 60) shape=net.switch style=net.lan
+box sw2 "Access switch B" at (690, 490) size (160, 60) shape=net.switch style=net.lan
+box ap "Wifi AP" at (430, 490) size (140, 60) shape=ellipse style=service
+box nas "NAS" at (810, 355) size (120, 70) shape=cylinder style=datastore
+box ws1 "Workstation 1" at (60, 620) size (130, 50)
+box ws2 "Workstation 2" at (270, 620) size (130, 50)
+box srv "App server" at (620, 620) size (130, 50) style=service
+box ws3 "Workstation 3" at (790, 620) size (130, 50)
+box lap "Laptop" at (435, 620) size (130, 50)
 
 arrow l1 inet.bottom -> fwall.top start=arrow
 line l2 fwall.bottom -> rtr.top

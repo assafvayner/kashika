@@ -34,9 +34,9 @@ The canvas is transparent by default (JPEG: white). `background=C` on the `diagr
 - On lines, a style applies only its `stroke*` and font keys, never `text-align` or `text-valign`. Free `text` takes no `style=`.
 
 ```kash
-diagram "commits" size (200,60)
-style commit { shape=ellipse fill=#e8f0fe stroke=#1a73e8 size=(20,20) }
-box c1 at (20,20) style=commit
-box c2 at (60,20) style=commit
-box tag at (100,20) style=commit shape=diamond
+diagram "commits" size (200, 60)
+style commit { shape=ellipse fill=#e8f0fe stroke=#1a73e8 size=(20, 20) }
+box c1 at (20, 20) style=commit
+box c2 at (60, 20) style=commit
+box tag at (100, 20) style=commit shape=diamond
 ```

@@ -1,20 +1,20 @@
 diagram "Release branches" background=#f8fafc kashika="0.1.0"
 
-style main { shape=ellipse size=(18,18) fill=#2563eb stroke=#1d4ed8 }
-style develop { shape=ellipse size=(18,18) fill=#16a34a stroke=#15803d }
-style feature { shape=ellipse size=(18,18) fill=white stroke=#a21caf stroke-width=2 }
-style tag { fill=#fef3c7 stroke=#b45309 radius=4 font-size=11 padding=(6,3) }
+style main { shape=ellipse size=(18, 18) fill=#2563eb stroke=#1d4ed8 }
+style develop { shape=ellipse size=(18, 18) fill=#16a34a stroke=#15803d }
+style feature { shape=ellipse size=(18, 18) fill=white stroke=#a21caf stroke-width=2 }
+style tag { fill=#fef3c7 stroke=#b45309 radius=4 font-size=11 padding=(6, 3) }
 
-junction main_lane at (0,70)
-junction dev_lane at main_lane+(0,70)
-junction feat_lane at dev_lane+(0,70)
-junction c0 at (130,0)
-junction c1 at c0+(70,0)
-junction c2 at c1+(70,0)
-junction c3 at c2+(70,0)
-junction c4 at c3+(70,0)
-junction c5 at c4+(70,0)
-junction c6 at c5+(70,0)
+junction main_lane at (0, 70)
+junction dev_lane at main_lane+(0, 70)
+junction feat_lane at dev_lane+(0, 70)
+junction c0 at (130, 0)
+junction c1 at c0+(70, 0)
+junction c2 at c1+(70, 0)
+junction c3 at c2+(70, 0)
+junction c4 at c3+(70, 0)
+junction c5 at c4+(70, 0)
+junction c6 at c5+(70, 0)
 
 text "**main**" at (20, main_lane.y) text-align=left color=#1d4ed8
 text "**develop**" at (20, dev_lane.y) text-align=left color=#15803d
@@ -29,9 +29,9 @@ box f2 at (c4.x, feat_lane.y) pin=center style=feature
 box d3 at (c5.x, dev_lane.y) pin=center style=develop
 box m1 at (c6.x, main_lane.y) pin=center style=main
 
-box v10 "v1.0" at m0.top+(0,-10) pin=bottom style=tag
-box v101 "v1.0.1" at fix.top+(0,-10) pin=bottom style=tag
-box v11 "🚀 v1.1" at m1.top+(0,-10) pin=bottom style=tag
+box v10 "v1.0" at m0.top+(0, -10) pin=bottom style=tag
+box v101 "v1.0.1" at fix.top+(0, -10) pin=bottom style=tag
+box v11 "🚀 v1.1" at m1.top+(0, -10) pin=bottom style=tag
 
 line main_a m0.right -> fix.left stroke=#1d4ed8 stroke-width=2
 line main_b fix.right -> m1.left stroke=#1d4ed8 stroke-width=2

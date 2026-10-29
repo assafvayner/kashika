@@ -29,7 +29,7 @@ A line is `start -> segment -> segment ...`. Each segment ends at a point, which
 **Labels beside the line.** `label-side` applies to every label of the line. A side that doesn't match the segment under the label (`above` on a vertical segment, anything but `on` on a diagonal or curve) is an `attr` error, and the label stays on the line. At a corner either segment counts.
 
 ```kash
-diagram "Messages" size (320,140) kashika="0.1.0"
-arrow req (20,40) -> h 280 label="request" label-side=above
-arrow res (300,100) -> h -280 stroke-style=dashed label="reply" label-side=below
+diagram "Messages" size (320, 140) kashika="0.1.0"
+arrow req (20, 40) -> h 280 label="request" label-side=above
+arrow res (300, 100) -> h -280 stroke-style=dashed label="reply" label-side=below
 ```
