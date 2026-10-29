@@ -131,7 +131,7 @@ fn required_size(
         shape,
         custom,
         (need.0 + 2.0 * padding.x, need.1 + 2.0 * padding.y),
-        rect,
+        (rect.w, rect.h),
     );
     (w.max(rect.w), h.max(rect.h))
 }

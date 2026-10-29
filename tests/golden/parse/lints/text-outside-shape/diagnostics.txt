@@ -2,7 +2,7 @@ warn[text-outside-shape] 6:3-6:36: block item "out" lies outside the text area o
   = help: keep the item within the text area, local (8,8)..(152,52)
   elements: [{"bbox":[[20,40],[180,100]],"id":"e","kind":"box","span":{"col":1,"end_col":31,"end_line":4,"line":4}}]
   facts: {"bbox":[[170,61.25],[191.25,78.75]],"overflow":{"right":19.25},"text_area":[[28,48],[172,92]]}
-warn[text-outside-shape] 9:3-9:22: block item "x" lies outside the text area of box 'd' (left by 41.82px)
-  = help: keep the item within the text area, local (48,33)..(112,67)
+warn[text-outside-shape] 9:3-9:22: block item "x" lies outside the text area of box 'd' (left by 37.02px)
+  = help: keep the item within the text area, local (43.2,36)..(116.8,64)
   elements: [{"bbox":[[220,40],[380,140]],"id":"d","kind":"box","span":{"col":1,"end_col":47,"end_line":8,"line":8}}]
-  facts: {"bbox":[[226.18,81.25],[233.82,98.75]],"overflow":{"left":41.82},"text_area":[[268,73],[332,107]]}
+  facts: {"bbox":[[226.18,81.25],[233.82,98.75]],"overflow":{"left":37.02},"text_area":[[263.2,76],[336.8,104]]}

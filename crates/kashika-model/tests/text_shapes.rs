@@ -404,7 +404,7 @@ fn auto_axes_fit_and_fixed_axes_stay() {
          box c \"Payments API\" at (0,200) size (auto,auto)\n");
     let r = |id| shape(&s, id).rect;
     assert_eq!((r("a").w, r("a").h), (108.0, 60.0));
-    assert_eq!((r("b").w, r("b").h), (200.0, 67.0));
+    assert_eq!((r("b").w, r("b").h), (200.0, 77.0));
     assert_eq!((r("c").w, r("c").h), (108.0, 34.0));
 }
 

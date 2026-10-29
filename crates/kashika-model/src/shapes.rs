@@ -28,6 +28,12 @@ pub const SHAPE_KEYWORDS: &[(&str, &[&str])] = &[
 
 /// Largest cylinder cap height in px.
 const CAP: f64 = 20.0;
+/// Largest `doc` wave depth in px.
+const WAVE: f64 = 12.0;
+/// Largest `cloud` bump height in px.
+const BUMP: f64 = 24.0;
+/// Largest `person` head radius in px.
+const HEAD: f64 = 18.0;
 
 /// A shape in unit coordinates, stretched onto each box.
 #[derive(Debug, Clone, PartialEq)]
@@ -45,7 +51,7 @@ pub fn builtin_source(name: &str, w: f64, h: f64) -> Option<(String, usize, Rect
     let unit = Rect::new;
     Some(match name {
         "cylinder" => {
-            let c = cap(h) / h;
+            let c = CAP.min(h / 4.0) / h;
             let b = 1.0 - c;
             (
                 format!(
@@ -59,7 +65,7 @@ pub fn builtin_source(name: &str, w: f64, h: f64) -> Option<(String, usize, Rect
         "diamond" => (
             "M 0.5 0 L 1 0.5 L 0.5 1 L 0 0.5 Z".into(),
             1,
-            unit(0.25, 0.25, 0.5, 0.5),
+            unit(0.22, 0.28, 0.56, 0.44),
         ),
         "ellipse" => {
             let k = 0.5 - 0.5 * FRAC_1_SQRT_2;
@@ -70,7 +76,7 @@ pub fn builtin_source(name: &str, w: f64, h: f64) -> Option<(String, usize, Rect
             )
         }
         "hexagon" => {
-            let n = hex_inset(w, h) / w;
+            let n = (h / 4.0).min(w / 4.0) / w;
             let m = 1.0 - n;
             (
                 format!("M {n} 0 L {m} 0 L 1 0.5 L {m} 1 L {n} 1 L 0 0.5 Z"),
@@ -78,35 +84,82 @@ pub fn builtin_source(name: &str, w: f64, h: f64) -> Option<(String, usize, Rect
                 unit(n, 0.0, 1.0 - 2.0 * n, 1.0),
             )
         }
-        "doc" => (
-            "M 0 0 L 1 0 L 1 0.85 Q 0.75 0.7 0.5 0.85 Q 0.25 1 0 0.85 Z".into(),
-            1,
-            unit(0.0, 0.0, 1.0, 0.85),
-        ),
-        "cloud" => (
-            "M 0.25 0.9 C 0.05 0.9 0 0.6 0.18 0.5 C 0.1 0.2 0.4 0.1 0.5 0.25 \
-             C 0.6 0.05 0.95 0.15 0.85 0.45 C 1 0.55 1 0.9 0.75 0.9 Z"
-                .into(),
-            1,
-            unit(0.2, 0.4, 0.6, 0.4),
-        ),
-        "person" => (
-            "M 0.4 0.35 A 0.18 0.18 0 1 1 0.6 0.35 L 0.7 0.42 Q 0.9 0.42 0.9 0.6 \
-             L 0.9 1 L 0.1 1 L 0.1 0.6 Q 0.1 0.42 0.3 0.42 Z"
-                .into(),
-            1,
-            unit(0.1, 0.6, 0.8, 0.4),
-        ),
+        "doc" => {
+            let d = WAVE.min(0.15 * h) / h;
+            let b = 1.0 - d;
+            let c = b - d;
+            (
+                format!("M 0 0 L 1 0 L 1 {b} Q 0.75 {c} 0.5 {b} Q 0.25 1 0 {b} Z"),
+                1,
+                unit(0.0, 0.0, 1.0, b - d / 2.0),
+            )
+        }
+        "cloud" => cloud(w, h),
+        "person" => person(w, h),
         _ => return None,
     })
 }
 
-fn cap(h: f64) -> f64 {
-    CAP.min(h / 4.0)
+/// A flat-bottomed cloud: bumps of at most `BUMP` px along the top and as many
+/// side lobes as fit, so stretching adds bumps instead of distorting them.
+fn cloud(w: f64, h: f64) -> (String, usize, Rect) {
+    let c = BUMP.min(0.3 * h).min(0.175 * w);
+    let s = (0.15 * w).min((h - c) / 2.0).min(BUMP - 4.0);
+    let mut d = format!("M {} 1", s / w);
+    let mut arcs = |from: (f64, f64), to: (f64, f64), bulge: f64, n: f64| {
+        let n = n.round().max(1.0);
+        let len = (to.0 - from.0).hypot(to.1 - from.1) / n;
+        let r = (len * len / 4.0 + bulge * bulge) / (2.0 * bulge);
+        let large = u8::from(bulge > len / 2.0);
+        for i in 1..=n as usize {
+            let t = i as f64 / n;
+            let x = from.0 + (to.0 - from.0) * t;
+            let y = from.1 + (to.1 - from.1) * t;
+            d.push_str(&format!(
+                " A {} {} 0 {large} 1 {} {}",
+                r / w,
+                r / h,
+                x / w,
+                y / h
+            ));
+        }
+    };
+    let side = h - c;
+    arcs((s, h), (s, c), s, side / (2.5 * s));
+    arcs((s, c), (w - s, c), c, ((w - 2.0 * s) / (2.5 * c)).max(2.0));
+    arcs((w - s, c), (w - s, h), s, side / (2.5 * s));
+    d.push_str(" Z");
+    let area = Rect::new(s / w, c / h, 1.0 - 2.0 * s / w, (h - 1.5 * c) / h);
+    (d, 1, area)
 }
 
-fn hex_inset(w: f64, h: f64) -> f64 {
-    (h / 4.0).min(w / 2.0)
+/// A head of radius at most `HEAD` px over shoulders that slope from the neck to the
+/// sides of the box; the text sits in the torso.
+fn person(w: f64, h: f64) -> (String, usize, Rect) {
+    let r = HEAD.min(h / 4.5).min(w / 4.0);
+    let y = 2.2 * r;
+    let k = r.min((h - y) / 2.0);
+    let cx = w / 2.0;
+    let p = |x: f64, y: f64| format!("{} {}", x / w, y / h);
+    let d = format!(
+        "M {} A {} {} 0 1 1 {} L {} Q {} {} L {} L {} L {} Q {} {} Z",
+        p(cx - 0.6 * r, 1.8 * r),
+        r / w,
+        r / h,
+        p(cx + 0.6 * r, 1.8 * r),
+        p(cx + r, y),
+        p(w, y),
+        p(w, y + k),
+        p(w, h),
+        p(0.0, h),
+        p(0.0, y + k),
+        p(0.0, y),
+        p(cx - r, y),
+    );
+    let inset = (cx - r) / 4.0;
+    let top = y + k / 4.0;
+    let area = Rect::new(inset / w, top / h, 1.0 - 2.0 * inset / w, 1.0 - top / h);
+    (d, 1, area)
 }
 
 pub(crate) fn builtin(name: &str, w: f64, h: f64) -> Option<UnitShape> {
@@ -123,31 +176,55 @@ pub(crate) fn unit_text_area(shape: &str, w: f64, h: f64) -> Option<Rect> {
     builtin_source(shape, w, h).map(|(_, _, unit)| unit)
 }
 
-/// The smallest box size whose unit text area holds `need` (width, height), given that
-/// the box is at least `rect`'s size. `custom` is the unit text area of a custom shape.
+/// The smallest box size in whole pixels, at least `min`, whose unit text area holds
+/// `need` (width, height). `custom` is the unit text area of a custom shape. Each axis is found by
+/// bisection on the shape's own text area, so no shape needs a hand-written inverse.
 pub(crate) fn required_size(
     shape: &str,
     custom: Option<Rect>,
     need: (f64, f64),
-    rect: Rect,
+    min: (f64, f64),
 ) -> (f64, f64) {
-    let (w, h) = need;
-    if let Some(unit) = custom {
-        return (w / unit.w, h / unit.h);
+    let area = |w: f64, h: f64| {
+        let u = custom
+            .or_else(|| unit_text_area(shape, w, h))
+            .unwrap_or(Rect::new(0.0, 0.0, 1.0, 1.0));
+        (u.w * w, u.h * h)
+    };
+    let (mut w, mut h) = (min.0.max(need.0), min.1.max(need.1));
+    for _ in 0..64 {
+        let h2 = least(h, |h| area(w, h).1 >= need.1 - 1e-9);
+        let w2 = least(w, |w| area(w, h2).0 >= need.0 - 1e-9);
+        let done = (w2, h2) == (w, h);
+        (w, h) = (w2, h2);
+        if done {
+            break;
+        }
     }
-    match shape {
-        "cylinder" => (
-            w,
-            if h >= 2.0 * CAP {
-                h + 2.0 * CAP
-            } else {
-                2.0 * h
-            },
-        ),
-        "hexagon" => (w + h.max(rect.h) / 2.0, h),
-        _ => match unit_text_area(shape, rect.w, rect.h) {
-            Some(unit) => (w / unit.w, h / unit.h),
-            None => (w, h),
-        },
+    (w, h)
+}
+
+/// The least whole number `x >= lo` for which `ok` holds, assuming `ok` is monotonic.
+fn least(lo: f64, ok: impl Fn(f64) -> bool) -> f64 {
+    let mut a = lo.ceil();
+    if ok(a) {
+        return a;
     }
+    let mut b = a.max(1.0) * 2.0;
+    while !ok(b) {
+        if b > 1e9 {
+            return b;
+        }
+        a = b;
+        b *= 2.0;
+    }
+    while b - a > 1.0 {
+        let m = ((a + b) / 2.0).floor();
+        if ok(m) {
+            b = m;
+        } else {
+            a = m;
+        }
+    }
+    b
 }

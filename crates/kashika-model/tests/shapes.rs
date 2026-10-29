@@ -163,7 +163,12 @@ fn builtin_text_areas() {
     let s = ok(
         "box d at (0,0) size (120,80) shape=diamond\nbox c at (200,0) size (120,80) shape=cylinder\n",
     );
-    assert_eq!(shape(&s, "d").text_area, Rect::new(38.0, 28.0, 44.0, 24.0));
+    let d = shape(&s, "d").text_area;
+    assert!(
+        close(Pt::new(d.x, d.y), Pt::new(34.4, 30.4))
+            && close(Pt::new(d.w, d.h), Pt::new(51.2, 19.2)),
+        "{d:?}"
+    );
     assert_eq!(
         shape(&s, "c").text_area,
         Rect::new(208.0, 48.0, 104.0, 24.0)
@@ -171,9 +176,106 @@ fn builtin_text_areas() {
 }
 
 #[test]
-fn hexagon_inset_is_a_quarter_of_the_height() {
-    let s = ok("box hx at (0,0) size (120,80) shape=hexagon\nline l hx.left@0.25 -> h -20\n");
-    assert!(close(start(&s, "l"), Pt::new(10.0, 20.0)));
+fn builtin_text_areas_stay_inside_the_outline() {
+    use kashika_geom::{boundary_nearest, point_in_polygon};
+    for name in BUILTINS {
+        for (w, h) in [
+            (120, 80),
+            (60, 160),
+            (240, 80),
+            (200, 200),
+            (160, 50),
+            (40, 40),
+            (600, 90),
+        ] {
+            let s = ok(&format!(
+                "box a at (0,0) size ({w},{h}) shape={name} padding=0\n"
+            ));
+            let a = shape(&s, "a");
+            let poly = &a.form.as_ref().unwrap().outline;
+            let t = a.text_area;
+            // A cylinder's text area runs down to the bottom of the box, past its bottom cap's corners.
+            let bottom = if name == "cylinder" { t.y } else { t.bottom() };
+            for i in 0..=20 {
+                let f = f64::from(i) / 20.0;
+                for p in [
+                    Pt::new(t.x + f * t.w, t.y),
+                    Pt::new(t.x + f * t.w, bottom),
+                    Pt::new(t.x, t.y + f * (bottom - t.y)),
+                    Pt::new(t.right(), t.y + f * (bottom - t.y)),
+                ] {
+                    assert!(
+                        point_in_polygon(p, poly) || boundary_nearest(p, poly).0 < 0.5,
+                        "{name} {w}x{h}: {p:?} of {t:?} is outside the outline"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn tall_hexagons_keep_half_their_width_for_text() {
+    let s = ok("box hx at (0,0) size (60,160) shape=hexagon padding=0\n");
+    assert_eq!(shape(&s, "hx").text_area, Rect::new(15.0, 0.0, 30.0, 160.0));
+}
+
+#[test]
+fn pixel_features_do_not_stretch() {
+    let s = ok("box d at (0,0) size (100,200) shape=doc padding=0\n\
+                box p at (200,0) size (300,300) shape=person padding=0\n\
+                box c at (0,300) size (400,200) shape=cloud padding=0\n");
+    assert!(
+        (shape(&s, "d").text_area.h - 182.0).abs() < 1e-9,
+        "the wave is 12px deep"
+    );
+    let p = &shape(&s, "p").form.as_ref().unwrap().outline;
+    let across = kashika_geom::horizontal_hits(p, 18.0);
+    let (l, r) = across
+        .iter()
+        .fold((f64::MAX, f64::MIN), |(l, r), x| (l.min(*x), r.max(*x)));
+    assert!(
+        (r - l - 36.0).abs() < 0.5,
+        "the head is a circle of radius 18: {across:?}"
+    );
+    assert!(
+        (shape(&s, "c").text_area.y - 324.0).abs() < 1e-9,
+        "bumps are 24px high"
+    );
+}
+
+const BIG: &str = "diagram \"t\" size (4000,4000)\n";
+
+#[test]
+fn fitted_sizes_hold_their_text_and_are_minimal() {
+    for name in ["rect", "rounded"].into_iter().chain(BUILTINS) {
+        for size in [9, 12, 14, 20, 28] {
+            for label in ["Q", "Payments API", "Two\\nlines here"] {
+                let (s, d) = compile(&format!(
+                    "{BIG}box a \"{label}\" at (0,0) shape={name} font-size={size}\n"
+                ));
+                assert!(d.is_empty(), "{name} {size} {label}: {d:#?}");
+                let a = shape(&s, "a");
+                let need = a.text[0].rect;
+                let (w, h) = (a.rect.w, a.rect.h);
+                let area = |w: f64, h: f64| {
+                    let (s, _) = compile(&format!(
+                        "{BIG}box a \"{label}\" at (0,0) size ({w},{h}) shape={name} font-size={size}\n"
+                    ));
+                    shape(&s, "a").text_area
+                };
+                let at = area(w, h);
+                assert!(
+                    at.w + 1e-9 >= need.w && at.h + 1e-9 >= need.h,
+                    "{name} {size} {label}: {at:?} at ({w},{h}) does not hold {need:?}"
+                );
+                assert!(
+                    area(w - 1.0, h).w < need.w && area(w, h - 1.0).h < need.h,
+                    "{name} {size} {label}: ({w},{h}) is not minimal"
+                );
+            }
+        }
+    }
 }
 
 #[test]
@@ -217,9 +319,8 @@ fn builtin_source_is_exposed_for_ref() {
     let (d, outline, ta) = kashika_model::builtin_source("diamond", 120.0, 80.0).unwrap();
     assert_eq!(d, "M 0.5 0 L 1 0.5 L 0.5 1 L 0 0.5 Z");
     assert_eq!(outline, 1);
-    assert_eq!(ta, Rect::new(0.25, 0.25, 0.5, 0.5));
+    assert_eq!(ta, Rect::new(0.22, 0.28, 0.56, 0.44));
     assert!(kashika_model::builtin_source("rect", 1.0, 1.0).is_none());
-    assert_eq!(kashika_model::BUILTIN_SHAPES.len(), 9);
 }
 
 #[test]

@@ -116,7 +116,7 @@
           "span": {"col":1,"end_col":50,"end_line":6,"line":6}
         }
       ],
-      "text_area": {"h":24,"w":34,"x":163,"y":48},
+      "text_area": {"h":19.2,"w":40,"x":160,"y":50.4},
       "text_below": false,
       "title_band": 0
     },
