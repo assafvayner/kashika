@@ -4,6 +4,7 @@ use kashika_diag::{Diagnostic, Span, did_you_mean};
 
 use crate::ast::*;
 use crate::lexer::{Tok, Token, lex_raw};
+use crate::source::SourceText;
 
 mod defs;
 
@@ -36,7 +37,7 @@ pub(crate) fn parse_stripped(src: &str) -> (File, Vec<Diagnostic>) {
         point_parens: 0,
         diags: Vec::new(),
         src,
-        lines: OnceCell::new(),
+        text: OnceCell::new(),
         skip_recover: false,
         declared: Vec::new(),
         failed_ids: Vec::new(),
@@ -114,7 +115,7 @@ struct Parser<'a> {
     point_parens: usize,
     diags: Vec<Diagnostic>,
     src: &'a str,
-    lines: OnceCell<Vec<Vec<char>>>,
+    text: OnceCell<SourceText>,
     skip_recover: bool,
     /// Ids read by the statements being parsed, kept for an enclosing group until it parses.
     declared: Vec<Ident>,
@@ -168,30 +169,9 @@ impl Parser<'_> {
 
     /// The source text from the start of `from` to the end of `to`.
     fn source(&self, from: Span, to: Span) -> String {
-        let lines = self
-            .lines
-            .get_or_init(|| self.src.split('\n').map(|l| l.chars().collect()).collect());
-        let mut out = String::new();
-        for line in from.line..=to.end_line {
-            let Some(chars) = lines.get(line as usize - 1) else {
-                break;
-            };
-            let a = if line == from.line {
-                from.col as usize - 1
-            } else {
-                0
-            };
-            let b = if line == to.end_line {
-                to.end_col as usize - 1
-            } else {
-                chars.len()
-            };
-            if !out.is_empty() {
-                out.push(' ');
-            }
-            out.extend(chars.get(a..b.min(chars.len())).unwrap_or_default());
-        }
-        out
+        self.text
+            .get_or_init(|| SourceText::stripped(self.src))
+            .between(from, to)
     }
 
     /// The span of the last token before the end of the current physical line.

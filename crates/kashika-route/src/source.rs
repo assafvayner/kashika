@@ -1,33 +1,22 @@
 use kashika_diag::Span;
+use kashika_syntax::SourceText;
 
-/// The source as the lexer counts it: lines of chars, without a leading BOM.
+/// The source, and its text as the lexer counts it.
 pub(crate) struct Source<'a> {
     src: &'a str,
-    lines: Vec<Vec<char>>,
+    text: SourceText,
 }
 
 impl<'a> Source<'a> {
     pub(crate) fn new(src: &'a str) -> Self {
         Source {
             src,
-            lines: src
-                .strip_prefix('\u{feff}')
-                .unwrap_or(src)
-                .split('\n')
-                .map(|l| l.chars().collect())
-                .collect(),
+            text: SourceText::new(src),
         }
     }
 
-    /// Source text of a single-line span.
     pub(crate) fn slice(&self, span: Span) -> String {
-        let line = &self.lines[span.line as usize - 1];
-        let end = if span.end_line == span.line {
-            span.end_col as usize - 1
-        } else {
-            line.len()
-        };
-        line[span.col as usize - 1..end].iter().collect()
+        self.text.span(span)
     }
 
     /// The source with `stmts` on lines of their own right after `after` (1-based line and
@@ -37,11 +26,11 @@ impl<'a> Source<'a> {
         let Some((line, col)) = after else {
             return (
                 format!("{}\n{block}\n", self.src),
-                self.lines.len() as u32 + 1,
+                self.text.lines().len() as u32 + 1,
             );
         };
         let mut out = String::new();
-        for (i, l) in self.lines.iter().enumerate() {
+        for (i, l) in self.text.lines().iter().enumerate() {
             if i > 0 {
                 out.push('\n');
             }
