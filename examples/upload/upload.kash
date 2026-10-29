@@ -1,9 +1,9 @@
-diagram "Upload path" size (900,520) kashika="0.1.0"
+diagram "Upload path" kashika="0.1.0"
 
 box client "Browser" at (40,40) size (140,60) style=external
 box lb "Load balancer" at client.right+(80,0) size (160,60) pin=left style=service
 
-group vpc "VPC" at (40,160) size (820,320) {
+group vpc "VPC" at (40,160) {
   box api1 "API 1" at (60,50) size (140,60) style=service
   box api2 "API 2" at api1.right+(60,0) size (140,60) pin=left style=service
   box db "Postgres" at (560,50) size (180,60) shape=rounded style=datastore
@@ -11,12 +11,12 @@ group vpc "VPC" at (40,160) size (820,320) {
   box worker "Worker" at queue.right+(140,0) size (140,60) pin=left style=service
 }
 
-line client_lb client.right -> lb.left end=arrow label="HTTPS"
+arrow client_lb client.right -> lb.left label="HTTPS" label-side=above
 junction fan at (lb.bottom.x, 130)
 line lb_fan lb.bottom -> fan
-line fan_api1 fan -> hv api1.top end=arrow radius=8
-line fan_api2 fan -> hv api2.top end=arrow radius=8
-line api2_db api2.right -> db.left end=arrow label="SQL"
-line api1_queue api1.bottom -> y queue.left -> queue.left end=arrow radius=8
-line queue_worker queue.right -> worker.left end=arrow label="consume"
+arrow fan_api1 fan -> hv api1.top radius=8
+arrow fan_api2 fan -> hv api2.top radius=8
+arrow api2_db api2.right -> db.left label="SQL"
+arrow api1_queue api1.bottom -> y queue.left -> queue.left radius=8
+arrow queue_worker queue.right -> worker.left label="consume"
 line retry worker.top -> curve right 30 queue.top end=open stroke-style=dashed label="retry"

@@ -1,10 +1,52 @@
-diagram "Order flow" size (820,300) kashika="0.1.0"
+diagram "Order flow" kashika="0.1.0"
 
-box user "User" at (40,90) size (80,120) shape=person
+style cell { size=(100,64) fill=#f8fafc stroke=#475569 }
+
+box user "User" at (40,20) size (80,120) shape=person
 box web "Web" at user.right+(80,0) size (140,80) shape=rounded style=service pin=left
 box check "Valid?" at web.right+(80,0) size (160,100) shape=diamond pin=left
 box db "Orders" at check.right+(80,0) size (140,100) shape=cylinder style=datastore pin=left
+box reject "Rejection\nemail" at check.bottom+(0,50) size (140,70) shape=doc style=note pin=top
 
-line l_web user.right -> web.left end=arrow
-line l_check web.right -> check.left end=arrow
-line l_db check.right -> db.left end=arrow label="yes"
+arrow l_web user.right -> web.left
+arrow l_check web.right -> check.left
+arrow l_db check.right -> db.left label="yes" label-side=above
+arrow l_reject check.bottom -> reject.top label="no" label-side=right
+
+group gallery "Built-in shapes" at (20,290) {
+  box s_rect at (20,40) style=cell
+  box s_rounded at s_rect.tr+(40,0) shape=rounded style=cell
+  box s_cylinder at s_rounded.tr+(40,0) shape=cylinder style=cell
+  box s_diamond at s_cylinder.tr+(40,0) shape=diamond style=cell
+  box s_ellipse at s_diamond.tr+(40,0) shape=ellipse style=cell
+  box s_hexagon at s_ellipse.tr+(40,0) shape=hexagon style=cell
+  box s_doc at s_rect.bl+(0,50) shape=doc style=cell
+  box s_cloud at s_doc.tr+(40,0) shape=cloud style=cell
+  box s_person at s_cloud.tr+(40,0) shape=person style=cell
+  box s_parallelogram at s_person.tr+(40,0) shape=parallelogram style=cell
+  box s_predefined at s_parallelogram.tr+(40,0) shape=predefined-process style=cell
+  box s_stadium at s_predefined.tr+(40,0) shape=stadium style=cell
+  box s_triangle at s_doc.bl+(0,50) shape=triangle style=cell
+  box s_octagon at s_triangle.tr+(40,0) shape=octagon style=cell
+  box s_note at s_octagon.tr+(40,0) shape=note style=cell
+  box s_package at s_note.tr+(40,0) shape=package style=cell
+  box s_queue at s_package.tr+(40,0) shape=queue style=cell
+
+  text "`rect`" at s_rect.center+(0,46) font-size=12
+  text "`rounded`" at s_rounded.center+(0,46) font-size=12
+  text "`cylinder`" at s_cylinder.center+(0,46) font-size=12
+  text "`diamond`" at s_diamond.center+(0,46) font-size=12
+  text "`ellipse`" at s_ellipse.center+(0,46) font-size=12
+  text "`hexagon`" at s_hexagon.center+(0,46) font-size=12
+  text "`doc`" at s_doc.center+(0,46) font-size=12
+  text "`cloud`" at s_cloud.center+(0,46) font-size=12
+  text "`person`" at s_person.center+(0,46) font-size=12
+  text "`parallelogram`" at s_parallelogram.center+(0,46) font-size=12
+  text "`predefined-process`" at s_predefined.center+(0,46) font-size=12
+  text "`stadium`" at s_stadium.center+(0,46) font-size=12
+  text "`triangle`" at s_triangle.center+(0,46) font-size=12
+  text "`octagon`" at s_octagon.center+(0,46) font-size=12
+  text "`note`" at s_note.center+(0,46) font-size=12
+  text "`package`" at s_package.center+(0,46) font-size=12
+  text "`queue`" at s_queue.center+(0,46) font-size=12
+}

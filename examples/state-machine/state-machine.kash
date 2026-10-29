@@ -1,4 +1,4 @@
-diagram "TCP connection lifecycle" size (960,640) kashika="0.1.0"
+diagram "TCP connection lifecycle" kashika="0.1.0"
 box closed "CLOSED" at (100,60) size (140,50) shape=rounded
 box listen "LISTEN" at (420,60) size (140,50) shape=rounded
 box synrcvd "SYN_RECEIVED" at (740,60) size (140,50) shape=rounded
@@ -7,13 +7,13 @@ box est "ESTABLISHED" at (420,280) size (140,50) shape=rounded
 box closewait "CLOSE_WAIT" at (740,280) size (140,50) shape=rounded
 box timewait "TIME_WAIT" at (100,500) size (140,50) shape=rounded
 box finwait "FIN_WAIT" at (420,500) size (140,50) shape=rounded
-line c_l closed.right -> curve left 20 listen.left end=arrow label="passive open"
-line l_s listen.right -> curve left 20 synrcvd.left end=arrow label="recv SYN / send SYN+ACK"
-line s_e synrcvd.bottom -> curve right 40 est.right end=arrow label="recv ACK"
-line c_ss closed.bottom -> curve via (140,170) (140,230) synsent.top end=arrow label="active open / send SYN"
-line ss_e synsent.right -> curve right 20 est.left end=arrow label="recv SYN+ACK"
-line e_cw est.right@0.7 -> curve left 20 closewait.left end=arrow label="recv FIN"
-line e_fw est.bottom -> curve left 20 finwait.top end=arrow label="close / send FIN"
-line fw_tw finwait.left -> curve left 20 timewait.right end=arrow label="recv FIN"
-line tw_c timewait.left -> curve via (10,525) (10,85) closed.left end=arrow label="timeout"
-line self est.top@0.8 -> curve via (540,200) (480,200) est.top@0.2 end=arrow label="data / ACK"
+arrow c_l closed.right -> curve left 20 listen.left label="passive open"
+arrow l_s listen.right -> curve left 20 synrcvd.left label="recv SYN / send SYN+ACK"
+arrow s_e synrcvd.bottom -> curve right 40 est.right label="recv ACK"
+arrow c_ss closed.bottom -> curve via (140,170) (140,230) synsent.top label="active open / send SYN"
+arrow ss_e synsent.right -> curve right 20 est.left label="recv SYN+ACK"
+arrow e_cw est.right@0.7 -> curve left 20 closewait.left label="recv FIN"
+arrow e_fw est.bottom -> curve left 20 finwait.top label="close / send FIN"
+arrow fw_tw finwait.left -> curve left 20 timewait.right label="recv FIN"
+arrow tw_c timewait.left -> curve via (10,525) (10,85) closed.left label="timeout"
+arrow self est.top@0.8 -> curve via (540,200) (480,200) est.top@0.2 label="data / ACK"

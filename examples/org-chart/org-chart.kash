@@ -1,39 +1,39 @@
-diagram "Engineering Org Chart" size (1500,440) kashika="0.1.0" grid=10
+diagram "Engineering Org Chart" kashika="0.1.0" grid=10
 
-box vp "VP of Engineering" at (750,60) size (200,40) pin=top style=service
+box vp "VP of Engineering" at (750,20) size (200,40) pin=top style=service
 
-junction vbus at (vp.bottom.x, 140) dot
+junction vbus at (vp.bottom.x, 100) dot
 
-box d1 "Director, Platform" at (280,180) size (180,40) pin=top style=service
-box d2 "Director, Product" at (750,180) size (180,40) pin=top style=service
-box d3 "Director, Data" at (1220,180) size (180,40) pin=top style=service
+box d1 "Director, Platform" at (280,140) size (180,40) pin=top style=service
+box d2 "Director, Product" at (750,140) size (180,40) pin=top style=service
+box d3 "Director, Data" at (1220,140) size (180,40) pin=top style=service
 
-junction b1 at (d1.bottom.x, 260) dot
-junction b2 at (d2.bottom.x, 260) dot
-junction b3 at (d3.bottom.x, 260) dot
+junction b1 at (d1.bottom.x, 220) dot
+junction b2 at (d2.bottom.x, 220) dot
+junction b3 at (d3.bottom.x, 220) dot
 
-box l1 "Lead, Storage" at (20,300) size (160,40)
-box l2 "Lead, Networking" at l1.right+(20,0) size (160,40) pin=left@0.5
-box l3 "Lead, Tooling" at l2.right+(20,0) size (160,40) pin=left@0.5
-box l4 "Lead, Web" at l3.right+(40,0) size (160,40) pin=left
-box l5 "Lead, Mobile" at l4.right+(20,0) size (160,40) pin=left
-box l6 "Lead, Pipelines" at l5.right+(40,0) size (160,40) pin=left
-box l7 "Lead, Analytics" at l6.right+(20,0) size (160,40) pin=left
-box l8 "Lead, ML Systems" at l7.right+(20,0) size (160,40) pin=left
+box storage "Lead, Storage" at (20,260) size (160,40)
+box networking "Lead, Networking" at storage.right+(20,0) size (160,40) pin=left
+box tooling "Lead, Tooling" at networking.right+(20,0) size (160,40) pin=left
+box web "Lead, Web" at tooling.right+(40,0) size (160,40) pin=left
+box mobile "Lead, Mobile" at web.right+(20,0) size (160,40) pin=left
+box pipelines "Lead, Pipelines" at mobile.right+(40,0) size (160,40) pin=left
+box analytics "Lead, Analytics" at pipelines.right+(20,0) size (160,40) pin=left
+box ml "Lead, ML Systems" at analytics.right+(20,0) size (160,40) pin=left
 
 line vp_bus vp.bottom -> vbus
-line vb_d1 vbus -> hv d1.top end=arrow
-line vb_d2 vbus -> d2.top end=arrow
-line vb_d3 vbus -> hv d3.top end=arrow
+arrow vb_d1 vbus -> hv d1.top
+arrow vb_d2 vbus -> d2.top
+arrow vb_d3 vbus -> hv d3.top
 
 line d1_b d1.bottom -> b1
-line b1_l1 b1 -> hv l1.top end=arrow
-line b1_l2 b1 -> l2.top end=arrow
-line b1_l3 b1 -> hv l3.top end=arrow
+arrow to_storage b1 -> hv storage.top
+arrow to_networking b1 -> networking.top
+arrow to_tooling b1 -> hv tooling.top
 line d2_b d2.bottom -> b2
-line b2_l4 b2 -> hv l4.top end=arrow
-line b2_l5 b2 -> hv l5.top end=arrow
+arrow to_web b2 -> hv web.top
+arrow to_mobile b2 -> hv mobile.top
 line d3_b d3.bottom -> b3
-line b3_l6 b3 -> hv l6.top end=arrow
-line b3_l7 b3 -> l7.top end=arrow
-line b3_l8 b3 -> hv l8.top end=arrow
+arrow to_pipelines b3 -> hv pipelines.top
+arrow to_analytics b3 -> analytics.top
+arrow to_ml b3 -> hv ml.top

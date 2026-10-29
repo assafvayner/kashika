@@ -15,25 +15,25 @@ cargo run -p kashika-cli -- render examples/flowchart/flowchart.kash -o examples
 
 ## upload
 
-Upload path: a browser through a load balancer, two APIs, a queue, a worker and Postgres inside a VPC group.
+Upload path: a browser through a load balancer, two APIs, a queue, a worker and Postgres inside a VPC group that fits its children, with `arrow` statements and a fitted canvas.
 
 ![upload](upload/upload.svg)
 
 ## shapes
 
-Order flow: person, rounded, diamond and cylinder shapes joined by labeled lines.
+Order flow with a decision that takes both branches, above a fitted group showing all 17 built-in shapes in a grid placed with corner anchors (`tr`, `bl`) and a shared `style` with `size`.
 
 ![shapes](shapes/shapes.svg)
 
 ## flowchart
 
-Checkout decision flow: diamonds for decisions, `hv`/`vh` elbows, yes/no labels and junctions where branches merge.
+Checkout decision flow: `stadium` terminals, diamonds for decisions, `hv`/`vh` elbows, yes/no labels beside the line with `label-side`, and junctions where branches merge.
 
 ![flowchart](flowchart/flowchart.svg)
 
 ## microservices
 
-E-commerce backend: nested VPC and subnet groups, bundled icons, a cylinder database, and several paths taken verbatim from `kashika route`.
+E-commerce backend: nested subnet groups in a VPC that fits them, bundled icons (`load-balancer`, `gateway`, `mobile`, `cache`), a cylinder database, a junction fan-out, and several paths taken verbatim from `kashika route`.
 
 ![microservices](microservices/microservices.svg)
 
@@ -45,19 +45,19 @@ TCP connection lifecycle: curved transitions (`curve left/right` and `curve via`
 
 ## network
 
-Office network: an imported shape library (`net.kash`) with namespaced names, a `shape from` SVG, and an `image`.
+Office network: an imported shape library (`net.kash`) with namespaced names, a local SVG as a box's `icon=` above its label, an `image`, and a `label-side=right` label on a vertical link.
 
 ![network](network/network.svg)
 
 ## data-pipeline
 
-Analytics pipeline: sublabels, `{ }` text blocks, inline markup, boxes sized with `kashika measure`, and one crossing kept on purpose with `allow=` and a `reason=`.
+Analytics pipeline: sublabels, `{ }` text blocks, inline markup, `label-side=above` labels in narrow gaps, and a bypass line routed over the top row so nothing crosses.
 
 ![data-pipeline](data-pipeline/data-pipeline.svg)
 
 ## org-chart
 
-Engineering org: a junction bus per level, a strict `grid=`, and relative placement with `pin`, including `pin=<side>@t`.
+Engineering org: a junction bus per level, a strict `grid=`, relative placement with `pin`, and a canvas that fits the chart.
 
 ![org-chart](org-chart/org-chart.svg)
 

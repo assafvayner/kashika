@@ -1,13 +1,11 @@
-diagram "Office network" size (1000,720) kashika="0.1.0"
+diagram "Office network" kashika="0.1.0"
 import "net.kash" as net
-shape fw from "firewall.svg" text-area=below
 
 image logo "logo.svg" at (30,20) size (80,80)
 text "Acme Corp" at (30,112) font-size=12 text-align=left muted
 
 box inet "Internet" at (430,10) size (140,84) shape=cloud style=external
-box fwall at (450,130) size (100,70) shape=fw
-text "Firewall" at fwall.right+(10,35) text-align=left
+box fwall "Firewall" at inet.bottom+(0,40) pin=top size (140, auto) icon="firewall.svg" icon-pos=top icon-size=36 fill=#fde8e8 stroke=#c0392b
 box rtr "Router" at (430,250) size (140,60) shape=net.router style=net.lan
 box core "Core switch" at (430,360) size (140,60) shape=net.switch style=net.lan
 box sw1 "Access switch A" at (150,490) size (160,60) shape=net.switch style=net.lan
@@ -20,7 +18,7 @@ box srv "App server" at (620,620) size (130,50) style=service
 box ws3 "Workstation 3" at (790,620) size (130,50)
 box lap "Laptop" at (435,620) size (130,50)
 
-line l1 inet.bottom -> fwall.top end=arrow start=arrow
+arrow l1 inet.bottom -> fwall.top start=arrow
 line l2 fwall.bottom -> rtr.top
 line l3 rtr.bottom -> core.top
 line l4 core.left -> hv sw1.top
@@ -31,4 +29,4 @@ line l8 sw1.bottom@0.25 -> y 585 -> hv ws1.top
 line l9 sw1.bottom@0.75 -> y 585 -> hv ws2.top
 line l10 sw2.bottom@0.25 -> y 585 -> hv srv.top
 line l11 sw2.bottom@0.75 -> y 585 -> hv ws3.top
-line l12 ap.bottom -> lap.top stroke-style=dashed label="wifi"
+line l12 ap.bottom -> lap.top stroke-style=dashed label="wifi" label-side=right
