@@ -470,7 +470,7 @@ checksum = "a0370574b86f7eca156b9f298392b5e69a23f8c86f3f865add60bbc2e79467a6"
 
 [[package]]
 name = "kashika"
-version = "0.1.0"
+version = "0.1.0-dev0"
 dependencies = [
  "assert_cmd",
  "base64",
@@ -494,7 +494,7 @@ dependencies = [
 
 [[package]]
 name = "kashika-check"
-version = "0.1.0"
+version = "0.1.0-dev0"
 dependencies = [
  "kashika-diag",
  "kashika-geom",
@@ -507,7 +507,7 @@ dependencies = [
 
 [[package]]
 name = "kashika-diag"
-version = "0.1.0"
+version = "0.1.0-dev0"
 dependencies = [
  "serde",
  "serde_json",
@@ -515,14 +515,14 @@ dependencies = [
 
 [[package]]
 name = "kashika-geom"
-version = "0.1.0"
+version = "0.1.0-dev0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "kashika-model"
-version = "0.1.0"
+version = "0.1.0-dev0"
 dependencies = [
  "imagesize",
  "kashika-diag",
@@ -536,7 +536,7 @@ dependencies = [
 
 [[package]]
 name = "kashika-render"
-version = "0.1.0"
+version = "0.1.0-dev0"
 dependencies = [
  "base64",
  "image-webp",
@@ -553,7 +553,7 @@ dependencies = [
 
 [[package]]
 name = "kashika-route"
-version = "0.1.0"
+version = "0.1.0-dev0"
 dependencies = [
  "kashika-check",
  "kashika-diag",
@@ -565,14 +565,14 @@ dependencies = [
 
 [[package]]
 name = "kashika-syntax"
-version = "0.1.0"
+version = "0.1.0-dev0"
 dependencies = [
  "kashika-diag",
 ]
 
 [[package]]
 name = "kashika-text"
-version = "0.1.0"
+version = "0.1.0-dev0"
 dependencies = [
  "kashika-geom",
  "rustybuzz",

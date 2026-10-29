@@ -2,7 +2,14 @@
 name = "kashika-render"
 version.workspace = true
 edition.workspace = true
+description = "Renders Kashika scenes to SVG, PNG, JPEG and WebP"
+rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories = ["rendering", "visualization"]
+include = ["src/**/*", "LICENSE"]
 
 [dependencies]
 kashika-diag.workspace = true

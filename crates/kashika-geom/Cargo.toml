@@ -2,7 +2,14 @@
 name = "kashika-geom"
 version.workspace = true
 edition.workspace = true
+description = "Geometry for Kashika: points, rects, path flattening, rounded corners, intersections and convex hulls"
+rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories = ["graphics", "mathematics"]
+include = ["src/**/*", "LICENSE"]
 
 [dependencies]
 serde.workspace = true

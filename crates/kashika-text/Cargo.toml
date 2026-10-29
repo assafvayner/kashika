@@ -2,7 +2,14 @@
 name = "kashika-text"
 version.workspace = true
 edition.workspace = true
-license.workspace = true
+description = "Bundled fonts, inline markup, text measurement, block layout and glyph outlines for Kashika diagrams"
+rust-version.workspace = true
+license = "Apache-2.0 AND OFL-1.1 AND CC-BY-4.0"
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories = ["text-processing", "rendering"]
+include = ["src/**/*", "fonts/*", "LICENSE"]
 
 [dependencies]
 kashika-geom.workspace = true

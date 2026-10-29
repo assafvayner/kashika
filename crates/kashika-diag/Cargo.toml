@@ -2,7 +2,14 @@
 name = "kashika-diag"
 version.workspace = true
 edition.workspace = true
+description = "Diagnostics, severities, source spans and the lint code list for the Kashika diagram language"
+rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories = ["visualization"]
+include = ["src/**/*", "LICENSE"]
 
 [dependencies]
 serde.workspace = true

@@ -2,7 +2,14 @@
 name = "kashika-syntax"
 version.workspace = true
 edition.workspace = true
+description = "Lexer, parser, AST and whitespace-only formatter for the Kashika diagram language"
+rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories = ["parser-implementations"]
+include = ["src/**/*", "LICENSE"]
 
 [dependencies]
 kashika-diag.workspace = true

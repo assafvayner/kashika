@@ -2,7 +2,14 @@
 name = "kashika-route"
 version.workspace = true
 edition.workspace = true
+description = "Line route suggestions for Kashika diagrams, ranked by the checker's findings"
+rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories = ["visualization"]
+include = ["src/**/*", "LICENSE"]
 
 [dependencies]
 kashika-check.workspace = true

@@ -2,7 +2,14 @@
 name = "kashika-model"
 version.workspace = true
 edition.workspace = true
+description = "Resolver that turns Kashika source into a laid-out scene, with built-in shapes, bundled icons and sandboxed imports"
+rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories = ["visualization"]
+include = ["src/**/*", "build.rs", "icons/*", "LICENSE"]
 
 [dependencies]
 kashika-diag.workspace = true

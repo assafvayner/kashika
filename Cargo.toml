@@ -3,19 +3,23 @@ resolver = "2"
 members = ["crates/*"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.0-dev0"
 edition = "2021"
+rust-version = "1.89"
 license = "Apache-2.0"
+repository = "https://github.com/assafvayner/kashika"
+homepage = "https://github.com/assafvayner/kashika"
+keywords = ["kashika", "diagram", "svg", "dsl", "ai-agents"]
 
 [workspace.dependencies]
-kashika-diag = { path = "crates/kashika-diag" }
-kashika-geom = { path = "crates/kashika-geom" }
-kashika-syntax = { path = "crates/kashika-syntax" }
-kashika-text = { path = "crates/kashika-text" }
-kashika-model = { path = "crates/kashika-model" }
-kashika-check = { path = "crates/kashika-check" }
-kashika-render = { path = "crates/kashika-render" }
-kashika-route = { path = "crates/kashika-route" }
+kashika-diag = { path = "crates/kashika-diag", version = "=0.1.0-dev0" }
+kashika-geom = { path = "crates/kashika-geom", version = "=0.1.0-dev0" }
+kashika-syntax = { path = "crates/kashika-syntax", version = "=0.1.0-dev0" }
+kashika-text = { path = "crates/kashika-text", version = "=0.1.0-dev0" }
+kashika-model = { path = "crates/kashika-model", version = "=0.1.0-dev0" }
+kashika-check = { path = "crates/kashika-check", version = "=0.1.0-dev0" }
+kashika-render = { path = "crates/kashika-render", version = "=0.1.0-dev0" }
+kashika-route = { path = "crates/kashika-route", version = "=0.1.0-dev0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 clap = { version = "4", features = ["derive"] }

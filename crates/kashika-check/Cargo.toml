@@ -2,7 +2,14 @@
 name = "kashika-check"
 version.workspace = true
 edition.workspace = true
+description = "Geometry lints, suppression and metrics for Kashika diagrams"
+rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories = ["visualization"]
+include = ["src/**/*", "LICENSE"]
 
 [dependencies]
 kashika-diag.workspace = true

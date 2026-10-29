@@ -2,7 +2,15 @@
 name = "kashika"
 version.workspace = true
 edition.workspace = true
+description = "A text-to-diagram language for technical designs: check and render .kash files to SVG, with no auto-layout"
+rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme = "../../README.md"
+keywords = ["diagram", "svg", "dsl", "cli", "ai-agents"]
+categories = ["command-line-utilities", "visualization", "rendering"]
+include = ["src/**/*", "ref/*", "LICENSE"]
 
 [[bin]]
 name = "kashika"
