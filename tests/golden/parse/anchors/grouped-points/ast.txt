@@ -218,4 +218,6 @@ File {
         ),
     ],
     first_stmt: Some(4:1-4:8),
+    failed_ids: [],
+    failed_diagram: false,
 }

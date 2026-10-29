@@ -197,7 +197,7 @@ pub fn resolve_with(file: &ast::File, opts: &Options) -> (Scene, Vec<Diagnostic>
         placed: Vec::new(),
         on_stack: HashSet::new(),
         skipped: HashSet::new(),
-        skipped_ids: HashSet::new(),
+        skipped_ids: file.failed_ids.iter().map(|i| i.name.clone()).collect(),
         edges: Vec::new(),
         literals: Vec::new(),
         diags: Vec::new(),
@@ -257,7 +257,8 @@ struct Resolver<'a> {
     /// Entries being placed; `placement_graph` keeps this chain within the depth limit.
     on_stack: HashSet<usize>,
     skipped: HashSet<usize>,
-    /// Ids declared inside a skipped duplicate group; references to them stay silent.
+    /// Ids declared inside a skipped duplicate group or by a statement that failed to parse;
+    /// references to them stay silent.
     skipped_ids: HashSet<String>,
     edges: Vec<PlacementEdge>,
     literals: Vec<Literal>,
@@ -358,7 +359,7 @@ impl<'a> Resolver<'a> {
                 scene.allow = self.allow_list(x, false);
             }
         }
-        if !seen {
+        if !seen && !file.failed_diagram {
             let span = file.stmts.first().map_or(Span::new(1, 1, 1, 1), Stmt::span);
             self.diags.push(
                 Diagnostic::error("diagram", span, "missing `diagram` statement")

@@ -1,0 +1,4 @@
+// spec: 3, 7
+// A `diagram` statement that fails to parse is not also reported missing.
+diagram "broken" size (300,200
+box a at (10,10) size (40,30)

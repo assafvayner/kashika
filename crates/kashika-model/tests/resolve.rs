@@ -131,6 +131,70 @@ fn unknown_id_suggests() {
 }
 
 #[test]
+fn references_to_a_failed_statement_report_only_the_parse_error() {
+    let d = errors(
+        "box fan_a at (0,0) size (10,10)\njunction fan at fan_a.right+(40)\n\
+         line l1 fan -> fan_a.left\nline l2 fan -> (50,50)\nbox b at fan+(0,4) size (1,1)\n\
+         line l3 b.right -> (90,90) allow=cross:fan\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "parse");
+}
+
+#[test]
+fn a_failed_statement_id_can_be_reused() {
+    let d = errors(
+        "box c at (0,0) size (10,10\nbox c at (0,20) size (10,10)\nline l c.right -> ghost.left\n",
+    );
+    let codes: Vec<&str> = d.iter().map(|d| d.code).collect();
+    assert_eq!(codes, ["parse", "unknown-id"], "{d:#?}");
+    assert_eq!(d[1].message, "unknown id `ghost`");
+}
+
+#[test]
+fn a_failed_group_keeps_its_children_apart() {
+    let d = errors(
+        "group g at (0,0) size (90,90) {\n  box inner at (0,0) size (10,10\n  box ok at (0,20) size (10,10)\n}\n\
+         line l inner.right -> ok.left\nline m g.left -> (200,200)\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "parse");
+}
+
+#[test]
+fn breaking_any_one_statement_never_panics_or_cascades() {
+    let src = "diagram \"t\" size (400,300)\nbox a at (10,10) size (40,30)\n\
+               group g at (100,10) size (200,200) {\n  box b at (10,40) size (40,30)\n  \
+               junction j at b.bottom+(0,20)\n}\njunction fan at (a.right+(40,0))\n\
+               text n \"x\" at a.bottom+(0,20)\nline l a.right -> fan -> b.left allow=cross:m\n\
+               line m j -> y 250 -> (20,250)\n";
+    let lines: Vec<&str> = src.lines().collect();
+    for i in 0..lines.len() {
+        let mut broken = lines.clone();
+        let cut = format!("{} (", lines[i].trim_end_matches(['{', ' ']));
+        broken[i] = &cut;
+        let (_, d) = compile(&(broken.join("\n") + "\n"));
+        assert!(
+            d.iter()
+                .all(|d| d.code != "unknown-id" && d.code != "diagram"),
+            "line {i}: {d:#?}"
+        );
+    }
+}
+
+#[test]
+fn a_broken_diagram_statement_is_not_missing() {
+    let (_, d) = compile("diagram \"t\" size (800,600\nbox a at (0,0) size (10,10)\n");
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "parse");
+    let lib = kashika_model::compile_library_with(
+        "diagram \"t\" size (800\nstyle s { fill=#ffffff }\n",
+        &Default::default(),
+    );
+    assert!(lib.is_none());
+}
+
+#[test]
 fn unknown_anchor_suggests() {
     let d = errors("box api at (0,0) size (10,10)\nline api.rigth -> (50,50)\n");
     assert_eq!(d[0].code, "unknown-anchor");

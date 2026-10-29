@@ -1,0 +1,4 @@
+error[parse] 6:32-6:33: expected `,`, found `)`
+error[parse] 11:35-11:36: expected `)`, found end of line
+error[parse] 14:30-14:31: expected `)`, found end of line
+error[unknown-id] 16:20-16:25: unknown id `ghost`

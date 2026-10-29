@@ -560,7 +560,8 @@ fn keyword(stmt: &Stmt) -> &'static str {
 
 /// Whether `file` is a library: no `diagram`, and only `shape`, `style` and `import`.
 pub(crate) fn is_library(file: &ast::File) -> bool {
-    !file.stmts.is_empty()
+    !file.failed_diagram
+        && !file.stmts.is_empty()
         && file
             .stmts
             .iter()

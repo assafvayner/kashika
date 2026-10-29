@@ -1,0 +1,173 @@
+File {
+    stmts: [
+        Diagram(Diagram { title: "cascade", size: (400.0, 300.0), attrs: [], span: 4:1-4:33 }),
+        Box(
+            Node {
+                id: Ident { name: "fan_a", span: 5:5-5:10 },
+                label: None,
+                at: Lit { x: Num(10.0), y: Num(10.0), span: 5:14-5:21 },
+                size: (40.0, 30.0),
+                attrs: [],
+                block: None,
+                span: 5:1-5:34,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "l1", span: 7:6-7:8 }),
+                start: Ref {
+                    r: Ref { id: Ident { name: "fan", span: 7:9-7:12 }, anchor: None },
+                    offset: None,
+                    span: 7:9-7:12,
+                },
+                segs: [
+                    Seg {
+                        kind: To(
+                            Ref {
+                                r: Ref {
+                                    id: Ident { name: "fan_a", span: 7:16-7:21 },
+                                    anchor: Some(
+                                        Anchor {
+                                            name: Ident { name: "left", span: 7:22-7:26 },
+                                            t: None,
+                                        },
+                                    ),
+                                },
+                                offset: None,
+                                span: 7:16-7:26,
+                            },
+                        ),
+                        span: 7:16-7:26,
+                    },
+                ],
+                attrs: [],
+                span: 7:1-7:26,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "l2", span: 8:6-8:8 }),
+                start: Ref {
+                    r: Ref { id: Ident { name: "fan", span: 8:9-8:12 }, anchor: None },
+                    offset: None,
+                    span: 8:9-8:12,
+                },
+                segs: [
+                    Seg {
+                        kind: To(Lit { x: Num(200.0), y: Num(20.0), span: 8:16-8:24 }),
+                        span: 8:16-8:24,
+                    },
+                ],
+                attrs: [],
+                span: 8:1-8:24,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "b", span: 9:5-9:6 },
+                label: None,
+                at: Ref {
+                    r: Ref { id: Ident { name: "fan", span: 9:10-9:13 }, anchor: None },
+                    offset: Some(Offset { neg: false, dx: 0.0, dy: 40.0 }),
+                    span: 9:10-9:20,
+                },
+                size: (40.0, 30.0),
+                attrs: [],
+                block: None,
+                span: 9:1-9:33,
+            },
+        ),
+        Group(
+            Group {
+                node: Node {
+                    id: Ident { name: "g", span: 10:7-10:8 },
+                    label: None,
+                    at: Lit { x: Num(100.0), y: Num(100.0), span: 10:12-10:21 },
+                    size: (200.0, 150.0),
+                    attrs: [],
+                    block: None,
+                    span: 10:1-10:36,
+                },
+                children: [],
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "l3", span: 13:6-13:8 }),
+                start: Ref {
+                    r: Ref {
+                        id: Ident { name: "inner", span: 13:9-13:14 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "right", span: 13:15-13:20 }, t: None },
+                        ),
+                    },
+                    offset: None,
+                    span: 13:9-13:20,
+                },
+                segs: [
+                    Seg {
+                        kind: To(Lit { x: Num(380.0), y: Num(120.0), span: 13:24-13:33 }),
+                        span: 13:24-13:33,
+                    },
+                ],
+                attrs: [],
+                span: 13:1-13:33,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "c", span: 15:5-15:6 },
+                label: None,
+                at: Lit { x: Num(10.0), y: Num(250.0), span: 15:10-15:18 },
+                size: (40.0, 30.0),
+                attrs: [],
+                block: None,
+                span: 15:1-15:31,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "l4", span: 16:6-16:8 }),
+                start: Ref {
+                    r: Ref {
+                        id: Ident { name: "c", span: 16:9-16:10 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "right", span: 16:11-16:16 }, t: None },
+                        ),
+                    },
+                    offset: None,
+                    span: 16:9-16:16,
+                },
+                segs: [
+                    Seg {
+                        kind: To(
+                            Ref {
+                                r: Ref {
+                                    id: Ident { name: "ghost", span: 16:20-16:25 },
+                                    anchor: Some(
+                                        Anchor {
+                                            name: Ident { name: "left", span: 16:26-16:30 },
+                                            t: None,
+                                        },
+                                    ),
+                                },
+                                offset: None,
+                                span: 16:20-16:30,
+                            },
+                        ),
+                        span: 16:20-16:30,
+                    },
+                ],
+                attrs: [],
+                span: 16:1-16:30,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+    failed_ids: [
+        Ident { name: "fan", span: 6:10-6:13 },
+        Ident { name: "inner", span: 11:7-11:12 },
+        Ident { name: "c", span: 14:5-14:6 },
+    ],
+    failed_diagram: false,
+}

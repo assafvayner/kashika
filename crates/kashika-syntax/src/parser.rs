@@ -31,10 +31,19 @@ pub(crate) fn parse_stripped(src: &str) -> (File, Vec<Diagnostic>) {
         src,
         lines: OnceCell::new(),
         skip_recover: false,
+        declared: Vec::new(),
+        failed_ids: Vec::new(),
+        failed_diagram: false,
     };
     let stmts = p.stmts(false);
     diags.append(&mut p.diags);
-    (File { stmts, first_stmt }, diags)
+    let file = File {
+        stmts,
+        first_stmt,
+        failed_ids: p.failed_ids,
+        failed_diagram: p.failed_diagram,
+    };
+    (file, diags)
 }
 
 /// Where the first statement starts, skipping a misplaced `kashika=` line, which is
@@ -97,6 +106,10 @@ struct Parser<'a> {
     src: &'a str,
     lines: OnceCell<Vec<Vec<char>>>,
     skip_recover: bool,
+    /// Ids read by the statements being parsed, kept for an enclosing group until it parses.
+    declared: Vec<Ident>,
+    failed_ids: Vec<Ident>,
+    failed_diagram: bool,
 }
 
 impl Parser<'_> {
@@ -236,7 +249,22 @@ impl Parser<'_> {
         }
     }
 
+    /// Parses a statement; when it fails, records whether it was the `diagram` statement and
+    /// the ids it declared, including those of a dropped group's children.
     fn stmt(&mut self) -> PResult<Option<Stmt>> {
+        let mark = self.declared.len();
+        let diagram = self.is_kw("diagram");
+        let result = self.stmt_body();
+        if result.is_err() {
+            self.failed_diagram |= diagram;
+            self.failed_ids.extend(self.declared.drain(mark..));
+        } else if self.depth == 0 {
+            self.declared.truncate(mark);
+        }
+        result
+    }
+
+    fn stmt_body(&mut self) -> PResult<Option<Stmt>> {
         let start = self.span();
         let Tok::Ident(kw) = self.tok().clone() else {
             return self.error("a statement");
@@ -411,6 +439,7 @@ impl Parser<'_> {
             );
             return Err(());
         }
+        self.declared.push(id.clone());
         Ok(id)
     }
 

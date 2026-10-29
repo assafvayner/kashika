@@ -165,6 +165,23 @@ fn unclosed_group_is_reported() {
 }
 
 #[test]
+fn failed_statements_record_their_ids() {
+    let (f, diags) = parse(
+        "diagram \"t\" size (1\nbox a at (0,0) size (1\njunction j at\ntext t \"x\" at\n\
+         line l a.right ->\nimage i \"x.png\" at\nbox at (0,0) size (1,1)\nbox h at (0,0)\n\
+         group g at (0,0) size (9,9) {\n  box inner at\n  box ok at (0,0) size (1,1)\n} junk\n\
+         box fine at (0,0) size (1,1)\n",
+    );
+    assert!(!diags.is_empty());
+    let names: Vec<&str> = f.failed_ids.iter().map(|i| i.name.as_str()).collect();
+    assert_eq!(names, ["a", "j", "t", "l", "i", "at", "inner", "g", "ok"]);
+    assert!(f.failed_diagram);
+    assert_eq!(f.stmts.len(), 1);
+    let (f, _) = parse("diagram \"t\" size (1,1)\nbox a at\n");
+    assert!(!f.failed_diagram);
+}
+
+#[test]
 fn block_comment_between_statements() {
     let f = parse_ok(
         "box a \"A\" at (0,0) size (10,10)\n/* spans\nlines */\nbox b \"B\" at (20,0) size (10,10)\n",

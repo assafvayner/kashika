@@ -264,8 +264,8 @@ These block output unless `--force` is given:
 | code | trigger |
 |---|---|
 | `parse` | Includes expected tokens and a suggestion. Also: unknown string escapes, reserved ids (§2), groups nested more than 64 deep, the old `line <id>:` and `curve left:<N>` forms, `from … to` lines (§5) and a `kashika=` statement (§8), each with the rewrite in its help |
-| `unknown-id` / `unknown-anchor` | Includes did-you-mean. `unknown-anchor` also covers a bad `@t`: out of 0..1, or on a corner or `center` |
-| `duplicate-id` | Two statements use the same id |
+| `unknown-id` / `unknown-anchor` | Includes did-you-mean. `unknown-anchor` also covers a bad `@t`: out of 0..1, or on a corner or `center`. A reference to an id whose statement failed to parse after its id is not reported: the `parse` error explains it |
+| `duplicate-id` | Two statements use the same id. A statement that failed to parse does not count |
 | `duplicate-style` | Two `style` statements, or two `shape` definitions, define the same name, or a `shape` reuses a built-in shape name. Style and shape names are separate from element ids |
 | `placement-cycle` | Relative placements form a cycle, or a chain of more than 256 of them |
 | `label-overflow` | Reports the required size |
@@ -278,7 +278,7 @@ These block output unless `--force` is given:
 | `unknown-shape` | `shape=`, on a box or in a `style`, names no built-in, defined or imported shape. Includes did-you-mean |
 | `size` | A non-positive size, or one larger than 1,000,000 |
 | `range` | A resolved coordinate or curve amount more than 1,000,000 from the origin, or not a finite number (§1) |
-| `diagram` | Missing, misplaced or repeated `diagram` statement |
+| `diagram` | Missing, misplaced or repeated `diagram` statement. A `diagram` statement that failed to parse is not reported missing |
 | `version` | `kashika=` is not a quoted semver string, or names a newer version or a different major version than the tool |
 | `file` | A referenced file (`import`, `shape ... from`, `image`, `icon=`, `icons=`) is missing, is a directory, escapes the project root without `--allow-path` or `--include`, is a remote URL, can't be read or decoded, has the wrong type, is over the file size limits, is an image over the size limits or an SVG nested too deep (§3a); an import cycle; imports nested more than 32 deep; more than 1,000 library instances. Errors inside an imported file are reported at the `import` with an ``in `file` at L:C:`` prefix |
 

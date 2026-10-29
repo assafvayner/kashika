@@ -181,6 +181,7 @@ Comments: `// to end of line` and `/* block */` (no nesting; an unclosed `/*` is
 
 `kashika ref lints` lists every code; `kashika ref <code>` explains one. The fixes needed most:
 
+- `parse`: fix these first. A statement that fails to parse is dropped, but references to its id are not reported again as `unknown-id`.
 - `label-overflow`: grow the box to the size in the help, shorten the text, break it with `\n`, or for a small box lower `padding=`.
 - `cross` / `through` / `near`: move the segment to a lane from the `free` help; `allow=cross:<other>` only for a non-planar graph.
 - `shared-segment` / `port-crowding`: spread ports with `side@t`, or fan out from a `junction`.

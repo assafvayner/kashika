@@ -1,0 +1,16 @@
+// spec: 7
+// dump: ast
+// References to an id whose statement failed to parse, and a later statement reusing it, report nothing more; `ghost` is still unknown.
+diagram "cascade" size (400,300)
+box fan_a at (10,10) size (40,30)
+junction fan at fan_a.right+(40)
+line l1 fan -> fan_a.left
+line l2 fan -> (200,20)
+box b at fan+(0,40) size (40,30)
+group g at (100,100) size (200,150) {
+  box inner at (10,10) size (40,30
+}
+line l3 inner.right -> (380,120)
+box c at (10,200) size (40,30
+box c at (10,250) size (40,30)
+line l4 c.right -> ghost.left

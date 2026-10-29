@@ -5,7 +5,7 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | code | severity | trigger | fix |
 |---|---|---|---|
 | `parse` | error | malformed statement, unknown escape, reserved id, unclosed markup or comment | follow the expected-token message |
-| `unknown-id` | error | reference to an id that doesn't exist | apply the did-you-mean suggestion |
+| `unknown-id` | error | reference to an id that doesn't exist (not to one whose statement failed to parse) | apply the did-you-mean suggestion |
 | `unknown-anchor` | error | bad anchor name or `@t` | use a listed anchor; `@t` only on edges, `0 <= t <= 1` |
 | `duplicate-id` | error | two statements share an id | rename one; ids are global |
 | `duplicate-style` | error | two `style` or `shape` definitions share a name | merge or rename one |

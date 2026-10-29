@@ -5,6 +5,12 @@ pub struct File {
     pub stmts: Vec<Stmt>,
     /// Where the first statement starts, whether or not it parsed.
     pub first_stmt: Option<Span>,
+    /// Ids declared by statements that failed to parse after their id was read, and by the
+    /// children of a group that failed to parse; the parse error already explains why
+    /// references to them don't resolve.
+    pub failed_ids: Vec<Ident>,
+    /// Whether a `diagram` statement failed to parse.
+    pub failed_diagram: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
