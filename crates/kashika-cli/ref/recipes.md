@@ -130,6 +130,8 @@ line fk orders_cust.right -> customers_id.left start=many end=one
 
 **Guides for rows and columns.** A junction without `dot` draws nothing, so use junctions as named lanes and columns, chained so they move together, and place shapes on them with mixed points. Moving a lane or the first column is then a one-line edit. Put repeated looks, `shape=` included, in a `style`.
 
+**Rows and grids of mixed shapes.** Chain on corner anchors, not edge anchors. `right` and `bottom` move onto the outline (a cloud's bumps, a document's wave, a parallelogram's slant, a person's shoulders), so `at a.right+(40,0) pin=left` drifts along a row of mixed shapes. Corners are always the bounding box's: `at a.tr+(40,0) pin=tl` for the next column, `at a.bl+(0,40) pin=tl` for the next row, or place every shape on guide junctions as above.
+
 **Graphs and timelines** (commit graphs, state dots): place small markers with `pin=center` on guide columns and lanes, leave `grid=` off, and give hollow markers `fill=white`. Lines to a diamond's `left`/`right` meet its tips. Diagonal and curved edges are fine here; leave `ortho` off.
 
 ```kash

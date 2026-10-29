@@ -1,6 +1,6 @@
 # Text
 
-- Markup works in any label or text, a line's `label=` included: `**bold**` and `` `code` `` (JetBrains Mono, spaces kept). No nesting; `\*` and `` \` `` are literal; an unclosed marker is a `parse` error.
+- Markup works in any label or text, a line's `label=` included: `**bold**` and `` `code` `` (JetBrains Mono, spaces kept). No nesting; `\*` and `` \` `` are literal; an unclosed marker is a `parse` error. There are no italics: a single `*…*` is literal text.
 - `\n` breaks a line. There is no automatic wrapping.
 - `sublabel="..."` adds one muted line under a box's or group's label, at 0.8 × `font-size`, `gap` (default 2) below it.
 - Placement in a box: `text-align=left|center|right` (default center), `text-valign=top|middle|bottom` (default middle).

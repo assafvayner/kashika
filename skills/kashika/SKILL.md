@@ -10,7 +10,7 @@ Kashika is a text-to-diagram language with **no auto-layout**. You place every b
 ## How it works
 
 - Coordinates are pixels and **y grows down**. A box sits `at` a point; without `size` it fits its text.
-- Every shape has **anchors**: `a.top`, `a.right`, `a.center`, corners `a.tl`, points along a side like `a.top@0.25`, and offsets like `a.right+(80,0)`. Place shapes relative to each other (`at a.right+(80,0) pin=left`) so they move together.
+- Every shape has **anchors**: `a.top`, `a.right`, `a.center`, corners `a.tl`, points along a side like `a.top@0.25`, and offsets like `a.right+(80,0)`. Place shapes relative to each other (`at a.right+(80,0) pin=left`) so they move together; in rows and grids of mixed shapes chain on corners (`at a.tr+(80,0) pin=tl`), since edge anchors sit on a cloud's or parallelogram's outline.
 - A **line is a series of hops from anchor to anchor**: `a.right -> hv b.top` goes horizontal, then vertical into `b`'s top. The last hop sets the arrow's direction, so enter a `left`/`right` side horizontally and a `top`/`bottom` side vertically.
 - A **group** draws a boundary around its children. Literal coordinates inside a group are relative to it; anchors are always absolute, and ids are global (`db.left`, never `vpc.db.left`).
 - **`kashika check` is your eyes**: it reports crossings, lines through boxes, near-misses, overlaps, labels on things and text that doesn't fit, each with a help line naming the fix. Then render and look, since a clean check is not a good diagram.
