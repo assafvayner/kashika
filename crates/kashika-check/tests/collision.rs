@@ -118,6 +118,26 @@ fn label_on_its_own_stroke_away_from_markers() {
 }
 
 #[test]
+fn markers_on_thick_lines_reach_further() {
+    let line = |w: &str, end: &str| {
+        format!("line l (20,100) -> h 300 end={end} stroke-width={w} label@0.9=\"x\"\n")
+    };
+    assert!(lint("label-collision", &line("1.5", "arrow")).is_empty());
+    for (end, name) in [
+        ("arrow", "arrowhead"),
+        ("triangle", "triangle"),
+        ("circle", "circle"),
+    ] {
+        let d = lint("label-collision", &line("6", end));
+        assert_eq!(d.len(), 1, "{d:#?}");
+        assert_eq!(
+            d[0].message,
+            format!("label \"x\" of l collides with the end {name} of l")
+        );
+    }
+}
+
+#[test]
 fn label_over_the_boxes_its_line_connects() {
     let d = lint(
         "label-collision",

@@ -84,7 +84,7 @@ Segments after `->`:
 | `curve left 30 db.top` | the curve's midpoint bulges 30px off the straight chord, left/right as seen walking along the line |
 | `curve via (c1) (c2) db.top` | explicit cubic |
 
-Line attributes: `start=`/`end=` (`arrow open diamond dot none`, plus the crow's-foot ER ends `one many one-many zero-one zero-many`, which sit on the line untrimmed), `stroke-style=dashed|dotted`, `stroke-width=2`, `radius=8` (rounded corners), `label="x"`, `label@0.25="x"` (`t` is the fraction of the whole path length, across all segments; a label masks the line under it), `label-side=above|below` (horizontal segment) or `left|right` (vertical) to put every label of the line beside it instead, unmasked, `ortho`. A line may start or end at a junction, with or without an arrow.
+Line attributes: `start=`/`end=` (`arrow open diamond dot none`, the hollow UML ends `triangle` (generalization) `hollow-diamond` (aggregation; `diamond` is composition) `circle`, plus the crow's-foot ER ends `one many one-many zero-one zero-many`, which sit on the line untrimmed; ends scale with `stroke-width` above 1.5), `stroke-style=dashed|dotted`, `stroke-width=2`, `radius=8` (rounded corners), `label="x"`, `label@0.25="x"` (`t` is the fraction of the whole path length, across all segments; a label masks the line under it), `label-side=above|below` (horizontal segment) or `left|right` (vertical) to put every label of the line beside it instead, unmasked, `ortho`. A line may start or end at a junction, with or without an arrow.
 
 ## Line recipes
 

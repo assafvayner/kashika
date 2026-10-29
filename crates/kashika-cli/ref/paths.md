@@ -15,7 +15,7 @@ A line is `start -> segment -> segment ...`. Each segment ends at a point, which
 
 | attribute | default | meaning |
 |---|---|---|
-| `start=` `end=` | `none` (`end` on `arrow`: `arrow`) | `arrow`, `open`, `diamond`, `dot` or `none`; the tip sits on the endpoint. Crow's-foot (ER) ends `one`, `many`, `one-many`, `zero-one`, `zero-many` sit on the line without trimming it; a `zero-*` circle is open |
+| `start=` `end=` | `none` (`end` on `arrow`: `arrow`) | `arrow`, `open`, `diamond`, `dot` or `none`; hollow UML ends `triangle` (generalization), `hollow-diamond` (aggregation), `circle`, which show the fill beneath; the tip sits on the endpoint. Ends grow with `stroke-width` above 1.5. Crow's-foot (ER) ends `one`, `many`, `one-many`, `zero-one`, `zero-many` sit on the line without trimming it; a `zero-*` circle is open |
 | `label="..."` `label@t="..."` | `t=0.5` | label at fraction `t` of the path length, markup allowed; repeatable |
 | `label-side=` | `on` | `on` centers labels on the line and cuts it out under them; `above`/`below` (horizontal segment) or `left`/`right` (vertical) put them beside it, 4px off the stroke, unmasked |
 | `radius=N` | `0` | rounds every corner |

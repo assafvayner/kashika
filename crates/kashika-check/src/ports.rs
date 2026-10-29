@@ -41,7 +41,7 @@ pub fn ports(ctx: &Ctx) -> Vec<Port> {
                     line: l.line.id.clone(),
                     end,
                     marker: marker != Marker::None,
-                    marker_half_width: marker.half_width(),
+                    marker_half_width: marker.half_width(l.line.style.stroke_width),
                 });
             }
         }

@@ -1,0 +1,55 @@
+// spec: 5
+// raster: png
+// Every line end at stroke widths 1, 1.5 and 4: past the default 1.5 the ends grow with the stroke.
+diagram "marker widths" size (580,440) background=white
+text "1" at (230,20)
+text "1.5" at (370,20)
+text "4" at (510,20)
+text "arrow" at (150,50) align=right
+line (170,50) -> h 120 end=arrow stroke-width=1
+line (310,50) -> h 120 end=arrow stroke-width=1.5
+line (450,50) -> h 120 end=arrow stroke-width=4
+text "open" at (150,82) align=right
+line (170,82) -> h 120 end=open stroke-width=1
+line (310,82) -> h 120 end=open stroke-width=1.5
+line (450,82) -> h 120 end=open stroke-width=4
+text "triangle" at (150,114) align=right
+line (170,114) -> h 120 end=triangle stroke-width=1
+line (310,114) -> h 120 end=triangle stroke-width=1.5
+line (450,114) -> h 120 end=triangle stroke-width=4
+text "diamond" at (150,146) align=right
+line (170,146) -> h 120 end=diamond stroke-width=1
+line (310,146) -> h 120 end=diamond stroke-width=1.5
+line (450,146) -> h 120 end=diamond stroke-width=4
+text "hollow-diamond" at (150,178) align=right
+line (170,178) -> h 120 end=hollow-diamond stroke-width=1
+line (310,178) -> h 120 end=hollow-diamond stroke-width=1.5
+line (450,178) -> h 120 end=hollow-diamond stroke-width=4
+text "dot" at (150,210) align=right
+line (170,210) -> h 120 end=dot stroke-width=1
+line (310,210) -> h 120 end=dot stroke-width=1.5
+line (450,210) -> h 120 end=dot stroke-width=4
+text "circle" at (150,242) align=right
+line (170,242) -> h 120 end=circle stroke-width=1
+line (310,242) -> h 120 end=circle stroke-width=1.5
+line (450,242) -> h 120 end=circle stroke-width=4
+text "one" at (150,274) align=right
+line (170,274) -> h 120 end=one stroke-width=1
+line (310,274) -> h 120 end=one stroke-width=1.5
+line (450,274) -> h 120 end=one stroke-width=4
+text "many" at (150,306) align=right
+line (170,306) -> h 120 end=many stroke-width=1
+line (310,306) -> h 120 end=many stroke-width=1.5
+line (450,306) -> h 120 end=many stroke-width=4
+text "one-many" at (150,338) align=right
+line (170,338) -> h 120 end=one-many stroke-width=1
+line (310,338) -> h 120 end=one-many stroke-width=1.5
+line (450,338) -> h 120 end=one-many stroke-width=4
+text "zero-one" at (150,370) align=right
+line (170,370) -> h 120 end=zero-one stroke-width=1
+line (310,370) -> h 120 end=zero-one stroke-width=1.5
+line (450,370) -> h 120 end=zero-one stroke-width=4
+text "zero-many" at (150,402) align=right
+line (170,402) -> h 120 end=zero-many stroke-width=1
+line (310,402) -> h 120 end=zero-many stroke-width=1.5
+line (450,402) -> h 120 end=zero-many stroke-width=4

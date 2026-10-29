@@ -1,0 +1,14 @@
+// spec: 5
+// raster: png
+// UML hollow ends inside a filled group: the group fill shows through each triangle, hollow diamond and circle, straight or curved.
+diagram "hollow ends" size (480,300)
+group g "Model" at (20,20) size (440,260) fill=#fde68a {
+  box base "Shape" at (160,40) size (120,40)
+  box sq "Square" at (20,180) size (100,40)
+  box ci "Circle" at (170,180) size (100,40)
+  box tri "Triangle" at (320,180) size (100,40)
+  line sq.top -> v -40 -> h 126 -> base.bottom@0.3 end=triangle
+  line ci.top -> base.bottom end=triangle stroke-width=4
+  line tri.top -> curve left 20 base.bottom@0.7 start=hollow-diamond end=circle
+  line (20,60) -> base.left start=circle end=hollow-diamond stroke-width=4
+}

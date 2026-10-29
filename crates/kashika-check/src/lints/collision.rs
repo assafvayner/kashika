@@ -231,30 +231,24 @@ fn markers(l: &kashika_model::Line) -> Vec<(&'static str, &'static str, Vec<Pt>)
     let (Some(first), Some(last)) = (l.path.first(), l.path.last()) else {
         return Vec::new();
     };
+    let w = l.style.stroke_width;
     [
         ("start", l.start, first.from(), first.start_dir() * -1.0),
         ("end", l.end, last.to(), last.end_dir()),
     ]
     .into_iter()
     .filter_map(|(end, m, tip, dir)| {
+        let er = || l.er_parts(end == "start").hull();
         let (name, poly) = match m {
             Marker::None => return None,
-            Marker::Arrow | Marker::Open => ("arrowhead", m.outline(tip, dir)),
-            Marker::Diamond => ("diamond", m.outline(tip, dir)),
-            Marker::One => ("bar", l.er_parts(end == "start").hull()),
-            Marker::ZeroOne => ("bar and circle", l.er_parts(end == "start").hull()),
-            Marker::Many | Marker::OneMany | Marker::ZeroMany => {
-                ("crow's foot", l.er_parts(end == "start").hull())
-            }
-            Marker::Dot => (
-                "dot",
-                rect_polygon(Rect::new(
-                    tip.x - Marker::DOT_RADIUS,
-                    tip.y - Marker::DOT_RADIUS,
-                    2.0 * Marker::DOT_RADIUS,
-                    2.0 * Marker::DOT_RADIUS,
-                )),
-            ),
+            Marker::Arrow | Marker::Open => ("arrowhead", m.outline(tip, dir, w)),
+            Marker::Triangle => ("triangle", m.outline(tip, dir, w)),
+            Marker::Diamond | Marker::HollowDiamond => ("diamond", m.outline(tip, dir, w)),
+            Marker::Dot => ("dot", m.outline(tip, dir, w)),
+            Marker::Circle => ("circle", m.outline(tip, dir, w)),
+            Marker::One => ("bar", er()),
+            Marker::ZeroOne => ("bar and circle", er()),
+            Marker::Many | Marker::OneMany | Marker::ZeroMany => ("crow's foot", er()),
         };
         Some((end, name, poly))
     })

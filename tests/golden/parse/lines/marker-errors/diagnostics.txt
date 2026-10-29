@@ -1,10 +1,10 @@
-error[attr] 4:25-4:35: `start` expects one of: none, arrow, open, diamond, dot, one, many, one-many, zero-one, zero-many
+error[attr] 4:25-4:35: `start` expects one of: none, arrow, open, triangle, diamond, hollow-diamond, dot, circle, one, many, one-many, zero-one, zero-many
   = help: did you mean `arrow`?
-error[attr] 4:36-4:46: `end` expects one of: none, arrow, open, diamond, dot, one, many, one-many, zero-one, zero-many
+error[attr] 4:36-4:46: `end` expects one of: none, arrow, open, triangle, diamond, hollow-diamond, dot, circle, one, many, one-many, zero-one, zero-many
 error[attr] 4:47-4:61: `stroke-width` must be greater than 0
 error[attr] 4:62-4:71: `radius` must be at least 0
 error[attr] 4:72-4:76: unknown attribute `fill` on line
-error[attr] 5:25-5:40: `start` expects one of: none, arrow, open, diamond, dot, one, many, one-many, zero-one, zero-many
+error[attr] 5:25-5:40: `start` expects one of: none, arrow, open, triangle, diamond, hollow-diamond, dot, circle, one, many, one-many, zero-one, zero-many
   = help: did you mean `zero-many`?
-error[attr] 5:41-5:52: `end` expects one of: none, arrow, open, diamond, dot, one, many, one-many, zero-one, zero-many
+error[attr] 5:41-5:52: `end` expects one of: none, arrow, open, triangle, diamond, hollow-diamond, dot, circle, one, many, one-many, zero-one, zero-many
   = help: did you mean `one-many`?

@@ -1149,7 +1149,7 @@ fn crows_foot_parts_sit_on_the_line_and_touch_the_tip() {
     let zero_one = l.er_parts(true);
     assert_eq!(zero_one.strokes, [(Pt::new(8.0, -6.0), Pt::new(8.0, 6.0))]);
     assert_eq!(zero_one.circle, Some((Pt::new(16.0, 0.0), 4.0)));
-    assert_eq!(kashika_model::Marker::Many.length(), 0.0);
+    assert_eq!(kashika_model::Marker::Many.length(1.5), 0.0);
 }
 
 #[test]

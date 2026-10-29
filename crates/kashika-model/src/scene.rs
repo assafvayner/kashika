@@ -253,8 +253,11 @@ pub enum Marker {
     None,
     Arrow,
     Open,
+    Triangle,
     Diamond,
+    HollowDiamond,
     Dot,
+    Circle,
     One,
     Many,
     OneMany,
@@ -272,22 +275,28 @@ pub struct ErParts {
 }
 
 impl Marker {
-    pub const DOT_RADIUS: f64 = 3.0;
-    pub const CIRCLE_RADIUS: f64 = 4.0;
+    const DOT_RADIUS: f64 = 3.0;
+    const CIRCLE_RADIUS: f64 = 4.0;
     const ARROW_LEN: f64 = 10.0;
     const DIAMOND_LEN: f64 = 12.0;
     const HALF_WIDTH: f64 = 4.0;
+    const TRIANGLE_LEN: f64 = 12.0;
+    const TRIANGLE_HALF_WIDTH: f64 = 6.0;
     const FOOT_LEN: f64 = 12.0;
     const ER_HALF_WIDTH: f64 = 6.0;
     const BAR_AT: f64 = 8.0;
     const ER_GAP: f64 = 4.0;
+    const BASE_STROKE_WIDTH: f64 = 1.5;
 
-    pub const ALL: [Marker; 10] = [
+    pub const ALL: [Marker; 13] = [
         Marker::None,
         Marker::Arrow,
         Marker::Open,
+        Marker::Triangle,
         Marker::Diamond,
+        Marker::HollowDiamond,
         Marker::Dot,
+        Marker::Circle,
         Marker::One,
         Marker::Many,
         Marker::OneMany,
@@ -315,8 +324,11 @@ impl Marker {
             Marker::None => "none",
             Marker::Arrow => "arrow",
             Marker::Open => "open",
+            Marker::Triangle => "triangle",
             Marker::Diamond => "diamond",
+            Marker::HollowDiamond => "hollow-diamond",
             Marker::Dot => "dot",
+            Marker::Circle => "circle",
             Marker::One => "one",
             Marker::Many => "many",
             Marker::OneMany => "one-many",
@@ -325,51 +337,76 @@ impl Marker {
         }
     }
 
-    /// How far the line stroke stops short of the tip. Crow's-foot ends sit on the line and
-    /// don't trim it.
-    pub fn length(self) -> f64 {
-        match self {
-            Marker::Arrow => Self::ARROW_LEN,
-            Marker::Diamond => Self::DIAMOND_LEN,
-            _ => 0.0,
-        }
+    /// The factor every marker dimension is multiplied by on a line of `stroke_width`: 1 up
+    /// to the default width, then in proportion to it.
+    pub fn scale(stroke_width: f64) -> f64 {
+        (stroke_width / Self::BASE_STROKE_WIDTH).max(1.0)
     }
 
-    /// How far the marker reaches to either side of the line.
-    pub fn half_width(self) -> f64 {
-        match self {
-            Marker::None => 0.0,
-            Marker::Dot => Self::DOT_RADIUS,
-            Marker::Arrow | Marker::Open | Marker::Diamond => Self::HALF_WIDTH,
-            Marker::One | Marker::Many | Marker::OneMany | Marker::ZeroOne | Marker::ZeroMany => {
-                Self::ER_HALF_WIDTH
+    /// Whether the marker is an unfilled closed outline, with the line masked inside it.
+    pub fn is_hollow(self) -> bool {
+        matches!(
+            self,
+            Marker::Triangle | Marker::HollowDiamond | Marker::Circle
+        )
+    }
+
+    /// How far the line stroke stops short of the tip on a line of `stroke_width`.
+    /// Crow's-foot ends sit on the line and don't trim it.
+    pub fn length(self, stroke_width: f64) -> f64 {
+        Self::scale(stroke_width)
+            * match self {
+                Marker::Arrow => Self::ARROW_LEN,
+                Marker::Triangle => Self::TRIANGLE_LEN,
+                Marker::Diamond | Marker::HollowDiamond => Self::DIAMOND_LEN,
+                Marker::Circle => 2.0 * Self::CIRCLE_RADIUS,
+                _ => 0.0,
             }
-        }
     }
 
-    /// The bars, prongs and circle of a crow's-foot end. `back(d)` is the point `d` back
-    /// along the line from the tip and the line's direction there, toward the tip; the tip
-    /// is `back(0)`. Bars cross the line where they sit, so they stay on a curve. Empty for
-    /// the other markers.
-    pub fn er_parts(self, back: impl Fn(f64) -> (Pt, Pt)) -> ErParts {
+    /// How far the marker reaches to either side of a line of `stroke_width`.
+    pub fn half_width(self, stroke_width: f64) -> f64 {
+        Self::scale(stroke_width)
+            * match self {
+                Marker::None => 0.0,
+                Marker::Dot => Self::DOT_RADIUS,
+                Marker::Circle => Self::CIRCLE_RADIUS,
+                Marker::Arrow | Marker::Open | Marker::Diamond | Marker::HollowDiamond => {
+                    Self::HALF_WIDTH
+                }
+                Marker::Triangle => Self::TRIANGLE_HALF_WIDTH,
+                Marker::One
+                | Marker::Many
+                | Marker::OneMany
+                | Marker::ZeroOne
+                | Marker::ZeroMany => Self::ER_HALF_WIDTH,
+            }
+    }
+
+    /// The bars, prongs and circle of a crow's-foot end on a line of `stroke_width`.
+    /// `back(d)` is the point `d` back along the line from the tip and the line's direction
+    /// there, toward the tip; the tip is `back(0)`. Bars cross the line where they sit, so
+    /// they stay on a curve. Empty for the other markers.
+    pub fn er_parts(self, stroke_width: f64, back: impl Fn(f64) -> (Pt, Pt)) -> ErParts {
+        let k = Self::scale(stroke_width);
         let across = |d: f64| {
             let (p, dir) = back(d);
             let u = dir.norm();
-            (p, Pt::new(-u.y, u.x) * Self::ER_HALF_WIDTH)
+            (p, Pt::new(-u.y, u.x) * (Self::ER_HALF_WIDTH * k))
         };
         let bar = |d: f64| {
-            let (p, perp) = across(d);
+            let (p, perp) = across(d * k);
             (p + perp, p - perp)
         };
         let foot = || {
             let (tip, perp) = across(0.0);
-            let apex = back(Self::FOOT_LEN).0;
+            let apex = back(Self::FOOT_LEN * k).0;
             vec![(apex, tip + perp), (apex, tip), (apex, tip - perp)]
         };
         let circle = |d: f64| {
             Some((
-                back(d + Self::ER_GAP + Self::CIRCLE_RADIUS).0,
-                Self::CIRCLE_RADIUS,
+                back((d + Self::ER_GAP + Self::CIRCLE_RADIUS) * k).0,
+                Self::CIRCLE_RADIUS * k,
             ))
         };
         let (strokes, circle) = match self {
@@ -382,9 +419,14 @@ impl Marker {
             }
             Marker::ZeroOne => (vec![bar(Self::BAR_AT)], circle(Self::BAR_AT)),
             Marker::ZeroMany => (foot(), circle(Self::FOOT_LEN)),
-            Marker::None | Marker::Arrow | Marker::Open | Marker::Diamond | Marker::Dot => {
-                (Vec::new(), None)
-            }
+            Marker::None
+            | Marker::Arrow
+            | Marker::Open
+            | Marker::Triangle
+            | Marker::Diamond
+            | Marker::HollowDiamond
+            | Marker::Dot
+            | Marker::Circle => (Vec::new(), None),
         };
         ErParts {
             tip: back(0.0).0,
@@ -393,24 +435,57 @@ impl Marker {
         }
     }
 
-    /// Vertices of the head with its tip on `tip` pointing along `dir`: the tip first, then
-    /// the rest in drawing order. For crow's-foot ends on a straight end segment, the
-    /// convex hull of their parts. Empty for `None` and `Dot`.
-    pub fn outline(self, tip: Pt, dir: Pt) -> Vec<Pt> {
-        let u = dir.norm();
-        let perp = Pt::new(-u.y, u.x) * Self::HALF_WIDTH;
+    /// The circle of a `dot` (centered on the tip) or a `circle` end (touching the tip) on a
+    /// line of `stroke_width`, as (center, radius). `None` for the other markers.
+    pub fn round(self, tip: Pt, dir: Pt, stroke_width: f64) -> Option<(Pt, f64)> {
+        let k = Self::scale(stroke_width);
         match self {
-            Marker::Arrow | Marker::Open => {
-                let base = tip - u * Self::ARROW_LEN;
+            Marker::Dot => Some((tip, Self::DOT_RADIUS * k)),
+            Marker::Circle => {
+                let r = Self::CIRCLE_RADIUS * k;
+                Some((tip - dir.norm() * r, r))
+            }
+            _ => None,
+        }
+    }
+
+    /// Vertices of the head with its tip on `tip` pointing along `dir`, on a line of
+    /// `stroke_width`: the tip first, then the rest in drawing order. For crow's-foot ends on
+    /// a straight end segment, the convex hull of their parts; for `dot` and `circle`, the
+    /// circle's bounding square. Empty for `None`.
+    pub fn outline(self, tip: Pt, dir: Pt, stroke_width: f64) -> Vec<Pt> {
+        let k = Self::scale(stroke_width);
+        let u = dir.norm();
+        let perp = Pt::new(-u.y, u.x) * self.half_width(stroke_width);
+        match self {
+            Marker::Arrow | Marker::Open | Marker::Triangle => {
+                let len = if self == Marker::Triangle {
+                    Self::TRIANGLE_LEN
+                } else {
+                    Self::ARROW_LEN
+                };
+                let base = tip - u * (len * k);
                 vec![tip, base + perp, base - perp]
             }
-            Marker::Diamond => {
-                let mid = tip - u * (Self::DIAMOND_LEN / 2.0);
-                vec![tip, mid + perp, tip - u * Self::DIAMOND_LEN, mid - perp]
+            Marker::Diamond | Marker::HollowDiamond => {
+                let len = Self::DIAMOND_LEN * k;
+                let mid = tip - u * (len / 2.0);
+                vec![tip, mid + perp, tip - u * len, mid - perp]
             }
-            Marker::None | Marker::Dot => Vec::new(),
+            Marker::Dot | Marker::Circle => {
+                let Some((c, r)) = self.round(tip, dir, stroke_width) else {
+                    return Vec::new();
+                };
+                vec![
+                    c + Pt::new(-r, -r),
+                    c + Pt::new(r, -r),
+                    c + Pt::new(r, r),
+                    c + Pt::new(-r, r),
+                ]
+            }
+            Marker::None => Vec::new(),
             Marker::One | Marker::Many | Marker::OneMany | Marker::ZeroOne | Marker::ZeroMany => {
-                self.er_parts(|d| (tip - u * d, u)).hull()
+                self.er_parts(stroke_width, |d| (tip - u * d, u)).hull()
             }
         }
     }
@@ -633,7 +708,7 @@ impl Line {
             return ErParts::default();
         };
         let len = seg.length();
-        m.er_parts(|d| {
+        m.er_parts(self.style.stroke_width, |d| {
             if start {
                 if d < len {
                     let s = seg.trim(d, 0.0);

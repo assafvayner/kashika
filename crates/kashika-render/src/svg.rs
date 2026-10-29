@@ -128,8 +128,8 @@ fn shape(out: &mut String, s: &Shape, defs: &Defs) {
 }
 
 /// Shortens the end segments so the stroke stops at each marker's base.
-fn trim(path: &mut [PathSeg], start: Marker, end: Marker) {
-    let (a, b) = (start.length(), end.length());
+fn trim(path: &mut [PathSeg], start: Marker, end: Marker, stroke_width: f64) {
+    let (a, b) = (start.length(stroke_width), end.length(stroke_width));
     match path {
         [] => {}
         [only] => *only = only.trim(a, b),
@@ -187,16 +187,22 @@ fn ends(l: &Line) -> Vec<(Marker, Pt, Pt, ErParts)> {
 }
 
 /// Opens a group masked so the line and its markers are cut out under its own labels that
-/// sit on it (not beside it) and inside the open circles of its `zero-*` ends, leaving
-/// whatever is beneath visible.
+/// sit on it (not beside it), inside its hollow ends and inside the open circles of its
+/// `zero-*` ends, leaving whatever is beneath visible.
 /// Returns whether a group was opened.
 fn line_mask(out: &mut String, l: &Line, i: usize, (w, h): (f64, f64), id: &str) -> bool {
+    let sw = l.style.stroke_width;
+    let hollow: Vec<(Marker, Pt, Pt)> = ends(l)
+        .into_iter()
+        .filter(|(m, ..)| m.is_hollow())
+        .map(|(m, tip, dir, _)| (m, tip, dir))
+        .collect();
     let circles: Vec<(Pt, f64)> = ends(l)
         .into_iter()
         .filter_map(|(.., parts)| parts.circle)
         .collect();
     let masked: Vec<&Label> = l.labels.iter().filter(|lab| lab.side.is_on()).collect();
-    if masked.is_empty() && circles.is_empty() {
+    if masked.is_empty() && circles.is_empty() && hollow.is_empty() {
         return false;
     }
     let id = format!("kashika-{id}-mask-{i}");
@@ -205,6 +211,21 @@ fn line_mask(out: &mut String, l: &Line, i: usize, (w, h): (f64, f64), id: &str)
         n(w),
         n(h)
     ));
+    for (m, tip, dir) in hollow {
+        match m.round(tip, dir, sw) {
+            Some((c, r)) => out.push_str(&format!(
+                "<circle cx=\"{}\" cy=\"{}\" r=\"{}\" fill=\"#000\"/>",
+                n(c.x),
+                n(c.y),
+                n((r - sw / 2.0).max(0.0))
+            )),
+            None => out.push_str(&format!(
+                "<polygon points=\"{}\" fill=\"#000\" stroke=\"#fff\" stroke-width=\"{}\" stroke-linejoin=\"round\"/>",
+                points(&m.outline(tip, dir, sw)),
+                n(sw)
+            )),
+        }
+    }
     for lab in masked {
         out.push_str(&format!(
             "<rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"#000\"/>",
@@ -219,7 +240,7 @@ fn line_mask(out: &mut String, l: &Line, i: usize, (w, h): (f64, f64), id: &str)
             "<circle cx=\"{}\" cy=\"{}\" r=\"{}\" fill=\"#000\"/>",
             n(c.x),
             n(c.y),
-            n((r - l.style.stroke_width / 2.0).max(0.0))
+            n((r - sw / 2.0).max(0.0))
         ));
     }
     out.push_str(&format!("</mask>\n<g mask=\"url(#{id})\">\n"));
@@ -229,7 +250,7 @@ fn line_mask(out: &mut String, l: &Line, i: usize, (w, h): (f64, f64), id: &str)
 fn line(out: &mut String, l: &Line, i: usize, size: (f64, f64), id: &str) {
     let masked = line_mask(out, l, i, size, id);
     let mut path = l.path.clone();
-    trim(&mut path, l.start, l.end);
+    trim(&mut path, l.start, l.end, l.style.stroke_width);
     out.push_str(&format!(
         "<path d=\"{}\" fill=\"none\" stroke-linejoin=\"round\" {}/>\n",
         path_data(&path),
@@ -245,37 +266,50 @@ fn line(out: &mut String, l: &Line, i: usize, size: (f64, f64), id: &str) {
 
 /// Draws a marker whose tip sits on `tip`, pointing along `dir`.
 fn marker(out: &mut String, m: Marker, tip: Pt, dir: Pt, parts: &ErParts, style: &Style) {
-    let pts = |ps: &[Pt]| {
-        ps.iter()
-            .map(|p| format!("{},{}", n(p.x), n(p.y)))
-            .collect::<Vec<_>>()
-            .join(" ")
-    };
-    let outline = m.outline(tip, dir);
+    let outline = m.outline(tip, dir, style.stroke_width);
     match m {
         Marker::None => {}
         Marker::Arrow | Marker::Diamond => {
             out.push_str(&format!(
                 "<polygon points=\"{}\" fill=\"{}\"/>\n",
-                pts(&outline),
+                points(&outline),
                 style.stroke
             ));
         }
         Marker::Open => {
             out.push_str(&format!(
                 "<polyline points=\"{}\" fill=\"none\" stroke=\"{}\" stroke-width=\"{}\" stroke-linejoin=\"round\"/>\n",
-                pts(&[outline[1], outline[0], outline[2]]),
+                points(&[outline[1], outline[0], outline[2]]),
                 style.stroke,
                 n(style.stroke_width)
             ));
         }
-        Marker::Dot => {
+        Marker::Triangle | Marker::HollowDiamond => {
             out.push_str(&format!(
-                "<circle cx=\"{}\" cy=\"{}\" r=\"{}\" fill=\"{}\"/>\n",
-                n(tip.x),
-                n(tip.y),
-                n(Marker::DOT_RADIUS),
-                style.stroke
+                "<polygon points=\"{}\" fill=\"none\" stroke=\"{}\" stroke-width=\"{}\" stroke-linejoin=\"round\"/>\n",
+                points(&outline),
+                style.stroke,
+                n(style.stroke_width)
+            ));
+        }
+        Marker::Dot | Marker::Circle => {
+            let Some((c, r)) = m.round(tip, dir, style.stroke_width) else {
+                return;
+            };
+            let paint = if m == Marker::Dot {
+                format!("fill=\"{}\"", style.stroke)
+            } else {
+                format!(
+                    "fill=\"none\" stroke=\"{}\" stroke-width=\"{}\"",
+                    style.stroke,
+                    n(style.stroke_width)
+                )
+            };
+            out.push_str(&format!(
+                "<circle cx=\"{}\" cy=\"{}\" r=\"{}\" {paint}/>\n",
+                n(c.x),
+                n(c.y),
+                n(r)
             ));
         }
         Marker::One | Marker::Many | Marker::OneMany | Marker::ZeroOne | Marker::ZeroMany => {
@@ -302,4 +336,11 @@ fn marker(out: &mut String, m: Marker, tip: Pt, dir: Pt, parts: &ErParts, style:
             }
         }
     }
+}
+
+fn points(ps: &[Pt]) -> String {
+    ps.iter()
+        .map(|p| format!("{},{}", n(p.x), n(p.y)))
+        .collect::<Vec<_>>()
+        .join(" ")
 }

@@ -50,8 +50,8 @@ fn extent(scene: &Scene) -> (f64, f64) {
     }
     for l in &scene.lines {
         let pad = (l.style.stroke_width / 2.0)
-            .max(l.start.half_width())
-            .max(l.end.half_width());
+            .max(l.start.half_width(l.style.stroke_width))
+            .max(l.end.half_width(l.style.stroke_width));
         for p in flatten(&l.path) {
             reach(Rect::new(p.x, p.y, 0.0, 0.0), pad);
         }

@@ -64,3 +64,16 @@ fn crows_feet_need_room_for_both_spreads() {
     )
     .is_empty());
 }
+
+#[test]
+fn markers_on_thick_lines_need_more_room() {
+    let body = |w: &str| {
+        format!(
+            "box a at (100,100) size (100,60)\nline l1 a.top@0.5 -> v -50 start=arrow stroke-width={w}\nline l2 a.top@0.6 -> v -50 start=arrow stroke-width={w}\n"
+        )
+    };
+    assert!(lint("port-crowding", &body("1.5")).is_empty());
+    let d = lint("port-crowding", &body("3"));
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].message, "l2 and l1 meet 'a' 10px apart (minimum 16px)");
+}
