@@ -372,7 +372,9 @@ impl Library {
         diags: &mut Vec<Diagnostic>,
     ) {
         for &(k, s) in pending {
-            let Some(a) = style_shape_attr(s) else {
+            let (name, props) = &mut self.styles[k];
+            boundary_size(name, s, props, diags);
+            let Some(a) = style_attr(s, "shape") else {
                 continue;
             };
             let shape = style_shape(&self.styles[k].0, a, diags)
@@ -462,16 +464,44 @@ fn find_import(loader: &Loader, dir: &Path, i: &ast::Import) -> Result<PathBuf, 
     Ok(path)
 }
 
-fn style_props(s: &ast::StyleDef, diags: &mut Vec<Diagnostic>) -> StyleProps {
+/// The keys of a `style` definition, besides `shape`, which needs the shapes in scope.
+pub(crate) fn style_props(s: &ast::StyleDef, diags: &mut Vec<Diagnostic>) -> StyleProps {
     let a = Attrs::new(&s.attrs, "style", &style::def_keys(), diags);
-    attrs::style_props(&a, diags)
+    let mut props = attrs::style_props(&a, diags);
+    if let Some(x) = a.get("size") {
+        props.size = attrs::size(x, diags);
+    }
+    props
 }
 
-/// The `shape=` of a `style` definition that `Attrs` keeps: the first, without `@`.
-fn style_shape_attr(s: &ast::StyleDef) -> Option<&ast::Attr> {
+/// The `key=` of a `style` definition that `Attrs` keeps: the first, without `@`.
+pub(crate) fn style_attr<'s>(s: &'s ast::StyleDef, key: &str) -> Option<&'s ast::Attr> {
     s.attrs
         .iter()
-        .find(|a| a.key.name == "shape" && a.at_t.is_none())
+        .find(|a| a.key.name == key && a.at_t.is_none())
+}
+
+/// Drops `size` from the style `name` when it is `boundary`, which every group starts from:
+/// a size there would size every group.
+pub(crate) fn boundary_size(
+    name: &str,
+    s: &ast::StyleDef,
+    props: &mut StyleProps,
+    diags: &mut Vec<Diagnostic>,
+) {
+    if name != "boundary" || props.size.is_none() {
+        return;
+    }
+    let span = style_attr(s, "size").map_or(s.span, |a| a.span);
+    diags.push(
+        Diagnostic::error(
+            "attr",
+            span,
+            "the `boundary` style can't set `size`: every group starts from it",
+        )
+        .with_help("drop `size` here, and set it with another style or inline on the group"),
+    );
+    props.size = None;
 }
 
 /// Whether the style `name` may take the `shape=` in `a`: every group draws with the

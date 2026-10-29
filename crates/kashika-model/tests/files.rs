@@ -235,6 +235,34 @@ fn imports_bring_in_shapes_and_styles() {
 }
 
 #[test]
+fn library_styles_set_sizes() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "lib.kash",
+        b"style card { size=(100,50) }\nstyle boundary { size=(10,10) }\n",
+    );
+    let (s, d) = run(
+        dir.path(),
+        &format!(
+            "{HEAD}import \"lib.kash\" as ui\nimport \"lib.kash\"\n\
+             box a \"A\" at (0,0) style=ui.card\nbox b \"B\" at (0,100) style=card\n"
+        ),
+    );
+    let codes: Vec<&str> = d.iter().map(|d| d.code).collect();
+    assert_eq!(codes, ["attr"], "{d:#?}");
+    assert!(
+        d[0].message
+            .contains("the `boundary` style can't set `size`")
+    );
+    assert_eq!(d[0].span.line, 3, "reported at the unnamespaced import");
+    for id in ["a", "b"] {
+        let r = shape(&s, id).rect;
+        assert_eq!((r.w, r.h), (100.0, 50.0));
+    }
+}
+
+#[test]
 fn library_errors_point_at_the_import() {
     let dir = tempfile::tempdir().unwrap();
     write(

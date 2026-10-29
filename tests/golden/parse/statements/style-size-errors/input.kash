@@ -1,0 +1,13 @@
+// spec: 3, 7
+// `size` in `style boundary` is an `attr` error, as is a number; a size must be positive. A
+// group needs a size, inline or from its style, and can't fit one.
+diagram "style size errors" size (500,300)
+style boundary { size=(100,100) }
+style big { size=12 }
+style flat { size=(0,10) }
+style fit { size=(auto, 40) }
+group g at (10,10) style=fit {
+}
+group k at (200,10) {
+}
+box a "A" at (10,200) style=big

@@ -191,6 +191,8 @@ pub enum Value {
     /// An identifier, or a `:`/`,`/`.`-joined list of them, e.g. `cross:l2,near` or `aws.s3`.
     Word(String),
     Pair(f64, f64),
+    /// `size=(w,h)`, where an axis may be `auto`.
+    Size(Size),
     /// `side@t`, accepted only as the value of `pin`.
     AnchorAt(String, f64),
 }

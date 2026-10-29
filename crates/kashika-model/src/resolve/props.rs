@@ -178,15 +178,21 @@ impl<'a> Resolver<'a> {
             image: None,
             layer,
         };
-        p.size = self.node_size(n, group, &p);
+        p.size = self.node_size(n, group, &p, props.size);
         p
     }
 
-    /// The size of a box or group: its `size`, with each `auto` axis (or both, when it has
-    /// none) fitted to its text and rounded up to the `grid`.
-    fn node_size(&mut self, n: &ast::Node, group: bool, p: &NodeProps) -> Option<(f64, f64)> {
+    /// The size of a box or group: its `size`, else its style's, with each `auto` axis (or
+    /// both, when neither gives one) fitted to its text and rounded up to the `grid`.
+    fn node_size(
+        &mut self,
+        n: &ast::Node,
+        group: bool,
+        p: &NodeProps,
+        styled: Option<ast::Size>,
+    ) -> Option<(f64, f64)> {
         let what = format!("`{}`", n.id.name);
-        let ast::Size { w, h } = n.size.unwrap_or(ast::Size { w: None, h: None });
+        let ast::Size { w, h } = n.size.or(styled).unwrap_or(ast::Size { w: None, h: None });
         if let (Some(w), Some(h)) = (w, h) {
             return self.size_ok((w, h), n.span, &what).then_some((w, h));
         }

@@ -18,6 +18,7 @@ box api "API" at (40,40) size (140,60) style=service fill=#ffffff
 | `padding` | `8` | inset of the text area; `(x,y)` sets left/right and top/bottom |
 | `muted` | `#64748b` | color of sublabels and muted text |
 | `shape` | `rect` | boxes only: any `shape=` name (`kashika ref shapes`) |
+| `size` | fitted | boxes and groups without their own `size`: `(w,h)`, either axis `auto` on a box |
 
 The canvas is transparent by default (JPEG: white). `background=C` on the `diagram` line paints it, and `background=none` keeps it transparent. `low-contrast` checks canvas text against `background=`, or white. Line labels cut only their own line, so the fill beneath shows between the words.
 
@@ -30,16 +31,17 @@ The canvas is transparent by default (JPEG: white). `background=C` on the `diagr
 | `note` | `#fffbe6` | `#d4b106` |
 | `boundary` | none | `#94a3b8`, dashed, text `#475569` |
 
-- Precedence: inline attribute > `style=` > built-in default. This holds for `shape` too: an inline `shape=` beats the style's.
+- Precedence: inline attribute > `style=` > built-in default. This holds for `shape` and `size` too: an inline `shape=` beats the style's, and an inline `size (w,h)` replaces the style's `size=(w,h)` whole.
 - A user style with a built-in's name overrides it key by key.
-- Groups start from `boundary`. Groups take no shape: a group's `style=` naming a style with `shape` is an error, and so is `shape` in `style boundary`.
+- Groups start from `boundary`. Groups take no shape: a group's `style=` naming a style with `shape` is an error, and so is `shape` in `style boundary`. A group may take its `size` from its style, but `size` in `style boundary` is an error, and so is an `auto` axis reaching a group.
+- `size=12` in a style is an error: the text size is `font-size`. Lines ignore a style's `size`.
 - In an imported library, a style's `shape` names the library's own shapes as the library writes them: `shape=s3` in `lib/aws.kash`, imported `as aws`, is `aws.s3`.
 - On lines, a style applies only its `stroke*` and font keys.
 
 ```kash
 diagram "commits" size (200,60)
-style commit { shape=ellipse fill=#e8f0fe stroke=#1a73e8 }
-box c1 at (20,20) size (20,20) style=commit
-box c2 at (60,20) size (20,20) style=commit
-box tag at (100,20) size (20,20) style=commit shape=diamond
+style commit { shape=ellipse fill=#e8f0fe stroke=#1a73e8 size=(20,20) }
+box c1 at (20,20) style=commit
+box c2 at (60,20) style=commit
+box tag at (100,20) style=commit shape=diamond
 ```

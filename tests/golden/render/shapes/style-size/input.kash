@@ -1,0 +1,9 @@
+// spec: 3
+// Boxes that take their size from a style line up, whatever their text; one overrides it inline.
+diagram "style sizes" size (460,120)
+style step { size=(100,50) shape=rounded fill=#e8f0fe stroke=#1a73e8 }
+box s1 "Build" at (20,20) style=step
+box s2 "Test" at s1.right+(40,0) pin=left style=step
+box s3 "Deploy" at s2.right+(40,0) pin=left size (120,70) style=step
+arrow s1.right -> s2.left
+arrow s2.right -> s3.left

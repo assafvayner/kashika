@@ -509,7 +509,7 @@ impl Parser<'_> {
         self.number().map(Some)
     }
 
-    /// A required size with no `auto` axis, for statements that can't fit their size.
+    /// A required size with no `auto` axis, for an image.
     fn fixed_size(&mut self, size: Option<(Size, Span)>, what: &str) -> PResult<(f64, f64)> {
         match self.required(size, "size")? {
             (
@@ -578,14 +578,16 @@ impl Parser<'_> {
         };
         let tail = self.tail(Clauses::AT_SIZE)?;
         let at = self.required(tail.at, "at")?;
-        let size = if group {
-            let (w, h) = self.fixed_size(tail.size, "a group's")?;
-            Some(Size {
-                w: Some(w),
-                h: Some(h),
-            })
-        } else {
-            tail.size.map(|(s, _)| s)
+        let size = match tail.size {
+            Some((s, span)) if group && (s.w.is_none() || s.h.is_none()) => {
+                self.diags.push(
+                    Diagnostic::error("parse", span, "a group's size can't be `auto`").with_help(
+                        "only boxes and the diagram take `auto`; give it a size: `size (w,h)`",
+                    ),
+                );
+                return Err(());
+            }
+            size => size.map(|(s, _)| s),
         };
         Ok(Node {
             id,
@@ -880,7 +882,11 @@ impl Parser<'_> {
         };
         let value = if *self.tok() == Tok::Eq {
             self.bump();
-            let value = self.value()?;
+            let value = if key.name == "size" && *self.tok() == Tok::LParen {
+                Value::Size(self.size()?)
+            } else {
+                self.value()?
+            };
             if key.name == "pin" && *self.tok() == Tok::At {
                 self.bump();
                 let t = self.number()?;

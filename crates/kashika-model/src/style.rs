@@ -1,3 +1,4 @@
+use kashika_syntax::ast::Size;
 use serde::{Serialize, Serializer};
 
 pub const STYLE_KEYS: &[&str] = &[
@@ -13,9 +14,13 @@ pub const STYLE_KEYS: &[&str] = &[
     "muted",
 ];
 
-/// Keys a `style` definition takes: the style keys and `shape`.
+/// Keys a `style` definition takes: the style keys, `shape` and `size`.
 pub fn def_keys() -> Vec<&'static str> {
-    STYLE_KEYS.iter().copied().chain(["shape"]).collect()
+    STYLE_KEYS
+        .iter()
+        .copied()
+        .chain(["shape", "size"])
+        .collect()
 }
 
 pub const BUILTIN_STYLES: &[&str] = &[
@@ -117,6 +122,8 @@ pub struct StyleProps {
     pub muted: Option<String>,
     /// The qualified shape name; boxes only.
     pub shape: Option<String>,
+    /// Boxes and groups only.
+    pub size: Option<Size>,
 }
 
 impl StyleProps {
@@ -134,6 +141,7 @@ impl StyleProps {
             padding: top.padding.or(self.padding),
             muted: top.muted.clone().or_else(|| self.muted.clone()),
             shape: top.shape.clone().or_else(|| self.shape.clone()),
+            size: top.size.or(self.size),
         }
     }
 

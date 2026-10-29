@@ -10,7 +10,7 @@ use crate::library::{self, Ctx, Library};
 use crate::loader::{FileError, Loader, Options};
 use crate::markup;
 use crate::scene::*;
-use crate::style::{self, Style, StyleProps};
+use crate::style::{Style, StyleProps};
 use crate::textlayout::ShapeTextProps;
 use crate::version;
 
@@ -395,9 +395,9 @@ impl<'a> Resolver<'a> {
         }
         for stmt in &file.stmts {
             let Stmt::Style(s) = stmt else { continue };
-            let a = Attrs::new(&s.attrs, "style", &style::def_keys(), &mut self.diags);
-            let mut props = attrs::style_props(&a, &mut self.diags);
-            if let Some(x) = a.get("shape") {
+            let mut props = library::style_props(s, &mut self.diags);
+            library::boundary_size(&s.name, s, &mut props, &mut self.diags);
+            if let Some(x) = library::style_attr(s, "shape") {
                 if library::style_shape(&s.name, x, &mut self.diags) {
                     props.shape = self.shape_attr(x);
                 }

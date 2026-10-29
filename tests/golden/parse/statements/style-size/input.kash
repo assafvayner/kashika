@@ -1,0 +1,15 @@
+// spec: 3, 7
+// dump: scene
+// A style's `size=` sizes boxes and groups that give none; an inline `size` wins, an `auto` axis
+// fits a box's text, and lines ignore it.
+diagram "style sizes" size (500,300)
+style node { size=(120,50) fill=#e8f0fe }
+style tall { size=(auto, 60) }
+style zone { size=(200,120) }
+box a "A" at (20,20) style=node
+box b "B" at (20,90) size (80,40) style=node
+box c "Payments API" at (20,160) style=tall
+group g "Zone" at (260,20) style=zone {
+  box d "D" at (20,40) size (60,40)
+}
+line l a.right -> h 60 style=node

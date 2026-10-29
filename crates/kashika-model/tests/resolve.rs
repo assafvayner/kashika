@@ -1802,3 +1802,43 @@ fn margin_needs_a_fitted_canvas() {
     let (_, d) = compile("diagram \"t\" margin=-1\n");
     assert_eq!(codes_of(&d), vec!["attr"], "{d:#?}");
 }
+
+#[test]
+fn style_size_applies_to_boxes_and_groups() {
+    let s = ok(
+        "style node { size=(120,60) fill=#eeeeee }\nstyle wide { size=(300,200) }\n\
+         style tall { size=(auto, 60) }\n\
+         box a \"A\" at (0,0) style=node\n\
+         box b \"B\" at (0,100) size (80,40) style=node\n\
+         box c \"Payments API\" at (0,200) style=tall\n\
+         group g at (400,0) style=wide {\n}\n\
+         line l (0,400) -> h 100 style=node\n",
+    );
+    let size = |id| (rect(&s, id).w, rect(&s, id).h);
+    assert_eq!(size("a"), (120.0, 60.0));
+    assert_eq!(size("b"), (80.0, 40.0), "inline size wins");
+    assert_eq!(size("c"), (108.0, 60.0), "an auto axis fits");
+    assert_eq!(size("g"), (300.0, 200.0));
+}
+
+#[test]
+fn style_size_errors() {
+    let (_, d) = compile(&format!(
+        "{HEAD}style boundary {{ size=(100,100) }}\nstyle s {{ size=12 }}\nstyle z {{ size=(0,10) }}\n\
+         style a {{ size=(auto,40) }}\ngroup g at (0,0) style=a {{\n}}\ngroup k at (0,0) {{\n}}\n"
+    ));
+    assert_eq!(
+        codes_of(&d),
+        vec!["attr", "attr", "size", "size", "size"],
+        "{d:#?}"
+    );
+    assert!(
+        d[0].message
+            .starts_with("the `boundary` style can't set `size`")
+    );
+    assert_eq!(
+        d[1].help,
+        vec!["for the text size, write `font-size=N`".to_string()]
+    );
+    assert_eq!(d[3].message, "group `g` needs a size");
+}

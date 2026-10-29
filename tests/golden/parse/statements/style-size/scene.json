@@ -1,0 +1,264 @@
+{
+  "allow": [],
+  "assets": [],
+  "background": null,
+  "clearance": 6,
+  "grid": null,
+  "junctions": [],
+  "lines": [
+    {
+      "allow": [],
+      "end": "none",
+      "end_literal": true,
+      "id": "l",
+      "labels": [],
+      "named": true,
+      "origin": {"x":0,"y":0},
+      "ortho": false,
+      "parent": null,
+      "path": [
+        {"from":{"x":140,"y":45},"kind":"line","to":{"x":200,"y":45}}
+      ],
+      "path_seg": [0],
+      "reason": null,
+      "segments": [
+        {
+          "from": {"x":140,"y":45},
+          "kind": "h",
+          "pieces": [
+            {"from":{"x":140,"y":45},"kind":"line","to":{"x":200,"y":45}}
+          ],
+          "span": {"col":19,"end_col":23,"end_line":15,"line":15},
+          "to": {"x":200,"y":45}
+        }
+      ],
+      "span": {"col":1,"end_col":34,"end_line":15,"line":15},
+      "start": "none",
+      "start_literal": false,
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":12,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5}
+    }
+  ],
+  "literals": [
+    {"owner":"a","span":{"col":14,"end_col":21,"end_line":9,"line":9},"value":20,"what":"x"},
+    {"owner":"a","span":{"col":14,"end_col":21,"end_line":9,"line":9},"value":20,"what":"y"},
+    {"owner":"b","span":{"col":14,"end_col":21,"end_line":10,"line":10},"value":20,"what":"x"},
+    {"owner":"b","span":{"col":14,"end_col":21,"end_line":10,"line":10},"value":90,"what":"y"},
+    {"owner":"b","span":{"col":1,"end_col":45,"end_line":10,"line":10},"value":80,"what":"width"},
+    {"owner":"b","span":{"col":1,"end_col":45,"end_line":10,"line":10},"value":40,"what":"height"},
+    {"owner":"c","span":{"col":25,"end_col":33,"end_line":11,"line":11},"value":20,"what":"x"},
+    {"owner":"c","span":{"col":25,"end_col":33,"end_line":11,"line":11},"value":160,"what":"y"},
+    {"owner":"g","span":{"col":19,"end_col":27,"end_line":12,"line":12},"value":260,"what":"x"},
+    {"owner":"g","span":{"col":19,"end_col":27,"end_line":12,"line":12},"value":20,"what":"y"},
+    {"owner":"d","span":{"col":16,"end_col":23,"end_line":13,"line":13},"value":20,"what":"x"},
+    {"owner":"d","span":{"col":16,"end_col":23,"end_line":13,"line":13},"value":40,"what":"y"},
+    {"owner":"d","span":{"col":3,"end_col":36,"end_line":13,"line":13},"value":60,"what":"width"},
+    {"owner":"d","span":{"col":3,"end_col":36,"end_line":13,"line":13},"value":40,"what":"height"},
+    {"owner":"l","span":{"col":19,"end_col":23,"end_line":15,"line":15},"value":60,"what":"h"}
+  ],
+  "placement": [{"from":"d","kind":"frame","to":"g"}],
+  "shapes": [
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "a",
+      "image": null,
+      "kind": "box",
+      "label": "A",
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":50,"w":120,"x":20,"y":20},
+      "shape": "rect",
+      "span": {"col":1,"end_col":32,"end_line":9,"line":9},
+      "style": {"color":"#0f172a","fill":"#e8f0fe","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "A",
+          "lines": [
+            {
+              "baseline": 50.09,
+              "runs": [{"font":"regular","text":"A"}],
+              "width": 9.66,
+              "x": 75.17
+            }
+          ],
+          "rect": {"h":17.5,"w":9.66,"x":75.17,"y":36.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":32,"end_line":9,"line":9}
+        }
+      ],
+      "text_area": {"h":34,"w":104,"x":28,"y":28},
+      "text_below": false,
+      "title_band": 0
+    },
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "b",
+      "image": null,
+      "kind": "box",
+      "label": "B",
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":40,"w":80,"x":20,"y":90},
+      "shape": "rect",
+      "span": {"col":1,"end_col":45,"end_line":10,"line":10},
+      "style": {"color":"#0f172a","fill":"#e8f0fe","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "B",
+          "lines": [
+            {
+              "baseline": 115.09,
+              "runs": [{"font":"regular","text":"B"}],
+              "width": 9.16,
+              "x": 55.42
+            }
+          ],
+          "rect": {"h":17.5,"w":9.16,"x":55.42,"y":101.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":45,"end_line":10,"line":10}
+        }
+      ],
+      "text_area": {"h":24,"w":64,"x":28,"y":98},
+      "text_below": false,
+      "title_band": 0
+    },
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "c",
+      "image": null,
+      "kind": "box",
+      "label": "Payments API",
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":60,"w":108,"x":20,"y":160},
+      "shape": "rect",
+      "span": {"col":1,"end_col":44,"end_line":11,"line":11},
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "Payments API",
+          "lines": [
+            {
+              "baseline": 195.09,
+              "runs": [{"font":"regular","text":"Payments API"}],
+              "width": 91.64,
+              "x": 28.18
+            }
+          ],
+          "rect": {"h":17.5,"w":91.64,"x":28.18,"y":181.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":44,"end_line":11,"line":11}
+        }
+      ],
+      "text_area": {"h":44,"w":92,"x":28,"y":168},
+      "text_below": false,
+      "title_band": 0
+    },
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "g",
+      "image": null,
+      "kind": "group",
+      "label": "Zone",
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":120,"w":200,"x":260,"y":20},
+      "shape": "rect",
+      "span": {"col":1,"end_col":38,"end_line":12,"line":12},
+      "style": {"color":"#475569","fill":"none","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#94a3b8","stroke_style":"dashed","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#475569",
+          "content": "Zone",
+          "lines": [
+            {
+              "baseline": 41.84,
+              "runs": [{"font":"regular","text":"Zone"}],
+              "width": 33.63,
+              "x": 268
+            }
+          ],
+          "rect": {"h":17.5,"w":33.63,"x":268,"y":28},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":38,"end_line":12,"line":12}
+        }
+      ],
+      "text_area": {"h":104,"w":184,"x":268,"y":28},
+      "text_below": false,
+      "title_band": 25.5
+    },
+    {
+      "allow": [],
+      "depth": 1,
+      "form": null,
+      "icon": null,
+      "id": "d",
+      "image": null,
+      "kind": "box",
+      "label": "D",
+      "origin": {"x":260,"y":20},
+      "outline": "rect",
+      "parent": "g",
+      "reason": null,
+      "rect": {"h":40,"w":60,"x":280,"y":60},
+      "shape": "rect",
+      "span": {"col":3,"end_col":36,"end_line":13,"line":13},
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "D",
+          "lines": [
+            {
+              "baseline": 85.09,
+              "runs": [{"font":"regular","text":"D"}],
+              "width": 10.1,
+              "x": 304.95
+            }
+          ],
+          "rect": {"h":17.5,"w":10.1,"x":304.95,"y":71.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":3,"end_col":36,"end_line":13,"line":13}
+        }
+      ],
+      "text_area": {"h":24,"w":44,"x":288,"y":68},
+      "text_below": false,
+      "title_band": 0
+    }
+  ],
+  "size": [500,300],
+  "texts": [],
+  "title": "style sizes"
+}

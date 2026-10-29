@@ -729,13 +729,35 @@ fn auto_size_is_for_boxes_and_the_diagram() {
     for src in [
         "image i \"x.png\" at (0,0) size (auto,10)\n",
         "group g at (0,0) size (10,auto) {\n}\n",
-        "group g at (0,0) {\n}\n",
     ] {
         let (f, d) = parse(src);
         assert_eq!(d.len(), 1, "{src:?}: {d:#?}");
         assert_eq!(d[0].code, "parse", "{src:?}");
         assert!(f.stmts.is_empty(), "{src:?}");
     }
+    let Stmt::Group(g) = &parse_ok("group g at (0,0) style=wide {\n}\n").stmts[0] else {
+        panic!("expected group")
+    };
+    assert_eq!(g.node.size, None);
+}
+
+#[test]
+fn size_attribute_takes_a_size() {
+    let f = parse_ok("style s { size=(120, auto) font-size=12 }\ntext \"t\" at (0,0) size=12\n");
+    let Stmt::Style(s) = &f.stmts[0] else {
+        panic!("expected style")
+    };
+    assert_eq!(
+        s.attrs[0].value,
+        Value::Size(Size {
+            w: Some(120.0),
+            h: None
+        })
+    );
+    let Stmt::Text(t) = &f.stmts[1] else {
+        panic!("expected text")
+    };
+    assert_eq!(t.attrs[0].value, Value::Num(12.0));
 }
 
 fn line_stmt(f: &File) -> &Line {

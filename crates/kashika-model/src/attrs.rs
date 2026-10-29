@@ -1,5 +1,5 @@
 use kashika_diag::{Diagnostic, did_you_mean};
-use kashika_syntax::ast::{Attr, Value};
+use kashika_syntax::ast::{Attr, Size, Value};
 
 use crate::colors;
 use crate::style::{FontWeight, Padding, StrokeStyle, StyleProps};
@@ -135,6 +135,34 @@ fn padding(a: &Attr, diags: &mut Vec<Diagnostic>) -> Option<Padding> {
                 type_err(a, "a number or a pair `(x,y)`")
                     .with_help("write `padding=8` for every side, or `padding=(x,y)` for left/right and top/bottom"),
             );
+            None
+        }
+    }
+}
+
+/// A style's `size=(w,h)`: each axis a number in `0 < v <= LIMIT`, or `auto`.
+pub fn size(a: &Attr, diags: &mut Vec<Diagnostic>) -> Option<Size> {
+    match a.value {
+        Value::Size(s) => {
+            let bad = |v: Option<f64>| v.is_some_and(|v| !(v > 0.0 && v <= LIMIT));
+            if bad(s.w) || bad(s.h) {
+                diags.push(Diagnostic::error(
+                    "size",
+                    a.span,
+                    format!("`size` must be positive and at most {LIMIT}"),
+                ));
+                return None;
+            }
+            Some(s)
+        }
+        Value::Num(_) => {
+            diags.push(
+                type_err(a, "a size `(w,h)`").with_help("for the text size, write `font-size=N`"),
+            );
+            None
+        }
+        _ => {
+            diags.push(type_err(a, "a size `(w,h)`"));
             None
         }
     }
