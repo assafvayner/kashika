@@ -1,7 +1,7 @@
 // spec: 5
 // raster: png
-// Crow's-foot ends on every side of a box and on a curve; the open circles show the background.
-diagram "crows foot" size (480,260) background=#f8fafc
+// Crow's-foot ends on every side of a box and on a curve; the open circles show the saturated background, so a painted rect would show.
+diagram "crows foot" size (480,260) background=#fde68a
 box a "Customer" at (40,30) size (120,50)
 box b "Order" at (320,30) size (120,50)
 box c "Item" at (320,180) size (120,50)

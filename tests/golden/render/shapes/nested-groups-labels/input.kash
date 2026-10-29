@@ -1,0 +1,20 @@
+// spec: 1, 3, 3a, 5, 6
+// raster: png
+// Three nested filled groups: an icon title aligned right, a side label on a line crossing two borders, a `curve via` in the inner frame, an imported style and an over-layer highlight.
+diagram "nested groups" size (680,380) background=#ffffff
+import "lib/net.kash" as net
+group outer "Region" at (20,20) size (500,340) fill=#eff6ff {
+  group mid "VPC" at (20,40) size (460,290) fill=#dbeafe {
+    box client "Client" at (20,60) size (110,50)
+    group inner "Subnet" at (200,30) size (240,190) fill=#bfdbfe icon="server" text-align=right {
+      box svc "API" at (20,50) size (100,50) style=net.svc
+      box db "DB" at (20,120) size (100,50) style=datastore
+      line hop svc.right -> curve via (170,75) (170,145) db.right end=arrow
+    }
+    box cache "Cache" at (220,232) size (100,40)
+    line call client.right -> svc.left end=arrow
+  }
+}
+box user "User" at (540,287) size (110,50)
+line req user.left -> cache.right end=arrow label="lookup" label-side=above
+box ring at (254,134) size (112,62) layer=over fill=none stroke=#dc2626 stroke-width=3 stroke-style=dashed
