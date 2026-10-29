@@ -36,6 +36,8 @@ pub struct Case {
     pub icon_path: Option<String>,
     /// `--include` files, relative to the case directory.
     pub include: Vec<String>,
+    /// The first comment line that is not a directive.
+    pub description: String,
 }
 
 pub fn golden_root() -> PathBuf {
@@ -95,6 +97,7 @@ impl Case {
             raster: Vec::new(),
             icon_path: None,
             include: Vec::new(),
+            description: String::new(),
         };
         case.read_directives()?;
         Ok(case)
@@ -108,12 +111,15 @@ impl Case {
             let Some(text) = line.strip_prefix("// ") else {
                 break;
             };
-            let Some((key, value)) = text.split_once(": ") else {
+            let directive = text
+                .split_once(": ")
+                .filter(|(key, _)| key.chars().all(|c| c.is_ascii_lowercase() || c == '-'));
+            let Some((key, value)) = directive else {
+                if self.description.is_empty() {
+                    self.description = text.to_string();
+                }
                 continue;
             };
-            if !key.chars().all(|c| c.is_ascii_lowercase() || c == '-') {
-                continue;
-            }
             let values: Vec<String> = value
                 .split([',', ' '])
                 .filter(|v| !v.is_empty())

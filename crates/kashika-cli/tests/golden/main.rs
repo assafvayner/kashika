@@ -1,6 +1,7 @@
 mod case;
 mod coverage;
 mod dump;
+mod review;
 
 use std::path::Path;
 use std::process::Command;
@@ -45,6 +46,9 @@ fn main() {
     }
     let cases = libtest_mimic::run(&args, trials);
     let coverage = libtest_mimic::run(&args, coverage::trials());
+    if let Some(page) = review::write() {
+        eprintln!("review changed renders side by side: {}", page.display());
+    }
     if cases.has_failed() || coverage.has_failed() {
         std::process::exit(101);
     }
@@ -174,7 +178,23 @@ fn check_outputs(case: &Case, outputs: &[Output]) -> Result<(), Failed> {
         .copied()
         .filter(|n| case.dir.join(n).exists() && !outputs.iter().any(|o| o.name == *n))
         .collect();
+    let svg = outputs.iter().find(|o| o.name == "out.svg");
+    let expected_svg = svg.and_then(|_| std::fs::read(case.dir.join("out.svg")).ok());
+    let review = |blessed: bool| {
+        if let Some(svg) = svg {
+            review::record(review::Entry {
+                name: case.name.clone(),
+                description: case.description.clone(),
+                expected: expected_svg.clone(),
+                actual: svg.bytes.clone(),
+                blessed,
+            });
+        }
+    };
     if bless() {
+        if svg.is_some_and(|o| expected_svg.as_ref() != Some(&o.bytes)) {
+            review(true);
+        }
         for o in outputs {
             std::fs::write(case.dir.join(&o.name), &o.bytes).map_err(|e| e.to_string())?;
         }
@@ -233,6 +253,7 @@ fn check_outputs(case: &Case, outputs: &[Output]) -> Result<(), Failed> {
     if problems.is_empty() {
         Ok(())
     } else {
+        review(false);
         Err(format!("{}\n{}\n{hint}", case.name, problems.join("\n")).into())
     }
 }
