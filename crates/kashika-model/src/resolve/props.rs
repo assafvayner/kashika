@@ -14,7 +14,7 @@ use crate::textlayout::{self, ShapeInput, ShapeTextProps};
 
 use super::{
     IMAGE_KEYS, IconPos, IconProps, ImageProps, Item, JUNCTION_KEYS, LINE_KEYS, LineProps,
-    NodeProps, Resolver, TEXT_KEYS, TextProps, node_keys,
+    NodeProps, Props, Resolver, TEXT_KEYS, TextProps, node_keys,
 };
 
 impl NodeProps {
@@ -50,35 +50,21 @@ impl<'a> Resolver<'a> {
             if self.skipped.contains(&idx) {
                 continue;
             }
-            match self.entries[idx].item {
-                Item::Box(n) => {
-                    let p = self.node_props(n, false);
-                    self.nodes.insert(idx, p);
-                }
-                Item::Group(g) => {
-                    let p = self.node_props(&g.node, true);
-                    self.nodes.insert(idx, p);
-                }
-                Item::Image(i) => {
-                    let p = self.image_props(i);
-                    self.nodes.insert(idx, p);
-                }
+            let props = match self.entries[idx].item {
+                Item::Box(n) => Props::Node(self.node_props(n, false)),
+                Item::Group(g) => Props::Node(self.node_props(&g.node, true)),
+                Item::Image(i) => Props::Node(self.image_props(i)),
                 Item::Junction(j) => {
                     let a = Attrs::new(&j.attrs, "junction", JUNCTION_KEYS, &mut self.diags);
                     let dot = a
                         .get("dot")
                         .is_some_and(|x| attrs::flag(x, &mut self.diags));
-                    self.dots.insert(idx, dot);
+                    Props::Junction { dot }
                 }
-                Item::Text(t) => {
-                    let p = self.text_props(t);
-                    self.texts.insert(idx, p);
-                }
-                Item::Line(l) => {
-                    let p = self.line_props(l);
-                    self.lines.insert(idx, p);
-                }
-            }
+                Item::Text(t) => Props::Text(self.text_props(t)),
+                Item::Line(l) => Props::Line(self.line_props(l)),
+            };
+            self.entries[idx].props = Some(props);
         }
     }
 

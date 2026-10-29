@@ -77,8 +77,8 @@ impl<'a> Resolver<'a> {
     }
 
     pub(super) fn is_fitted(&self, idx: usize) -> bool {
-        self.nodes
-            .get(&idx)
+        self.entries[idx]
+            .node()
             .is_some_and(|p| p.fitted != (false, false))
     }
 
@@ -287,10 +287,10 @@ impl<'a> Resolver<'a> {
     }
 
     pub(super) fn place_node(&mut self, idx: usize, at: &'a Point, origin: Pt) -> Option<Rect> {
-        let (w, h) = self.nodes[&idx].size?;
+        let (w, h) = self.entries[idx].node()?.size?;
         let at = self.eval_point(at, origin)?;
 
-        let p = &self.nodes[&idx];
+        let p = self.entries[idx].node()?;
         let local = Rect::new(0.0, 0.0, w, h);
         let (name, t) = p.pin;
         let radius = p.style.radius;
@@ -322,7 +322,7 @@ impl<'a> Resolver<'a> {
         };
         let origin = self.frame_origin(idx)?;
         let at = self.eval_point(&g.node.at, origin)?;
-        let p = &self.nodes[&idx];
+        let p = self.entries[idx].node()?;
         let (w, h) = p.size?;
         let (name, t) = p.pin;
         let unit = anchor::resolve(Rect::new(0.0, 0.0, 1.0, 1.0), 0.0, "pin", name, t).ok()?;
@@ -347,7 +347,7 @@ impl<'a> Resolver<'a> {
                 _ => {}
             }
         }
-        let p = &self.nodes[&idx];
+        let p = self.entries[idx].node()?;
         let (w, h) = p.size?;
         let shape = p.drawn_shape();
         let title = textlayout::fit_size(&ShapeInput {
@@ -403,7 +403,7 @@ impl<'a> Resolver<'a> {
         if !self.size_ok(size, g.node.span, &what) {
             return None;
         }
-        if let Some(p) = self.nodes.get_mut(&idx) {
+        if let Some(p) = self.entries[idx].node_mut() {
             p.size = Some(size);
         }
         Some(Rect::new(origin.x, origin.y, size.0, size.1))
@@ -500,7 +500,7 @@ impl<'a> Resolver<'a> {
                     return None;
                 };
                 let rect = self.place(idx)?;
-                let p = &self.nodes[&idx];
+                let p = self.entries[idx].node()?;
                 let form = p.shape.as_deref().and_then(|s| self.form(s, rect));
                 match form::resolve_anchor(
                     form.as_ref(),

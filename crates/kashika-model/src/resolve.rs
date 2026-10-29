@@ -145,6 +145,57 @@ struct Entry<'a> {
     item: Item<'a>,
     parent: Option<usize>,
     depth: usize,
+    /// What `validate` read from its attributes; `None` before that and for skipped entries.
+    props: Option<Props>,
+}
+
+/// An entry's attributes, read by `validate`.
+enum Props {
+    /// A box, group or image.
+    Node(NodeProps),
+    Junction {
+        dot: bool,
+    },
+    Text(TextProps),
+    Line(LineProps),
+}
+
+impl Entry<'_> {
+    fn node(&self) -> Option<&NodeProps> {
+        match &self.props {
+            Some(Props::Node(p)) => Some(p),
+            _ => None,
+        }
+    }
+
+    fn node_mut(&mut self) -> Option<&mut NodeProps> {
+        match &mut self.props {
+            Some(Props::Node(p)) => Some(p),
+            _ => None,
+        }
+    }
+
+    fn text(&self) -> Option<&TextProps> {
+        match &self.props {
+            Some(Props::Text(p)) => Some(p),
+            _ => None,
+        }
+    }
+
+    fn dot(&self) -> bool {
+        matches!(self.props, Some(Props::Junction { dot: true }))
+    }
+
+    /// Takes a line's props out; they are used once.
+    fn take_line(&mut self) -> Option<LineProps> {
+        match self.props.take() {
+            Some(Props::Line(p)) => Some(p),
+            other => {
+                self.props = other;
+                None
+            }
+        }
+    }
 }
 
 struct NodeProps {
@@ -217,10 +268,6 @@ pub fn resolve_with(file: &ast::File, opts: &Options) -> (Scene, Vec<Diagnostic>
         entries: Vec::new(),
         ids: HashMap::new(),
         user_styles: HashMap::new(),
-        nodes: HashMap::new(),
-        lines: HashMap::new(),
-        texts: HashMap::new(),
-        dots: HashMap::new(),
         placed: Vec::new(),
         frames: HashMap::new(),
         built: HashMap::new(),
@@ -281,10 +328,6 @@ struct Resolver<'a> {
     entries: Vec<Entry<'a>>,
     ids: HashMap<String, usize>,
     user_styles: HashMap<String, StyleProps>,
-    nodes: HashMap<usize, NodeProps>,
-    lines: HashMap<usize, LineProps>,
-    texts: HashMap<usize, TextProps>,
-    dots: HashMap<usize, bool>,
     /// Per entry: `None` until placed, then its canvas rect (junctions use a zero-size
     /// rect), or `Some(None)` when it can't be placed.
     placed: Vec<Option<Option<Rect>>>,
@@ -506,6 +549,7 @@ impl<'a> Resolver<'a> {
                 item,
                 parent,
                 depth,
+                props: None,
             });
             if parent.is_some_and(|p| self.skipped.contains(&p)) {
                 self.skipped.insert(idx);

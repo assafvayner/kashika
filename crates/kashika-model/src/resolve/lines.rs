@@ -59,7 +59,7 @@ impl<'a> Resolver<'a> {
             ));
             return None;
         }
-        let p = self.lines.remove(&idx)?;
+        let p = self.entries[idx].take_line()?;
         if p.ortho {
             for (s, i) in &raw {
                 if !s.is_axis_aligned() {

@@ -103,7 +103,7 @@ impl<'a> Resolver<'a> {
             Item::Image(i) => self.make_image(idx, i).map(Built::Shape),
             Item::Junction(j) => {
                 let r = self.place(idx)?;
-                let dot = self.dots.get(&idx).copied().unwrap_or(false);
+                let dot = self.entries[idx].dot();
                 let origin = self.frame_origin(idx).unwrap_or_default();
                 Some(Built::Junction(Junction {
                     id: j.id.name.clone(),
@@ -117,7 +117,7 @@ impl<'a> Resolver<'a> {
             Item::Text(t) => {
                 let origin = self.frame_origin(idx)?;
                 let at = self.eval_point(&t.at, origin)?;
-                let p = &self.texts[&idx];
+                let p = self.entries[idx].text()?;
                 let block =
                     textlayout::measure_at(&t.content, p.size, false, t.span, &mut self.diags)?;
                 let (lines, rect) = block.place_at(at.x, at.y, textlayout::halign(p.align));
@@ -159,7 +159,7 @@ impl<'a> Resolver<'a> {
                     .and_then(|at| self.eval_point(at, rect.origin()))
             })
             .collect();
-        let p = &self.nodes[&idx];
+        let p = self.entries[idx].node()?;
         let shape = p.drawn_shape();
         let form = self.form(&shape, rect);
         let svg = self.svg_shape(&shape);
@@ -231,8 +231,8 @@ impl<'a> Resolver<'a> {
     fn make_image(&mut self, idx: usize, i: &ast::Image) -> Option<Shape> {
         let rect = self.place(idx)?;
         let origin = self.frame_origin(idx).unwrap_or_default();
-        let p = &self.nodes[&idx];
-        let props = p.image.expect("image props");
+        let p = self.entries[idx].node()?;
+        let props = p.image?;
         Some(Shape {
             id: i.id.name.clone(),
             kind: ShapeKind::Image,
