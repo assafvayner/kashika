@@ -2,7 +2,8 @@ use kashika_diag::Diagnostic;
 use kashika_geom::{TOLERANCE, polygons_overlap};
 use kashika_model::ShapeKind;
 
-use crate::ctx::{Ctx, bbox, kind_name, shape_el};
+use crate::ctx::Ctx;
+use crate::element::{bbox, kind_name, shape_el};
 use crate::sink::Sink;
 
 /// `overlap`: two shapes have intersecting interiors and neither is a group that contains the other.

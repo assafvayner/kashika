@@ -2,7 +2,8 @@ use kashika_diag::Diagnostic;
 use kashika_geom::{fmt_num, round2};
 use kashika_model::ShapeKind;
 
-use crate::ctx::{Ctx, shape_el};
+use crate::ctx::Ctx;
+use crate::element::shape_el;
 use crate::sink::Sink;
 
 const MAX_DISTORTION: f64 = 0.05;

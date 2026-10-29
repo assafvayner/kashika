@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
-use kashika_check::ctx::{Ctx, bbox, kind_name, text_id};
+use kashika_check::ctx::Ctx;
+use kashika_check::element::{bbox, kind_name, text_id};
 use kashika_check::free::corridors as free_corridors;
 use kashika_check::ports::ports as find_ports;
 use kashika_diag::{Diagnostic, Severity};

@@ -1,4 +1,5 @@
 pub mod ctx;
+pub mod element;
 pub mod free;
 pub mod index;
 mod lints;

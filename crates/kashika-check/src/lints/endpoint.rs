@@ -1,7 +1,8 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::{Rect, TOLERANCE, boundary_nearest, fmt_num};
 
-use crate::ctx::{Ctx, anchor_text, arr, fmt_pt, line_el, shape_el};
+use crate::ctx::{Ctx, anchor_text, fmt_pt};
+use crate::element::{arr, line_el, shape_el};
 use crate::sink::Sink;
 
 /// How close a literal endpoint must be to an outline to look like a missed anchor.

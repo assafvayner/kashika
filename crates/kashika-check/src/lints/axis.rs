@@ -2,7 +2,8 @@ use kashika_diag::Diagnostic;
 use kashika_geom::{PathSeg, Pt, TOLERANCE, boundary_nearest, fmt_num, round2};
 use kashika_model::Shape;
 
-use crate::ctx::{Ctx, ShapeGeom, fmt_pt, line_el, outline_anchor};
+use crate::ctx::{Ctx, ShapeGeom, fmt_pt, outline_anchor};
+use crate::element::line_el;
 use crate::sink::Sink;
 
 /// The largest angle off horizontal or vertical that still reads as a slip: 5°.

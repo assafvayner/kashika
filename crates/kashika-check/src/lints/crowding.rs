@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use kashika_diag::Diagnostic;
 use kashika_geom::{TOLERANCE, fmt_num, round2};
 
-use crate::ctx::{Ctx, LineGeom, fmt_pt, line_el, shape_el};
+use crate::ctx::{Ctx, LineGeom, fmt_pt};
+use crate::element::{line_el, shape_el};
 use crate::ports::ports;
 use crate::sink::Sink;
 

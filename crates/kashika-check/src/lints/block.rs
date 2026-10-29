@@ -2,7 +2,8 @@ use kashika_diag::Diagnostic;
 use kashika_geom::{Rect, TOLERANCE};
 use kashika_model::{Shape, ShapeKind, TextItem, TextRole};
 
-use crate::ctx::{Ctx, kind_name, shape_el};
+use crate::ctx::Ctx;
+use crate::element::{kind_name, shape_el};
 use crate::sink::Sink;
 
 /// Size of a `sublabel` relative to the label.

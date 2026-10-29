@@ -3,7 +3,8 @@ use kashika_geom::{
     Pt, Rect, TOLERANCE, boundary_nearest, dist_point_seg, inside_runs, point_in_polygon,
 };
 
-use crate::ctx::{Ctx, LineGeom, arr, line_el, shape_el};
+use crate::ctx::{Ctx, LineGeom};
+use crate::element::{arr, line_el, shape_el};
 use crate::sink::Sink;
 
 /// `group-transit`: a line passes through a group's interior while neither endpoint is inside

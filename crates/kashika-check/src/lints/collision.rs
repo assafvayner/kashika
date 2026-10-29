@@ -4,7 +4,8 @@ use kashika_geom::{
 };
 use kashika_model::Marker;
 
-use crate::ctx::{Ctx, arr, bbox, kind_name, line_el, shape_el, text_el, text_id};
+use crate::ctx::Ctx;
+use crate::element::{arr, bbox, kind_name, line_el, shape_el, text_el, text_id};
 use crate::index::Grid;
 use crate::sink::Sink;
 use crate::text_box::{below_box, label_box, label_box_at, text_box, title_band, title_box};

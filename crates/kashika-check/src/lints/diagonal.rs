@@ -1,7 +1,8 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::PathSeg;
 
-use crate::ctx::{Ctx, fmt_pt, line_el};
+use crate::ctx::{Ctx, fmt_pt};
+use crate::element::line_el;
 use crate::lints::axis::slant;
 use crate::sink::Sink;
 

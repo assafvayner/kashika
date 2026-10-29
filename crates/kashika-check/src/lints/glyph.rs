@@ -2,7 +2,8 @@ use kashika_diag::{Diagnostic, Element, Span};
 use kashika_model::PlacedLine;
 use kashika_text::{covered_scripts, missing_glyphs};
 
-use crate::ctx::{Ctx, line_el, shape_el, text_el, text_id};
+use crate::ctx::Ctx;
+use crate::element::{line_el, shape_el, text_el, text_id};
 use crate::sink::Sink;
 
 /// `missing-glyph`: text uses characters the bundled fonts cannot draw. They render as the

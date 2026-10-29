@@ -1,7 +1,8 @@
 use kashika_diag::{Diagnostic, code, fact};
 use kashika_geom::{Pt, TOLERANCE, inside_runs, strictly_inside};
 
-use crate::ctx::{Ctx, arr, kind_name, line_el, shape_el};
+use crate::ctx::Ctx;
+use crate::element::{arr, kind_name, line_el, shape_el};
 use crate::free::with_free;
 use crate::sink::Sink;
 
