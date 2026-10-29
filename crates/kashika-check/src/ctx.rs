@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
 use kashika_diag::Element;
-use kashika_geom::{PathSeg, Pt, Rect, TOLERANCE, boundary_nearest, pieces, point_in_polygon};
+use kashika_geom::{
+    PathSeg, Pt, Rect, TOLERANCE, boundary_nearest, fmt_num, pieces, point_in_polygon, round2,
+};
 use kashika_model::{Junction, Layer, Line, Scene, Shape, ShapeKind, Text};
 
 use crate::index::Grid;
@@ -298,15 +300,6 @@ fn marks(scene: &Scene) -> Vec<Mark<'_>> {
 /// A box or image on the normal layer.
 pub fn is_box(s: &Shape) -> bool {
     s.kind != ShapeKind::Group && s.layer == Layer::Normal
-}
-
-pub fn round2(v: f64) -> f64 {
-    let r = (v * 100.0).round() / 100.0;
-    if r == 0.0 { 0.0 } else { r }
-}
-
-pub fn fmt_num(v: f64) -> String {
-    format!("{}", round2(v))
 }
 
 pub fn fmt_pt(p: Pt) -> String {

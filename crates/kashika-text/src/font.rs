@@ -1,6 +1,7 @@
 use std::fmt::Write;
 use std::sync::OnceLock;
 
+use kashika_geom::fmt_num as num;
 use skrifa::color::{Brush, ColorPainter, CompositeMode, Transform};
 use skrifa::instance::{LocationRef, Size};
 use skrifa::metrics::BoundingBox;
@@ -327,15 +328,6 @@ pub(crate) fn baseline_offset(size: f64) -> f64 {
     let asc = f64::from(m.ascent) / em;
     let desc = f64::from(m.descent) / em;
     ((LINE_HEIGHT - (asc - desc)) / 2.0 + asc) * size
-}
-
-fn num(v: f64) -> String {
-    let r = (v * 100.0).round() / 100.0;
-    if r == 0.0 {
-        "0".to_string()
-    } else {
-        format!("{r}")
-    }
 }
 
 struct PathOut<'a> {

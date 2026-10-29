@@ -7,8 +7,8 @@ use kashika_geom::{
 };
 use kashika_model::{Scene, ShapeKind};
 
-use crate::text::num;
 use crate::{Endpoint, SQUARE, Style};
+use kashika_geom::fmt_num as num;
 
 /// Lanes per axis that detours pick from: those nearest either endpoint.
 pub(crate) const DETOUR_LANES: usize = 16;

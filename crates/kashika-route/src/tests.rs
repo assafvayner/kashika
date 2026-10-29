@@ -8,8 +8,9 @@ use crate::candidates::{
     Hop, Lane, MAX_DETOURS, MAX_LANE_PLANS, Plan, corners, doubles_back, generate, key,
 };
 use crate::endpoint::resolve_endpoints;
-use crate::text::{num, path_text, statement};
+use crate::text::{path_text, statement};
 use crate::{Endpoint, Error, Side, Style};
+use kashika_geom::fmt_num as num;
 
 const WALL: &str = "diagram \"w\" size (460,240)\n\
 box a \"A\" at (20,100) size (100,40)\n\

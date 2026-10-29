@@ -1,6 +1,7 @@
 use kashika_diag::Diagnostic;
+use kashika_geom::fmt_num;
 
-use crate::ctx::{Ctx, fmt_num};
+use crate::ctx::Ctx;
 use crate::sink::Sink;
 
 /// `off-grid`: an authored literal is not a multiple of `grid`. Resolved anchors are never checked.

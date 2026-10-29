@@ -1,3 +1,4 @@
+use kashika_geom::fmt_num;
 use serde_json::Value;
 
 const FOLD_WIDTH: usize = 100;
@@ -95,21 +96,14 @@ fn compact_span(s: &str) -> String {
     )
 }
 
-/// A float rounded to 2 decimals, without a trailing `.0` and never `-0`.
-fn num(v: f64) -> String {
-    let r = (v * 100.0).round() / 100.0;
-    let r = if r == 0.0 { 0.0 } else { r };
-    format!("{r}")
-}
-
-/// One-line JSON with every float rounded by [`num`].
+/// One-line JSON with every float rounded by [`fmt_num`].
 pub fn compact(v: &Value) -> String {
     match v {
         Value::Number(n) => n
             .as_i64()
             .map(|i| i.to_string())
             .or_else(|| n.as_u64().map(|u| u.to_string()))
-            .unwrap_or_else(|| num(n.as_f64().unwrap_or(f64::NAN))),
+            .unwrap_or_else(|| fmt_num(n.as_f64().unwrap_or(f64::NAN))),
         Value::Array(a) => format!("[{}]", a.iter().map(compact).collect::<Vec<_>>().join(",")),
         Value::Object(o) => format!(
             "{{{}}}",
@@ -122,7 +116,7 @@ pub fn compact(v: &Value) -> String {
     }
 }
 
-/// Indented JSON, floats rounded by [`num`]; arrays and objects of scalars stay on one line.
+/// Indented JSON, floats rounded by [`fmt_num`]; arrays and objects of scalars stay on one line.
 pub fn pretty(v: &Value) -> String {
     let mut out = String::new();
     write_pretty(v, 0, &mut out);

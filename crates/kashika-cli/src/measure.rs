@@ -1,6 +1,7 @@
 use std::process::ExitCode;
 
 use clap::{Args, ValueEnum};
+use kashika_geom::round2;
 
 use crate::Format;
 
@@ -50,10 +51,6 @@ fn unescape(s: &str) -> String {
     out
 }
 
-fn round(v: f64) -> f64 {
-    (v * 100.0).round() / 100.0
-}
-
 pub fn run(a: &MeasureArgs) -> ExitCode {
     if !(a.size.is_finite() && a.size > 0.0) {
         return crate::tool_error(a.format, SCHEMA, "--size must be a positive number");
@@ -68,8 +65,8 @@ pub fn run(a: &MeasureArgs) -> ExitCode {
     let failed = results.iter().any(Result::is_err);
     let entry = |r: &Result<kashika_text::Block, kashika_text::MarkupError>| match r {
         Ok(b) => serde_json::json!({
-            "width": round(b.width()),
-            "height": round(b.height()),
+            "width": round2(b.width()),
+            "height": round2(b.height()),
             "lines": b.lines().len(),
         }),
         Err(e) => serde_json::json!({ "error": { "code": "parse", "message": e.to_string() } }),
@@ -80,8 +77,8 @@ pub fn run(a: &MeasureArgs) -> ExitCode {
                 match r {
                     Ok(b) => println!(
                         "width={} height={} lines={}",
-                        round(b.width()),
-                        round(b.height()),
+                        round2(b.width()),
+                        round2(b.height()),
                         b.lines().len()
                     ),
                     Err(e) => println!("error[parse]: {}", crate::term::line(&e.to_string())),

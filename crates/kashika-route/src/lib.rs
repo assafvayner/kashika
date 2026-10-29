@@ -10,7 +10,7 @@ use std::collections::HashMap;
 
 use kashika_check::ctx::Ctx;
 use kashika_diag::{Diagnostic, Severity};
-use kashika_geom::{PathSeg, Pt, flatten};
+use kashika_geom::{PathSeg, Pt, flatten, fmt_num};
 use kashika_model::{Line, Scene};
 use kashika_syntax::ast;
 use serde::Serialize;
@@ -21,7 +21,6 @@ use crate::source::Source;
 use crate::text::{path_text, statement};
 
 pub use endpoint::{Endpoint, Side};
-pub use text::num;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -446,7 +445,7 @@ fn attrs(existing: Option<&[String]>, style: Style, radius: f64) -> String {
         None => vec!["end=arrow".into()],
     };
     if style == Style::Arc {
-        out.push(format!("radius={}", num(radius)));
+        out.push(format!("radius={}", fmt_num(radius)));
     }
     out.join(" ")
 }

@@ -1,9 +1,9 @@
 use kashika_diag::{Diagnostic, Pending};
-use kashika_geom::{Pt, Rect, TOLERANCE};
+use kashika_geom::{Pt, Rect, TOLERANCE, fmt_num, round2};
 use kashika_model::Scene;
 use serde::Serialize;
 
-use crate::ctx::{Ctx, LineGeom, fmt_num, round2};
+use crate::ctx::{Ctx, LineGeom};
 
 /// A closed range `lo..hi` on one axis.
 pub type Interval = (f64, f64);

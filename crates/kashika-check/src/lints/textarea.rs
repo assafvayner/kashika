@@ -1,9 +1,8 @@
 use kashika_diag::Diagnostic;
+use kashika_geom::fmt_num;
 use kashika_model::TextRole;
 
-use crate::ctx::{
-    Ctx, bbox, describe_overflow, fmt_num, kind_name, overflow, overflow_fact, shape_el,
-};
+use crate::ctx::{Ctx, bbox, describe_overflow, kind_name, overflow, overflow_fact, shape_el};
 use crate::sink::Sink;
 
 /// `text-outside-shape`: an absolute block item (`at` in the box-local frame) lies outside

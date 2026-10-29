@@ -1,3 +1,4 @@
+pub(crate) use kashika_geom::fmt_num as n;
 use kashika_geom::{PathSeg, Pt};
 use kashika_model::{ErParts, Label, Layer, Line, Marker, Scene, Shape, StrokeStyle, Style, Text};
 
@@ -77,16 +78,6 @@ fn fnv1a32(bytes: &[u8]) -> u32 {
     bytes.iter().fold(0x811c_9dc5, |h, &b| {
         (h ^ u32::from(b)).wrapping_mul(0x0100_0193)
     })
-}
-
-pub(crate) fn n(v: f64) -> String {
-    let r = (v * 100.0).round() / 100.0;
-    let r = if r.is_finite() { r } else { v };
-    if r == 0.0 {
-        "0".to_string()
-    } else {
-        format!("{r}")
-    }
 }
 
 /// Escapes `s` for an attribute value, dropping characters XML 1.0 forbids.

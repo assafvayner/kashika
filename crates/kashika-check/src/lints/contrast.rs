@@ -1,8 +1,8 @@
 use kashika_diag::{Diagnostic, Element, Span};
-use kashika_geom::{Pt, Rect, point_in_polygon};
+use kashika_geom::{Pt, Rect, point_in_polygon, round2};
 use kashika_model::{Layer, PlacedLine, Shape, ShapeKind, TextRole};
 
-use crate::ctx::{Ctx, line_el, round2, shape_el, text_el, text_id};
+use crate::ctx::{Ctx, line_el, shape_el, text_el, text_id};
 use crate::sink::Sink;
 use crate::text_box::text_box;
 

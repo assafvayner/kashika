@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 
-use kashika_check::ctx::{Ctx, bbox, kind_name, round2, text_id};
+use kashika_check::ctx::{Ctx, bbox, kind_name, text_id};
 use kashika_check::free::corridors as free_corridors;
 use kashika_check::ports::ports as find_ports;
 use kashika_diag::{Diagnostic, Severity};
-use kashika_geom::{Pt, Rect, length, point_at};
+use kashika_geom::{Pt, Rect, length, point_at, round2};
 use kashika_model::{EdgeKind, Fit, LabelSide, Scene, SegmentKind};
 use serde::Serialize;
 use sha2::{Digest, Sha256};

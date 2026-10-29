@@ -1,7 +1,7 @@
 use kashika_diag::Diagnostic;
-use kashika_geom::{PathSeg, Pt, TOLERANCE, dot};
+use kashika_geom::{PathSeg, Pt, TOLERANCE, dot, fmt_num, round2};
 
-use crate::ctx::{Ctx, fmt_num, fmt_pt, line_el, round2};
+use crate::ctx::{Ctx, fmt_pt, line_el};
 use crate::lints::axis::anchor_at;
 use crate::sink::Sink;
 

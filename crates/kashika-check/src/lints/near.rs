@@ -1,7 +1,7 @@
 use kashika_diag::{Diagnostic, code};
-use kashika_geom::{Pt, TOLERANCE, cross, dot, edges, inside_runs, seg_seg_dist};
+use kashika_geom::{Pt, TOLERANCE, cross, dot, edges, fmt_num, inside_runs, round2, seg_seg_dist};
 
-use crate::ctx::{Ctx, LineGeom, ShapeGeom, fmt_num, kind_name, line_el, round2, shape_el};
+use crate::ctx::{Ctx, LineGeom, ShapeGeom, kind_name, line_el, shape_el};
 use crate::free::with_free;
 use crate::sink::Sink;
 

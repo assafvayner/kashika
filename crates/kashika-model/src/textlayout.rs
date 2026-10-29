@@ -1,5 +1,5 @@
 use kashika_diag::{Diagnostic, Span};
-use kashika_geom::{Pt, Rect, TOLERANCE};
+use kashika_geom::{Pt, Rect, TOLERANCE, fmt_num};
 use kashika_syntax::ast;
 use kashika_text::{Block, HAlign, MarkupError, PlacedLine, VAlign, measure, stack, stack_size};
 use serde::Serialize;
@@ -187,12 +187,6 @@ pub(crate) fn text_color(x: &ast::Attr, diags: &mut Vec<Diagnostic>) -> Option<S
         return None;
     }
     Some(c)
-}
-
-/// Rounds to 2 decimals for messages, like the SVG writer does.
-fn px(v: f64) -> String {
-    let r = (v * 100.0).round() / 100.0;
-    if r == 0.0 { "0".into() } else { format!("{r}") }
 }
 
 pub(crate) struct ShapeText {
@@ -483,12 +477,12 @@ fn overflow(s: &ShapeInput, what: &str, need: (f64, f64), area: Rect, span: Span
     let size = required_box(s, need);
     let (dw, dh) = (need.0 - area.w, need.1 - area.h);
     let short = match (dw > TOLERANCE, dh > TOLERANCE) {
-        (true, false) => format!("too narrow by {}px", px(dw)),
-        (false, true) => format!("too short by {}px", px(dh)),
+        (true, false) => format!("too narrow by {}px", fmt_num(dw)),
+        (false, true) => format!("too short by {}px", fmt_num(dh)),
         _ => format!(
             "too small: {}px narrower, {}px shorter",
-            px(dw.max(0.0)),
-            px(dh.max(0.0))
+            fmt_num(dw.max(0.0)),
+            fmt_num(dh.max(0.0))
         ),
     };
     Diagnostic::error(
@@ -496,11 +490,11 @@ fn overflow(s: &ShapeInput, what: &str, need: (f64, f64), area: Rect, span: Span
         span,
         format!(
             "{what} needs {}x{}px but the text area of `{}` is {}x{}px ({short})",
-            px(need.0),
-            px(need.1),
+            fmt_num(need.0),
+            fmt_num(need.1),
             s.id,
-            px(area.w),
-            px(area.h)
+            fmt_num(area.w),
+            fmt_num(area.h)
         ),
     )
     .with_help(format!(

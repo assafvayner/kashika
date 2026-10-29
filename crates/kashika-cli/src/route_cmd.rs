@@ -2,7 +2,8 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::Args;
-use kashika_route::{Error, Request, Style, Suggestion, num};
+use kashika_geom::fmt_num as num;
+use kashika_route::{Error, Request, Style, Suggestion};
 
 use crate::{Format, term};
 

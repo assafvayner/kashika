@@ -1,4 +1,5 @@
 mod isect;
+mod num;
 mod path;
 mod point;
 mod poly;
@@ -10,6 +11,7 @@ pub use isect::{
     inside_runs, pieces, point_in_polygon, polygons_overlap, rect_polygon, seg_hit, seg_seg_dist,
     strictly_inside,
 };
+pub use num::{fmt_num, round2};
 pub use path::{
     FLATTEN_TOLERANCE, MAX_FLATTEN_STEPS, PathSeg, flatten, length, point_at, round_corners,
     round_corners_tagged,

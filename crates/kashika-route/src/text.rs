@@ -1,13 +1,7 @@
-use kashika_geom::Pt;
+use kashika_geom::{Pt, fmt_num as num};
 
 use crate::Endpoint;
 use crate::candidates::{Hop, Lane, Plan};
-
-/// A coordinate as a person would write it: at most two decimals, no `-0`.
-pub fn num(v: f64) -> String {
-    let r = (v * 100.0).round() / 100.0;
-    if r == 0.0 { "0".into() } else { format!("{r}") }
-}
 
 fn point(at: Pt, expr: &Option<String>, origin: Pt) -> String {
     match expr {
