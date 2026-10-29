@@ -183,7 +183,7 @@ Comments: `// to end of line` and `/* block */` (no nesting; an unclosed `/*` is
 
 - `parse`: fix these first. A statement that fails to parse is dropped, but references to its id are not reported again as `unknown-id`.
 - `label-overflow`: grow the box to the size in the help, shorten the text, break it with `\n`, or for a small box lower `padding=`.
-- `cross` / `through` / `near`: move the segment to a lane from the `free` help; `allow=cross:<other>` only for a non-planar graph.
+- `cross` / `through` / `near`: move the segment to a lane from the `free` help; `allow=cross:<other>` only for a non-planar graph. `through` on a line's own endpoint box means a corner sits inside that box and the line reaches the anchor from inside: put the corner outside so a `left`/`right` end arrives horizontally (`vh`, `x …`) and a `top`/`bottom` end vertically (`hv`, `y …`).
 - `shared-segment` / `port-crowding`: spread ports with `side@t`, or fan out from a `junction`.
 - `not-ortho` / `diagonal-tail`: finish with `hv`/`vh` or `x`/`y`.
 - `label-collision` on a group border or title: move the label to a `label@t` from the help, and route lines below a group's title band, not through its title, or move the title out of the way with `text-align=right` (or `center`) on the group.

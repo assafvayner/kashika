@@ -1,0 +1,10 @@
+// spec: 7
+// A line that reaches its own endpoint box's edge anchor from inside it is flagged; a center anchor and a square approach are not.
+diagram "through own endpoint" size (400,260)
+box a at (20,20) size (60,50)
+box b at (200,20) size (100,100)
+box c at (20,160) size (60,50)
+box d at (200,160) size (100,50)
+line l a.right -> (240,45) -> vh b.left
+line ok1 c.bottom -> v 30 -> hv d.bottom
+line ok2 c.center -> d.center

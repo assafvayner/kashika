@@ -25,7 +25,7 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `file` | error | missing, oversized or unusable file, an import cycle, or too many imports | fix the path, or pass `--include <file>` or `--allow-path` |
 | `cross` | warn | two lines intersect away from a shared endpoint | reroute via a free interval |
 | `shared-segment` | warn | two lines overlap collinearly over 1px | move one to the free lane |
-| `through` | warn | a line enters a box or image (not `layer=under`/`over`) | route around it |
+| `through` | warn | a line enters a box or image (not `layer=under`/`over`), including its own endpoint box: reaching an edge anchor from inside the box is flagged; only the run from an interior anchor like `center` to the outline is exempt | route around it; for its own endpoint box, keep the last corner outside so a `left`/`right` end is reached horizontally (`vh`, `x …`) and a `top`/`bottom` end vertically (`hv`, `y …`) |
 | `near` | warn | a line within `clearance` of a box, a parallel line or along a group border | move it `clearance` away |
 | `overlap` | warn | two shapes overlap, unless a group contains the other | move one, or use a group |
 | `spill` | warn | a child leaves its group or enters its title band | grow the group |

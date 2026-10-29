@@ -50,3 +50,59 @@ fn groups_are_never_obstacles() {
         .is_empty()
     );
 }
+
+#[test]
+fn reaching_an_edge_anchor_from_inside_its_own_box_is_flagged() {
+    let d = lint(
+        "through",
+        "box a at (20,20) size (60,50)\nbox b at (200,20) size (100,100)\nline l a.right -> (240,45) -> vh b.left\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "l runs through the inside of its own endpoint box 'b'"
+    );
+    assert_eq!(d[0].elements[1].id, "b");
+    assert_eq!(d[0].facts["entry"], serde_json::json!([200.0, 45.0]));
+    assert_eq!(d[0].facts["exit"], serde_json::json!([200.0, 70.0]));
+    assert!(
+        d[0].help[0].starts_with("arrive at 'b' from outside"),
+        "{d:#?}"
+    );
+
+    let d = lint(
+        "through",
+        "box a at (20,20) size (100,100)\nbox b at (300,20) size (60,50)\nline l a.right -> h -40 -> v 150 -> hv b.bottom\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "l runs through the inside of its own endpoint box 'a'"
+    );
+    assert_eq!(d[0].facts["entry"], serde_json::json!([120.0, 70.0]));
+    assert_eq!(d[0].facts["exit"], serde_json::json!([80.0, 120.0]));
+    assert!(d[0].help[0].starts_with("leave 'a' straight out"), "{d:#?}");
+}
+
+#[test]
+fn normal_attachments_to_own_boxes_are_not_flagged() {
+    let boxes = "box a at (20,20) size (60,50)\nbox b at (200,20) size (100,100)\n";
+    for line in [
+        "line l a.right -> (150,45) -> vh b.left end=arrow start=diamond",
+        "line l a.top -> v -10 -> x 250 -> b.top",
+        "line l a.bottom -> v 60 -> x 220 -> y 120 -> b.bottom",
+        "line l a.center -> b.center",
+        "line l a.center+(10,5) -> hv b.left",
+    ] {
+        let src = format!("{boxes}{line}\n");
+        let d = lint("through", &src);
+        assert!(d.is_empty(), "{src}: {d:#?}");
+    }
+    for src in [
+        "box a at (20,20) size (60,50) icon=\"lock\"\nshape srv from \"server\" text-area=below\nbox b \"B\" at (200,20) size (100,60) shape=srv\nline l a.right -> b.left end=arrow\nline m a.bottom -> v 60 -> hv b.bottom\n",
+        "box a at (20,20) size (60,50)\nbox b at (200,20) size (100,100) layer=under\nline l a.right -> (240,45) -> vh b.left\n",
+    ] {
+        let d = lint("through", src);
+        assert!(d.is_empty(), "{src}: {d:#?}");
+    }
+}

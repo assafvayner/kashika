@@ -1,0 +1,4 @@
+warn[through] 8:1-8:40: l runs through the inside of its own endpoint box 'b'
+  = help: arrive at 'b' from outside: keep the last corner beyond the side it ends on, so a `left`/`right` end is reached by a horizontal run from outside (`vh`, or an `x …` hop first) and a `top`/`bottom` end by a vertical one (`hv`, `y …`)
+  elements: [{"from":[80,45],"id":"l","kind":"line","segment":1,"span":{"col":1,"end_col":40,"end_line":8,"line":8},"to":[240,45]},{"bbox":[[200,20],[300,120]],"id":"b","kind":"box","span":{"col":1,"end_col":33,"end_line":5,"line":5}}]
+  facts: {"entry":[200,45],"exit":[200,70]}
