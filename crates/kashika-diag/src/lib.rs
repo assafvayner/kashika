@@ -246,9 +246,10 @@ impl Diagnostic {
     }
 }
 
-/// The candidate closest to `name` that differs from it in at least one character, in at
-/// most half the characters of the longer of the two, and in fewer characters than the
-/// candidate has, so a one-letter candidate is never suggested.
+/// The candidate closest to `name` that is at least one edit away (an insertion, deletion,
+/// substitution or swap of neighbors), at most a third of the characters of the longer of
+/// the two away (counting at least 3, so one edit up to five characters, two up to eight),
+/// and fewer edits away than it has characters, so a one-letter candidate is never suggested.
 pub fn did_you_mean<'a>(
     name: &str,
     candidates: impl IntoIterator<Item = &'a str>,
@@ -258,7 +259,7 @@ pub fn did_you_mean<'a>(
         .map(|c| (edit_distance(name, c), c))
         .filter(|&(d, c)| {
             let len = c.chars().count();
-            d > 0 && d < len && d <= len.max(name.chars().count()) / 2
+            d > 0 && d < len && d <= len.max(name.chars().count()).max(3) / 3
         })
         .min_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(b.1)))
         .map(|(_, c)| c)
@@ -267,14 +268,18 @@ pub fn did_you_mean<'a>(
 fn edit_distance(a: &str, b: &str) -> usize {
     let a: Vec<char> = a.chars().collect();
     let b: Vec<char> = b.chars().collect();
+    let mut older: Vec<usize> = vec![0; b.len() + 1];
     let mut prev: Vec<usize> = (0..=b.len()).collect();
     for i in 1..=a.len() {
         let mut cur = vec![i; b.len() + 1];
         for j in 1..=b.len() {
             let cost = usize::from(a[i - 1] != b[j - 1]);
             cur[j] = (prev[j] + 1).min(cur[j - 1] + 1).min(prev[j - 1] + cost);
+            if i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1] {
+                cur[j] = cur[j].min(older[j - 2] + 1);
+            }
         }
-        prev = cur;
+        older = std::mem::replace(&mut prev, cur);
     }
     prev[b.len()]
 }
@@ -307,6 +312,28 @@ mod tests {
     fn suggests_close_names() {
         assert_eq!(did_you_mean("rigth", ["right", "left"]), Some("right"));
         assert_eq!(did_you_mean("bx", ["box", "text", "line"]), Some("box"));
+    }
+
+    #[test]
+    fn suggests_real_typos() {
+        assert_eq!(
+            did_you_mean("boundry", ["boundary", "box"]),
+            Some("boundary")
+        );
+        assert_eq!(did_you_mean("pinn", ["pin"]), Some("pin"));
+        assert_eq!(did_you_mean("colr", ["color"]), Some("color"));
+        assert_eq!(
+            did_you_mean("stroke-widht", ["stroke-width"]),
+            Some("stroke-width")
+        );
+    }
+
+    #[test]
+    fn does_not_suggest_loose_matches() {
+        assert_eq!(did_you_mean("icon", ["cdn"]), None);
+        assert_eq!(did_you_mean("condition", ["function"]), None);
+        assert_eq!(did_you_mean("centre", ["center"]), Some("center"));
+        assert_eq!(did_you_mean("abcdef", ["abcxyz"]), None);
     }
 
     #[test]

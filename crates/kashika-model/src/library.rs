@@ -610,7 +610,11 @@ pub(crate) fn shape_name(
         .iter()
         .find(|s| s.name == lower || s.keywords.contains(&lower.as_str()))
         .map(|s| s.name);
-    if let Some(s) = keyword.or_else(|| did_you_mean(w, names)) {
+    let namespaced = shapes
+        .keys()
+        .find(|k| k.strip_suffix(w.as_str()).is_some_and(|p| p.ends_with('.')))
+        .map(String::as_str);
+    if let Some(s) = keyword.or(namespaced).or_else(|| did_you_mean(w, names)) {
         d = d.with_help(format!("did you mean `{s}`?"));
     }
     if crate::icons::bundled(w).is_some() {
