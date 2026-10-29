@@ -74,7 +74,7 @@ fn example_cases() -> Vec<Case> {
                 to: t.to,
                 line: Some(id),
                 arrow: t.arrow,
-                attrs: crate::attrs(Some(&t.attrs), Style::Corner, 0.0),
+                attrs: crate::attrs(Some(&t.attrs), Style::Corner, 0.0).text(None),
                 frame: Frame {
                     origin: t.origin,
                     after: Some(t.end),
@@ -140,7 +140,7 @@ fn synthetic_cases() -> Vec<Case> {
                 to,
                 line: None,
                 arrow: false,
-                attrs: crate::attrs(None, Style::Corner, 0.0),
+                attrs: crate::attrs(None, Style::Corner, 0.0).text(None),
                 frame: Frame::default(),
             }
         })

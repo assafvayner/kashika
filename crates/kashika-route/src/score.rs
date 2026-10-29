@@ -9,6 +9,8 @@ use kashika_model::{Line, Scene};
 use crate::{Corridor, Crossing, Transit};
 
 pub(crate) struct Score {
+    /// Every finding that counts, suppressed ones included.
+    pub(crate) findings: Vec<Diagnostic>,
     pub(crate) crossed: Vec<Crossing>,
     pub(crate) transited: Vec<Transit>,
     pub(crate) near: usize,
@@ -58,11 +60,22 @@ pub(crate) fn score(scene: &Scene, probe: &Line, ignore: Option<&str>) -> Option
         .filter(|d| d.code == code::NEAR || d.code == code::SHARED_SEGMENT)
         .count();
     Some(Score {
+        findings: mine,
         crossed,
         transited,
         near,
         length: length(&probe.path),
     })
+}
+
+/// Whether the `allow=` entry `entry` (`code` or `code:other`) on the line `owner` suppresses
+/// `d`, as `kashika check` decides.
+pub(crate) fn suppresses(entry: &str, owner: &str, d: &Diagnostic) -> bool {
+    let (code, other) = match entry.split_once(':') {
+        Some((c, o)) => (c, Some(o)),
+        None => (entry, None),
+    };
+    code == d.code && involves(d, owner) && other.is_none_or(|o| o != owner && involves(d, o))
 }
 
 fn involves(d: &Diagnostic, id: &str) -> bool {

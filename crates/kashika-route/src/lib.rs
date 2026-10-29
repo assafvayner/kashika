@@ -72,6 +72,10 @@ pub struct Candidate {
     pub corridor: Option<Corridor>,
     /// A ready-to-paste `line` statement, or `arrow` when rerouting one.
     pub statement: String,
+    /// The rerouted line's `allow=` entries that suppress nothing on this path, left out of
+    /// `statement` (with `reason=` when no entry is left).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub dropped_allow: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -202,7 +206,7 @@ struct Target {
     arrow: bool,
     from: Endpoint,
     to: Endpoint,
-    attrs: Vec<String>,
+    attrs: Vec<Written>,
     origin: Pt,
     end: (u32, u32),
 }
@@ -229,7 +233,20 @@ fn existing(file: &ast::File, scene: &Scene, src: &Source, id: &str) -> Result<T
         arrow: ast_line.arrow,
         from: endpoint(Some(&ast_line.start), first.from()),
         to: endpoint(end_point(ast_line), last.to()),
-        attrs: ast_line.attrs.iter().map(|a| src.slice(a.span)).collect(),
+        attrs: ast_line
+            .attrs
+            .iter()
+            .map(|a| Written {
+                key: a.key.name.clone(),
+                text: src.slice(a.span),
+                allow: match &a.value {
+                    ast::Value::Word(w) if a.key.name == "allow" => {
+                        w.split(',').map(str::to_string).collect()
+                    }
+                    _ => Vec::new(),
+                },
+            })
+            .collect(),
         origin: line.origin,
         end: (ast_line.span.end_line, ast_line.span.end_col),
     })
@@ -246,7 +263,7 @@ fn rank(
     scene: &Scene,
     src: &Source,
     (from, to): (&Endpoint, &Endpoint),
-    (arrow, id, attrs): (bool, &str, &str),
+    (arrow, id, attrs): (bool, &str, &Attrs),
     frame: Frame,
 ) -> Vec<Candidate> {
     let ctx = Ctx::new(scene);
@@ -256,10 +273,11 @@ fn rank(
         .iter()
         .map(|p| path_text(from, to, p, frame.origin))
         .collect();
+    let all = attrs.text(None);
     let probes: Vec<String> = paths
         .iter()
         .enumerate()
-        .map(|(i, p)| statement(arrow, &probe_id(i), p, attrs))
+        .map(|(i, p)| statement(arrow, &probe_id(i), p, &all))
         .collect();
     let (text, first) = src.with_lines(frame.after, &probes);
     let (probed, diags) = kashika_model::compile_with(&text, req.opts);
@@ -305,6 +323,9 @@ fn rank(
             let span = lane_span(from, to, plan, axis, v)?;
             score::corridor(&ctx, axis, v, span, &skip)
         });
+        let (kept, dropped_allow): (Vec<&str>, Vec<&str>) = attrs
+            .allow()
+            .partition(|a| s.findings.iter().any(|d| score::suppresses(a, &line.id, d)));
         detour.push(plan.hops.len() >= 3);
         ties.push(plan.lane_anchors(from, to));
         candidates.push(Candidate {
@@ -316,7 +337,8 @@ fn rank(
             segments: segments(&line.path, req.style),
             length: s.length.round(),
             corridor,
-            statement: statement(arrow, id, path, attrs),
+            statement: statement(arrow, id, path, &attrs.text(Some(&kept))),
+            dropped_allow: dropped_allow.into_iter().map(str::to_string).collect(),
         });
     }
     let simple: Vec<&Candidate> = candidates
@@ -434,19 +456,66 @@ fn default_id(scene: &Scene, from: &Endpoint, to: &Endpoint) -> String {
         .expect("some suffix is free")
 }
 
-/// Attributes for the suggested statement, which the probes share: the rerouted line's own,
-/// minus `radius` (and `ortho` for curves), or `end=arrow` for a new line; `arc` adds `radius=N`.
-fn attrs(existing: Option<&[String]>, style: Style, radius: f64) -> String {
-    let mut out: Vec<String> = match existing {
+/// An attribute of the rerouted line as written, with its `allow=` entries.
+#[derive(Clone)]
+struct Written {
+    key: String,
+    text: String,
+    allow: Vec<String>,
+}
+
+/// Attributes for the suggested statement: the rerouted line's own, minus `radius` (and
+/// `ortho` for curves), or `end=arrow` for a new line; `arc` adds `radius=N`.
+struct Attrs(Vec<Written>);
+
+impl Attrs {
+    fn allow(&self) -> impl Iterator<Item = &str> {
+        self.0
+            .iter()
+            .flat_map(|w| w.allow.iter().map(String::as_str))
+    }
+
+    /// The attributes, with only the `allow=` entries in `kept` when given, and no `reason=`
+    /// when none is left.
+    fn text(&self, kept: Option<&[&str]>) -> String {
+        let kept = kept.filter(|_| self.allow().next().is_some());
+        let out: Vec<String> = self
+            .0
+            .iter()
+            .filter_map(|w| match (kept, w.key.as_str()) {
+                (Some([]), "allow" | "reason") => None,
+                (Some(kept), "allow") if !w.allow.is_empty() => {
+                    let list: Vec<&str> = w
+                        .allow
+                        .iter()
+                        .map(String::as_str)
+                        .filter(|a| kept.contains(a))
+                        .collect();
+                    (!list.is_empty()).then(|| format!("allow={}", list.join(",")))
+                }
+                _ => Some(w.text.clone()),
+            })
+            .collect();
+        out.join(" ")
+    }
+}
+
+fn attrs(existing: Option<&[Written]>, style: Style, radius: f64) -> Attrs {
+    let written = |text: String| Written {
+        key: String::new(),
+        text,
+        allow: Vec::new(),
+    };
+    let mut out: Vec<Written> = match existing {
         Some(list) => list
             .iter()
-            .filter(|a| !a.starts_with("radius=") && !(style == Style::Bezier && *a == "ortho"))
+            .filter(|a| a.key != "radius" && !(style == Style::Bezier && a.key == "ortho"))
             .cloned()
             .collect(),
-        None => vec!["end=arrow".into()],
+        None => vec![written("end=arrow".into())],
     };
     if style == Style::Arc {
-        out.push(format!("radius={}", fmt_num(radius)));
+        out.push(written(format!("radius={}", fmt_num(radius))));
     }
-    out.join(" ")
+    Attrs(out)
 }

@@ -734,6 +734,61 @@ fn probes_carry_the_rerouted_line_attributes() {
 }
 
 #[test]
+fn keeps_only_the_allow_entries_each_suggestion_needs() {
+    let line = "line ab a.right -> b.left end=arrow allow=cross:l_feat,overlap reason=\"bus\"";
+    let src = format!(
+        "diagram \"r\" size (460,240)\n\
+box a \"A\" at (20,100) size (100,40)\n\
+box b \"B\" at (320,100) size (100,40)\n\
+line l_feat (220,60) -> (220,180)\n\
+{line}\n"
+    );
+    let s = suggest(&Request {
+        max: 30,
+        ..reroute_req(&src, "ab")
+    })
+    .unwrap();
+    let clear = &s.candidates[0];
+    assert_eq!(clear.crossings, 0);
+    assert_eq!(clear.dropped_allow, ["cross:l_feat", "overlap"]);
+    assert!(
+        clear.statement.ends_with(" end=arrow"),
+        "{}",
+        clear.statement
+    );
+    let crossing = s
+        .candidates
+        .iter()
+        .find(|c| c.crossings == 1)
+        .expect("the straight path is a candidate");
+    assert_eq!(
+        crossing.statement,
+        "line ab a.right -> b.left end=arrow allow=cross:l_feat reason=\"bus\""
+    );
+    assert_eq!(crossing.dropped_allow, ["overlap"]);
+    for c in &s.candidates {
+        let (scene, diags) = kashika_model::compile(&src.replace(line, &c.statement));
+        assert!(diags.is_empty(), "{}: {diags:#?}", c.statement);
+        assert!(
+            kashika_check::check(&scene)
+                .iter()
+                .filter(|d| d.code == "cross")
+                .all(|d| d.suppressed),
+            "{}",
+            c.statement
+        );
+    }
+}
+
+#[test]
+fn keeps_reason_without_allow() {
+    let src = format!("{WALL}line ab a.top -> y 28 -> hv b.top reason=\"x\"\n");
+    let s = reroute(&src, "ab", Style::Corner).unwrap();
+    assert!(s.candidates[0].statement.ends_with(" reason=\"x\""));
+    assert!(s.candidates[0].dropped_allow.is_empty());
+}
+
+#[test]
 fn ties_prefer_lanes_on_the_endpoint_boxes() {
     let src = "diagram \"t\" size (500,200)\n\
 box a at (20,60) size (100,60)\n\

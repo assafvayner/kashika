@@ -175,3 +175,35 @@ fn hints_at_line_with_same_endpoints() {
         .assert()
         .stdout(predicate::str::contains("hint:").not());
 }
+
+#[test]
+fn notes_allow_entries_a_suggestion_no_longer_needs() {
+    let dir = tempfile::tempdir().unwrap();
+    let f = dir.path().join("r.kash");
+    std::fs::write(
+        &f,
+        "diagram \"r\" size (460,240)\n\
+box a \"A\" at (20,100) size (100,40)\n\
+box b \"B\" at (320,100) size (100,40)\n\
+line l_feat (220,60) -> (220,180)\n\
+line ab a.right -> b.left end=arrow allow=cross:l_feat reason=\"shared bus\"\n",
+    )
+    .unwrap();
+    let f = f.to_str().unwrap();
+    kashika()
+        .args(["route", f, "--line", "ab", "--max", "1"])
+        .assert()
+        .code(0)
+        .stdout(
+            "#1  crossings=0 transits=0 near=0 segments=5 length=386px  via corridor y 0..54\n    line ab a.right -> x a.tr+(12,0) -> y 27 -> x b.tl+(-12,0) -> vh b.left end=arrow\n    note: dropped allow=cross:l_feat (no longer needed)\n",
+        );
+    let out = kashika()
+        .args(["route", f, "--line", "ab", "--max", "1", "--format", "json"])
+        .output()
+        .unwrap();
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(
+        v["candidates"][0]["dropped_allow"],
+        serde_json::json!(["cross:l_feat"])
+    );
+}

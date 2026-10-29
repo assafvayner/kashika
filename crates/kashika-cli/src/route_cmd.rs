@@ -181,6 +181,12 @@ fn candidates_text(s: &Suggestion) -> String {
             ));
         }
         out.push_str(&format!("\n    {}\n", c.statement));
+        if !c.dropped_allow.is_empty() {
+            out.push_str(&format!(
+                "    note: dropped allow={} (no longer needed)\n",
+                c.dropped_allow.join(",")
+            ));
+        }
     }
     out
 }

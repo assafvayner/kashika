@@ -470,7 +470,7 @@ Suggests up to `--max` (default 3) candidate paths from `<from>` to `<to>`. Both
   | `corner` | orthogonal paths with hard corners, written with `h`/`v`/`x`/`y`/`hv`/`vh`/`vhv`/`hvh` |
   | `arc` | the same orthogonal paths plus `radius=N` for rounded corners (default 8, set with `--radius`) |
   | `bezier` | smooth paths written with `curve left N` / `right N` where possible, otherwise `curve via` |
-- `--line <id>` reroutes an existing line. The line is ignored as an obstacle, its endpoints are used when `<from>`/`<to>` are omitted, and its attributes are kept in the output.
+- `--line <id>` reroutes an existing line. The line is ignored as an obstacle, its endpoints are used when `<from>`/`<to>` are omitted, and its attributes are kept in the output, except stale suppressions: each candidate keeps only the `allow=` entries that still suppress at least one of its findings (as `kashika check` would match them), and drops `reason=` when no entry is left. Ranking is unaffected. A candidate that drops entries prints `note: dropped allow=<entries> (no longer needed)` under its statement; JSON lists them in `dropped_allow`.
 - Candidates must not cross into any box (`through`), and paths must keep `clearance`. They are ranked by:
   1. crossings plus group transits: a transit (a `group-transit` finding, one per group the path passes through) weighs the same as a crossing
   2. `near` findings
@@ -489,7 +489,7 @@ Each candidate lists these numbers, which line it crosses and where, which group
     line app1_db app1.bottom -> vh pg.left@0.25 end=arrow
 ```
 
-Suggestions use anchors and axis targets rather than literals wherever possible, so they survive later moves. `--format json` returns the same data structured: each candidate has `crossings` and `crossed` (`line`, `at`), and `transits` and `transited` (`group`, `at`, the entry point). It is a suggestion tool, not a layout engine; the search is bounded:
+Suggestions use anchors and axis targets rather than literals wherever possible, so they survive later moves. `--format json` returns the same data structured: each candidate has `crossings` and `crossed` (`line`, `at`), and `transits` and `transited` (`group`, `at`, the entry point), and `dropped_allow` when it drops any. It is a suggestion tool, not a layout engine; the search is bounded:
 
 - `bezier` tries single curves only. `curve left N` / `right N` is tried only when it leaves and enters side anchors square; `curve via` places its control points out along the side normals, written as offsets from the endpoints' references.
 - `corner` and `arc` try the straight path, `hv`, `vh`, and one lane (`x <lane> -> vh`, `y <lane> -> hv`) at the midpoint, `2 × clearance` outside any box or group edge, or the middle of a free interval between the endpoints (as `inspect --corridors` reports it) that holds no lane other than a group's, at least `clearance` inside the canvas, written as a literal. Of lanes within 0.5px of each other only one is kept, preferring a lane written relative to a box the path starts or ends at, then the box or group nearest the endpoints, then the literal midpoint. A literal lane exactly halfway between the point before it and the end, followed by the elbow to the end, is written as one `hvh <to>` (or `vhv <to>`), which draws the same path. Of the one-lane paths that enter no box and leave and enter side anchors square, only the 32 best by estimated crossings and group transits, near-misses, segments and length are scored.
