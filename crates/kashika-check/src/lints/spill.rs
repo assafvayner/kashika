@@ -2,7 +2,7 @@ use kashika_diag::{Diagnostic, Element, Span};
 use kashika_geom::{Pt, Rect, fmt_num, inside_runs, rect_polygon};
 
 use crate::ctx::{Ctx, describe_overflow, line_bbox, overflow, overflow_fact};
-use crate::element::{bbox, junction_el, line_el, shape_el, text_el, text_id};
+use crate::element::{bbox, junction_el, line_el, shape_el, text_el};
 use crate::sink::Sink;
 use crate::text_box::{below_box, text_box, title_band};
 
@@ -106,7 +106,7 @@ fn children(ctx: &Ctx, gid: &str) -> Vec<Child> {
         out.push(Child {
             el: text_el(t),
             span: t.span,
-            what: format!("text '{}'", text_id(t)),
+            what: format!("text '{}'", t.display_id()),
             extent: text_box(t),
             pieces: Vec::new(),
             point: false,

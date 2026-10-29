@@ -6,7 +6,7 @@ use kashika_geom::{
 };
 use kashika_model::{Junction, Layer, Line, Scene, Shape, ShapeKind};
 
-use crate::element::{junction_el, line_el, shape_el, text_el, text_id};
+use crate::element::{junction_el, line_el, shape_el, text_el};
 use crate::index::Grid;
 use crate::outline::polygon;
 use crate::text_box::{below_box, label_box, text_box};
@@ -131,7 +131,7 @@ impl<'a> Ctx<'a> {
         }
         let mut text_ids = HashMap::new();
         for (i, t) in scene.texts.iter().enumerate() {
-            text_ids.entry(text_id(t)).or_insert(i);
+            text_ids.entry(t.display_id()).or_insert(i);
         }
         let junction_boxes: Vec<Rect> = scene
             .junctions

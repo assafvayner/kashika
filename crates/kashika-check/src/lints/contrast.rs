@@ -3,7 +3,7 @@ use kashika_geom::{Pt, Rect, point_in_polygon, round2};
 use kashika_model::{Layer, PlacedLine, Shape, ShapeKind, TextRole};
 
 use crate::ctx::Ctx;
-use crate::element::{line_el, shape_el, text_el, text_id};
+use crate::element::{line_el, shape_el, text_el};
 use crate::sink::Sink;
 use crate::text_box::text_box;
 
@@ -79,7 +79,7 @@ pub fn low_contrast(ctx: &Ctx, out: &mut Sink) {
             bg,
             text_el(t),
             t.span,
-            format!("text '{}'", text_id(t)),
+            format!("text '{}'", t.display_id()),
         );
     }
     for l in &ctx.lines {

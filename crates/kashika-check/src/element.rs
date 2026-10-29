@@ -14,12 +14,6 @@ pub fn bbox(r: Rect) -> [[f64; 2]; 2] {
     [arr(r.origin()), arr(Pt::new(r.right(), r.bottom()))]
 }
 
-/// The id of a text, or `text@L<n>` when it has none.
-pub fn text_id(t: &Text) -> String {
-    t.id.clone()
-        .unwrap_or_else(|| format!("text@L{}", t.span.line))
-}
-
 pub fn shape_el(s: &Shape) -> Element {
     let mut e = Element::new(s.id.clone(), s.kind.name(), s.span);
     e.bbox = Some(bbox(s.rect));
@@ -48,7 +42,7 @@ pub fn junction_el(j: &Junction) -> Element {
 }
 
 pub fn text_el(t: &Text) -> Element {
-    let mut e = Element::new(text_id(t), "text", t.span);
+    let mut e = Element::new(t.display_id(), "text", t.span);
     e.bbox = Some(bbox(text_box(t)));
     e
 }

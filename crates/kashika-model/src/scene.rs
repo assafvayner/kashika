@@ -279,6 +279,20 @@ pub struct Text {
     pub span: Span,
 }
 
+impl Text {
+    /// The declared id, or `text@L<n>` for unnamed texts.
+    pub fn display_id(&self) -> String {
+        self.id
+            .clone()
+            .unwrap_or_else(|| unnamed_text_id(self.span.line))
+    }
+}
+
+/// The id an unnamed text on source line `line` goes by.
+pub(crate) fn unnamed_text_id(line: u32) -> String {
+    format!("text@L{line}")
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Marker {

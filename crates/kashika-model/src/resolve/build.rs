@@ -55,10 +55,9 @@ impl<'a> Resolver<'a> {
                 Item::Text(t) => {
                     if let Some(Built::Text(x)) = built {
                         scene.texts.push(x);
-                        let owner = t
-                            .id
-                            .as_ref()
-                            .map_or_else(|| format!("text@L{}", t.span.line), |i| i.name.clone());
+                        let owner =
+                            t.id.as_ref()
+                                .map_or_else(|| unnamed_text_id(t.span.line), |i| i.name.clone());
                         self.record_point(&owner, &t.at);
                     }
                 }
@@ -267,7 +266,7 @@ impl<'a> Resolver<'a> {
         let item = self.entries[idx].item;
         match (item.id(), item) {
             (Some(id), _) => id.name.clone(),
-            (None, Item::Text(t)) => format!("text@L{}", t.span.line),
+            (None, Item::Text(t)) => unnamed_text_id(t.span.line),
             (None, _) => format!("line@L{}", item.span().line),
         }
     }

@@ -3,7 +3,7 @@ use kashika_model::PlacedLine;
 use kashika_text::{covered_scripts, missing_glyphs};
 
 use crate::ctx::Ctx;
-use crate::element::{line_el, shape_el, text_el, text_id};
+use crate::element::{line_el, shape_el, text_el};
 use crate::sink::Sink;
 
 /// `missing-glyph`: text uses characters the bundled fonts cannot draw. They render as the
@@ -25,7 +25,7 @@ pub fn missing_glyph(ctx: &Ctx, out: &mut Sink) {
             out,
             &t.lines,
             t.span,
-            format!("text '{}'", text_id(t)),
+            format!("text '{}'", t.display_id()),
             text_el(t),
         );
     }

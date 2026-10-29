@@ -444,7 +444,7 @@ fn scene_ids(scene: &Scene) -> Vec<String> {
         .map(|s| s.id.clone())
         .chain(scene.junctions.iter().map(|j| j.id.clone()))
         .chain(scene.lines.iter().map(|l| l.id.clone()))
-        .chain(scene.texts.iter().map(kashika_check::element::text_id))
+        .chain(scene.texts.iter().map(kashika_model::Text::display_id))
         .collect()
 }
 

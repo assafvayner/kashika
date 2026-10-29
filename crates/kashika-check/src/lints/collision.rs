@@ -5,7 +5,7 @@ use kashika_geom::{
 use kashika_model::Marker;
 
 use crate::ctx::Ctx;
-use crate::element::{arr, bbox, line_el, shape_el, text_el, text_id};
+use crate::element::{arr, bbox, line_el, shape_el, text_el};
 use crate::index::Grid;
 use crate::sink::Sink;
 use crate::text_box::{below_box, label_box, label_box_at, text_box, title_band, title_box};
@@ -161,7 +161,7 @@ fn subjects<'c>(ctx: &'c Ctx) -> Vec<Subject<'c>> {
         out.push(Subject {
             el: text_el(t),
             span: t.span,
-            what: format!("text '{}'", text_id(t)),
+            what: format!("text '{}'", t.display_id()),
             rect: text_box(t),
             label: None,
             shape: None,

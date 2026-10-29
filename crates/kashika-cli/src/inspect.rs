@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use kashika_check::ctx::Ctx;
-use kashika_check::element::{bbox, text_id};
+use kashika_check::element::bbox;
 use kashika_check::free::corridors as free_corridors;
 use kashika_check::ports::ports as find_ports;
 use kashika_diag::{Diagnostic, Severity};
@@ -228,9 +228,9 @@ pub fn build(
     let texts = scene
         .texts
         .iter()
-        .filter(|t| keep(&text_id(t)))
+        .filter(|t| keep(&t.display_id()))
         .map(|t| TextInfo {
-            id: text_id(t),
+            id: t.display_id(),
             content: t.content.clone(),
             parent: t.parent.clone(),
             line: t.span.line,

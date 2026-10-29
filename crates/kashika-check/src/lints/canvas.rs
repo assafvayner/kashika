@@ -3,7 +3,7 @@ use kashika_geom::{Rect, fmt_num};
 use kashika_model::Shape;
 
 use crate::ctx::{Ctx, describe_overflow, line_bbox, overflow, overflow_fact};
-use crate::element::{junction_el, line_el, shape_el, text_el, text_id};
+use crate::element::{junction_el, line_el, shape_el, text_el};
 use crate::sink::Sink;
 use crate::text_box::{below_box, label_box, text_box};
 
@@ -103,7 +103,7 @@ pub fn out_of_canvas(ctx: &Ctx, out: &mut Sink) {
     }
     for t in &ctx.scene.texts {
         check(
-            format!("text '{}'", text_id(t)),
+            format!("text '{}'", t.display_id()),
             text_el(t),
             t.span,
             text_box(t),
