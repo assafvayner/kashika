@@ -11,8 +11,8 @@
 <polygon points="190.22,150 180.22,154 180.22,146" fill="#334155"/>
 <path d="M 330.22 150 L 400.22 150" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
 <polygon points="410.22,150 400.22,154 400.22,146" fill="#334155"/>
-<mask id="kashika-d6e1aa5b-mask-2" maskUnits="userSpaceOnUse" x="0" y="0" width="820" height="300"><rect width="820" height="300" fill="#fff"/><rect x="600.19" y="142.5" width="20.07" height="15" fill="#000"/></mask>
-<g mask="url(#kashika-d6e1aa5b-mask-2)">
+<mask id="kashika-9e9a95db-mask-2" maskUnits="userSpaceOnUse" x="0" y="0" width="820" height="300"><rect width="820" height="300" fill="#fff"/><rect x="600.19" y="142.5" width="20.07" height="15" fill="#000"/></mask>
+<g mask="url(#kashika-9e9a95db-mask-2)">
 <path d="M 570.22 150 L 640.22 150" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
 <polygon points="650.22,150 640.22,154 640.22,146" fill="#334155"/>
 </g>

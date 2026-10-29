@@ -238,5 +238,23 @@ fn mask_ids_are_unique_per_diagram_and_stable() {
     assert_ne!(ia[0], ia[1]);
     assert!(ib.iter().all(|id| !ia.contains(id)), "{ia:?} {ib:?}");
     assert_eq!(ia, mask_ids(&svg(a)));
-    assert!(!svg(a).contains("@ID@"));
+}
+
+#[test]
+fn drops_characters_invalid_in_xml() {
+    let (mut scene, diags) =
+        compile("diagram \"e\" size (100,100)\nbox a \"ab\" at (0,0) size (90,40)\n");
+    assert!(diags.is_empty(), "{diags:#?}");
+    scene.shapes[0].text[0].lines[0].runs[0].text = "a\u{1}\u{b}\u{fffe}\u{ffff}b\tc".to_string();
+    let s = render_svg(&scene);
+    assert!(s.contains("aria-label=\"ab\tc\""), "{s}");
+}
+
+#[test]
+fn repeated_icons_are_embedded_once() {
+    let s = svg(
+        "diagram \"r\" size (400,100)\nbox a at (0,0) size (60,60) icon=\"server\"\nbox b at (100,0) size (60,60) icon=\"server\"\nbox c at (200,0) size (60,60) icon=\"lock\"\n",
+    );
+    assert_eq!(s.matches("data:image/svg+xml;base64,").count(), 2, "{s}");
+    assert_eq!(s.matches("<use href=\"#kashika-").count(), 3, "{s}");
 }

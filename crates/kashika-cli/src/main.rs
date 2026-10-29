@@ -285,11 +285,8 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
                     error_markers: errors > 0,
                     debug: r.debug,
                 };
-                let marked: Vec<_> = report::visible(&diags, c.show_suppressed)
-                    .into_iter()
-                    .cloned()
-                    .collect();
-                let svg = kashika_render::render_svg_with(&scene, &marked, overlay);
+                let marked = report::visible(&diags, c.show_suppressed);
+                let svg = kashika_render::render_svg_with(&scene, marked, overlay);
                 let kind = output::kind(&r.output).expect("checked above");
                 let bytes = match output::encode(kind, svg) {
                     Ok(b) => b,

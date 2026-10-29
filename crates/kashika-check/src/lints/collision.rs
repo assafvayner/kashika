@@ -9,11 +9,6 @@ use crate::index::Grid;
 use crate::sink::Sink;
 use crate::text_box::{below_box, label_box, label_box_at, text_box, title_band, title_box};
 
-const ARROW_LEN: f64 = 10.0;
-const DIAMOND_LEN: f64 = 12.0;
-const MARKER_HALF_WIDTH: f64 = 4.0;
-const DOT_RADIUS: f64 = 3.0;
-
 struct Subject<'c> {
     el: Element,
     span: Span,
@@ -227,28 +222,17 @@ fn markers(l: &kashika_model::Line) -> Vec<(&'static str, &'static str, Vec<Pt>)
     ]
     .into_iter()
     .filter_map(|(end, m, tip, dir)| {
-        let u = dir.norm();
-        let perp = Pt::new(-u.y, u.x) * MARKER_HALF_WIDTH;
         let (name, poly) = match m {
             Marker::None => return None,
-            Marker::Arrow | Marker::Open => {
-                let base = tip - u * ARROW_LEN;
-                ("arrowhead", vec![tip, base + perp, base - perp])
-            }
-            Marker::Diamond => {
-                let mid = tip - u * (DIAMOND_LEN / 2.0);
-                (
-                    "diamond",
-                    vec![tip, mid + perp, tip - u * DIAMOND_LEN, mid - perp],
-                )
-            }
+            Marker::Arrow | Marker::Open => ("arrowhead", m.outline(tip, dir)),
+            Marker::Diamond => ("diamond", m.outline(tip, dir)),
             Marker::Dot => (
                 "dot",
                 rect_polygon(Rect::new(
-                    tip.x - DOT_RADIUS,
-                    tip.y - DOT_RADIUS,
-                    2.0 * DOT_RADIUS,
-                    2.0 * DOT_RADIUS,
+                    tip.x - Marker::DOT_RADIUS,
+                    tip.y - Marker::DOT_RADIUS,
+                    2.0 * Marker::DOT_RADIUS,
+                    2.0 * Marker::DOT_RADIUS,
                 )),
             ),
         };

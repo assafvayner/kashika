@@ -211,6 +211,40 @@ pub enum Marker {
     Dot,
 }
 
+impl Marker {
+    pub const DOT_RADIUS: f64 = 3.0;
+    const ARROW_LEN: f64 = 10.0;
+    const DIAMOND_LEN: f64 = 12.0;
+    const HALF_WIDTH: f64 = 4.0;
+
+    /// How far the line stroke stops short of the tip.
+    pub fn length(self) -> f64 {
+        match self {
+            Marker::Arrow => Self::ARROW_LEN,
+            Marker::Diamond => Self::DIAMOND_LEN,
+            Marker::None | Marker::Open | Marker::Dot => 0.0,
+        }
+    }
+
+    /// Vertices of the head with its tip on `tip` pointing along `dir`: the tip first, then
+    /// the rest in drawing order. Empty for `None` and `Dot`.
+    pub fn outline(self, tip: Pt, dir: Pt) -> Vec<Pt> {
+        let u = dir.norm();
+        let perp = Pt::new(-u.y, u.x) * Self::HALF_WIDTH;
+        match self {
+            Marker::Arrow | Marker::Open => {
+                let base = tip - u * Self::ARROW_LEN;
+                vec![tip, base + perp, base - perp]
+            }
+            Marker::Diamond => {
+                let mid = tip - u * (Self::DIAMOND_LEN / 2.0);
+                vec![tip, mid + perp, tip - u * Self::DIAMOND_LEN, mid - perp]
+            }
+            Marker::None | Marker::Dot => Vec::new(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Label {
     pub t: f64,

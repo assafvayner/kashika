@@ -21,7 +21,11 @@ pub struct Overlay {
     pub debug: bool,
 }
 
-pub fn render_svg_with(scene: &Scene, diags: &[Diagnostic], o: Overlay) -> String {
+pub fn render_svg_with<'d>(
+    scene: &Scene,
+    diags: impl IntoIterator<Item = &'d Diagnostic>,
+    o: Overlay,
+) -> String {
     let mut svg = render_svg(scene);
     if !o.error_markers && !o.debug {
         return svg;
@@ -38,7 +42,7 @@ pub fn render_svg_with(scene: &Scene, diags: &[Diagnostic], o: Overlay) -> Strin
     }
     let mut unplaced = 0;
     for d in diags
-        .iter()
+        .into_iter()
         .filter(|d| o.debug || d.severity == Severity::Error)
     {
         match locate(scene, d) {

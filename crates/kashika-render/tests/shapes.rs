@@ -138,3 +138,20 @@ fn png_output_draws_embedded_images() {
     assert_eq!((px(30, 30).red(), px(30, 30).green()), (255, 0));
     assert_eq!(px(80, 80).alpha(), 0, "outside the image stays transparent");
 }
+
+#[test]
+fn repeated_images_embed_once_and_still_rasterize() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("red.png"), red_png()).unwrap();
+    let s = svg_in(
+        dir.path(),
+        "diagram \"p\" size (100,100)\nimage a \"red.png\" at (10,10) size (30,30)\nimage b \"red.png\" at (60,60) size (30,30) fit=cover\n",
+    );
+    assert_eq!(s.matches("data:image/png;base64,").count(), 1, "{s}");
+    let png = svg_to_png(&s).unwrap();
+    let pm = resvg::tiny_skia::Pixmap::decode_png(&png).unwrap();
+    let px = |x, y| pm.pixel(x, y).unwrap();
+    assert_eq!(px(20, 20).red(), 255);
+    assert_eq!(px(75, 75).red(), 255);
+    assert_eq!(px(50, 50).alpha(), 0);
+}
