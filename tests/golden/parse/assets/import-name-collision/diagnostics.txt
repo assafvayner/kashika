@@ -1,0 +1,3 @@
+error[duplicate-style] 6:8-6:20: in `lib/b.kash` at 1:1: style `edge` is already defined in `lib/a.kash` (imported at 5:8)
+error[duplicate-style] 8:1-8:29: style `api` is already defined in `lib/a.kash` (imported at 5:8)
+error[duplicate-style] 9:7-9:10: shape `tag` is already defined in `lib/a.kash` (imported at 5:8)

@@ -64,6 +64,29 @@ pub(crate) struct Library {
     bodies: HashMap<(PathBuf, usize), (Option<LibShape>, Vec<Diagnostic>)>,
     /// Library instances registered so far, against `MAX_INSTANCES`.
     instances: usize,
+    /// Where each imported style was defined, by qualified name.
+    style_origins: HashMap<String, Origin>,
+    /// Where each imported shape was defined, by qualified name.
+    shape_origins: HashMap<String, Origin>,
+}
+
+/// The library file a definition came from and the main file's import that brought it in.
+#[derive(Debug, Clone)]
+pub(crate) struct Origin {
+    /// The library's path as its importer wrote it.
+    file: String,
+    /// The path string of the main file's `import` that leads to the library.
+    import: Span,
+}
+
+impl std::fmt::Display for Origin {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "in `{}` (imported at {}:{})",
+            self.file, self.import.line, self.import.col
+        )
+    }
 }
 
 /// A library file, read, parsed and partly resolved once.
@@ -123,6 +146,8 @@ impl Nested {
 struct Chain {
     stack: Vec<PathBuf>,
     depth: usize,
+    /// The path string of the main file's `import` being followed.
+    top: Span,
 }
 
 impl Library {
@@ -140,7 +165,7 @@ impl Library {
         for stmt in &file.stmts {
             if let Stmt::Style(s) = stmt {
                 let props = style_props(s, &mut ctx.diags);
-                if let Some(k) = lib.add_style(s, "", props, ctx) {
+                if let Some(k) = lib.add_style(s, "", props, None, ctx) {
                     pending.push((k, s));
                 }
             }
@@ -161,6 +186,7 @@ impl Library {
                 .into_iter()
                 .collect(),
             depth: 0,
+            top: Span::new(1, 1, 1, 1),
         };
         for stmt in &file.stmts {
             match stmt {
@@ -243,6 +269,13 @@ impl Library {
         }
         self.instances += 1;
         self.loaded.insert((path.clone(), ns.clone()));
+        if chain.depth == 0 {
+            chain.top = i.path_span;
+        }
+        let origin = Origin {
+            file: i.path.clone(),
+            import: chain.top,
+        };
         let m = match self.module(&path, &i.path, ctx.loader) {
             Ok(m) => m,
             Err(e) => return fail(ctx, e),
@@ -257,7 +290,7 @@ impl Library {
                 Stmt::Style(s) => {
                     let (props, diags) = &m.styles[&k];
                     ctx.diags.extend(diags.iter().cloned());
-                    if let Some(at) = self.add_style(s, &ns, props.clone(), ctx) {
+                    if let Some(at) = self.add_style(s, &ns, props.clone(), Some(&origin), ctx) {
                         pending.push((at, s));
                     }
                 }
@@ -273,7 +306,7 @@ impl Library {
         }
         chain.stack.push(path);
         chain.depth += 1;
-        self.module_defs(&m, &ns, chain, ctx);
+        self.module_defs(&m, &ns, &origin, chain, ctx);
         chain.depth -= 1;
         chain.stack.pop();
         self.style_shapes(&pending, &ns, &mut ctx.diags);
@@ -313,7 +346,14 @@ impl Library {
     }
 
     /// A library's shapes and imports, registered under `ns`.
-    fn module_defs(&mut self, m: &Module, ns: &str, chain: &mut Chain, ctx: &mut Ctx) {
+    fn module_defs(
+        &mut self,
+        m: &Module,
+        ns: &str,
+        origin: &Origin,
+        chain: &mut Chain,
+        ctx: &mut Ctx,
+    ) {
         for (k, stmt) in m.file.stmts.iter().enumerate() {
             match stmt {
                 Stmt::Shape(s) => {
@@ -330,7 +370,9 @@ impl Library {
                     let (def, diags) = &self.bodies[&key];
                     ctx.diags.extend(diags.iter().cloned());
                     if let Some(d) = def.clone() {
-                        self.shapes.insert(format!("{ns}{}", s.name.name), d);
+                        let name = format!("{ns}{}", s.name.name);
+                        self.shape_origins.insert(name.clone(), origin.clone());
+                        self.shapes.insert(name, d);
                     }
                 }
                 Stmt::Import(i) => {
@@ -348,6 +390,7 @@ impl Library {
         s: &ast::StyleDef,
         ns: &str,
         props: StyleProps,
+        origin: Option<&Origin>,
         ctx: &mut Ctx,
     ) -> Option<usize> {
         let name = format!("{ns}{}", s.name);
@@ -355,9 +398,12 @@ impl Library {
             ctx.diags.push(Diagnostic::error(
                 "duplicate-style",
                 s.span,
-                format!("style `{name}` is defined twice"),
+                twice("style", &name, self.style_origins.get(&name)),
             ));
             return None;
+        }
+        if let Some(o) = origin {
+            self.style_origins.insert(name.clone(), o.clone());
         }
         self.styles.push((name, props));
         Some(self.styles.len() - 1)
@@ -384,6 +430,11 @@ impl Library {
         }
     }
 
+    /// Where the imported style `name` was defined.
+    pub fn style_origin(&self, name: &str) -> Option<&Origin> {
+        self.style_origins.get(name)
+    }
+
     /// Whether `s` may be defined under `prefix`: not a built-in name, not defined yet.
     fn name_free(&self, s: &ast::ShapeDef, prefix: &str, ctx: &mut Ctx) -> bool {
         if BUILTIN_SHAPES.contains(&s.name.name.as_str()) {
@@ -402,11 +453,19 @@ impl Library {
             ctx.diags.push(Diagnostic::error(
                 "duplicate-style",
                 s.name.span,
-                format!("shape `{name}` is defined twice"),
+                twice("shape", &name, self.shape_origins.get(&name)),
             ));
             return false;
         }
         true
+    }
+}
+
+/// The message for a second definition of `name`, naming where an imported first one is.
+pub(crate) fn twice(kind: &str, name: &str, first: Option<&Origin>) -> String {
+    match first {
+        Some(o) => format!("{kind} `{name}` is already defined {o}"),
+        None => format!("{kind} `{name}` is defined twice"),
     }
 }
 

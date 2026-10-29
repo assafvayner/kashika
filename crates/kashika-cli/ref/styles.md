@@ -32,7 +32,7 @@ The canvas is transparent by default (JPEG: white). `background=C` on the `diagr
 | `boundary` | none | `#94a3b8`, dashed, text `#475569` |
 
 - Precedence: inline attribute > `style=` > built-in default. This holds for `shape` and `size` too: an inline `shape=` beats the style's, and an inline `size (w,h)` replaces the style's `size=(w,h)` whole.
-- A user style with a built-in's name overrides it key by key.
+- A user style with a built-in's name overrides it key by key, and so does a library style of that name imported without `as`.
 - Groups start from `boundary`. Groups take no shape: a group's `style=` naming a style with `shape` is an error, and so is `shape` in `style boundary`. A group may take its `size` from its style, but `size` in `style boundary` is an error, and so is an `auto` axis reaching a group.
 - `size=12` in a style is an error: the text size is `font-size`. Lines ignore a style's `size`.
 - In an imported library, a style's `shape` names the library's own shapes as the library writes them: `shape=s3` in `lib/aws.kash`, imported `as aws`, is `aws.s3`.

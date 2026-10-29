@@ -393,6 +393,7 @@ impl<'a> Resolver<'a> {
         for (name, props) in &self.lib.styles {
             self.user_styles.insert(name.clone(), props.clone());
         }
+        let mut local = HashSet::new();
         for stmt in &file.stmts {
             let Stmt::Style(s) = stmt else { continue };
             let mut props = library::style_props(s, &mut self.diags);
@@ -403,12 +404,16 @@ impl<'a> Resolver<'a> {
                 }
             }
             if self.user_styles.insert(s.name.clone(), props).is_some() {
+                let first = Some(&s.name)
+                    .filter(|n| !local.contains(*n))
+                    .and_then(|n| self.lib.style_origin(n));
                 self.diags.push(Diagnostic::error(
                     "duplicate-style",
                     s.span,
-                    format!("style `{}` is defined twice", s.name),
+                    library::twice("style", &s.name, first),
                 ));
             }
+            local.insert(s.name.clone());
         }
     }
 

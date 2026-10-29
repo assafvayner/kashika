@@ -1,0 +1,13 @@
+// spec: 3, 3a, 7
+// dump: scene
+// Names that collide across imports: a local style or shape named like an imported one, two plain imports defining one style, and one library imported with and without `as` (no collision). A library style named like a built-in overrides it key by key.
+diagram "import collisions" size (400,200)
+import "lib/a.kash"
+import "lib/b.kash"
+import "lib/a.kash" as a
+style api { stroke=#0c4a6e }
+shape tag { path "M 0 0 L 1 0 L 0.5 1 Z" }
+box p "P" at (20,20) size (100,60) style=api shape=tag
+box q "Q" at (140,20) size (100,60) style=a.api shape=a.tag
+box r "R" at (260,20) size (100,60) style=service
+line l p.bottom -> v 60 style=edge

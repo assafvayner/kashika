@@ -1,0 +1,3 @@
+style api { fill=#e0f2fe }
+style edge { stroke=#0369a1 }
+shape tag { path "M 0 0 L 1 0 L 1 1 L 0 1 Z" }

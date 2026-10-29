@@ -351,7 +351,7 @@ fn import_rules() {
         (
             "import \"plain.kash\"\nstyle s { fill=#ffffff }\n",
             "duplicate-style",
-            "defined twice",
+            "already defined in `plain.kash` (imported at 2:8)",
         ),
     ] {
         let (_, d) = run(dir.path(), &format!("{HEAD}{body}"));
@@ -377,7 +377,7 @@ fn styles_from_two_imports_clash() {
     assert_eq!(d[0].span.line, 3);
     assert_eq!(
         d[0].message,
-        "in `two.kash` at 1:1: style `s` is defined twice"
+        "in `two.kash` at 1:1: style `s` is already defined in `one.kash` (imported at 2:8)"
     );
     let (_, d) = run(
         dir.path(),
