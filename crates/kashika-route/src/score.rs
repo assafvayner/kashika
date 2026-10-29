@@ -81,17 +81,16 @@ fn at(d: &Diagnostic, fact: &str) -> Option<Pt> {
 /// doesn't keep `clearance`.
 pub(crate) fn corridor(
     ctx: &Ctx,
-    axis: &'static str,
+    axis: Axis,
     value: f64,
     span: (f64, f64),
     skip: &[&str],
 ) -> Option<Corridor> {
-    let (free_axis, within) = if axis == "x" {
-        (Axis::X, (0.0, ctx.scene.size.0))
-    } else {
-        (Axis::Y, (0.0, ctx.scene.size.1))
+    let within = match axis {
+        Axis::X => (0.0, ctx.scene.size.0),
+        Axis::Y => (0.0, ctx.scene.size.1),
     };
-    free_intervals(ctx, free_axis, span, within, skip)
+    free_intervals(ctx, axis, span, within, skip)
         .into_iter()
         .find(|&(lo, hi)| lo - TOLERANCE <= value && value <= hi + TOLERANCE)
         .map(|(lo, hi)| Corridor {

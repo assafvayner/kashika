@@ -1,5 +1,5 @@
 use kashika_geom::Pt;
-use kashika_route::{Corridor, Error, Request, Style, Suggestion, suggest};
+use kashika_route::{Axis, Corridor, Error, Request, Style, Suggestion, suggest};
 
 const WALL: &str = "diagram \"w\" size (460,240)\n\
 box a \"A\" at (20,100) size (100,40)\n\
@@ -56,7 +56,7 @@ fn routes_over_the_wall() {
     assert_eq!(
         c.corridor,
         Some(Corridor {
-            axis: "y",
+            axis: Axis::Y,
             band: [0.0, 34.0]
         })
     );
@@ -237,7 +237,7 @@ box b at (300,160) size (100,40)\n";
     assert_eq!(
         s.candidates[0].corridor,
         Some(Corridor {
-            axis: "y",
+            axis: Axis::Y,
             band: [66.0, 104.0]
         })
     );
@@ -351,7 +351,7 @@ fn one_lane_through_the_gap_between_two_groups() {
     assert_eq!(
         c.corridor,
         Some(Corridor {
-            axis: "y",
+            axis: Axis::Y,
             band: [186.0, 214.0]
         })
     );

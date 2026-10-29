@@ -9,6 +9,7 @@ mod text;
 use std::collections::HashMap;
 
 use kashika_check::ctx::Ctx;
+pub use kashika_check::free::Axis;
 use kashika_diag::{Diagnostic, Severity};
 use kashika_geom::{PathSeg, Pt, flatten, fmt_num};
 use kashika_model::{Line, Scene};
@@ -54,8 +55,8 @@ pub struct Transit {
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Corridor {
-    /// `"y"` for a horizontal lane (the band is a y range), `"x"` for a vertical one.
-    pub axis: &'static str,
+    /// `y` for a horizontal lane (the band is a y range), `x` for a vertical one.
+    pub axis: Axis,
     pub band: [f64; 2],
 }
 
@@ -359,15 +360,15 @@ fn lane_span(
     from: &Endpoint,
     to: &Endpoint,
     plan: &Plan,
-    axis: &str,
+    axis: Axis,
     v: f64,
 ) -> Option<(f64, f64)> {
     let pts = corners(from.at, to.at, plan)?;
     pts.windows(2).find_map(|w| {
         let (p, q) = (w[0], w[1]);
-        if axis == "x" && p.x == v && q.x == v {
+        if axis == Axis::X && p.x == v && q.x == v {
             Some((p.y, q.y))
-        } else if axis == "y" && p.y == v && q.y == v {
+        } else if axis == Axis::Y && p.y == v && q.y == v {
             Some((p.x, q.x))
         } else {
             None

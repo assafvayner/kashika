@@ -175,7 +175,7 @@ fn candidates_text(s: &Suggestion) -> String {
         if let Some(k) = &c.corridor {
             out.push_str(&format!(
                 "  via corridor {} {}..{}",
-                k.axis,
+                k.axis.name(),
                 num(k.band[0]),
                 num(k.band[1])
             ));

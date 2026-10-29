@@ -51,9 +51,9 @@ pub(crate) enum Hop {
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Plan {
     pub(crate) hops: Vec<Hop>,
-    /// The lane the path is routed along: `("x", v)` when a vertical segment runs at x=v. For
-    /// a detour, its second lane.
-    pub(crate) lane: Option<(&'static str, f64)>,
+    /// The lane the path is routed along: `(Axis::X, v)` when a vertical segment runs at x=v.
+    /// For a detour, its second lane.
+    pub(crate) lane: Option<(Axis, f64)>,
 }
 
 /// How a plan's lanes are anchored, lower first: lanes on a box the path neither starts nor
@@ -170,8 +170,8 @@ fn orthogonal(ctx: &Ctx, a: &Endpoint, b: &Endpoint, skip: &[&str]) -> Vec<Plan>
     let mut found = Vec::new();
     for (axis, cross) in [(Axis::X, Hop::Vh), (Axis::Y, Hop::Hv)] {
         for lane in lane_pool(ctx, a, b, axis, skip) {
-            let hops = vec![hop(axis.name(), &lane), cross.clone()];
-            field.consider(&mut found, hops, (axis.name(), lane.value));
+            let hops = vec![hop(axis, &lane), cross.clone()];
+            field.consider(&mut found, hops, (axis, lane.value));
         }
     }
     out.extend(best(found, MAX_LANE_PLANS));
@@ -194,9 +194,13 @@ fn detours(ctx: &Ctx, field: &Field, a: &Endpoint, b: &Endpoint, skip: &[&str]) 
     let xs = detour_lanes(ctx, a, b, Axis::X, skip);
     let ys = detour_lanes(ctx, a, b, Axis::Y, skip);
     let mut found: Vec<(Estimate, Plan)> = Vec::new();
-    for (lead, back) in [("x", "y"), ("y", "x")] {
-        let (outer, inner) = if lead == "x" { (&xs, &ys) } else { (&ys, &xs) };
-        let (cross, along) = if lead == "x" {
+    for (lead, back) in [(Axis::X, Axis::Y), (Axis::Y, Axis::X)] {
+        let (outer, inner) = if lead == Axis::X {
+            (&xs, &ys)
+        } else {
+            (&ys, &xs)
+        };
+        let (cross, along) = if lead == Axis::X {
             (Hop::Hv, Hop::Vh)
         } else {
             (Hop::Vh, Hop::Hv)
@@ -222,11 +226,10 @@ fn detours(ctx: &Ctx, field: &Field, a: &Endpoint, b: &Endpoint, skip: &[&str]) 
     best(found, MAX_DETOURS).collect()
 }
 
-fn hop(axis: &str, lane: &Lane) -> Hop {
-    if axis == "x" {
-        Hop::X(lane.clone())
-    } else {
-        Hop::Y(lane.clone())
+fn hop(axis: Axis, lane: &Lane) -> Hop {
+    match axis {
+        Axis::X => Hop::X(lane.clone()),
+        Axis::Y => Hop::Y(lane.clone()),
     }
 }
 
@@ -369,12 +372,7 @@ impl<'a> Field<'a> {
     }
 
     /// Adds `hops` to `found` with its estimate, unless [`Field::estimate`] rules it out.
-    fn consider(
-        &self,
-        found: &mut Vec<(Estimate, Plan)>,
-        hops: Vec<Hop>,
-        lane: (&'static str, f64),
-    ) {
+    fn consider(&self, found: &mut Vec<(Estimate, Plan)>, hops: Vec<Hop>, lane: (Axis, f64)) {
         let plan = Plan {
             hops,
             lane: Some(lane),
