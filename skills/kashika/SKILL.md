@@ -24,7 +24,7 @@ Kashika has **no auto-layout**. You decide every box position and every line pat
 2. **Literal coordinates are relative to the enclosing group.** Anchors (`db.left`) are always absolute. `kashika inspect file.kash <id>` prints a child's absolute box.
 3. **Ids are global** and referenced bare (`db.left`, never `vpc.db.left`). Shapes, groups and lines share one namespace, so a line can't be named after a box. The segment keywords `h v x y hv vh curve` can't be ids. Groups have anchors too, and a line can start or end on one (`web.right`).
 4. **Prefer relationships to numbers.** `at api.right+(80,0) pin=left`, `-> hv db.top`, `-> y queue.left`, `junction j at stock.bottom+(0,50)`. They survive later edits; literals don't.
-5. **The last hop must line up**, so the path stays orthogonal. A diagonal passes `check` silently unless the line has `ortho`, which makes any diagonal an error; put `ortho` on every line of an orthogonal diagram. The last segment sets the arrow direction: `hv` is horizontal then vertical, `vh` vertical then horizontal.
+5. **The last hop must line up**, so the path stays orthogonal. `check` doesn't flag a diagonal, since some diagrams want them, so look for unintended ones in the render. `ortho` on a line makes any diagonal (or curve) in it an error: add it to lines meant to run at right angles, such as boxes-and-arrows architecture and flow diagrams, or when a reviewer points out a stray diagonal, so `check` catches it from then on. Leave it off where diagonals and curves are intended. The last segment sets the arrow direction: `hv` is horizontal then vertical, `vh` vertical then horizontal.
 
    | the line enters | finish with |
    |---|---|
