@@ -74,6 +74,23 @@ fn parse_errors_exit_two_and_leave_the_file() {
 }
 
 #[test]
+fn stdin_name_names_stdin_in_reports() {
+    kashika()
+        .args(["fmt", "-", "--stdin-name", "draft.kash"])
+        .write_stdin("box a at\n")
+        .assert()
+        .code(2)
+        .stdout(predicate::str::contains("draft.kash:1:"))
+        .stdout(predicate::str::contains("<stdin>").not());
+    kashika()
+        .args(["fmt", "-", "--check", "--stdin-name", "draft.kash"])
+        .write_stdin("diagram \"d\" size (100,100)\nbox  a at (0,0) size (10,10)\n")
+        .assert()
+        .code(1)
+        .stdout("draft.kash: not formatted\n");
+}
+
+#[test]
 fn missing_file_is_a_tool_error() {
     kashika().args(["fmt", "nope.kash"]).assert().code(3);
 }

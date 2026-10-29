@@ -3,9 +3,9 @@ use std::process::ExitCode;
 
 use crate::{Format, report};
 
-pub fn run(file: &str, check: bool) -> ExitCode {
+pub fn run(file: &str, check: bool, stdin_name: Option<&str>) -> ExitCode {
     let stdin = file == "-";
-    let (file, src) = match crate::read_input(file, None) {
+    let (file, src) = match crate::read_input(file, stdin_name) {
         Ok(v) => v,
         Err(msg) => return crate::tool_error(Format::Text, report::SCHEMA, &msg),
     };

@@ -73,6 +73,9 @@ enum Cmd {
         /// Exit 1 if the file is not formatted, without rewriting it
         #[arg(long)]
         check: bool,
+        /// File name to report for stdin input
+        #[arg(long)]
+        stdin_name: Option<String>,
     },
 }
 
@@ -217,7 +220,11 @@ fn main() -> ExitCode {
     };
     match cli.cmd {
         Cmd::Check(common) => run(&common, None),
-        Cmd::Fmt { file, check } => fmt_cmd::run(&file, check),
+        Cmd::Fmt {
+            file,
+            check,
+            stdin_name,
+        } => fmt_cmd::run(&file, check, stdin_name.as_deref()),
         Cmd::Render {
             common,
             output,

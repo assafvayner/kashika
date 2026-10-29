@@ -4,7 +4,7 @@
 kashika check   <file|-> [--format text|json] [--stdin-name <name>] [--allow-path] [--include <file>] [--summary]
 kashika render  <file|-> -o <out.svg|out.png|out.jpg|out.jpeg|out.webp> [--force] [--debug] [--format text|json] [--stdin-name <name>] [--allow-path] [--include <file>] [--summary]
 kashika inspect <file|-> [id ...] [--ports] [--corridors x1,y1,x2,y2] [--format text|json] [--stdin-name <name>] [--allow-path] [--include <file>]
-kashika fmt     <file|-> [--check]
+kashika fmt     <file|-> [--check] [--stdin-name <name>]
 kashika measure "<text>"... [--size N] [--weight bold] [--format text|json]
 kashika route   <file|-> <from> <to> [corner|arc|bezier] [--line <id>] [--radius N] [--max N] [--format text|json] [--stdin-name <name>] [--allow-path] [--include <file>]
 kashika icons   [dir...] [--search <term>] [--format text|json]

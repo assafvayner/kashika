@@ -323,7 +323,7 @@ A clean check does not prove that arrows point the right way or that the right b
 kashika render  <file|-> -o <out.svg|out.png|out.jpg|out.jpeg|out.webp> [--force] [--debug]
 kashika check   <file|->
 kashika inspect <file|-> [ids...] [--ports] [--corridors <x1,y1,x2,y2>]
-kashika fmt     <file|-> [--check]            // `-` formats stdin to stdout
+kashika fmt     <file|-> [--check] [--stdin-name <name>]  // `-` formats stdin to stdout
 kashika measure "<text>"... [--size N] [--weight bold]
 kashika route   <file|-> <from> <to> [corner|arc|bezier] [--line <id>]
 kashika icons   [dir...] [--search <term>]     // list built-in shapes, bundled icons and importable files: name, path, natural size, library; --search matches names and built-in keywords ("user" finds person)
@@ -331,7 +331,7 @@ kashika ref     [topic] [--json]          // topics: syntax anchors paths shapes
 kashika --version
 ```
 
-Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`), `--show-suppressed`, `--focus <id,...>` (only warnings involving these ids), `--max N` (default 50), `--stdin-name <name>`, `--summary` (print per-code counts; JSON always has `by_code`), `--allow-path` and `--include <file>` (§3a). `inspect` takes only `--format`, `--stdin-name`, `--allow-path`, `--include`, ids, `--ports` and `--corridors`; `--corridors` without ids prints only the corridors. `route` takes `--allow-path` and `--include` too. `fmt` reads no other files, so it takes neither.
+Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`), `--show-suppressed`, `--focus <id,...>` (only warnings involving these ids), `--max N` (default 50), `--stdin-name <name>`, `--summary` (print per-code counts; JSON always has `by_code`), `--allow-path` and `--include <file>` (§3a). `inspect` takes only `--format`, `--stdin-name`, `--allow-path`, `--include`, ids, `--ports` and `--corridors`; `--corridors` without ids prints only the corridors. `route` takes `--allow-path` and `--include` too. `fmt` reads no other files, so it takes neither; of the common flags it takes only `--stdin-name`.
 
 - `--focus` filters warnings only; errors are always reported. An unknown id is a usage error.
 - Suppressed findings are excluded from `warn` and from the exit code, and counted in `suppressed`. `crossings` in the metrics counts every crossing, suppressed or not, and is computed before `--focus` filtering.
