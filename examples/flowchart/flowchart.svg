@@ -23,26 +23,26 @@
 <polygon points="350,100 346,90 354,90" fill="#334155"/>
 <path d="M 350 150 L 350 180" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
 <polygon points="350,190 346,180 354,180" fill="#334155"/>
-<mask id="kashika-b5ec2a9b-mask-2" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="780"><rect width="700" height="780" fill="#fff"/><rect x="339.96" y="297.5" width="20.07" height="15" fill="#000"/></mask>
-<g mask="url(#kashika-b5ec2a9b-mask-2)">
+<mask id="kashika-ce881c5f-mask-2" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="780"><rect width="700" height="780" fill="#fff"/><rect x="339.96" y="297.5" width="20.07" height="15" fill="#000"/></mask>
+<g mask="url(#kashika-ce881c5f-mask-2)">
 <path d="M 350 280 L 350 330" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
 </g>
 <path d="M 350 330 L 350 350" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
 <polygon points="350,360 346,350 354,350" fill="#334155"/>
 <path d="M 350 410 L 350 440" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
 <polygon points="350,450 346,440 354,440" fill="#334155"/>
-<mask id="kashika-b5ec2a9b-mask-5" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="780"><rect width="700" height="780" fill="#fff"/><rect x="339.96" y="557.5" width="20.07" height="15" fill="#000"/></mask>
-<g mask="url(#kashika-b5ec2a9b-mask-5)">
+<mask id="kashika-ce881c5f-mask-5" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="780"><rect width="700" height="780" fill="#fff"/><rect x="339.96" y="557.5" width="20.07" height="15" fill="#000"/></mask>
+<g mask="url(#kashika-ce881c5f-mask-5)">
 <path d="M 350 540 L 350 580" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
 <polygon points="350,590 346,580 354,580" fill="#334155"/>
 </g>
-<mask id="kashika-b5ec2a9b-mask-6" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="780"><rect width="700" height="780" fill="#fff"/><rect x="457.86" y="227.5" width="14.29" height="15" fill="#000"/></mask>
-<g mask="url(#kashika-b5ec2a9b-mask-6)">
+<mask id="kashika-ce881c5f-mask-6" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="780"><rect width="700" height="780" fill="#fff"/><rect x="457.86" y="227.5" width="14.29" height="15" fill="#000"/></mask>
+<g mask="url(#kashika-ce881c5f-mask-6)">
 <path d="M 430 235 L 490 235" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
 <polygon points="500,235 490,239 490,231" fill="#334155"/>
 </g>
-<mask id="kashika-b5ec2a9b-mask-7" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="780"><rect width="700" height="780" fill="#fff"/><rect x="202.86" y="487.5" width="14.29" height="15" fill="#000"/></mask>
-<g mask="url(#kashika-b5ec2a9b-mask-7)">
+<mask id="kashika-ce881c5f-mask-7" maskUnits="userSpaceOnUse" x="0" y="0" width="700" height="780"><rect width="700" height="780" fill="#fff"/><rect x="202.86" y="487.5" width="14.29" height="15" fill="#000"/></mask>
+<g mask="url(#kashika-ce881c5f-mask-7)">
 <path d="M 245 495 L 185 495" fill="none" stroke-linejoin="round" stroke="#334155" stroke-width="1.5"/>
 <polygon points="175,495 185,491 185,499" fill="#334155"/>
 </g>

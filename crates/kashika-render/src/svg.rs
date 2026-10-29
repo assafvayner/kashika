@@ -13,7 +13,7 @@ enum Overlay<'s> {
 
 pub fn render_svg(scene: &Scene) -> String {
     let (w, h) = scene.size;
-    let defs = Defs::new(scene, diagram_id(scene));
+    let defs = Defs::new(scene, ID_HASH.to_string());
     let mut out = format!(
         "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{0}\" height=\"{1}\" viewBox=\"0 0 {0} {1}\">\n",
         n(w),
@@ -70,22 +70,21 @@ pub fn render_svg(scene: &Scene) -> String {
         shape(&mut out, s, &defs);
     }
     out.push_str("</svg>\n");
-    out
+    let hash = format!("{:08x}", fnv1a32(out.as_bytes()));
+    out.replace(ID_HASH, &hash)
 }
 
-/// A hash of the scene for ids: deterministic, and different between diagrams so several
-/// SVGs can be inlined in one HTML page.
-fn diagram_id(scene: &Scene) -> String {
-    let fnv = |h: u32, bytes: &[u8]| {
-        bytes
-            .iter()
-            .fold(h, |h, &b| (h ^ u32::from(b)).wrapping_mul(0x0100_0193))
-    };
-    let mut h = fnv(0x811c_9dc5, &serde_json::to_vec(scene).unwrap_or_default());
-    for a in &scene.assets {
-        h = fnv(h, &a.bytes);
-    }
-    format!("{h:08x}")
+/// Stands in for the per-diagram id hash until the document is complete. `esc` drops
+/// control characters, so no user text can contain it.
+const ID_HASH: &str = "\u{1}ID\u{1}";
+
+/// FNV-1a over the finished document, whose numbers are already rounded: ids stay
+/// deterministic across platforms, and differ between diagrams so several SVGs can be
+/// inlined in one HTML page.
+fn fnv1a32(bytes: &[u8]) -> u32 {
+    bytes.iter().fold(0x811c_9dc5, |h, &b| {
+        (h ^ u32::from(b)).wrapping_mul(0x0100_0193)
+    })
 }
 
 pub(crate) fn n(v: f64) -> String {
