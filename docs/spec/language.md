@@ -417,6 +417,7 @@ Suggests up to `--max` (default 3) candidate paths from `<from>` to `<to>`. Both
   2. `near` findings
   3. number of segments
   4. length
+  5. on a tie, lanes that follow the endpoints' own boxes: fewer lanes on other boxes, then fewer literal lanes
 
 Each candidate lists these numbers, which line it crosses and where, and the corridor it uses. It is printed as a ready-to-paste `line` statement:
 

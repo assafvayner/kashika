@@ -602,3 +602,30 @@ fn probes_carry_the_rerouted_line_attributes() {
         }
     }
 }
+
+#[test]
+fn ties_prefer_lanes_on_the_endpoint_boxes() {
+    let src = "diagram \"t\" size (500,200)\n\
+box a at (20,60) size (100,60)\n\
+box b at (200,60) size (100,60)\n\
+box c at (380,60) size (100,60)\n";
+    let mut r = req(src, "a.right", "c.left", Style::Corner);
+    r.max = 10;
+    let s = suggest(&r).unwrap();
+    let on_b = |c: &kashika_route::Candidate| c.statement.contains(" b.");
+    let score = |c: &kashika_route::Candidate| (c.crossings, c.near, c.segments, c.length);
+    assert!(
+        s.candidates.iter().any(on_b),
+        "a lane on b ties with lanes on a and c"
+    );
+    for (i, early) in s.candidates.iter().enumerate() {
+        for late in &s.candidates[i + 1..] {
+            assert!(
+                !(score(early) == score(late) && on_b(early) && !on_b(late)),
+                "{} ranks before the equally scored {}",
+                early.statement,
+                late.statement
+            );
+        }
+    }
+}

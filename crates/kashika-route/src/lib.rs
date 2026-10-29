@@ -15,7 +15,7 @@ use kashika_model::{Line, Scene};
 use kashika_syntax::ast;
 use serde::Serialize;
 
-use crate::candidates::{Plan, corners, generate, key};
+use crate::candidates::{LaneAnchors, Plan, corners, generate, key};
 use crate::endpoint::{PROBE, end_point, resolve_endpoints};
 use crate::source::Source;
 use crate::text::{path_text, statement};
@@ -265,6 +265,7 @@ fn rank(
     let mut seen: Vec<Vec<(i64, i64)>> = Vec::new();
     let mut candidates = Vec::new();
     let mut detour = Vec::new();
+    let mut ties = Vec::new();
     for (i, (plan, path)) in plans.iter().zip(&paths).enumerate() {
         if failed.contains(&(i as u32)) {
             continue;
@@ -291,6 +292,7 @@ fn rank(
             score::corridor(&ctx, axis, v, span, &skip)
         });
         detour.push(plan.hops.len() >= 3);
+        ties.push(plan.lane_anchors(from, to));
         candidates.push(Candidate {
             crossings: s.crossed.len(),
             crossed: s.crossed,
@@ -311,15 +313,19 @@ fn rank(
         .zip(&detour)
         .map(|(c, d)| *d && dominated(c, &simple))
         .collect();
-    let mut drop = drop.into_iter();
-    candidates.retain(|_| !drop.next().unwrap_or(false));
-    candidates.sort_by(|a, b| {
+    let mut ranked: Vec<(LaneAnchors, Candidate)> = ties
+        .into_iter()
+        .zip(candidates)
+        .zip(drop)
+        .filter_map(|(c, d)| (!d).then_some(c))
+        .collect();
+    ranked.sort_by(|(ta, a), (tb, b)| {
         (a.crossings, a.near, a.segments)
             .cmp(&(b.crossings, b.near, b.segments))
             .then(a.length.total_cmp(&b.length))
+            .then(ta.cmp(tb))
     });
-    candidates.truncate(req.max);
-    candidates
+    ranked.into_iter().take(req.max).map(|(_, c)| c).collect()
 }
 
 /// A detour is dropped when a simpler candidate is at least as good on crossings, near-misses

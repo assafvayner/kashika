@@ -54,6 +54,27 @@ pub(crate) struct Plan {
     pub(crate) lane: Option<(&'static str, f64)>,
 }
 
+/// How a plan's lanes are anchored, lower first: lanes on a box the path neither starts nor
+/// ends at, which move with a bystander, then literal lanes, which move with nothing.
+pub(crate) type LaneAnchors = (usize, usize);
+
+impl Plan {
+    pub(crate) fn lane_anchors(&self, a: &Endpoint, b: &Endpoint) -> LaneAnchors {
+        let owns = |id: &str| [a, b].iter().any(|e| e.owner.as_deref() == Some(id));
+        self.hops
+            .iter()
+            .filter_map(|h| match h {
+                Hop::X(l) | Hop::Y(l) => Some(l),
+                _ => None,
+            })
+            .fold((0, 0), |(bystander, literal), l| match &l.expr {
+                Some(e) if owns(e.split('.').next().unwrap_or_default()) => (bystander, literal),
+                Some(_) => (bystander + 1, literal),
+                None => (bystander, literal + 1),
+            })
+    }
+}
+
 /// The plans worth scoring, without two that draw the same path. Lines in `skip` aren't
 /// obstacles when picking lanes.
 pub(crate) fn generate(
