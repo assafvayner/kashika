@@ -172,9 +172,9 @@ impl<'a> Resolver<'a> {
     pub(super) fn compute_place(&mut self, idx: usize) -> Option<Rect> {
         let origin = self.frame_origin(idx)?;
         match self.entries[idx].item {
-            Item::Box(n) => self.place_node(idx, &n.at, n.size, origin),
-            Item::Group(g) => self.place_node(idx, &g.node.at, g.node.size, origin),
-            Item::Image(i) => self.place_node(idx, &i.at, i.size, origin),
+            Item::Box(n) => self.place_node(idx, &n.at, origin),
+            Item::Group(g) => self.place_node(idx, &g.node.at, origin),
+            Item::Image(i) => self.place_node(idx, &i.at, origin),
             Item::Junction(j) => self
                 .eval_point(&j.at, origin)
                 .map(|p| Rect::new(p.x, p.y, 0.0, 0.0)),
@@ -182,18 +182,9 @@ impl<'a> Resolver<'a> {
         }
     }
 
-    pub(super) fn place_node(
-        &mut self,
-        idx: usize,
-        at: &'a Point,
-        size: (f64, f64),
-        origin: Pt,
-    ) -> Option<Rect> {
-        if !self.nodes[&idx].size_ok {
-            return None;
-        }
+    pub(super) fn place_node(&mut self, idx: usize, at: &'a Point, origin: Pt) -> Option<Rect> {
+        let (w, h) = self.nodes[&idx].size?;
         let at = self.eval_point(at, origin)?;
-        let (w, h) = size;
 
         let p = &self.nodes[&idx];
         let local = Rect::new(0.0, 0.0, w, h);

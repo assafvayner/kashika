@@ -295,3 +295,88 @@ fn label_overflow_names_the_short_dimension() {
         "its text needs 91.64x17.5px but the text area of `a` is 64x44px (too narrow by 27.64px)"
     );
 }
+
+/// The size `label-overflow` asks for when the box is drawn at `size (1,1)`.
+fn overflow_size(label: &str, attrs: &str) -> (f64, f64) {
+    let d = errors(&format!("box a {label} at (0,0) size (1,1) {attrs}\n"));
+    let help = &d.iter().find(|d| d.code == "label-overflow").unwrap().help[0];
+    let size = help
+        .split_once("size (")
+        .and_then(|(_, r)| r.split_once(')'))
+        .unwrap()
+        .0;
+    let (w, h) = size.split_once(',').unwrap();
+    (w.parse().unwrap(), h.parse().unwrap())
+}
+
+#[test]
+fn omitted_size_is_the_size_label_overflow_reports() {
+    for (label, attrs) in [
+        ("\"Payments API\"", ""),
+        ("\"Payments API\"", "sublabel=\"v2.4.1\" padding=(12,4)"),
+        ("\"Decision\"", "shape=diamond"),
+        ("\"Orders\"", "shape=cylinder"),
+        ("\"Two\\nlines\\nand three\"", "shape=cylinder"),
+        ("\"Worker pool\"", "shape=hexagon"),
+        ("\"Internet\"", "shape=cloud"),
+        ("\"Server\"", "icon=\"server\""),
+        ("\"Server\"", "icon=\"server\" icon-pos=top"),
+        ("\"**Bold** title\"", "font-weight=bold font-size=18"),
+        (
+            "",
+            "{\n  text \"**Worker**\"\n  text \"retries charges\" size=12\n}",
+        ),
+    ] {
+        let want = overflow_size(label, attrs);
+        let s = ok(&format!("box a {label} at (0,0) {attrs}\n"));
+        let r = shape(&s, "a").rect;
+        assert_eq!((r.w, r.h), want, "{label} {attrs}");
+    }
+    let s = ok("box a at (0,0) {\n  text \"wide absolute item\" at (8,8)\n}\n");
+    assert!(shape(&s, "a").rect.w > 100.0);
+}
+
+#[test]
+fn auto_axes_fit_and_fixed_axes_stay() {
+    let s = ok("box a \"Payments API\" at (0,0) size (auto, 60)\n\
+         box b \"Q\" at (0,100) size (200, auto) shape=diamond\n\
+         box c \"Payments API\" at (0,200) size (auto,auto)\n");
+    let r = |id| shape(&s, id).rect;
+    assert_eq!((r("a").w, r("a").h), (108.0, 60.0));
+    assert_eq!((r("b").w, r("b").h), (200.0, 67.0));
+    assert_eq!((r("c").w, r("c").h), (108.0, 34.0));
+}
+
+#[test]
+fn fitted_sizes_round_up_to_the_grid() {
+    let (s, d) = compile(
+        "diagram \"t\" size (300,300) grid=10\n\
+         box a \"Payments API\" at (0,0)\n\
+         box b \"Payments API\" at (0,100) size (auto, 35)\n",
+    );
+    assert!(d.iter().all(|d| d.code == "off-grid"), "{d:#?}");
+    let r = |id| shape(&s, id).rect;
+    assert_eq!((r("a").w, r("a").h), (110.0, 40.0));
+    assert_eq!((r("b").w, r("b").h), (110.0, 35.0));
+}
+
+#[test]
+fn anchors_and_pins_use_the_fitted_size() {
+    let s = ok(
+        "box a \"Client\" at (100,100) pin=center\nbox b \"B\" at a.right+(20,0) size (40,40) pin=left\n",
+    );
+    let a = shape(&s, "a").rect;
+    assert_eq!((a.center().x, a.center().y), (100.0, 100.0));
+    assert_eq!(shape(&s, "b").rect.x, a.right() + 20.0);
+}
+
+#[test]
+fn nothing_to_fit_is_a_size_error() {
+    let d = errors("box a at (0,0)\nbox b at (0,0) size (auto, 40)\n");
+    assert_eq!(d.len(), 2, "{d:#?}");
+    assert!(d.iter().all(|d| d.code == "size"));
+    assert_eq!(d[0].message, "`a` has no size to fit: it has no text");
+    assert_eq!(d[0].help, vec!["give it a size: `size (w,h)`".to_string()]);
+    let d = errors("box a \"A\" at (0,0) size (auto, 0)\n");
+    assert_eq!(d[0].message, "`a` must have a positive size");
+}

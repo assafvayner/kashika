@@ -230,12 +230,18 @@ struct Pending {
     span: Span,
 }
 
-/// Lays out a shape's label, sublabel and text block, and reports `text-conflict`,
-/// `label-overflow` and markup errors.
-pub(crate) fn layout_shape(s: &ShapeInput, diags: &mut Vec<Diagnostic>) -> ShapeText {
+/// A shape's measured text: the stacked flow (the label and sublabel, else the stacked
+/// block items) and the absolute block items with their block index.
+struct Measured {
+    flow: Vec<Pending>,
+    absolute: Vec<(usize, Pending)>,
+    /// The first stacked block item, when a label or sublabel is there too.
+    conflict: Option<Span>,
+}
+
+fn measure_shape(s: &ShapeInput, diags: &mut Vec<Diagnostic>) -> Measured {
     let st = s.style;
     let p = s.props;
-    let mut area = text_area(s.shape, s.custom_text_area, s.rect, st.padding);
     let bold = st.font_weight == FontWeight::Bold;
     let mut head: Vec<Pending> = Vec::new();
     if let Some(label) = &s.node.label {
@@ -266,23 +272,80 @@ pub(crate) fn layout_shape(s: &ShapeInput, diags: &mut Vec<Diagnostic>) -> Shape
     }
 
     let mut stacked: Vec<Pending> = Vec::new();
-    let mut absolute: Vec<(Pending, Pt)> = Vec::new();
+    let mut absolute: Vec<(usize, Pending)> = Vec::new();
     for (i, item) in s.node.block.iter().flatten().enumerate() {
         let Some(pending) = block_item(item, st, p.align, diags) else {
             continue;
         };
-        match (&item.at, s.block_at.get(i).copied().flatten()) {
-            (None, _) => stacked.push(pending),
-            (Some(_), Some(at)) => absolute.push((pending, at)),
-            (Some(_), None) => {}
+        if item.at.is_some() {
+            absolute.push((i, pending));
+        } else {
+            stacked.push(pending);
         }
     }
     let has_head = s.node.label.is_some() || p.sublabel.is_some();
-    if has_head && !stacked.is_empty() {
+    let conflict = (has_head && !stacked.is_empty()).then(|| stacked[0].span);
+    Measured {
+        flow: if has_head { head } else { stacked },
+        absolute,
+        conflict,
+    }
+}
+
+/// The size a box needs to hold its text, as `label-overflow` reports it; `None` when it
+/// has no text to fit, or its text sits under it (`text-area=below`). `s.rect` holds the
+/// axes that are already fixed, and 0 for the others.
+pub(crate) fn fit_size(s: &ShapeInput) -> Option<(f64, f64)> {
+    if s.text_below {
+        return None;
+    }
+    let m = measure_shape(s, &mut Vec::new());
+    let blocks: Vec<&Block> = m.flow.iter().map(|x| &x.block).collect();
+    let need = (!blocks.is_empty())
+        .then(|| stack_size(&blocks, s.props.gap))
+        .into_iter()
+        .chain(
+            m.absolute
+                .iter()
+                .map(|(_, x)| (x.block.width(), x.block.height())),
+        )
+        .reduce(|a, b| (a.0.max(b.0), a.1.max(b.1)))?;
+    Some(required_box(s, with_inset(s, need)))
+}
+
+/// `need` plus the room an icon takes from the text area.
+fn with_inset(s: &ShapeInput, need: (f64, f64)) -> (f64, f64) {
+    let inset = if s.text_below {
+        (0.0, 0.0)
+    } else {
+        s.icon_inset
+    };
+    (need.0 + inset.0, need.1 + inset.1)
+}
+
+/// The box size, in whole pixels, whose text area holds `need`.
+fn required_box(s: &ShapeInput, need: (f64, f64)) -> (f64, f64) {
+    let (w, h) = required_size(s.shape, s.custom_text_area, need, s.style.padding, s.rect);
+    (w.ceil(), h.ceil())
+}
+
+/// Lays out a shape's label, sublabel and text block, and reports `text-conflict`,
+/// `label-overflow` and markup errors.
+pub(crate) fn layout_shape(s: &ShapeInput, diags: &mut Vec<Diagnostic>) -> ShapeText {
+    let st = s.style;
+    let p = s.props;
+    let mut area = text_area(s.shape, s.custom_text_area, s.rect, st.padding);
+    let m = measure_shape(s, diags);
+    let absolute: Vec<(Pending, Pt)> = m
+        .absolute
+        .into_iter()
+        .filter_map(|(i, x)| Some((x, s.block_at.get(i).copied().flatten()?)))
+        .collect();
+    if let Some(span) = m.conflict {
         diags.push(
             Diagnostic::error(
                 "text-conflict",
-                stacked[0].span,
+                span,
                 format!(
                     "`{}` has a label or sublabel and stacked text block items",
                     s.id
@@ -291,7 +354,7 @@ pub(crate) fn layout_shape(s: &ShapeInput, diags: &mut Vec<Diagnostic>) -> Shape
             .with_help("move the label into the block as its first `text` item, or give every block item its own `at`"),
         );
     }
-    let flow = if has_head { head } else { stacked };
+    let flow = m.flow;
     if s.text_below {
         area = below_area(s.rect, &flow, st, p.gap);
     } else {
@@ -417,14 +480,8 @@ fn block_item(
 }
 
 fn overflow(s: &ShapeInput, what: &str, need: (f64, f64), area: Rect, span: Span) -> Diagnostic {
-    let inset = if s.text_below {
-        (0.0, 0.0)
-    } else {
-        s.icon_inset
-    };
-    let need = (need.0 + inset.0, need.1 + inset.1);
-    let (w, h) = required_size(s.shape, s.custom_text_area, need, s.style.padding, s.rect);
-    let size = (w.ceil(), h.ceil());
+    let need = with_inset(s, need);
+    let size = required_box(s, need);
     let (dw, dh) = (need.0 - area.w, need.1 - area.h);
     let short = match (dw > TOLERANCE, dh > TOLERANCE) {
         (true, false) => format!("too narrow by {}px", px(dw)),

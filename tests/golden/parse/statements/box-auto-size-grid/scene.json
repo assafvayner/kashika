@@ -1,0 +1,121 @@
+{
+  "allow": [],
+  "assets": [],
+  "background": null,
+  "clearance": 6,
+  "grid": 10,
+  "junctions": [],
+  "lines": [],
+  "literals": [
+    {"owner":"a","span":{"col":19,"end_col":26,"end_line":5,"line":5},"value":20,"what":"x"},
+    {"owner":"a","span":{"col":19,"end_col":26,"end_line":5,"line":5},"value":20,"what":"y"},
+    {"owner":"b","span":{"col":25,"end_col":32,"end_line":6,"line":6},"value":20,"what":"x"},
+    {"owner":"b","span":{"col":25,"end_col":32,"end_line":6,"line":6},"value":80,"what":"y"},
+    {"owner":"b","span":{"col":1,"end_col":62,"end_line":6,"line":6},"value":50,"what":"height"}
+  ],
+  "placement": [],
+  "shapes": [
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "a",
+      "image": null,
+      "kind": "box",
+      "label": "Client",
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":40,"w":60,"x":20,"y":20},
+      "shape": "rect",
+      "span": {"col":1,"end_col":26,"end_line":5,"line":5},
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "Client",
+          "lines": [
+            {
+              "baseline": 45.09,
+              "runs": [{"font":"regular","text":"Client"}],
+              "width": 38.02,
+              "x": 30.99
+            }
+          ],
+          "rect": {"h":17.5,"w":38.02,"x":30.99,"y":31.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":26,"end_line":5,"line":5}
+        }
+      ],
+      "text_area": {"h":24,"w":44,"x":28,"y":28},
+      "text_below": false,
+      "title_band": 0
+    },
+    {
+      "allow": [],
+      "depth": 0,
+      "form": {
+        "draw": [
+          [
+            {"from":{"x":32.5,"y":80},"kind":"line","to":{"x":147.5,"y":80}},
+            {"from":{"x":147.5,"y":80},"kind":"line","to":{"x":160,"y":105}},
+            {"from":{"x":160,"y":105},"kind":"line","to":{"x":147.5,"y":130}},
+            {"from":{"x":147.5,"y":130},"kind":"line","to":{"x":32.5,"y":130}},
+            {"from":{"x":32.5,"y":130},"kind":"line","to":{"x":20,"y":105}},
+            {"from":{"x":20,"y":105},"kind":"line","to":{"x":32.5,"y":80}}
+          ]
+        ],
+        "outline": [
+          {"x":32.5,"y":80},
+          {"x":147.5,"y":80},
+          {"x":160,"y":105},
+          {"x":147.5,"y":130},
+          {"x":32.5,"y":130},
+          {"x":20,"y":105}
+        ]
+      },
+      "icon": null,
+      "id": "b",
+      "image": null,
+      "kind": "box",
+      "label": "Payments API",
+      "origin": {"x":0,"y":0},
+      "outline": "path",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":50,"w":140,"x":20,"y":80},
+      "shape": "hexagon",
+      "span": {"col":1,"end_col":62,"end_line":6,"line":6},
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "Payments API",
+          "lines": [
+            {
+              "baseline": 110.09,
+              "runs": [{"font":"regular","text":"Payments API"}],
+              "width": 91.64,
+              "x": 44.18
+            }
+          ],
+          "rect": {"h":17.5,"w":91.64,"x":44.18,"y":96.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":62,"end_line":6,"line":6}
+        }
+      ],
+      "text_area": {"h":34,"w":99,"x":40.5,"y":88},
+      "text_below": false,
+      "title_band": 0
+    }
+  ],
+  "size": [300,200],
+  "texts": [],
+  "title": "fit grid"
+}

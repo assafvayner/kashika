@@ -1,0 +1,6 @@
+// spec: 3, 6
+// dump: scene
+// With `grid=`, a fitted size rounds up to the grid; a fixed axis stays as written.
+diagram "fit grid" size (300,200) grid=10
+box a "Client" at (20,20)
+box b "Payments API" at (20,80) size (auto, 50) shape=hexagon

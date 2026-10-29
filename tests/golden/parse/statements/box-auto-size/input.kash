@@ -1,0 +1,14 @@
+// spec: 2, 3, 6
+// dump: scene
+// A box without `size`, or with an `auto` axis, fits its text; other shapes place against it.
+diagram "fit" size (600,300)
+box a "Client" at (20,20)
+box b "Payments API" at (20,80) size (auto, 60) sublabel="v2.4.1"
+box c "Queue" at (20,180) size (160, auto) shape=diamond
+box d "Orders" at a.right+(40,0) size (auto, auto) pin=left shape=cylinder
+box e at (300,100) text-align=left {
+  text "**Worker**"
+  text "• retries" size=12
+}
+box f "Server" at (300,200) icon="server"
+line ad a.right -> d.left

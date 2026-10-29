@@ -38,7 +38,8 @@ The CLI renders `.kash` files to SVG, PNG, JPEG or WebP and runs geometric check
     ```
   - when the next non-blank line starts with an attribute (`key=` or `key@t=`) or, on a `line`, with a line flag (`ortho`). Neither can begin a new statement, because no statement keyword is followed by `=` or `@` and no statement keyword is also a flag.
 - Attributes are `key=value` pairs in any order. Unknown or duplicate attributes are errors.
-- After a statement's id and label, `at <point>`, `size (w,h)` and attributes come in any order: `box a "A" style=service size (120,60) at (20,20)` is the same box as the form in §3. A missing `at` or `size`, or a repeated one, is a `parse` error that drops the statement.
+- After a statement's id and label, `at <point>`, `size (w,h)` and attributes come in any order: `box a "A" style=service size (120,60) at (20,20)` is the same box as the form in §3. A missing `at`, a missing `size` on a statement that requires one (§3), or a repeated `at` or `size`, is a `parse` error that drops the statement.
+- `auto` is a size axis, not a word: it is recognized only inside `size (…)` (`size (120, auto)`), so it remains a valid id.
 
 ## 3. Statements
 
@@ -47,7 +48,7 @@ diagram "<title>" size (w,h) [kashika="0.1.0"] [grid=N] [clearance=N] [backgroun
 import "<file.kash>" [as <ns>]                      // §3a
 style <name> { key=value ... }
 shape <name> { ... }  |  shape <name> from "<file.svg>" [...]   // §3a
-box   <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [shape=<shape>] [style=<name>] [layer=under|over] [allow=<code>[:<id>],...] [reason="..."] [attrs]
+box   <id> ["<label>"] at <point> [size (w|auto, h|auto)] [pin=<anchor>] [shape=<shape>] [style=<name>] [layer=under|over] [allow=<code>[:<id>],...] [reason="..."] [attrs]
 group <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [style=<name>] [allow=<code>[:<id>],...] [reason="..."] { ... }
 junction <id> at <point> [dot]
 text  [<id>] "<content>" at <point> [size=N] [color=C] [align=left|center|right] [muted]
@@ -57,6 +58,7 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
 
 `diagram` comes first, then any `import` statements, then everything else. "First" means first in the source: a statement before `diagram` makes it misplaced even when that statement failed to parse. Boxes accept `sublabel=`, `text-align=`, `text-valign=`, `gap=`, `icon=` and a `{ }` text block (§6). Groups accept `sublabel=`, `text-align=`, `gap=` and `icon=`; a group's `{ }` holds its children, and `text-valign` on a group is an `attr` error because the title always sits at the top.
 
+- A `box` may leave out `size`: it is then **fitted to its text**, the smallest size whose text area holds the label, sublabel and text block, exactly the size `label-overflow` reports (§6): it accounts for the shape's text area, `padding`, an icon, the sublabel and the block (stacked items, and each absolute item's own extent). `size (w, auto)` fixes the width and fits the height, `size (auto, h)` the other way round, and `size (auto, auto)` is the same as no `size`. A fitted axis is rounded up to whole pixels, then up to a multiple of `grid` when the diagram sets one. A box with nothing to fit (no label, sublabel or block item), or whose shape has `text-area=below` (its text sits under it, §3a), is a `size` error with help ``give it a size: `size (w,h)` ``. Everything downstream sees the fitted size: `pin`, anchors, shapes placed against the box, checks, `inspect` and the JSON. Only boxes fit: `group`, `image` and `diagram` take a numeric `size (w,h)`, and `auto` there is a `parse` error.
 - `grid=N` makes `off-grid` check authored literals only, never resolved anchors. `clearance=N` (default `6`) is the minimum gap used by the `near` lint.
 - `background=C` paints the whole canvas in color `C` (the same color values as styles) under everything else. Without it, or with `background=none`, the canvas is transparent in SVG, PNG and WebP output; JPEG has no alpha, so it composites onto white (§8). Any other value is an `attr` error.
 - Numeric attributes must be in range, or they are `attr` errors: `font-size`, `stroke-width`, `icon-size` and `grid` must be greater than 0; `radius`, `padding`, `gap` and `clearance` must be at least 0. All of them must be at most 1,000,000. Each value of `padding=(x,y)` follows the `padding` rule; any other `padding` value is an `attr` error. A `text` `size=` outside that range is a `size` error.
@@ -251,7 +253,7 @@ Unnamed lines are referred to as `line@L<n>`, where n is the source line of the 
   | hexagon | horizontally inset by `min(h/4, w/2)` |
   | cylinder | below the cap |
   | rounded | same as `rect` |
-- The stacked text (or each absolute item) must fit the text area. `label-overflow` reports the required box size; for an absolute item it fires only when the item is larger than the text area. Placing an item outside the text area is the `text-outside-shape` warning (§7), not an error. For small text areas, such as a diamond's, it suggests a roomier shape.
+- The stacked text (or each absolute item) must fit the text area. `label-overflow` reports the required box size, which is the size a box without `size` gets (§3); for an absolute item it fires only when the item is larger than the text area. Placing an item outside the text area is the `text-outside-shape` warning (§7), not an error. For small text areas, such as a diamond's, it suggests a roomier shape.
 - `kashika measure "text" [--size N] [--weight bold]` prints a label's exact width and height, with markup applied. `kashika ref metrics` lists average character widths at common sizes.
 
 ## 7. Checks
@@ -277,7 +279,7 @@ These block output unless `--force` is given:
 | `attr` | Unknown, duplicate, mistyped (including an unknown color name) or out-of-range attribute (§3), a duplicate label position, a `label-side` that does not match the segment under a label (§5), or a style `shape` that reaches a group (§3) |
 | `unknown-style` | `style=` names no built-in or user style |
 | `unknown-shape` | `shape=`, on a box or in a `style`, names no built-in, defined or imported shape. Includes did-you-mean |
-| `size` | A non-positive size, or one larger than 1,000,000 |
+| `size` | A non-positive size, or one larger than 1,000,000; a box with no `size` and nothing to fit, or whose text sits below it (§3) |
 | `range` | A resolved coordinate or curve amount more than 1,000,000 from the origin, or not a finite number (§1) |
 | `diagram` | Missing, misplaced or repeated `diagram` statement. A `diagram` statement that failed to parse is not reported missing |
 | `version` | `kashika=` is not a quoted semver string, or names a newer version or a different major version than the tool |

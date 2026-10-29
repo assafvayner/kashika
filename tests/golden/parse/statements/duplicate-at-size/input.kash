@@ -1,10 +1,11 @@
 // spec: 2, 3
-// A repeated `at` or `size` is a parse error that drops the statement; a missing one is too.
+// A repeated `at` or `size` is a parse error that drops the statement; so is a missing `at`, or
+// a missing `size` on an image.
 diagram "dupes" size (300,200)
 box a at (10,10) size (40,40) at (20,20)
 box b size (40,40) at (60,10) size (50,50)
 junction j at (10,100) at (20,100)
 text "t" at (100,100) at (110,100)
 box c fill=red size (40,40)
-box d at (200,10) style=service
+image d "logo.png" at (200,10) fit=cover
 box ok at (200,100) size (60,40)

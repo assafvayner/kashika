@@ -6,7 +6,7 @@ File {
                 id: Ident { name: "a", span: 5:5-5:6 },
                 label: Some("xqy"),
                 at: Lit { x: Num(10.0), y: Num(10.0), span: 5:17-5:24 },
-                size: (120.0, 40.0),
+                size: Some(Size { w: Some(120.0), h: Some(40.0) }),
                 attrs: [],
                 block: None,
                 span: 5:1-5:38,

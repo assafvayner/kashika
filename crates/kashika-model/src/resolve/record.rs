@@ -66,11 +66,16 @@ impl Resolver<'_> {
         }
     }
 
-    /// Records a box or group's `at` literals and size.
+    /// Records a box or group's `at` literals and the axes of its size that are numbers.
     pub(super) fn record_node(&mut self, n: &ast::Node) {
         self.record_point(&n.id.name, &n.at);
-        self.literal(&n.id.name, "width", n.size.0, n.span);
-        self.literal(&n.id.name, "height", n.size.1, n.span);
+        let size = n.size.unwrap_or(ast::Size { w: None, h: None });
+        if let Some(w) = size.w {
+            self.literal(&n.id.name, "width", w, n.span);
+        }
+        if let Some(h) = size.h {
+            self.literal(&n.id.name, "height", h, n.span);
+        }
     }
 
     pub(super) fn record_line(&mut self, owner: &str, l: &ast::Line) {

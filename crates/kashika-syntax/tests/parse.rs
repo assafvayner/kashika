@@ -7,6 +7,13 @@ fn parse_ok(src: &str) -> File {
     file
 }
 
+fn sized(w: f64, h: f64) -> Option<Size> {
+    Some(Size {
+        w: Some(w),
+        h: Some(h),
+    })
+}
+
 #[test]
 fn parses_diagram_and_box() {
     let f = parse_ok(
@@ -18,7 +25,7 @@ fn parses_diagram_and_box() {
     };
     assert_eq!(b.id.name, "api");
     assert_eq!(b.label.as_deref(), Some("API"));
-    assert_eq!(b.size, (120.0, 60.0));
+    assert_eq!(b.size, sized(120.0, 60.0));
     assert_eq!(b.attrs[0].key.name, "style");
     assert_eq!(b.attrs[0].value, Value::Word("service".into()));
     let Point::Lit {
@@ -223,7 +230,7 @@ fn numbers_are_integers_or_decimals_optionally_negative() {
     else {
         panic!("expected literal point")
     };
-    assert_eq!((*x, *y, b.size), (-1.5, 20.0, (0.25, 3.0)));
+    assert_eq!((*x, *y, b.size), (-1.5, 20.0, sized(0.25, 3.0)));
 }
 
 #[test]
@@ -653,7 +660,7 @@ fn at_size_and_attributes_come_in_any_order() {
     let Stmt::Box(b) = &f.stmts[2] else {
         panic!("expected box")
     };
-    assert_eq!(b.size, (10.0, 20.0));
+    assert_eq!(b.size, sized(10.0, 20.0));
     assert_eq!(b.attrs.len(), 2);
     assert!(matches!(b.at, Point::Lit { x: Coord::Num(x), .. } if x == 1.0));
     let Stmt::Junction(j) = &f.stmts[4] else {
@@ -675,12 +682,44 @@ fn duplicate_or_missing_at_and_size_are_parse_errors() {
         ("diagram \"t\" size (1,1) size (2,2)\n", "duplicate `size`"),
         ("junction j at (0,0) at (1,1)\n", "duplicate `at`"),
         ("box a fill=red size (1,1)\n", "expected `at`"),
-        ("box a at (0,0) fill=red\n", "expected `size`"),
+        ("image i \"x.png\" at (0,0) fit=cover\n", "expected `size`"),
     ] {
         let (f, d) = parse(src);
         assert_eq!(d.len(), 1, "{src:?}: {d:#?}");
         assert_eq!(d[0].code, "parse");
         assert!(d[0].message.contains(msg), "{src:?}: {}", d[0].message);
+        assert!(f.stmts.is_empty(), "{src:?}");
+    }
+}
+
+#[test]
+fn box_size_is_optional_and_takes_auto() {
+    let f = parse_ok(
+        "box a \"A\" at (0,0)\nbox b \"B\" at (0,0) size (auto, 40)\nbox c \"C\" size (auto,auto) at (0,0)\n",
+    );
+    let sizes: Vec<Option<Size>> = f
+        .stmts
+        .iter()
+        .map(|s| match s {
+            Stmt::Box(b) => b.size,
+            _ => panic!("expected box"),
+        })
+        .collect();
+    let auto = |w, h| Some(Size { w, h });
+    assert_eq!(sizes, [None, auto(None, Some(40.0)), auto(None, None)]);
+}
+
+#[test]
+fn auto_size_is_a_box_feature() {
+    for src in [
+        "diagram \"t\" size (auto,100)\n",
+        "image i \"x.png\" at (0,0) size (auto,10)\n",
+        "group g at (0,0) size (10,auto) {\n}\n",
+        "group g at (0,0) {\n}\n",
+    ] {
+        let (f, d) = parse(src);
+        assert_eq!(d.len(), 1, "{src:?}: {d:#?}");
+        assert_eq!(d[0].code, "parse", "{src:?}");
         assert!(f.stmts.is_empty(), "{src:?}");
     }
 }

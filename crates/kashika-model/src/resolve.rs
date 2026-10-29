@@ -118,7 +118,8 @@ struct NodeProps {
     shape: Option<String>,
     style: Style,
     pin: (&'static str, Option<f64>),
-    size_ok: bool,
+    /// The resolved size; `None` when it is invalid or can't be fitted.
+    size: Option<(f64, f64)>,
     text: ShapeTextProps,
     allow: Vec<Allow>,
     reason: Option<String>,
@@ -188,6 +189,7 @@ pub fn resolve_with(file: &ast::File, opts: &Options) -> (Scene, Vec<Diagnostic>
         skipped_ids: file.failed_ids.iter().map(|i| i.name.clone()).collect(),
         edges: Vec::new(),
         literals: Vec::new(),
+        grid: None,
         diags: Vec::new(),
     };
     r.icons_dir(file);
@@ -203,6 +205,7 @@ pub fn resolve_with(file: &ast::File, opts: &Options) -> (Scene, Vec<Diagnostic>
     r.collect(&file.stmts, None, 0);
     r.placed = vec![None; r.entries.len()];
     let mut scene = r.diagram(file);
+    r.grid = scene.grid;
     r.validate();
     r.placement_graph();
     r.build(&mut scene);
@@ -250,6 +253,8 @@ struct Resolver<'a> {
     skipped_ids: HashSet<String>,
     edges: Vec<PlacementEdge>,
     literals: Vec<Literal>,
+    /// The diagram's `grid=`, which fitted sizes round up to.
+    grid: Option<f64>,
     diags: Vec<Diagnostic>,
 }
 

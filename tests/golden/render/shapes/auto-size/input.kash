@@ -1,0 +1,14 @@
+// spec: 3, 6
+// Boxes sized to their text: a label, a sublabel, an icon, a text block and other shapes.
+diagram "fit" size (440,240)
+box a "Client" at (20,20) style=external
+box b "Payments API" at (20,80) size (auto, 60) sublabel="v2.4.1" style=service
+box c "Decision" at (20,160) shape=diamond
+box d "Orders" at a.right+(40,0) pin=left shape=cylinder style=datastore
+box e at (240,100) style=note text-align=left {
+  text "**Worker**"
+  text "• validates cards" size=12
+  text "• retries charges" size=12
+}
+box f "Server" at (240,20) icon="server"
+line ad a.right -> d.left end=arrow

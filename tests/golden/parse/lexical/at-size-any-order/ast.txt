@@ -26,7 +26,7 @@ File {
                 id: Ident { name: "a", span: 5:5-5:6 },
                 label: None,
                 at: Lit { x: Num(20.0), y: Num(20.0), span: 5:24-5:31 },
-                size: (100.0, 60.0),
+                size: Some(Size { w: Some(100.0), h: Some(60.0) }),
                 attrs: [
                     Attr {
                         key: Ident { name: "style", span: 5:32-5:37 },
@@ -44,7 +44,7 @@ File {
                 id: Ident { name: "b", span: 6:5-6:6 },
                 label: Some("B"),
                 at: Lit { x: Num(200.0), y: Num(20.0), span: 6:30-6:38 },
-                size: (100.0, 60.0),
+                size: Some(Size { w: Some(100.0), h: Some(60.0) }),
                 attrs: [
                     Attr {
                         key: Ident { name: "style", span: 6:11-6:16 },
@@ -75,7 +75,7 @@ File {
                     id: Ident { name: "g", span: 7:7-7:8 },
                     label: Some("G"),
                     at: Lit { x: Num(20.0), y: Num(140.0), span: 7:46-7:54 },
-                    size: (360.0, 120.0),
+                    size: Some(Size { w: Some(360.0), h: Some(120.0) }),
                     attrs: [
                         Attr {
                             key: Ident { name: "style", span: 7:28-7:33 },
@@ -133,7 +133,7 @@ File {
                 id: Ident { name: "c", span: 11:5-11:6 },
                 label: None,
                 at: Lit { x: Num(200.0), y: Num(180.0), span: 11:10-11:19 },
-                size: (120.0, 60.0),
+                size: Some(Size { w: Some(120.0), h: Some(60.0) }),
                 attrs: [],
                 block: Some(
                     [

@@ -6,7 +6,7 @@ File {
                 id: Ident { name: "a", span: 5:5-5:6 },
                 label: Some("Payments"),
                 at: Lit { x: Num(200.0), y: Num(100.0), span: 5:21-5:30 },
-                size: (160.0, 80.0),
+                size: Some(Size { w: Some(160.0), h: Some(80.0) }),
                 attrs: [
                     Attr {
                         key: Ident { name: "pin", span: 5:45-5:48 },

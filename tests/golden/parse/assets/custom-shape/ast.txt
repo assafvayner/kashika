@@ -31,7 +31,7 @@ File {
                 id: Ident { name: "lb", span: 14:5-14:7 },
                 label: Some("LB"),
                 at: Lit { x: Num(20.0), y: Num(40.0), span: 14:16-14:23 },
-                size: (160.0, 120.0),
+                size: Some(Size { w: Some(160.0), h: Some(120.0) }),
                 attrs: [
                     Attr {
                         key: Ident { name: "shape", span: 14:39-14:44 },
@@ -49,7 +49,7 @@ File {
                 id: Ident { name: "c", span: 15:5-15:6 },
                 label: None,
                 at: Lit { x: Num(200.0), y: Num(40.0), span: 15:10-15:18 },
-                size: (90.0, 120.0),
+                size: Some(Size { w: Some(90.0), h: Some(120.0) }),
                 attrs: [
                     Attr {
                         key: Ident { name: "shape", span: 15:33-15:38 },

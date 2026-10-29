@@ -65,7 +65,8 @@ pub struct Node {
     pub id: Ident,
     pub label: Option<String>,
     pub at: Point,
-    pub size: (f64, f64),
+    /// `None` when omitted; a box then fits its text.
+    pub size: Option<Size>,
     pub attrs: Vec<Attr>,
     /// A box's `{ }` text block; always `None` on a group header.
     pub block: Option<Vec<BlockText>>,
@@ -154,6 +155,13 @@ pub struct Image {
     pub size: (f64, f64),
     pub attrs: Vec<Attr>,
     pub span: Span,
+}
+
+/// A `size (w,h)` clause; an axis written `auto` is `None`.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Size {
+    pub w: Option<f64>,
+    pub h: Option<f64>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

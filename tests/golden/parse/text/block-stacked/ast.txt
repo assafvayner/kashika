@@ -6,7 +6,7 @@ File {
                 id: Ident { name: "api", span: 5:5-5:8 },
                 label: None,
                 at: Lit { x: Num(20.0), y: Num(20.0), span: 5:12-5:19 },
-                size: (220.0, 140.0),
+                size: Some(Size { w: Some(220.0), h: Some(140.0) }),
                 attrs: [
                     Attr {
                         key: Ident { name: "style", span: 5:35-5:40 },

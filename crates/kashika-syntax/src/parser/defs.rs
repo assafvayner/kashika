@@ -43,7 +43,7 @@ impl Parser<'_> {
             file,
             file_span,
             at: self.required(tail.at, "at")?,
-            size: self.required(tail.size, "size")?,
+            size: self.fixed_size(tail.size, "an image's")?,
             attrs: tail.attrs,
             span: start.to(self.prev_span()),
         })

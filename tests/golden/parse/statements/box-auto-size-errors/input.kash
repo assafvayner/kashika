@@ -1,0 +1,10 @@
+// spec: 3, 6, 7
+// A box with no text and no size has nothing to fit, nor does a shape whose text sits under it;
+// a fixed axis is still checked, and too small a fixed axis overflows.
+diagram "fit errors" size (400,300)
+shape tri from "tri.svg" text-area=below
+box empty at (10,10)
+box half at (10,60) size (auto, 40) style=service
+box under "Under" at (10,120) shape=tri
+box neg "Neg" at (200,10) size (auto, -5)
+box narrow "A long label for a narrow box" at (200,60) size (60, auto)

@@ -18,7 +18,7 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `attr` | error | unknown, duplicate, mistyped or out-of-range attribute | apply the did-you-mean suggestion |
 | `unknown-style` | error | `style=` names no style | define it or use a built-in |
 | `unknown-shape` | error | `shape=` names no shape | apply the did-you-mean suggestion, or define or import it |
-| `size` | error | non-positive or oversized size | use a positive width and height |
+| `size` | error | non-positive or oversized size, or a box with no `size` and no text to fit | use a positive width and height |
 | `range` | error | a coordinate or curve amount beyond ±1,000,000 | keep coordinates within -1000000..1000000 |
 | `diagram` | error | missing, misplaced or repeated `diagram` | start with one `diagram "<title>" size (w,h)` |
 | `version` | error | `kashika=` is malformed or newer than the binary | fix the file or the binary |

@@ -1,0 +1,9 @@
+error[size] 6:1-6:21: `empty` has no size to fit: it has no text
+  = help: give it a size: `size (w,h)`
+error[size] 7:1-7:50: `half` has no size to fit: it has no text
+  = help: give it a size: `size (w,h)`
+error[size] 8:1-8:40: `under` has no size to fit: its text sits under it (`text-area=below`)
+  = help: give it a size: `size (w,h)`
+error[size] 9:1-9:42: `neg` must have a positive size
+error[label-overflow] 10:1-10:71: its text needs 191.15x17.5px but the text area of `narrow` is 44x18px (too narrow by 147.15px)
+  = help: make `narrow` at least size (208,34), or shorten the text

@@ -41,7 +41,7 @@ Kashika has **no auto-layout**. You decide every box position and every line pat
 - A line is `1.25 × size` tall (17.5px at the default 14). A sublabel adds a `0.8 × size` line (`--size 11.2`) after `gap`. A text block is as wide as its widest item.
 - Padding defaults to 8 per side, so for `rect`/`rounded` add 16 to each text dimension (`Payments API` is 91.64×17.5, so the box is at least 108×34). Other shapes put the text in a fraction of the box (`diamond` 0.5 × 0.5, `cloud` 0.6 × 0.4; `kashika ref shapes`): add the 16, then divide by the fraction. A `cylinder` loses up to 20px to each cap, so a one-line cylinder needs about 70px of height and a one-line cloud about 85. `icon=` adds `icon-size + padding` (32px) on the icon's side.
 - Small boxes (badges, table rows under ~30px tall) need a smaller inset: `padding=N` sets one value for all four sides (`padding=3` fits size-12 text in a 22px row; `padding=(x,y)` sets left/right and top/bottom).
-- Easiest for any shape: write a guess, then use the size from the `label-overflow` help, which accounts for shape, icon and sublabel.
+- Easiest for any shape: leave `size` out and the box fits its text (the size `label-overflow` would ask for, rounded up to `grid=`); `size (140, auto)` fixes the width and fits the height. `kashika inspect` shows the size it got. A box with no text still needs a `size`.
 
 ## Cheat sheet
 

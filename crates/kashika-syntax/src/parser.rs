@@ -94,7 +94,8 @@ impl Clauses {
 #[derive(Default)]
 struct Tail {
     at: Option<Point>,
-    size: Option<(f64, f64)>,
+    /// The size and the span of its clause.
+    size: Option<(Size, Span)>,
     attrs: Vec<Attr>,
 }
 
@@ -295,7 +296,7 @@ impl Parser<'_> {
             }
             "box" => {
                 self.bump();
-                let mut node = self.node(start)?;
+                let mut node = self.node(start, false)?;
                 if *self.tok() == Tok::LBrace {
                     node.block = Some(self.text_block()?);
                 }
@@ -319,7 +320,7 @@ impl Parser<'_> {
             }
             "group" => {
                 self.bump();
-                let node = self.node(start)?;
+                let node = self.node(start, true)?;
                 self.depth += 1;
                 let children = self.block();
                 self.depth -= 1;
@@ -480,12 +481,52 @@ impl Parser<'_> {
         Ok((a, b))
     }
 
+    /// `size (w,h)`, where each axis is a number or `auto`.
+    fn size(&mut self) -> PResult<Size> {
+        self.expect(Tok::LParen)?;
+        let w = self.dim()?;
+        self.expect(Tok::Comma)?;
+        let h = self.dim()?;
+        self.expect(Tok::RParen)?;
+        Ok(Size { w, h })
+    }
+
+    fn dim(&mut self) -> PResult<Option<f64>> {
+        if self.is_kw("auto") {
+            self.bump();
+            return Ok(None);
+        }
+        self.number().map(Some)
+    }
+
+    /// A required size with no `auto` axis, for statements that can't fit their size.
+    fn fixed_size(&mut self, size: Option<(Size, Span)>, what: &str) -> PResult<(f64, f64)> {
+        match self.required(size, "size")? {
+            (
+                Size {
+                    w: Some(w),
+                    h: Some(h),
+                },
+                _,
+            ) => Ok((w, h)),
+            (_, span) => {
+                self.diags.push(
+                    Diagnostic::error("parse", span, format!("{what} size can't be `auto`"))
+                        .with_help(
+                            "only a box fits its size to its text; give it a size: `size (w,h)`",
+                        ),
+                );
+                Err(())
+            }
+        }
+    }
+
     fn diagram(&mut self, start: Span) -> PResult<Diagram> {
         let title = self.string()?;
         let tail = self.tail(Clauses::SIZE)?;
         Ok(Diagram {
             title,
-            size: self.required(tail.size, "size")?,
+            size: self.fixed_size(tail.size, "a diagram's")?,
             attrs: tail.attrs,
             span: start.to(self.prev_span()),
         })
@@ -517,7 +558,7 @@ impl Parser<'_> {
         })
     }
 
-    fn node(&mut self, start: Span) -> PResult<Node> {
+    fn node(&mut self, start: Span, group: bool) -> PResult<Node> {
         let id = self.decl_id("an id")?;
         let label = if let Tok::Str(s) = self.tok().clone() {
             self.bump();
@@ -526,11 +567,21 @@ impl Parser<'_> {
             None
         };
         let tail = self.tail(Clauses::AT_SIZE)?;
+        let at = self.required(tail.at, "at")?;
+        let size = if group {
+            let (w, h) = self.fixed_size(tail.size, "a group's")?;
+            Some(Size {
+                w: Some(w),
+                h: Some(h),
+            })
+        } else {
+            tail.size.map(|(s, _)| s)
+        };
         Ok(Node {
             id,
             label,
-            at: self.required(tail.at, "at")?,
-            size: self.required(tail.size, "size")?,
+            at,
+            size,
             attrs: tail.attrs,
             block: None,
             span: start.to(self.prev_span()),
@@ -766,8 +817,9 @@ impl Parser<'_> {
                 self.once(&mut tail.at, at, "at", kw)?;
             } else if clauses.size && clause && self.is_kw("size") {
                 let kw = self.bump();
-                let size = self.pair()?;
-                self.once(&mut tail.size, size, "size", kw)?;
+                let size = self.size()?;
+                let span = kw.to(self.prev_span());
+                self.once(&mut tail.size, (size, span), "size", kw)?;
             } else if matches!(self.tok(), Tok::Ident(_)) {
                 tail.attrs.push(self.attr()?);
             } else {

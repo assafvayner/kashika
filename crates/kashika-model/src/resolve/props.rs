@@ -9,7 +9,7 @@ use crate::markup;
 use crate::scene::*;
 use crate::shapes;
 use crate::style::{self, STYLE_KEYS, Style, StyleProps};
-use crate::textlayout::{self, SHAPE_TEXT_KEYS, ShapeTextProps};
+use crate::textlayout::{self, SHAPE_TEXT_KEYS, ShapeInput, ShapeTextProps};
 
 use super::{
     IMAGE_KEYS, IconPos, IconProps, ImageProps, Item, LINE_KEYS, LineProps, NODE_KEYS, NodeProps,
@@ -17,6 +17,18 @@ use super::{
 };
 
 impl NodeProps {
+    /// How far the icon pushes the text area from the left and from the top edge.
+    pub(super) fn icon_inset(&self, group: bool) -> (f64, f64) {
+        self.icon.map_or((0.0, 0.0), |ic| {
+            let pad = self.style.padding;
+            if group || ic.pos == IconPos::Left {
+                (ic.size + pad.x, 0.0)
+            } else {
+                (0.0, ic.size + pad.y)
+            }
+        })
+    }
+
     /// The shape drawn: the `shape=` name, else `rounded` or `rect` from the outline.
     pub(super) fn drawn_shape(&self) -> String {
         self.shape.clone().unwrap_or_else(|| {
@@ -93,7 +105,6 @@ impl<'a> Resolver<'a> {
             .collect();
         let a = Attrs::new(&n.attrs, what, &keys, &mut self.diags);
 
-        let size_ok = self.size_ok(n.size, n.span, &format!("`{}`", n.id.name));
         let shape = a.get("shape").and_then(|x| self.shape_attr(x));
         let mut props = StyleProps::default();
         let mut color = None;
@@ -154,19 +165,74 @@ impl<'a> Resolver<'a> {
             .unwrap_or(style::ICON_COLOR);
         let icon = self.icon_props(&a, group, style.font_size, icon_color);
         let layer = self.layer(&a);
-        NodeProps {
+        let mut p = NodeProps {
             outline,
             shape,
             style,
             pin,
-            size_ok,
+            size: None,
             text,
             allow,
             reason,
             icon,
             image: None,
             layer,
+        };
+        p.size = self.node_size(n, group, &p);
+        p
+    }
+
+    /// The size of a box or group: its `size`, with each `auto` axis (or both, when it has
+    /// none) fitted to its text and rounded up to the `grid`.
+    fn node_size(&mut self, n: &ast::Node, group: bool, p: &NodeProps) -> Option<(f64, f64)> {
+        let what = format!("`{}`", n.id.name);
+        let ast::Size { w, h } = n.size.unwrap_or(ast::Size { w: None, h: None });
+        if let (Some(w), Some(h)) = (w, h) {
+            return self.size_ok((w, h), n.span, &what).then_some((w, h));
         }
+        if group {
+            self.diags.push(
+                Diagnostic::error("size", n.span, format!("group {what} needs a size"))
+                    .with_help("groups don't fit their contents; give it a size: `size (w,h)`"),
+            );
+            return None;
+        }
+        if !self.size_ok((w.unwrap_or(1.0), h.unwrap_or(1.0)), n.span, &what) {
+            return None;
+        }
+        let shape = p.drawn_shape();
+        let input = ShapeInput {
+            id: &n.id.name,
+            node: n,
+            kind: ShapeKind::Box,
+            shape: &shape,
+            custom_text_area: self.lib.shapes.get(&shape).and_then(LibShape::text_area),
+            text_below: self.svg_shape(&shape).is_some_and(|s| s.below),
+            icon_inset: p.icon_inset(false),
+            rect: Rect::new(0.0, 0.0, w.unwrap_or(0.0), h.unwrap_or(0.0)),
+            style: &p.style,
+            props: &p.text,
+            block_at: &[],
+        };
+        let Some(fit) = textlayout::fit_size(&input) else {
+            let why = if input.text_below {
+                "its text sits under it (`text-area=below`)"
+            } else {
+                "it has no text"
+            };
+            self.diags.push(
+                Diagnostic::error("size", n.span, format!("{what} has no size to fit: {why}"))
+                    .with_help("give it a size: `size (w,h)`"),
+            );
+            return None;
+        };
+        let grid = self.grid;
+        let snap = |v: f64| grid.map_or(v, |g| (v / g).ceil() * g);
+        let size = (
+            w.unwrap_or_else(|| snap(fit.0)),
+            h.unwrap_or_else(|| snap(fit.1)),
+        );
+        self.size_ok(size, n.span, &what).then_some(size)
     }
 
     fn layer(&mut self, a: &Attrs<'_>) -> Layer {
@@ -232,7 +298,9 @@ impl<'a> Resolver<'a> {
 
     pub(super) fn image_props(&mut self, i: &ast::Image) -> NodeProps {
         let a = Attrs::new(&i.attrs, "image", IMAGE_KEYS, &mut self.diags);
-        let size_ok = self.size_ok(i.size, i.span, &format!("`{}`", i.id.name));
+        let size = self
+            .size_ok(i.size, i.span, &format!("`{}`", i.id.name))
+            .then_some(i.size);
         let pin = a
             .get("pin")
             .and_then(|x| self.pin(x))
@@ -253,7 +321,7 @@ impl<'a> Resolver<'a> {
             shape: None,
             style: Style::default(),
             pin,
-            size_ok,
+            size,
             text: ShapeTextProps::default(),
             allow,
             reason,

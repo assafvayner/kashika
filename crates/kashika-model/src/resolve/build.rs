@@ -121,14 +121,7 @@ impl<'a> Resolver<'a> {
         let form = self.form(&shape, rect);
         let svg = self.svg_shape(&shape);
         let icon = p.icon;
-        let icon_inset = icon.map_or((0.0, 0.0), |ic| {
-            let pad = p.style.padding;
-            if kind == ShapeKind::Group || ic.pos == IconPos::Left {
-                (ic.size + pad.x, 0.0)
-            } else {
-                (0.0, ic.size + pad.y)
-            }
-        });
+        let icon_inset = p.icon_inset(kind == ShapeKind::Group);
         let text = textlayout::layout_shape(
             &ShapeInput {
                 id: &n.id.name,

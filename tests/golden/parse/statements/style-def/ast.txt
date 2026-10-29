@@ -74,7 +74,7 @@ File {
                 id: Ident { name: "a", span: 6:5-6:6 },
                 label: Some("Warm"),
                 at: Lit { x: Num(20.0), y: Num(20.0), span: 6:17-6:24 },
-                size: (120.0, 60.0),
+                size: Some(Size { w: Some(120.0), h: Some(60.0) }),
                 attrs: [
                     Attr {
                         key: Ident { name: "style", span: 6:39-6:44 },
