@@ -13,9 +13,11 @@ const STATEMENTS: &[&str] = &[
 ];
 const LINE_FLAGS: &[&str] = &["ortho"];
 /// Segment keywords, which could not be bare segment targets, and the `arrow` statement keyword.
-pub const RESERVED_IDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve", "arrow"];
+pub const RESERVED_IDS: &[&str] = &[
+    "h", "v", "x", "y", "hv", "vh", "vhv", "hvh", "curve", "arrow",
+];
 /// The reserved ids that are segment keywords.
-pub const SEGMENT_KEYWORDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve"];
+pub const SEGMENT_KEYWORDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "vhv", "hvh", "curve"];
 const MAX_GROUP_DEPTH: usize = 64;
 const MAX_POINT_PARENS: usize = 16;
 
@@ -1176,6 +1178,17 @@ impl Parser<'_> {
                 self.bump();
                 SegKind::Vh(self.point()?)
             }
+            Some(kw @ ("vhv" | "hvh")) => {
+                let vertical = kw == "vhv";
+                self.bump();
+                let t = self.cross_at(vertical)?;
+                let to = self.point()?;
+                if vertical {
+                    SegKind::Vhv { t, to }
+                } else {
+                    SegKind::Hvh { t, to }
+                }
+            }
             Some("curve") => {
                 self.bump();
                 self.curve()?
@@ -1186,6 +1199,35 @@ impl Parser<'_> {
             kind,
             span: start.to(self.prev_span()),
         })
+    }
+
+    /// The `@t` of `vhv@t`/`hvh@t`: where the middle run sits, as a fraction of the way.
+    fn cross_at(&mut self, vertical: bool) -> PResult<Option<f64>> {
+        if *self.tok() != Tok::At {
+            return Ok(None);
+        }
+        self.bump();
+        let span = self.span();
+        let t = self.number()?;
+        if t > 0.0 && t < 1.0 {
+            return Ok(Some(t));
+        }
+        let (kw, run) = if vertical {
+            ("vhv", "horizontal")
+        } else {
+            ("hvh", "vertical")
+        };
+        self.diags.push(
+            Diagnostic::error(
+                "parse",
+                span,
+                format!("`{kw}@t` needs t between 0 and 1 (exclusive), found {t}"),
+            )
+            .with_help(format!(
+                "`{kw}@0.5` puts the {run} run halfway, which is the default; leave out `@t` for that"
+            )),
+        );
+        Err(())
     }
 
     fn target(&mut self) -> PResult<Target> {

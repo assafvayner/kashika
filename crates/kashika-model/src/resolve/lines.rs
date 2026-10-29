@@ -143,6 +143,8 @@ impl<'a> Resolver<'a> {
             SegKind::To(p)
             | SegKind::Hv(p)
             | SegKind::Vh(p)
+            | SegKind::Vhv { to: p, .. }
+            | SegKind::Hvh { to: p, .. }
             | SegKind::Curve { to: p, .. }
             | SegKind::X(Target::Point(p))
             | SegKind::Y(Target::Point(p)) => {
@@ -198,6 +200,24 @@ impl<'a> Resolver<'a> {
                 let p = self.eval_point(p, origin)?;
                 let corner = Pt::new(cur.x, p.y);
                 vec![line(cur, corner), line(corner, p)]
+            }
+            SegKind::Vhv { t, to } => {
+                let p = self.eval_point(to, origin)?;
+                if (p.x - cur.x).abs() <= 1e-9 {
+                    return Some(vec![line(cur, p)]);
+                }
+                let y = cur.y + (p.y - cur.y) * t.unwrap_or(0.5);
+                let (a, b) = (Pt::new(cur.x, y), Pt::new(p.x, y));
+                vec![line(cur, a), line(a, b), line(b, p)]
+            }
+            SegKind::Hvh { t, to } => {
+                let p = self.eval_point(to, origin)?;
+                if (p.y - cur.y).abs() <= 1e-9 {
+                    return Some(vec![line(cur, p)]);
+                }
+                let x = cur.x + (p.x - cur.x) * t.unwrap_or(0.5);
+                let (a, b) = (Pt::new(x, cur.y), Pt::new(x, p.y));
+                vec![line(cur, a), line(a, b), line(b, p)]
             }
             SegKind::Curve { side, amount, to } => {
                 let to = self.eval_point(to, origin)?;

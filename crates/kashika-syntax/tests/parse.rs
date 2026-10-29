@@ -43,7 +43,7 @@ fn parses_diagram_and_box() {
 fn parses_every_segment_kind() {
     let f = parse_ok(
         "line l1 a.right -> h 10 -> v -20 -> x 50 -> y b.top -> hv c.left@0.25 -> vh (1,2) \
-         -> curve left 30 d.top -> curve via (0,0) (5,5) e.bottom -> f.left+(0,-4) end=arrow ortho\n",
+         -> vhv g.top -> hvh@0.25 (3,4) -> curve left 30 d.top -> curve via (0,0) (5,5) e.bottom -> f.left+(0,-4) end=arrow ortho\n",
     );
     let Stmt::Line(l) = &f.stmts[0] else {
         panic!("expected line")
@@ -60,17 +60,23 @@ fn parses_every_segment_kind() {
             SegKind::Y(_) => "y",
             SegKind::Hv(_) => "hv",
             SegKind::Vh(_) => "vh",
+            SegKind::Vhv { .. } => "vhv",
+            SegKind::Hvh { .. } => "hvh",
             SegKind::Curve { .. } => "curve",
             SegKind::CurveVia { .. } => "via",
         })
         .collect();
     assert_eq!(
         kinds,
-        ["h", "v", "x", "y", "hv", "vh", "curve", "via", "to"]
+        [
+            "h", "v", "x", "y", "hv", "vh", "vhv", "hvh", "curve", "via", "to"
+        ]
     );
     assert_eq!(l.segs[1].kind, SegKind::V(-20.0));
+    assert!(matches!(&l.segs[6].kind, SegKind::Vhv { t: None, .. }));
+    assert!(matches!(&l.segs[7].kind, SegKind::Hvh { t: Some(t), .. } if *t == 0.25));
     assert!(
-        matches!(&l.segs[6].kind, SegKind::Curve { side: Side::Left, amount, .. } if *amount == 30.0)
+        matches!(&l.segs[8].kind, SegKind::Curve { side: Side::Left, amount, .. } if *amount == 30.0)
     );
     assert_eq!(l.attrs.len(), 2);
     assert_eq!(l.attrs[1].value, Value::Flag);
@@ -1119,4 +1125,29 @@ fn unclosed_point_paren_is_an_error_with_help() {
         d[0].help,
         ["`.x`/`.y` take one axis of a mixed point, which needs both: `(a.left.x, other.y)`"]
     );
+}
+
+#[test]
+fn elbow_pair_position_is_inside_0_1() {
+    for (src, msg) in [
+        (
+            "vhv@0 b.top",
+            "`vhv@t` needs t between 0 and 1 (exclusive), found 0",
+        ),
+        (
+            "hvh@1.5 b.top",
+            "`hvh@t` needs t between 0 and 1 (exclusive), found 1.5",
+        ),
+        (
+            "vhv@-0.2 b.top",
+            "`vhv@t` needs t between 0 and 1 (exclusive), found -0.2",
+        ),
+    ] {
+        let (f, d) = parse(&format!("line l a.bottom -> {src}\n"));
+        assert_eq!(d.len(), 1, "{src}: {d:#?}");
+        assert_eq!((d[0].code, d[0].message.as_str()), ("parse", msg));
+        assert!(f.stmts.is_empty());
+    }
+    let (_, d) = parse("box vhv at (0,0) size (1,1)\n");
+    assert_eq!(d[0].message, "`vhv` is a reserved word and cannot be an id");
 }

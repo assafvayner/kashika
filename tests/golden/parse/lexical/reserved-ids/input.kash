@@ -11,3 +11,4 @@ group hv at (130,10) size (40,40) {
 box vh at (180,10) size (20,20)
 line curve (10,100) -> h 50
 box arrow at (210,10) size (20,20)
+box hvh at (240,10) size (20,20)

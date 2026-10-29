@@ -247,19 +247,45 @@ fn literals_are_written_in_the_line_frame() {
         side: Some(Side::Left),
         ..Endpoint::literal(Pt::new(280.0, 160.0))
     };
-    let plan = Plan {
-        hops: vec![
-            Hop::X(Lane {
-                value: 200.0,
-                expr: None,
-            }),
-            Hop::Vh,
-        ],
-        lane: Some(("x", 200.0)),
-    };
+    let plan = |hops: Vec<Hop>| Plan { hops, lane: None };
+    let lane = |value| Lane { value, expr: None };
+    let origin = Pt::new(100.0, 100.0);
     assert_eq!(
-        path_text(&from, &to, &plan, Pt::new(100.0, 100.0)),
-        "(20,40) -> x 100 -> vh b.left"
+        path_text(
+            &from,
+            &to,
+            &plan(vec![Hop::X(lane(220.0)), Hop::Vh]),
+            origin
+        ),
+        "(20,40) -> x 120 -> vh b.left"
+    );
+    assert_eq!(
+        path_text(
+            &from,
+            &to,
+            &plan(vec![Hop::X(lane(200.0)), Hop::Vh]),
+            origin
+        ),
+        "(20,40) -> hvh b.left"
+    );
+    assert_eq!(
+        path_text(
+            &from,
+            &to,
+            &plan(vec![Hop::Y(lane(150.0)), Hop::Hv]),
+            origin
+        ),
+        "(20,40) -> vhv b.left"
+    );
+    let detour = vec![
+        Hop::X(lane(60.0)),
+        Hop::Y(lane(300.0)),
+        Hop::X(lane(170.0)),
+        Hop::Vh,
+    ];
+    assert_eq!(
+        path_text(&from, &to, &plan(detour), origin),
+        "(20,40) -> x -40 -> y 200 -> hvh b.left"
     );
 }
 

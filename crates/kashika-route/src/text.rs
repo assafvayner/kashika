@@ -1,7 +1,7 @@
 use kashika_geom::Pt;
 
 use crate::Endpoint;
-use crate::candidates::{Hop, Plan};
+use crate::candidates::{Hop, Lane, Plan};
 
 /// A coordinate as a person would write it: at most two decimals, no `-0`.
 pub fn num(v: f64) -> String {
@@ -17,23 +17,41 @@ fn point(at: Pt, expr: &Option<String>, origin: Pt) -> String {
 }
 
 /// The path part of a `line` statement. Literals are written relative to `origin`, the
-/// top-left of the group the line belongs to.
+/// top-left of the group the line belongs to. A literal lane halfway to the end followed by
+/// the elbow to the end is written as one `hvh` or `vhv`.
 pub(crate) fn path_text(from: &Endpoint, to: &Endpoint, plan: &Plan, origin: Pt) -> String {
     let end = point(to.at, &to.expr, origin);
     let mut s = point(from.at, &from.expr, origin);
-    for hop in &plan.hops {
+    let mut at = from.at;
+    let halfway = |l: &Lane, a: f64, b: f64| l.expr.is_none() && a != b && l.value == (a + b) / 2.0;
+    let mut hops = plan.hops.iter().peekable();
+    while let Some(hop) = hops.next() {
         let h = match hop {
+            Hop::X(l) if hops.peek() == Some(&&Hop::Vh) && halfway(l, at.x, to.at.x) => {
+                hops.next();
+                format!("hvh {end}")
+            }
+            Hop::Y(l) if hops.peek() == Some(&&Hop::Hv) && halfway(l, at.y, to.at.y) => {
+                hops.next();
+                format!("vhv {end}")
+            }
+            Hop::X(l) => {
+                at.x = l.value;
+                format!(
+                    "x {}",
+                    l.expr.clone().unwrap_or_else(|| num(l.value - origin.x))
+                )
+            }
+            Hop::Y(l) => {
+                at.y = l.value;
+                format!(
+                    "y {}",
+                    l.expr.clone().unwrap_or_else(|| num(l.value - origin.y))
+                )
+            }
             Hop::To => end.clone(),
             Hop::Hv => format!("hv {end}"),
             Hop::Vh => format!("vh {end}"),
-            Hop::X(l) => format!(
-                "x {}",
-                l.expr.clone().unwrap_or_else(|| num(l.value - origin.x))
-            ),
-            Hop::Y(l) => format!(
-                "y {}",
-                l.expr.clone().unwrap_or_else(|| num(l.value - origin.y))
-            ),
             Hop::Curve { left, amount } => format!(
                 "curve {} {} {end}",
                 if *left { "left" } else { "right" },

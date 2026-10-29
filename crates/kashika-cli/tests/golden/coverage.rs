@@ -240,6 +240,8 @@ const SEGMENT_KINDS: &[&str] = &[
     "y <point>",
     "hv",
     "vh",
+    "vhv",
+    "hvh",
     "curve left",
     "curve right",
     "curve via",
@@ -256,6 +258,8 @@ fn segment_kind(k: &SegKind) -> &'static str {
         SegKind::Y(Target::Point(_)) => "y <point>",
         SegKind::Hv(_) => "hv",
         SegKind::Vh(_) => "vh",
+        SegKind::Vhv { .. } => "vhv",
+        SegKind::Hvh { .. } => "hvh",
         SegKind::Curve {
             side: Side::Left, ..
         } => "curve left",

@@ -125,6 +125,8 @@ pub(crate) fn end_point(line: &ast::Line) -> Option<&ast::Point> {
         SegKind::To(p)
         | SegKind::Hv(p)
         | SegKind::Vh(p)
+        | SegKind::Vhv { to: p, .. }
+        | SegKind::Hvh { to: p, .. }
         | SegKind::Curve { to: p, .. }
         | SegKind::CurveVia { to: p, .. } => Some(p),
         SegKind::H(_) | SegKind::V(_) | SegKind::X(_) | SegKind::Y(_) => None,

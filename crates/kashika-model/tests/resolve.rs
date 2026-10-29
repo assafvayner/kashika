@@ -1559,6 +1559,52 @@ fn lines_keep_their_authored_segments() {
 }
 
 #[test]
+fn vhv_and_hvh_put_the_middle_run_part_way() {
+    let s = ok(
+        "line a (0,0) -> vhv (100,40) -> hvh@0.25 (140,80) -> vhv (140,200) -> hvh (0,200)
+",
+    );
+    let l = &s.lines[0];
+    let kinds: Vec<SegmentKind> = l.segments.iter().map(|g| g.kind).collect();
+    assert_eq!(
+        kinds,
+        [
+            SegmentKind::Vhv,
+            SegmentKind::Hvh,
+            SegmentKind::Vhv,
+            SegmentKind::Hvh
+        ]
+    );
+    let corners = |i: usize| -> Vec<Pt> {
+        let g = &l.segments[i];
+        let mut v = vec![g.from];
+        v.extend(g.pieces.iter().map(PathSeg::to));
+        v
+    };
+    assert_eq!(
+        corners(0),
+        [
+            Pt::new(0.0, 0.0),
+            Pt::new(0.0, 20.0),
+            Pt::new(100.0, 20.0),
+            Pt::new(100.0, 40.0)
+        ]
+    );
+    assert_eq!(
+        corners(1),
+        [
+            Pt::new(100.0, 40.0),
+            Pt::new(110.0, 40.0),
+            Pt::new(110.0, 80.0),
+            Pt::new(140.0, 80.0)
+        ]
+    );
+    assert_eq!(corners(2), [Pt::new(140.0, 80.0), Pt::new(140.0, 200.0)]);
+    assert_eq!(corners(3), [Pt::new(140.0, 200.0), Pt::new(0.0, 200.0)]);
+    assert_eq!(SegmentKind::Vhv.name(), "vhv");
+}
+
+#[test]
 fn literals_are_recorded_in_their_own_frame() {
     let s = ok(
         "group g at (100,50) size (300,200) {\n  box a at (10,20) size (40,30)\n}\nline l a.right+(5,0) -> h 15 -> (300,95)\n",

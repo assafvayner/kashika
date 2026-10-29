@@ -1,0 +1,6 @@
+warn[cross] 9:1-9:35: l2 crosses l1 at (110,100)
+  = help: segment 1 runs at x=110; free x-intervals across y 40..160: 0..14, 386..400
+  = help: if intentional: allow=cross:l1 on l2
+  = suppressed
+  elements: [{"from":[80,40],"id":"l2","kind":"line","segment":1,"span":{"col":1,"end_col":35,"end_line":9,"line":9},"to":[200,160]},{"from":[50,60],"id":"l1","kind":"line","segment":1,"span":{"col":1,"end_col":30,"end_line":8,"line":8},"to":[230,140]}]
+  facts: {"at":[110,100],"free":{"axis":"x","band":[40,160],"intervals":[[0,14],[386,400]]}}

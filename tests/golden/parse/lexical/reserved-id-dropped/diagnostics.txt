@@ -1,2 +1,2 @@
 error[parse] 5:6-5:8: `hv` is a reserved word and cannot be an id
-  = help: segment keywords (h v x y hv vh curve) are reserved; pick another name, e.g. `hv_1`
+  = help: segment keywords (h v x y hv vh vhv hvh curve) are reserved; pick another name, e.g. `hv_1`

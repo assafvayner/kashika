@@ -1,4 +1,4 @@
 error[parse] 4:5-4:6: `h` is a reserved word and cannot be an id
-  = help: segment keywords (h v x y hv vh curve) are reserved; pick another name, e.g. `h_1`
+  = help: segment keywords (h v x y hv vh vhv hvh curve) are reserved; pick another name, e.g. `h_1`
 error[unknown-id] 6:10-6:11: unknown id `h`
   = help: `h` is a reserved word, so nothing can have that id; rename the shape it refers to

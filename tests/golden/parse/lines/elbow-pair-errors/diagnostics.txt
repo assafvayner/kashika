@@ -1,0 +1,6 @@
+error[parse] 6:25-6:26: `vhv@t` needs t between 0 and 1 (exclusive), found 0
+  = help: `vhv@0.5` puts the horizontal run halfway, which is the default; leave out `@t` for that
+error[parse] 7:24-7:25: `hvh@t` needs t between 0 and 1 (exclusive), found 1
+  = help: `hvh@0.5` puts the vertical run halfway, which is the default; leave out `@t` for that
+error[parse] 8:24-8:27: `hvh@t` needs t between 0 and 1 (exclusive), found 1.5
+  = help: `hvh@0.5` puts the vertical run halfway, which is the default; leave out `@t` for that

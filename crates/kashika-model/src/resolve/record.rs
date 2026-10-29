@@ -99,9 +99,12 @@ impl Resolver<'_> {
 
     fn record_segment(&mut self, owner: &str, seg: &ast::Seg) {
         match &seg.kind {
-            SegKind::To(p) | SegKind::Hv(p) | SegKind::Vh(p) | SegKind::Curve { to: p, .. } => {
-                self.record_point(owner, p)
-            }
+            SegKind::To(p)
+            | SegKind::Hv(p)
+            | SegKind::Vh(p)
+            | SegKind::Vhv { to: p, .. }
+            | SegKind::Hvh { to: p, .. }
+            | SegKind::Curve { to: p, .. } => self.record_point(owner, p),
             SegKind::H(d) => self.literal(owner, "h", *d, seg.span),
             SegKind::V(d) => self.literal(owner, "v", *d, seg.span),
             SegKind::X(t) => self.record_target(owner, "x", t, seg.span),
@@ -146,6 +149,8 @@ pub(super) fn segment_kind(k: &SegKind) -> SegmentKind {
         SegKind::Y(_) => SegmentKind::Y,
         SegKind::Hv(_) => SegmentKind::Hv,
         SegKind::Vh(_) => SegmentKind::Vh,
+        SegKind::Vhv { .. } => SegmentKind::Vhv,
+        SegKind::Hvh { .. } => SegmentKind::Hvh,
         SegKind::Curve { .. } => SegmentKind::Curve,
         SegKind::CurveVia { .. } => SegmentKind::CurveVia,
     }
@@ -161,6 +166,8 @@ pub(super) fn end_is_literal(segs: &[ast::Seg]) -> bool {
             SegKind::To(p)
             | SegKind::Hv(p)
             | SegKind::Vh(p)
+            | SegKind::Vhv { to: p, .. }
+            | SegKind::Hvh { to: p, .. }
             | SegKind::Curve { to: p, .. }
             | SegKind::CurveVia { to: p, .. },
         ) => is_literal(p),

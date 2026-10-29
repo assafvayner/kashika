@@ -24,7 +24,7 @@ The CLI renders `.kash` files to SVG, PNG, JPEG or WebP and runs geometric check
 - Strings: `"..."` with escapes `\"`, `\\`, `\n`, and the markup escapes `\*` and `` \` `` (§6). Any other escape, such as `\q`, is a `parse` error.
 - Identifiers: `[a-zA-Z_][a-zA-Z0-9_-]*`, where a `-` that starts `->` or `-(` ends the identifier (`a->b`, `db.top-(10,0)`). **Ids are unique across the whole file** (boxes, groups, images, junctions, lines, texts) and are always referenced by bare id. There are no dotted paths. Only the names of imported shapes and styles are dotted (`shape=aws.s3`, §3a); shape and style names are separate from ids.
   Identifiers are ASCII only: a run of other characters, such as the `é` in `café`, is one `parse` error.
-- The segment keywords `h`, `v`, `x`, `y`, `hv`, `vh` and `curve` are reserved: declaring an id with one of these names is a `parse` error, since it could not be used as a bare segment target. So is the statement keyword `arrow` (§5). Like any statement that fails to parse, the statement is dropped, so it is never resolved or linted.
+- The segment keywords `h`, `v`, `x`, `y`, `hv`, `vh`, `vhv`, `hvh` and `curve` are reserved: declaring an id with one of these names is a `parse` error, since it could not be used as a bare segment target. So is the statement keyword `arrow` (§5). Like any statement that fails to parse, the statement is dropped, so it is never resolved or linted.
 - Numbers: integers or decimals, optionally negative. Exponent notation (`1e5`) is not supported and is a `parse` error. Colors: `#rgb`, `#rrggbb` or `#rrggbbaa`, one of the 148 CSS Color Module Level 4 names (`steelblue`, `rebeccapurple`; case-insensitive, no `transparent`), or `none` where a style allows it. A name resolves to lowercase `#rrggbb` hex, so the scene, the SVG and `low-contrast` only ever see hex. An unknown word where a color is expected is an `attr` error with a did-you-mean over the names.
 - **Statements** end at a newline, except in three cases:
   - inside `{ }` blocks;
@@ -204,6 +204,8 @@ The optional id comes right after `line` (or `arrow`), with no colon: `line api_
 | `x <X>` / `y <Y>` | horizontal or vertical **move to** x=X / y=Y. X/Y is a number (in the current frame) or a point (its x or y is used), e.g. `y db.top` |
 | `hv <point>` | horizontal, then vertical, to the point (one elbow) |
 | `vh <point>` | vertical, then horizontal, to the point |
+| `vhv <point>` / `vhv@t <point>` | vertical to `t` of the way to the point's y (default `0.5`, halfway), horizontal to its x, then vertical to the point (two elbows). `t` must be strictly between 0 and 1, else a `parse` error. When the point has the current x, it is one straight vertical run |
+| `hvh <point>` / `hvh@t <point>` | the same with the axes swapped: horizontal to `t` of the way, vertical, horizontal |
 | `curve left <N> <point>` / `curve right <N> <point>` | quadratic curve to the point that bulges N px at its midpoint, to the left or right **as seen on screen by someone walking along the line**. Example: a line traveling right with `left 30` bulges **up** |
 | `curve via (c1) (c2) <point>` | cubic Bézier with explicit control points |
 
@@ -446,7 +448,7 @@ Suggests up to `--max` (default 3) candidate paths from `<from>` to `<to>`. Both
 
   | style | output |
   |---|---|
-  | `corner` | orthogonal paths with hard corners, written with `h`/`v`/`x`/`y`/`hv`/`vh` |
+  | `corner` | orthogonal paths with hard corners, written with `h`/`v`/`x`/`y`/`hv`/`vh`/`vhv`/`hvh` |
   | `arc` | the same orthogonal paths plus `radius=N` for rounded corners (default 8, set with `--radius`) |
   | `bezier` | smooth paths written with `curve left N` / `right N` where possible, otherwise `curve via` |
 - `--line <id>` reroutes an existing line. The line is ignored as an obstacle, its endpoints are used when `<from>`/`<to>` are omitted, and its attributes are kept in the output.
@@ -471,7 +473,7 @@ Each candidate lists these numbers, which line it crosses and where, which group
 Suggestions use anchors and axis targets rather than literals wherever possible, so they survive later moves. `--format json` returns the same data structured: each candidate has `crossings` and `crossed` (`line`, `at`), and `transits` and `transited` (`group`, `at`, the entry point). It is a suggestion tool, not a layout engine; the search is bounded:
 
 - `bezier` tries single curves only. `curve left N` / `right N` is tried only when it leaves and enters side anchors square; `curve via` places its control points out along the side normals, written as offsets from the endpoints' references.
-- `corner` and `arc` try the straight path, `hv`, `vh`, and one lane (`x <lane> -> vh`, `y <lane> -> hv`) at the midpoint, `2 × clearance` outside any box or group edge, or the middle of a free interval between the endpoints (as `inspect --corridors` reports it) that holds no lane other than a group's, at least `clearance` inside the canvas, written as a literal. Of lanes within 0.5px of each other only one is kept, preferring a lane written relative to a box the path starts or ends at, then the box or group nearest the endpoints, then the literal midpoint. Of the one-lane paths that enter no box and leave and enter side anchors square, only the 32 best by estimated crossings and group transits, near-misses, segments and length are scored.
+- `corner` and `arc` try the straight path, `hv`, `vh`, and one lane (`x <lane> -> vh`, `y <lane> -> hv`) at the midpoint, `2 × clearance` outside any box or group edge, or the middle of a free interval between the endpoints (as `inspect --corridors` reports it) that holds no lane other than a group's, at least `clearance` inside the canvas, written as a literal. Of lanes within 0.5px of each other only one is kept, preferring a lane written relative to a box the path starts or ends at, then the box or group nearest the endpoints, then the literal midpoint. A literal lane exactly halfway between the point before it and the end, followed by the elbow to the end, is written as one `hvh <to>` (or `vhv <to>`), which draws the same path. Of the one-lane paths that enter no box and leave and enter side anchors square, only the 32 best by estimated crossings and group transits, near-misses, segments and length are scored.
 - They also try detours with 3 or 4 elbows through two or three lanes: `x -> y -> hv` and `y -> x -> vh`, which end on the other axis than they start, and `x -> y -> x -> vh` and `y -> x -> y -> hv`, which end on the same one. Detour lanes are the same lanes, at least `clearance` inside the canvas. Only the 16 lanes per axis nearest either endpoint are used, and of the detours that enter no box and leave and enter side anchors square, only the 32 best by the same estimate are scored.
 - Paths that double back (a zero-length segment, or one that reverses the segment before it) are dropped, and of paths that draw the same geometry only the first is kept.
 

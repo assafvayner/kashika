@@ -1,16 +1,18 @@
 error[parse] 5:5-5:6: `h` is a reserved word and cannot be an id
-  = help: segment keywords (h v x y hv vh curve) are reserved; pick another name, e.g. `h_1`
+  = help: segment keywords (h v x y hv vh vhv hvh curve) are reserved; pick another name, e.g. `h_1`
 error[parse] 6:5-6:6: `v` is a reserved word and cannot be an id
-  = help: segment keywords (h v x y hv vh curve) are reserved; pick another name, e.g. `v_1`
+  = help: segment keywords (h v x y hv vh vhv hvh curve) are reserved; pick another name, e.g. `v_1`
 error[parse] 7:10-7:11: `x` is a reserved word and cannot be an id
-  = help: segment keywords (h v x y hv vh curve) are reserved; pick another name, e.g. `x_1`
+  = help: segment keywords (h v x y hv vh vhv hvh curve) are reserved; pick another name, e.g. `x_1`
 error[parse] 8:6-8:7: `y` is a reserved word and cannot be an id
-  = help: segment keywords (h v x y hv vh curve) are reserved; pick another name, e.g. `y_1`
+  = help: segment keywords (h v x y hv vh vhv hvh curve) are reserved; pick another name, e.g. `y_1`
 error[parse] 9:7-9:9: `hv` is a reserved word and cannot be an id
-  = help: segment keywords (h v x y hv vh curve) are reserved; pick another name, e.g. `hv_1`
+  = help: segment keywords (h v x y hv vh vhv hvh curve) are reserved; pick another name, e.g. `hv_1`
 error[parse] 11:5-11:7: `vh` is a reserved word and cannot be an id
-  = help: segment keywords (h v x y hv vh curve) are reserved; pick another name, e.g. `vh_1`
+  = help: segment keywords (h v x y hv vh vhv hvh curve) are reserved; pick another name, e.g. `vh_1`
 error[parse] 12:6-12:11: `curve` is a reserved word and cannot be an id
-  = help: segment keywords (h v x y hv vh curve) are reserved; pick another name, e.g. `curve_1`
+  = help: segment keywords (h v x y hv vh vhv hvh curve) are reserved; pick another name, e.g. `curve_1`
 error[parse] 13:5-13:10: `arrow` is a reserved word and cannot be an id
   = help: `arrow` is a statement keyword; pick another name, e.g. `arrow_1`
+error[parse] 14:5-14:8: `hvh` is a reserved word and cannot be an id
+  = help: segment keywords (h v x y hv vh vhv hvh curve) are reserved; pick another name, e.g. `hvh_1`

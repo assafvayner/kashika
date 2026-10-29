@@ -311,8 +311,26 @@ pub enum SegKind {
     Y(Target),
     Hv(Point),
     Vh(Point),
-    Curve { side: Side, amount: f64, to: Point },
-    CurveVia { c1: Point, c2: Point, to: Point },
+    /// `vhv[@t] <point>`: vertical, horizontal at `t` of the way (default 0.5), vertical.
+    Vhv {
+        t: Option<f64>,
+        to: Point,
+    },
+    /// `hvh[@t] <point>`: horizontal, vertical at `t` of the way (default 0.5), horizontal.
+    Hvh {
+        t: Option<f64>,
+        to: Point,
+    },
+    Curve {
+        side: Side,
+        amount: f64,
+        to: Point,
+    },
+    CurveVia {
+        c1: Point,
+        c2: Point,
+        to: Point,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq)]

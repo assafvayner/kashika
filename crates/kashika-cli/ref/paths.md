@@ -9,6 +9,7 @@ A line is `start -> segment -> segment ...`. Each segment ends at a point, which
 | `x X` / `y Y` | move to x=X / y=Y; X or Y is a number or a point (`y db.top`) |
 | `hv <point>` | horizontal, then vertical: one elbow |
 | `vh <point>` | vertical, then horizontal |
+| `vhv <point>` / `hvh <point>` | vertical, horizontal halfway, vertical (or the other way round): two elbows; `vhv@t` puts the middle run `t` of the way (`0 < t < 1`); straight when the point is level |
 | `curve left N <point>` | curve that bulges N px to the left of the direction of travel |
 | `curve right N <point>` | the same, to the right |
 | `curve via (c1) (c2) <point>` | cubic Bézier with explicit control points |
@@ -23,7 +24,7 @@ A line is `start -> segment -> segment ...`. Each segment ends at a point, which
 | `ortho` | off | any diagonal segment is an error |
 | `allow=<code>[:<id>],...` `reason="..."` | | suppress findings |
 
-**The last segment sets the arrow direction.** Enter `left`/`right` with a horizontal hop (`vh`, or `x`/`y` and then the anchor) and `top`/`bottom` with a vertical one (`hv`). Name your lines; unnamed ones are `line@L<n>`.
+**The last segment sets the arrow direction.** Enter `left`/`right` with a horizontal hop (`vh`, `hvh`, or `x`/`y` and then the anchor) and `top`/`bottom` with a vertical one (`hv`, `vhv`). Name your lines; unnamed ones are `line@L<n>`.
 
 **Labels beside the line.** `label-side` applies to every label of the line. A side that doesn't match the segment under the label (`above` on a vertical segment, anything but `on` on a diagonal or curve) is an `attr` error, and the label stays on the line. At a corner either segment counts.
 

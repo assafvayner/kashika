@@ -227,7 +227,7 @@ box b at (300,160) size (100,40)\n";
     let border = s
         .candidates
         .iter()
-        .find(|c| c.statement.contains("-> y 110 ->"))
+        .find(|c| c.statement.contains("-> vhv b.top"))
         .expect("the midpoint lane on the VPC's top border");
     assert_eq!(border.near, 1, "{border:?}");
     assert_eq!(
@@ -318,13 +318,7 @@ fn a_transit_ranks_the_same_as_a_crossing() {
                 3,
                 "line a_b a.right -> x b.tl+(-12,0) -> vh b.left end=arrow"
             ),
-            (
-                0,
-                1,
-                0,
-                3,
-                "line a_b a.right -> x 250 -> vh b.left end=arrow"
-            ),
+            (0, 1, 0, 3, "line a_b a.right -> hvh b.left end=arrow"),
         ],
         "a tie, broken by lanes on the endpoints' own boxes: {rows:#?}"
     );

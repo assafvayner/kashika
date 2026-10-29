@@ -776,6 +776,8 @@ pub enum SegmentKind {
     Y,
     Hv,
     Vh,
+    Vhv,
+    Hvh,
     Curve,
     CurveVia,
 }
@@ -790,6 +792,8 @@ impl SegmentKind {
             SegmentKind::Y => "y",
             SegmentKind::Hv => "hv",
             SegmentKind::Vh => "vh",
+            SegmentKind::Vhv => "vhv",
+            SegmentKind::Hvh => "hvh",
             SegmentKind::Curve => "curve",
             SegmentKind::CurveVia => "curve-via",
         }

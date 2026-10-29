@@ -1,0 +1,12 @@
+// spec: 5
+// raster: png
+// `vhv` and `hvh` draw Z-shaped paths, or a straight one to an aligned point; `@t` moves the middle run.
+diagram "elbow pairs" size (460,300)
+box a "A" at (20,20) size (80,40)
+box b "B" at (180,200) size (80,40)
+box c "C" at (360,20) size (80,40)
+box d "D" at (360,220) size (80,40)
+arrow ab a.bottom -> vhv b.top
+arrow ac a.right -> hvh c.left
+arrow cd c.bottom -> vhv@0.25 d.top@0.25 radius=6
+arrow bd b.right -> hvh@0.7 d.left@0.75 stroke-style=dashed

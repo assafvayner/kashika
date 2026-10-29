@@ -1,0 +1,8 @@
+// spec: 5
+// The `@t` of `vhv`/`hvh` must lie strictly between 0 and 1.
+diagram "elbow pair errors" size (300,200)
+box a at (20,20) size (60,40)
+box b at (200,120) size (60,40)
+line l1 a.bottom -> vhv@0 b.top
+line l2 a.right -> hvh@1 b.left
+line l3 a.right -> hvh@1.5 b.left

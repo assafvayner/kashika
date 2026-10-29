@@ -22,7 +22,7 @@ Kashika has **no auto-layout**. You decide every box position and every line pat
 
 1. **y grows down.** `(0,0)` is the top-left. `v -40` moves up.
 2. **Literal coordinates are relative to the enclosing group.** Anchors (`db.left`) are always absolute. `kashika inspect file.kash <id>` prints a child's absolute box.
-3. **Ids are global** and referenced bare (`db.left`, never `vpc.db.left`). Shapes, groups and lines share one namespace, so a line can't be named after a box. The segment keywords `h v x y hv vh curve` and `arrow` can't be ids. Groups have anchors too, and a line can start or end on one (`web.right`).
+3. **Ids are global** and referenced bare (`db.left`, never `vpc.db.left`). Shapes, groups and lines share one namespace, so a line can't be named after a box. The segment keywords `h v x y hv vh vhv hvh curve` and `arrow` can't be ids. Groups have anchors too, and a line can start or end on one (`web.right`).
 4. **Prefer relationships to numbers.** `at api.right+(80,0) pin=left`, `-> hv db.top`, `-> y queue.left`, `junction j at stock.bottom+(0,50)`. They survive later edits; literals don't.
 5. **The last hop must line up**, so the path stays orthogonal. `check` doesn't flag a diagonal, since some diagrams want them, so look for unintended ones in the render. `ortho` on a line makes any diagonal (or curve) in it an error: add it to lines meant to run at right angles, such as boxes-and-arrows architecture and flow diagrams, or when a reviewer points out a stray diagonal, so `check` catches it from then on. Leave it off where diagonals and curves are intended. The last segment sets the arrow direction: `hv` is horizontal then vertical, `vh` vertical then horizontal.
 
@@ -81,6 +81,7 @@ Segments after `->`:
 | `h 40` / `v -20` | move by |
 | `x 300` / `y db.top` | move to that x / y: a number or a point (`x bi.bottom`, not `x bi.bottom.x`) |
 | `hv db.top` / `vh db.left` | one elbow: horizontal then vertical / vertical then horizontal |
+| `vhv db.top` / `hvh db.left` | two elbows, middle run halfway (`vhv@0.3` for 30%): a Z between offset boxes |
 | `curve left 30 db.top` | the curve's midpoint bulges 30px off the straight chord, left/right as seen walking along the line |
 | `curve via (c1) (c2) db.top` | explicit cubic |
 
