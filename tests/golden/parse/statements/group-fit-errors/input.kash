@@ -1,0 +1,16 @@
+// spec: 3, 7
+// A fitted group can't place its children against its own size, can't be pinned at an anchor that moves as it grows, and needs children or a label to fit.
+diagram "group fit errors" size (400,300)
+group g at (10,10) {
+  box a at (8,8) size (40,20)
+  box b at g.right size (20,20)
+}
+group k at (10,150) {
+  box d at (8,8) size (40,20)
+  line l d.bottom -> k.bottom
+}
+group p at (200,10) pin=center {
+  box c at (8,8) size (20,20)
+}
+group e at (200,200) size (auto, 40) {
+}

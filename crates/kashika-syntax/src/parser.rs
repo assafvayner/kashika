@@ -305,7 +305,7 @@ impl Parser<'_> {
             }
             "box" => {
                 self.bump();
-                let mut node = self.node(start, false)?;
+                let mut node = self.node(start)?;
                 if *self.tok() == Tok::LBrace {
                     node.block = Some(self.text_block()?);
                 }
@@ -329,7 +329,7 @@ impl Parser<'_> {
             }
             "group" => {
                 self.bump();
-                let node = self.node(start, true)?;
+                let node = self.node(start)?;
                 self.depth += 1;
                 let children = self.block();
                 self.depth -= 1;
@@ -529,7 +529,7 @@ impl Parser<'_> {
                 self.diags.push(
                     Diagnostic::error("parse", span, format!("{what} size can't be `auto`"))
                         .with_help(
-                            "only boxes and the diagram take `auto`; give it a size: `size (w,h)`",
+                            "only boxes, groups and the diagram take `auto`; give it a size: `size (w,h)`",
                         ),
                 );
                 Err(())
@@ -574,7 +574,7 @@ impl Parser<'_> {
         })
     }
 
-    fn node(&mut self, start: Span, group: bool) -> PResult<Node> {
+    fn node(&mut self, start: Span) -> PResult<Node> {
         let id = self.decl_id("an id")?;
         let label = if let Tok::Str(s) = self.tok().clone() {
             self.bump();
@@ -584,17 +584,7 @@ impl Parser<'_> {
         };
         let tail = self.tail(Clauses::AT_SIZE)?;
         let at = self.required(tail.at, "at")?;
-        let size = match tail.size {
-            Some((s, span)) if group && (s.w.is_none() || s.h.is_none()) => {
-                self.diags.push(
-                    Diagnostic::error("parse", span, "a group's size can't be `auto`").with_help(
-                        "only boxes and the diagram take `auto`; give it a size: `size (w,h)`",
-                    ),
-                );
-                return Err(());
-            }
-            size => size.map(|(s, _)| s),
-        };
+        let size = tail.size.map(|(s, _)| s);
         Ok(Node {
             id,
             label,

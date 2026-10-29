@@ -1,4 +1,4 @@
 error[attr] 4:34-4:43: `margin` applies only to a canvas that fits its content
   = help: remove `margin`, or leave out `size` (or write `size (w, auto)`) to fit the canvas
-error[parse] 5:20-5:35: a group's size can't be `auto`
-  = help: only boxes and the diagram take `auto`; give it a size: `size (w,h)`
+error[parse] 5:34-5:49: an image's size can't be `auto`
+  = help: only boxes, groups and the diagram take `auto`; give it a size: `size (w,h)`

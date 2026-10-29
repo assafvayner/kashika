@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use kashika_diag::{Diagnostic, Span};
-use kashika_geom::Rect;
+use kashika_geom::{Pt, Rect};
 use kashika_syntax::ast::{self, Stmt, Value};
 
 use crate::assets::Store;
@@ -153,8 +153,11 @@ struct NodeProps {
     shape: Option<String>,
     style: Style,
     pin: (&'static str, Option<f64>),
-    /// The resolved size; `None` when it is invalid or can't be fitted.
+    /// The resolved size; `None` when it is invalid or can't be fitted. A group's fitted
+    /// axes hold 0 until it is placed.
     size: Option<(f64, f64)>,
+    /// The axes of a group's size fitted to its children.
+    fitted: (bool, bool),
     text: ShapeTextProps,
     allow: Vec<Allow>,
     reason: Option<String>,
@@ -219,6 +222,8 @@ pub fn resolve_with(file: &ast::File, opts: &Options) -> (Scene, Vec<Diagnostic>
         texts: HashMap::new(),
         dots: HashMap::new(),
         placed: Vec::new(),
+        frames: HashMap::new(),
+        built: HashMap::new(),
         on_stack: HashSet::new(),
         skipped: HashSet::new(),
         skipped_ids: file.failed_ids.iter().map(|i| i.name.clone()).collect(),
@@ -283,6 +288,11 @@ struct Resolver<'a> {
     /// Per entry: `None` until placed, then its canvas rect (junctions use a zero-size
     /// rect), or `Some(None)` when it can't be placed.
     placed: Vec<Option<Option<Rect>>>,
+    /// The frame origin of each fitted group, known before its size; `None` when it can't
+    /// be placed.
+    frames: HashMap<usize, Option<Pt>>,
+    /// Scene items built so far, by entry; `None` once `build` has taken one or it failed.
+    built: HashMap<usize, Option<build::Built>>,
     /// Entries being placed; `placement_graph` keeps this chain within the depth limit.
     on_stack: HashSet<usize>,
     skipped: HashSet<usize>,

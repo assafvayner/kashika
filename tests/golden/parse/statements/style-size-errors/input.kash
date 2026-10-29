@@ -1,6 +1,7 @@
 // spec: 3, 7
 // `size` in `style boundary` is an `attr` error, as is a number; a size must be positive. A
-// group needs a size, inline or from its style, and can't fit one.
+// group with no size, or an `auto` axis from its style, fits its children, so an empty one has
+// no size to fit.
 diagram "style size errors" size (500,300)
 style boundary { size=(100,100) }
 style big { size=12 }

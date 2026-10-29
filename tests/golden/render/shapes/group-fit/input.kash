@@ -1,0 +1,17 @@
+// spec: 3
+// raster: png
+// Nested groups fit their children, titles and padding pairs bottom-up; the canvas fits them too.
+diagram "group fit"
+group vpc "VPC" at (20,20) padding=(16,12) {
+  group pub "Public subnet" at (16,40) padding=(12,8) {
+    box lb "LB" at (12,36) size (100,40)
+  }
+  group priv "Private subnet" at pub.tr+(24,0) padding=(12,8) {
+    box api "API" at (12,36) size (100,40)
+    box db "DB" at api.bl+(0,24) size (100,70) shape=cylinder
+  }
+  arrow lb_api lb.right -> hv api.left
+  arrow api_db api.bottom -> db.top
+}
+box users "Users" at (lb.left.x, vpc.bottom.y)+(0,40) size (100,40)
+arrow u_lb users.top -> lb.bottom

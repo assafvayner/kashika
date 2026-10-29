@@ -1,0 +1,8 @@
+error[placement-cycle] 6:12-6:19: placement cycle: b -> g -> b
+  = help: `g` is fitted to its children, so they can't be placed against its size; give `g` a size: `size (w,h)`
+error[placement-cycle] 10:3-10:30: placement cycle: l -> k -> l
+  = help: `k` is fitted to its children, so they can't be placed against its size; give `k` a size: `size (w,h)`
+error[attr] 12:21-12:31: `pin=center` moves as `p` grows to fit its children
+  = help: a fitted group grows right and down from its top-left corner: pin it at `tl`, on its left edge for a fitted width or its top edge for a fitted height, or give it a size: `size (w,h)`
+error[size] 15:1-15:37: group `e` has no size to fit: it has no children or label
+  = help: give it a size: `size (w,h)`

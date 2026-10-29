@@ -1,0 +1,19 @@
+// spec: 3
+// dump: scene
+// A group without a size, or with an `auto` axis, fits its children plus `padding` on the right and bottom, at least its title; nested groups fit bottom-up, and outsiders can use the fitted anchors.
+diagram "group fit" size (600,400)
+style lane { size=(auto, 140) }
+group outer "Outer" at (20,20) padding=(16,10) {
+  box a "A" at (16,36) size (80,40)
+  group inner "Inner" at (120,36) {
+    box b "B" at (8,32) size (60,40)
+  }
+  arrow ab a.right -> inner.left@0.6
+}
+group wide "A title wider than its child" at (20,260) size (auto, 100) {
+  box c at (8,40) size (20,20)
+}
+group styled at (400,20) style=lane {
+  junction j at (30,20) dot
+}
+box d "D" at outer.tr+(40,0) size (80,40)

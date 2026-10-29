@@ -7,6 +7,14 @@ use crate::textlayout::{self, ShapeInput};
 
 use super::{IconPos, Item, Resolver};
 
+/// An entry's scene item, built before `build` adds it to the scene.
+pub(super) enum Built {
+    Shape(Shape),
+    Junction(Junction),
+    Text(Text),
+    Line(Line),
+}
+
 impl<'a> Resolver<'a> {
     pub(super) fn build(&mut self, scene: &mut Scene) {
         for idx in 0..self.entries.len() {
@@ -17,76 +25,48 @@ impl<'a> Resolver<'a> {
                 self.skipped.insert(idx);
                 continue;
             }
-
-            let (item, depth) = (entry.item, entry.depth);
-            let parent = entry
-                .parent
-                .and_then(|p| self.entries[p].item.id())
-                .map(|i| i.name.clone());
+            let item = entry.item;
+            self.ensure_built(idx);
+            let built = self.built.get_mut(&idx).and_then(Option::take);
             match item {
-                Item::Box(n) => {
+                Item::Box(n) | Item::Group(ast::Group { node: n, .. }) => {
                     self.record_edges(idx, &n.at);
-                    self.push_shape(scene, idx, n, ShapeKind::Box, parent, depth)
-                }
-                Item::Group(g) => {
-                    self.record_edges(idx, &g.node.at);
-                    self.push_shape(scene, idx, &g.node, ShapeKind::Group, parent, depth)
+                    if let Some(Built::Shape(s)) = built {
+                        scene.shapes.push(s);
+                        self.record_node(n);
+                    }
                 }
                 Item::Image(i) => {
                     self.record_edges(idx, &i.at);
-                    self.push_image(scene, idx, i)
+                    if let Some(Built::Shape(s)) = built {
+                        scene.shapes.push(s);
+                        self.record_point(&i.id.name, &i.at);
+                        self.literal(&i.id.name, "width", i.size.0, i.span);
+                        self.literal(&i.id.name, "height", i.size.1, i.span);
+                    }
                 }
                 Item::Junction(j) => {
                     self.record_edges(idx, &j.at);
-                    if let Some(r) = self.place(idx) {
-                        let dot = self.dots.get(&idx).copied().unwrap_or(false);
-                        let origin = self.frame_origin(idx).unwrap_or_default();
-                        scene.junctions.push(Junction {
-                            id: j.id.name.clone(),
-                            at: r.origin(),
-                            dot,
-                            parent,
-                            origin,
-                            span: j.span,
-                        });
+                    if let Some(Built::Junction(x)) = built {
+                        scene.junctions.push(x);
                         self.record_point(&j.id.name, &j.at);
                     }
                 }
                 Item::Text(t) => {
-                    let Some(origin) = self.frame_origin(idx) else {
-                        continue;
-                    };
-                    let Some(at) = self.eval_point(&t.at, origin) else {
-                        continue;
-                    };
-                    let p = &self.texts[&idx];
-                    let Some(block) =
-                        textlayout::measure_at(&t.content, p.size, false, t.span, &mut self.diags)
-                    else {
-                        continue;
-                    };
-                    let (lines, rect) = block.place_at(at.x, at.y, textlayout::halign(p.align));
-                    scene.texts.push(Text {
-                        id: t.id.as_ref().map(|i| i.name.clone()),
-                        content: p.content.clone(),
-                        at,
-                        size: p.size,
-                        color: p.color.clone(),
-                        align: p.align,
-                        rect,
-                        lines,
-                        parent,
-                        origin,
-                        span: t.span,
-                    });
-                    let owner =
-                        t.id.as_ref()
+                    if let Some(Built::Text(x)) = built {
+                        scene.texts.push(x);
+                        let owner = t
+                            .id
+                            .as_ref()
                             .map_or_else(|| format!("text@L{}", t.span.line), |i| i.name.clone());
-                    self.record_point(&owner, &t.at);
+                        self.record_point(&owner, &t.at);
+                    }
                 }
                 Item::Line(l) => {
-                    if let Some(line) = self.build_line(idx, l, parent) {
-                        scene.lines.push(line);
+                    if let Some(Built::Line(x)) = built {
+                        let id = x.id.clone();
+                        scene.lines.push(x);
+                        self.record_line(&id, l);
                     }
                 }
             }
@@ -95,16 +75,80 @@ impl<'a> Resolver<'a> {
         scene.literals = std::mem::take(&mut self.literals);
     }
 
-    pub(super) fn push_shape(
+    /// Builds an entry's scene item once; a fitted group builds its children early.
+    pub(super) fn ensure_built(&mut self, idx: usize) {
+        if self.built.contains_key(&idx) {
+            return;
+        }
+        let built = self.make(idx);
+        self.built.insert(idx, built);
+    }
+
+    fn make(&mut self, idx: usize) -> Option<Built> {
+        if self.skipped.contains(&idx) {
+            return None;
+        }
+        let entry = &self.entries[idx];
+        let (item, depth) = (entry.item, entry.depth);
+        let parent = entry
+            .parent
+            .and_then(|p| self.entries[p].item.id())
+            .map(|i| i.name.clone());
+        match item {
+            Item::Box(n) => self
+                .make_shape(idx, n, ShapeKind::Box, parent, depth)
+                .map(Built::Shape),
+            Item::Group(g) => self
+                .make_shape(idx, &g.node, ShapeKind::Group, parent, depth)
+                .map(Built::Shape),
+            Item::Image(i) => self.make_image(idx, i).map(Built::Shape),
+            Item::Junction(j) => {
+                let r = self.place(idx)?;
+                let dot = self.dots.get(&idx).copied().unwrap_or(false);
+                let origin = self.frame_origin(idx).unwrap_or_default();
+                Some(Built::Junction(Junction {
+                    id: j.id.name.clone(),
+                    at: r.origin(),
+                    dot,
+                    parent,
+                    origin,
+                    span: j.span,
+                }))
+            }
+            Item::Text(t) => {
+                let origin = self.frame_origin(idx)?;
+                let at = self.eval_point(&t.at, origin)?;
+                let p = &self.texts[&idx];
+                let block =
+                    textlayout::measure_at(&t.content, p.size, false, t.span, &mut self.diags)?;
+                let (lines, rect) = block.place_at(at.x, at.y, textlayout::halign(p.align));
+                Some(Built::Text(Text {
+                    id: t.id.as_ref().map(|i| i.name.clone()),
+                    content: p.content.clone(),
+                    at,
+                    size: p.size,
+                    color: p.color.clone(),
+                    align: p.align,
+                    rect,
+                    lines,
+                    parent,
+                    origin,
+                    span: t.span,
+                }))
+            }
+            Item::Line(l) => self.build_line(idx, l, parent).map(Built::Line),
+        }
+    }
+
+    fn make_shape(
         &mut self,
-        scene: &mut Scene,
         idx: usize,
         n: &'a ast::Node,
         kind: ShapeKind,
         parent: Option<String>,
         depth: usize,
-    ) {
-        let Some(rect) = self.place(idx) else { return };
+    ) -> Option<Shape> {
+        let rect = self.place(idx)?;
         let origin = self.frame_origin(idx).unwrap_or_default();
         let block_at: Vec<Option<Pt>> = n
             .block
@@ -138,7 +182,7 @@ impl<'a> Resolver<'a> {
             },
             &mut self.diags,
         );
-        scene.shapes.push(Shape {
+        Some(Shape {
             id: n.id.name.clone(),
             kind,
             outline: p.outline,
@@ -182,16 +226,15 @@ impl<'a> Resolver<'a> {
             reason: p.reason.clone(),
             origin,
             span: n.span,
-        });
-        self.record_node(n);
+        })
     }
 
-    pub(super) fn push_image(&mut self, scene: &mut Scene, idx: usize, i: &ast::Image) {
-        let Some(rect) = self.place(idx) else { return };
+    fn make_image(&mut self, idx: usize, i: &ast::Image) -> Option<Shape> {
+        let rect = self.place(idx)?;
         let origin = self.frame_origin(idx).unwrap_or_default();
         let p = &self.nodes[&idx];
         let props = p.image.expect("image props");
-        scene.shapes.push(Shape {
+        Some(Shape {
             id: i.id.name.clone(),
             kind: ShapeKind::Image,
             outline: Outline::Rect,
@@ -217,16 +260,15 @@ impl<'a> Resolver<'a> {
             reason: p.reason.clone(),
             origin,
             span: i.span,
-        });
-        self.record_point(&i.id.name, &i.at);
-        self.literal(&i.id.name, "width", i.size.0, i.span);
-        self.literal(&i.id.name, "height", i.size.1, i.span);
+        })
     }
 
-    pub(super) fn name(&self, idx: usize) -> &str {
-        self.entries[idx]
-            .item
-            .id()
-            .map_or("?", |id| id.name.as_str())
+    pub(super) fn name(&self, idx: usize) -> String {
+        let item = self.entries[idx].item;
+        match (item.id(), item) {
+            (Some(id), _) => id.name.clone(),
+            (None, Item::Text(t)) => format!("text@L{}", t.span.line),
+            (None, _) => format!("line@L{}", item.span().line),
+        }
     }
 }

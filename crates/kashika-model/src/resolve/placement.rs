@@ -7,47 +7,119 @@ use kashika_syntax::ast::{self, Axis, Coord, Point, Target};
 use crate::anchor;
 use crate::attrs;
 use crate::form;
+use crate::scene::ShapeKind;
+use crate::textlayout::{self, ShapeInput};
 
+use super::build::Built;
+use super::canvas::Reach;
 use super::{CYCLE_SHOWN, Item, MAX_PLACEMENT_DEPTH, Resolver, record};
 
 impl<'a> Resolver<'a> {
-    /// The placeable entries `idx`'s position depends on: its group, then each id in its `at`.
-    pub(super) fn placement_deps(&self, idx: usize) -> Vec<usize> {
-        let at = match self.entries[idx].item {
-            Item::Box(n) => &n.at,
-            Item::Group(g) => &g.node.at,
-            Item::Image(i) => &i.at,
-            Item::Junction(j) => &j.at,
+    /// The entries `idx`'s position depends on: its group (or that group's frame, when the
+    /// group is fitted), then each id in its `at`. A fitted group's rect depends on its frame
+    /// and everything inside it; texts and lines only take part inside a fitted group.
+    fn placement_deps(&self, idx: usize, frame_of: &HashMap<usize, usize>) -> Vec<usize> {
+        if frame_of.contains_key(&idx) {
+            return std::iter::once(frame_of[&idx])
+                .chain(self.descendants(idx).filter(|d| !self.skipped.contains(d)))
+                .collect();
+        }
+        let refs = match self.entries[idx].item {
+            Item::Box(n) => record::point_refs(&n.at),
+            Item::Image(i) => record::point_refs(&i.at),
+            Item::Junction(j) => record::point_refs(&j.at),
+            Item::Text(t) if self.in_fitted(idx) => record::point_refs(&t.at),
+            Item::Line(l) if self.in_fitted(idx) => record::line_points(l)
+                .into_iter()
+                .flat_map(record::point_refs)
+                .collect(),
+            Item::Group(_) => return self.frame_deps(idx, frame_of),
             Item::Text(_) | Item::Line(_) => return Vec::new(),
         };
-        let refs = record::point_refs(at);
+        self.with_parent(idx, refs, frame_of)
+    }
+
+    /// What a group's frame depends on: its parent's frame and the ids in its `at`.
+    fn frame_deps(&self, idx: usize, frame_of: &HashMap<usize, usize>) -> Vec<usize> {
+        let Item::Group(g) = self.entries[idx].item else {
+            return Vec::new();
+        };
+        self.with_parent(idx, record::point_refs(&g.node.at), frame_of)
+    }
+
+    fn with_parent(
+        &self,
+        idx: usize,
+        refs: Vec<&ast::Ref>,
+        frame_of: &HashMap<usize, usize>,
+    ) -> Vec<usize> {
         let placeable = |i: &usize| !matches!(self.entries[*i].item, Item::Text(_) | Item::Line(_));
-        self.entries[idx]
+        let parent = self.entries[idx]
             .parent
+            .map(|p| frame_of.get(&p).copied().unwrap_or(p));
+        parent
             .into_iter()
             .chain(
                 refs.into_iter()
-                    .filter_map(|r| self.ids.get(&r.id.name).copied()),
+                    .filter_map(|r| self.ids.get(&r.id.name).copied())
+                    .filter(placeable),
             )
-            .filter(placeable)
             .collect()
     }
 
+    /// The entries inside group `idx`, at any depth; they follow it in order.
+    pub(super) fn descendants(&self, idx: usize) -> std::ops::Range<usize> {
+        let depth = self.entries[idx].depth;
+        let end = (idx + 1..self.entries.len())
+            .find(|&i| self.entries[i].depth <= depth)
+            .unwrap_or(self.entries.len());
+        idx + 1..end
+    }
+
+    pub(super) fn is_fitted(&self, idx: usize) -> bool {
+        self.nodes
+            .get(&idx)
+            .is_some_and(|p| p.fitted != (false, false))
+    }
+
+    fn in_fitted(&self, idx: usize) -> bool {
+        let mut p = self.entries[idx].parent;
+        while let Some(i) = p {
+            if self.is_fitted(i) {
+                return true;
+            }
+            p = self.entries[i].parent;
+        }
+        false
+    }
+
     /// Reports placement cycles and over-long reference chains before anything is placed,
-    /// whatever the statement order, and marks the entries involved as unplaceable.
+    /// whatever the statement order, and marks the entries involved as unplaceable. A fitted
+    /// group is two nodes: its frame, which its children use, and its rect, which needs them.
     pub(super) fn placement_graph(&mut self) {
         let n = self.entries.len();
-        let deps: Vec<Vec<usize>> = (0..n)
+        let fitted: Vec<usize> = (0..n)
+            .filter(|i| !self.skipped.contains(i) && self.is_fitted(*i))
+            .collect();
+        let frame_of: HashMap<usize, usize> = fitted
+            .iter()
+            .enumerate()
+            .map(|(k, &g)| (g, n + k))
+            .collect();
+        let mut deps: Vec<Vec<usize>> = (0..n)
             .map(|i| {
                 if self.skipped.contains(&i) {
                     Vec::new()
                 } else {
-                    self.placement_deps(i)
+                    self.placement_deps(i, &frame_of)
                 }
             })
             .collect();
+        deps.extend(fitted.iter().map(|&g| self.frame_deps(g, &frame_of)));
+        let entry = |i: usize| if i < n { i } else { fitted[i - n] };
+        let total = deps.len();
         let sccs = tarjan(&deps);
-        let mut cyclic = vec![false; n];
+        let mut cyclic = vec![false; total];
         for scc in &sccs {
             let looped = scc.len() > 1 || deps[scc[0]].contains(&scc[0]);
             if !looped {
@@ -55,16 +127,37 @@ impl<'a> Resolver<'a> {
             }
             for &i in scc {
                 cyclic[i] = true;
-                self.placed[i] = Some(None);
+                self.unplaceable(i, n, &fitted);
             }
             let start = *scc.iter().min().expect("non-empty");
-            let cycle = shortest_cycle(start, &deps, scc);
-            self.report_cycle(&cycle);
+            let mut cycle = shortest_cycle(start, &deps, scc);
+            let grown = cycle.iter().position(|&i| {
+                i < n
+                    && frame_of.contains_key(&i)
+                    && cycle
+                        .iter()
+                        .any(|&d| d < n && self.descendants(i).contains(&d))
+            });
+            let help = grown.map(|k| {
+                let g = cycle[k];
+                let len = cycle.len();
+                cycle.rotate_left((k + 1) % len);
+                let g = self.name(g);
+                format!(
+                    "`{g}` is fitted to its children, so they can't be placed against its size; give `{g}` a size: `size (w,h)`"
+                )
+            });
+            let mut named: Vec<usize> = cycle.iter().map(|&i| entry(i)).collect();
+            named.dedup();
+            if named.len() > 1 && named.first() == named.last() {
+                named.pop();
+            }
+            self.report_cycle(&named, help);
         }
 
         // `depth[i]`: references in the longest chain from `i`; `next[i]`: its next link.
-        let mut depth = vec![0usize; n];
-        let mut next: Vec<Option<usize>> = vec![None; n];
+        let mut depth = vec![0usize; total];
+        let mut next: Vec<Option<usize>> = vec![None; total];
         for scc in &sccs {
             let i = scc[0];
             if cyclic[i] {
@@ -77,7 +170,7 @@ impl<'a> Resolver<'a> {
                 }
             }
         }
-        let Some(head) = (0..n)
+        let Some(head) = (0..total)
             .filter(|&i| depth[i] > MAX_PLACEMENT_DEPTH)
             .max_by(|&a, &b| depth[a].cmp(&depth[b]).then(b.cmp(&a)))
         else {
@@ -90,11 +183,11 @@ impl<'a> Resolver<'a> {
         self.diags.push(
             Diagnostic::error(
                 "placement-cycle",
-                self.entries[head].item.at_span(),
+                self.entries[entry(head)].item.at_span(),
                 format!(
                     "placement chain from `{}` to `{}` is {} references deep; the limit is {MAX_PLACEMENT_DEPTH}",
-                    self.name(head),
-                    self.name(tail),
+                    self.name(entry(head)),
+                    self.name(entry(tail)),
                     depth[head]
                 ),
             )
@@ -102,14 +195,22 @@ impl<'a> Resolver<'a> {
         );
         for (i, &d) in depth.iter().enumerate() {
             if d > MAX_PLACEMENT_DEPTH {
-                self.placed[i] = Some(None);
+                self.unplaceable(i, n, &fitted);
             }
         }
     }
 
-    pub(super) fn report_cycle(&mut self, cycle: &[usize]) {
-        let names: Vec<&str> = cycle.iter().map(|&i| self.name(i)).collect();
-        let first = names[0];
+    fn unplaceable(&mut self, node: usize, n: usize, fitted: &[usize]) {
+        if node < n {
+            self.placed[node] = Some(None);
+        } else {
+            self.frames.insert(fitted[node - n], None);
+        }
+    }
+
+    pub(super) fn report_cycle(&mut self, cycle: &[usize], help: Option<String>) {
+        let names: Vec<String> = cycle.iter().map(|&i| self.name(i)).collect();
+        let first = &names[0];
         let message = if names.len() <= CYCLE_SHOWN {
             format!("placement cycle: {} -> {first}", names.join(" -> "))
         } else {
@@ -126,7 +227,9 @@ impl<'a> Resolver<'a> {
                 self.entries[cycle[0]].item.at_span(),
                 message,
             )
-            .with_help("place one of these with literal coordinates"),
+            .with_help(
+                help.unwrap_or_else(|| "place one of these with literal coordinates".into()),
+            ),
         );
     }
 
@@ -173,6 +276,7 @@ impl<'a> Resolver<'a> {
         let origin = self.frame_origin(idx)?;
         match self.entries[idx].item {
             Item::Box(n) => self.place_node(idx, &n.at, origin),
+            Item::Group(g) if self.is_fitted(idx) => self.place_fitted(idx, g),
             Item::Group(g) => self.place_node(idx, &g.node.at, origin),
             Item::Image(i) => self.place_node(idx, &i.at, origin),
             Item::Junction(j) => self
@@ -201,8 +305,108 @@ impl<'a> Resolver<'a> {
     pub(super) fn frame_origin(&mut self, idx: usize) -> Option<Pt> {
         match self.entries[idx].parent {
             None => Some(Pt::new(0.0, 0.0)),
+            Some(p) if self.is_fitted(p) => self.fitted_frame(p),
             Some(p) => self.place(p).map(Rect::origin),
         }
+    }
+
+    /// A fitted group's top-left corner, which doesn't depend on its fitted size: `at`
+    /// minus the pin's bounding-box offset, which is 0 on a fitted axis.
+    fn fitted_frame(&mut self, idx: usize) -> Option<Pt> {
+        if let Some(&f) = self.frames.get(&idx) {
+            return f;
+        }
+        self.frames.insert(idx, None);
+        let Item::Group(g) = self.entries[idx].item else {
+            return None;
+        };
+        let origin = self.frame_origin(idx)?;
+        let at = self.eval_point(&g.node.at, origin)?;
+        let p = &self.nodes[&idx];
+        let (w, h) = p.size?;
+        let (name, t) = p.pin;
+        let unit = anchor::resolve(Rect::new(0.0, 0.0, 1.0, 1.0), 0.0, "pin", name, t).ok()?;
+        let f = Pt::new(at.x - unit.x * w, at.y - unit.y * h);
+        self.frames.insert(idx, Some(f));
+        Some(f)
+    }
+
+    /// Places a fitted group: from its frame to the far edge of everything inside it, plus
+    /// `padding`, and at least as large as its title. A fitted axis is rounded up to whole
+    /// pixels, then to the `grid`.
+    fn place_fitted(&mut self, idx: usize, g: &'a ast::Group) -> Option<Rect> {
+        let origin = self.fitted_frame(idx)?;
+        let mut reach = Reach::default();
+        for d in self.descendants(idx) {
+            self.ensure_built(d);
+            match self.built.get(&d) {
+                Some(Some(Built::Shape(s))) => reach.shape(s),
+                Some(Some(Built::Junction(j))) => reach.junction(j),
+                Some(Some(Built::Text(t))) => reach.text(t),
+                Some(Some(Built::Line(l))) => reach.line(l),
+                _ => {}
+            }
+        }
+        let p = &self.nodes[&idx];
+        let (w, h) = p.size?;
+        let shape = p.drawn_shape();
+        let title = textlayout::fit_size(&ShapeInput {
+            id: &g.node.id.name,
+            node: &g.node,
+            kind: ShapeKind::Group,
+            shape: &shape,
+            custom_text_area: None,
+            text_below: false,
+            icon_inset: p.icon_inset(true),
+            rect: Rect::new(0.0, 0.0, w, h),
+            style: &p.style,
+            props: &p.text,
+            block_at: &[],
+        });
+        let (far_x, far_y) = reach.far();
+        let what = format!("`{}`", g.node.id.name);
+        if far_x == f64::NEG_INFINITY && title.is_none() {
+            self.diags.push(
+                Diagnostic::error(
+                    "size",
+                    g.node.span,
+                    format!("group {what} has no size to fit: it has no children or label"),
+                )
+                .with_help("give it a size: `size (w,h)`"),
+            );
+            return None;
+        }
+        let pad = p.style.padding;
+        let grid = self.grid;
+        let fit = |far: f64, o: f64, pad: f64, title: Option<f64>| {
+            let inner = if far == f64::NEG_INFINITY {
+                0.0
+            } else {
+                (far - o).max(0.0) + pad
+            };
+            let v = inner.max(title.unwrap_or(0.0)).ceil();
+            grid.map_or(v, |g| (v / g).ceil() * g)
+        };
+        let (fw, fh) = p.fitted;
+        let size = (
+            if fw {
+                fit(far_x, origin.x, pad.x, title.map(|t| t.0))
+            } else {
+                w
+            },
+            if fh {
+                fit(far_y, origin.y, pad.y, title.map(|t| t.1))
+            } else {
+                h
+            },
+        );
+        if !self.size_ok(size, g.node.span, &what) {
+            return None;
+        }
+        if let Some(p) = self.nodes.get_mut(&idx) {
+            p.size = Some(size);
+        }
+        Some(Rect::new(origin.x, origin.y, size.0, size.1))
     }
 
     pub(super) fn eval_point(&mut self, p: &'a Point, origin: Pt) -> Option<Pt> {

@@ -113,7 +113,6 @@ impl<'a> Resolver<'a> {
             Some(i) => (i.name.clone(), true),
             None => (format!("line@L{}", l.span.line), false),
         };
-        self.record_line(&id, l);
         Some(Line {
             id,
             named,

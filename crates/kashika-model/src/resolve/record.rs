@@ -140,6 +140,29 @@ pub(super) fn point_refs(p: &Point) -> Vec<&ast::Ref> {
     }
 }
 
+/// Every point a line names: its start and each segment's points.
+pub(super) fn line_points(l: &ast::Line) -> Vec<&Point> {
+    let mut out = vec![&l.start];
+    for seg in &l.segs {
+        match &seg.kind {
+            SegKind::To(p)
+            | SegKind::Hv(p)
+            | SegKind::Vh(p)
+            | SegKind::Vhv { to: p, .. }
+            | SegKind::Hvh { to: p, .. }
+            | SegKind::Curve { to: p, .. }
+            | SegKind::X(Target::Point(p))
+            | SegKind::Y(Target::Point(p)) => out.push(p),
+            SegKind::CurveVia { c1, c2, to } => out.extend([c1, c2, to]),
+            SegKind::H(_)
+            | SegKind::V(_)
+            | SegKind::X(Target::Num(_))
+            | SegKind::Y(Target::Num(_)) => {}
+        }
+    }
+    out
+}
+
 pub(super) fn segment_kind(k: &SegKind) -> SegmentKind {
     match k {
         SegKind::To(_) => SegmentKind::To,

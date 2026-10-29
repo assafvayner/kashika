@@ -57,7 +57,7 @@ fn default_page_has_the_required_parts_and_length() {
         .filter(|w| w.chars().any(char::is_alphanumeric))
         .count();
     assert!(
-        (1500..=3000).contains(&words),
+        (1500..=3200).contains(&words),
         "default page has {words} words"
     );
 }

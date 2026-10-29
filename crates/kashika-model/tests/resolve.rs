@@ -1902,5 +1902,73 @@ fn style_size_errors() {
         d[1].help,
         vec!["for the text size, write `font-size=N`".to_string()]
     );
-    assert_eq!(d[3].message, "group `g` needs a size");
+    assert_eq!(
+        d[3].message,
+        "group `g` has no size to fit: it has no children or label"
+    );
+}
+
+#[test]
+fn groups_without_a_size_fit_their_children() {
+    let s = ok("group outer \"Outer\" at (20,100) padding=(16,10) {\n  \
+         box a \"A\" at (16,30) size (80,40)\n  \
+         group inner at (120,30) {\n    box b at (10,30) size (60,30)\n  }\n  \
+         line ab a.right -> inner.left end=arrow\n}\n\
+         box c at outer.tr+(40,0) size (20,20)\n\
+         group w at (400,20) size (200, auto) {\n  junction j at (10,80) dot\n}\n");
+    assert_eq!(rect(&s, "inner"), Rect::new(140.0, 130.0, 79.0, 69.0));
+    assert_eq!(rect(&s, "outer"), Rect::new(20.0, 100.0, 216.0, 110.0));
+    assert_eq!(rect(&s, "c"), Rect::new(276.0, 100.0, 20.0, 20.0));
+    assert_eq!(rect(&s, "w"), Rect::new(400.0, 20.0, 200.0, 91.0));
+}
+
+#[test]
+fn fitted_groups_hold_their_title_and_round_to_the_grid() {
+    let s = ok("group g \"A long group title\" at (0,0) {\n}\n");
+    let r = rect(&s, "g");
+    assert!(r.w > 100.0 && r.h > 20.0, "{r:?}");
+    let s = ok("group g at (0,0) {\n  box a at (-30,-30) size (40,40)\n}\n");
+    assert_eq!(rect(&s, "g"), Rect::new(0.0, 0.0, 19.0, 19.0));
+    let (s, d) = compile(
+        "diagram \"t\" size (800,600) grid=10\ngroup g at (0,0) {\n  box a at (10,10) size (41,20)\n}\n",
+    );
+    assert!(d.is_empty(), "{d:#?}");
+    assert_eq!(rect(&s, "g"), Rect::new(0.0, 0.0, 60.0, 40.0));
+}
+
+#[test]
+fn children_cannot_be_placed_against_a_fitted_group() {
+    let d = errors(
+        "group g at (0,0) {\n  box a at (0,0) size (10,10)\n  box b at g.right size (10,10)\n}\n",
+    );
+    assert_eq!(codes_of(&d), ["placement-cycle"], "{d:#?}");
+    assert_eq!(d[0].message, "placement cycle: b -> g -> b");
+    assert_eq!(
+        d[0].help,
+        [
+            "`g` is fitted to its children, so they can't be placed against its size; give `g` a size: `size (w,h)`"
+        ]
+    );
+    let d = errors(
+        "group g at (0,0) {\n  box a at (0,0) size (10,10)\n  line l a.right -> g.right\n}\n",
+    );
+    assert_eq!(d[0].message, "placement cycle: l -> g -> l");
+    let s = ok(
+        "group g at (0,0) size (100,auto) {\n  box a at (0,0) size (10,10)\n}\n\
+         box b at g.br+(10,0) size (10,10)\n",
+    );
+    assert_eq!(rect(&s, "b"), Rect::new(110.0, 19.0, 10.0, 10.0));
+}
+
+#[test]
+fn a_fitted_group_pins_on_its_top_left_edges() {
+    let d = errors("group g at (100,100) pin=center {\n  box a at (0,0) size (10,10)\n}\n");
+    assert_eq!(codes_of(&d), ["attr"], "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "`pin=center` moves as `g` grows to fit its children"
+    );
+    let s = ok("group g at (100,100) size (40,auto) pin=top {\n  box a at (0,0) size (10,10)\n}\n");
+    assert_eq!(rect(&s, "g"), Rect::new(80.0, 100.0, 40.0, 19.0));
+    assert_eq!(rect(&s, "a"), Rect::new(80.0, 100.0, 10.0, 10.0));
 }

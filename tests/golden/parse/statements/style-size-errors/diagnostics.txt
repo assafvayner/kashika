@@ -1,9 +1,9 @@
-error[attr] 5:18-5:32: the `boundary` style can't set `size`: every group starts from it
+error[attr] 6:18-6:32: the `boundary` style can't set `size`: every group starts from it
   = help: drop `size` here, and set it with another style or inline on the group
-error[attr] 6:13-6:20: `size` expects a size `(w,h)`
+error[attr] 7:13-7:20: `size` expects a size `(w,h)`
   = help: for the text size, write `font-size=N`
-error[size] 7:14-7:25: `size` must be positive and at most 1000000
-error[size] 9:1-9:29: group `g` needs a size
-  = help: groups don't fit their contents; give it a size: `size (w,h)`
-error[size] 11:1-11:20: group `k` needs a size
-  = help: groups don't fit their contents; give it a size: `size (w,h)`
+error[size] 8:14-8:25: `size` must be positive and at most 1000000
+error[size] 10:1-10:29: group `g` has no size to fit: it has no children or label
+  = help: give it a size: `size (w,h)`
+error[size] 12:1-12:20: group `k` has no size to fit: it has no children or label
+  = help: give it a size: `size (w,h)`

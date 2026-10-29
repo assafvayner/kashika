@@ -2,6 +2,7 @@ use kashika_diag::{Diagnostic, Span, did_you_mean};
 use kashika_geom::{Pt, Rect};
 use kashika_syntax::ast::{self};
 
+use crate::anchor;
 use crate::attrs::{self, Attrs, Min};
 use crate::form::Form;
 use crate::library::{self, LibShape, SvgShape};
@@ -164,6 +165,7 @@ impl<'a> Resolver<'a> {
             style,
             pin,
             size: None,
+            fitted: (false, false),
             text,
             allow,
             reason,
@@ -172,6 +174,33 @@ impl<'a> Resolver<'a> {
             layer,
         };
         p.size = self.node_size(n, group, &p, props.size);
+        if group && p.size.is_some() {
+            let ast::Size { w, h } = n
+                .size
+                .or(props.size)
+                .unwrap_or(ast::Size { w: None, h: None });
+            p.fitted = (w.is_none(), h.is_none());
+            if let Some(x) = a.get("pin") {
+                if !pin_stays(p.pin, p.fitted) {
+                    let (name, t) = p.pin;
+                    let pin = t.map_or(name.to_string(), |t| format!("{name}@{t}"));
+                    self.diags.push(
+                        Diagnostic::error(
+                            "attr",
+                            x.span,
+                            format!(
+                                "`pin={pin}` moves as `{}` grows to fit its children",
+                                n.id.name
+                            ),
+                        )
+                        .with_help(
+                            "a fitted group grows right and down from its top-left corner: pin it at `tl`, on its left edge for a fitted width or its top edge for a fitted height, or give it a size: `size (w,h)`",
+                        ),
+                    );
+                    p.pin = ("tl", None);
+                }
+            }
+        }
         p
     }
 
@@ -189,15 +218,11 @@ impl<'a> Resolver<'a> {
         if let (Some(w), Some(h)) = (w, h) {
             return self.size_ok((w, h), n.span, &what).then_some((w, h));
         }
-        if group {
-            self.diags.push(
-                Diagnostic::error("size", n.span, format!("group {what} needs a size"))
-                    .with_help("groups don't fit their contents; give it a size: `size (w,h)`"),
-            );
-            return None;
-        }
         if !self.size_ok((w.unwrap_or(1.0), h.unwrap_or(1.0)), n.span, &what) {
             return None;
+        }
+        if group {
+            return Some((w.unwrap_or(0.0), h.unwrap_or(0.0)));
         }
         let shape = p.drawn_shape();
         let input = ShapeInput {
@@ -321,6 +346,7 @@ impl<'a> Resolver<'a> {
             style: Style::default(),
             pin,
             size,
+            fitted: (false, false),
             text: ShapeTextProps::default(),
             allow,
             reason,
@@ -500,4 +526,12 @@ impl<'a> Resolver<'a> {
             radius,
         }
     }
+}
+
+/// Whether a pin's anchor is on the left edge when the width is fitted, and on the top
+/// edge when the height is, so the pinned point doesn't move as the group grows.
+fn pin_stays((name, t): (&'static str, Option<f64>), (fw, fh): (bool, bool)) -> bool {
+    let unit = Rect::new(0.0, 0.0, 1.0, 1.0);
+    anchor::resolve(unit, 0.0, "pin", name, t)
+        .is_ok_and(|u| (!fw || u.x == 0.0) && (!fh || u.y == 0.0))
 }

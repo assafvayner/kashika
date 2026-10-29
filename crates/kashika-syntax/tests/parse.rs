@@ -716,7 +716,7 @@ fn box_size_is_optional_and_takes_auto() {
 }
 
 #[test]
-fn auto_size_is_for_boxes_and_the_diagram() {
+fn auto_size_is_for_boxes_groups_and_the_diagram() {
     for (src, size) in [
         ("diagram \"t\"\n", None),
         (
@@ -732,15 +732,20 @@ fn auto_size_is_for_boxes_and_the_diagram() {
         };
         assert_eq!(d.size, size);
     }
-    for src in [
-        "image i \"x.png\" at (0,0) size (auto,10)\n",
-        "group g at (0,0) size (10,auto) {\n}\n",
-    ] {
-        let (f, d) = parse(src);
-        assert_eq!(d.len(), 1, "{src:?}: {d:#?}");
-        assert_eq!(d[0].code, "parse", "{src:?}");
-        assert!(f.stmts.is_empty(), "{src:?}");
-    }
+    let (f, d) = parse("image i \"x.png\" at (0,0) size (auto,10)\n");
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "parse");
+    assert!(f.stmts.is_empty());
+    let Stmt::Group(g) = &parse_ok("group g at (0,0) size (10,auto) {\n}\n").stmts[0] else {
+        panic!("expected group")
+    };
+    assert_eq!(
+        g.node.size,
+        Some(Size {
+            w: Some(10.0),
+            h: None
+        })
+    );
     let Stmt::Group(g) = &parse_ok("group g at (0,0) style=wide {\n}\n").stmts[0] else {
         panic!("expected group")
     };

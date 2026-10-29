@@ -55,7 +55,7 @@ box api "API" at (40,40) size (140,60) style=service fill=#1a73e833 stroke=steel
 box db "DB" at api.right+(120,0) size (140,60) pin=left  // pin: any anchor, `side@t` included (`pin=left@0.25`); default `tl`
 box badge at db.tr size (16,16) pin=center allow=overlap:db reason="corner badge"
 arrow api_db api.right -> db.left label="SQL"  // `arrow` is `line` with end=arrow; the optional id follows the keyword directly, with no colon
-group vpc "VPC" at (20,180) size (600,280) {  // children use vpc-relative coordinates
+group vpc "VPC" at (20,180) size (600,280) {  // children use vpc-relative coordinates; leave out size to fit them (+padding)
   box pay "Payments API" at (20,60) size (140,60) sublabel="v2.4.1"  // muted second line at 0.8 × size
   box q "Jobs" at (300,60) size (160,60) icon="queue"  // icon-pos=left|top icon-size=24; bundled: server browser queue lock cloud person (use person for users); currentColor icons take the box's color=
 }
