@@ -11,7 +11,8 @@ use crate::style::{FontWeight, Padding, Style};
 
 /// Attributes a box or group accepts for its text, besides the style keys.
 pub(crate) const SHAPE_TEXT_KEYS: &[&str] = &["sublabel", "text-align", "text-valign", "gap"];
-pub(crate) const BLOCK_ITEM_KEYS: &[&str] = &["font-size", "text-align", "color", "muted", "size", "align"];
+pub(crate) const BLOCK_ITEM_KEYS: &[&str] =
+    &["font-size", "text-align", "color", "muted", "size", "align"];
 const SUBLABEL_SCALE: f64 = 0.8;
 const DEFAULT_GAP: f64 = 2.0;
 

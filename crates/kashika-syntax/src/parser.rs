@@ -15,7 +15,7 @@ const LINE_FLAGS: &[&str] = &["ortho"];
 /// Segment keywords, which could not be bare segment targets, and the `arrow` statement keyword.
 pub const RESERVED_IDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve", "arrow"];
 /// The reserved ids that are segment keywords.
-const SEGMENT_KEYWORDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve"];
+pub const SEGMENT_KEYWORDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve"];
 const MAX_GROUP_DEPTH: usize = 64;
 
 pub fn parse(src: &str) -> (File, Vec<Diagnostic>) {

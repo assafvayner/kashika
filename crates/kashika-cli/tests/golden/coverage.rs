@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use kashika_diag::{ERROR_CODES, LINT_CODES};
-use kashika_syntax::RESERVED_IDS;
+use kashika_syntax::SEGMENT_KEYWORDS;
 use kashika_syntax::ast::{Attr, SegKind, ShapeBody, Side, Stmt, Target, Value};
 use libtest_mimic::{Failed, Trial};
 
@@ -229,7 +229,7 @@ struct Usage {
 }
 
 /// Segment kinds as `segment_kind` names them; the exhaustive match keeps them in step with
-/// the parser, and `RESERVED_IDS` must each start one.
+/// the parser, and `SEGMENT_KEYWORDS` must each start one.
 const SEGMENT_KINDS: &[&str] = &[
     "<point>",
     "h",
@@ -365,7 +365,7 @@ fn attributes_and_values() -> Result<(), Failed> {
             }
         }
     }
-    for kw in RESERVED_IDS {
+    for kw in SEGMENT_KEYWORDS {
         if !SEGMENT_KINDS
             .iter()
             .any(|k| k.split(' ').next() == Some(kw))
