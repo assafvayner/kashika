@@ -236,6 +236,49 @@ impl Marker {
     const BAR_AT: f64 = 8.0;
     const ER_GAP: f64 = 4.0;
 
+    pub const ALL: [Marker; 10] = [
+        Marker::None,
+        Marker::Arrow,
+        Marker::Open,
+        Marker::Diamond,
+        Marker::Dot,
+        Marker::One,
+        Marker::Many,
+        Marker::OneMany,
+        Marker::ZeroOne,
+        Marker::ZeroMany,
+    ];
+
+    /// The `start=`/`end=` names, in `ALL` order.
+    pub const NAMES: &'static [&'static str] = &{
+        let mut names = [""; Self::ALL.len()];
+        let mut i = 0;
+        while i < names.len() {
+            names[i] = Self::ALL[i].name();
+            i += 1;
+        }
+        names
+    };
+
+    pub fn from_name(name: &str) -> Option<Marker> {
+        Self::ALL.into_iter().find(|m| m.name() == name)
+    }
+
+    pub const fn name(self) -> &'static str {
+        match self {
+            Marker::None => "none",
+            Marker::Arrow => "arrow",
+            Marker::Open => "open",
+            Marker::Diamond => "diamond",
+            Marker::Dot => "dot",
+            Marker::One => "one",
+            Marker::Many => "many",
+            Marker::OneMany => "one-many",
+            Marker::ZeroOne => "zero-one",
+            Marker::ZeroMany => "zero-many",
+        }
+    }
+
     /// How far the line stroke stops short of the tip. Crow's-foot ends sit on the line and
     /// don't trim it.
     pub fn length(self) -> f64 {

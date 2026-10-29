@@ -12,8 +12,8 @@ use crate::style::{self, STYLE_KEYS, Style, StyleProps};
 use crate::textlayout::{self, SHAPE_TEXT_KEYS, ShapeTextProps};
 
 use super::{
-    IMAGE_KEYS, IconPos, IconProps, ImageProps, Item, LINE_KEYS, LineProps, MARKERS, NODE_KEYS,
-    NodeProps, Resolver, TEXT_KEYS, TextProps,
+    IMAGE_KEYS, IconPos, IconProps, ImageProps, Item, LINE_KEYS, LineProps, NODE_KEYS, NodeProps,
+    Resolver, TEXT_KEYS, TextProps,
 };
 
 impl NodeProps {
@@ -342,26 +342,14 @@ impl<'a> Resolver<'a> {
 
     pub(super) fn line_props(&mut self, l: &ast::Line) -> LineProps {
         let a = Attrs::new(&l.attrs, "line", LINE_KEYS, &mut self.diags);
-        let marker = |m: Option<&str>| match m {
-            Some("arrow") => Marker::Arrow,
-            Some("open") => Marker::Open,
-            Some("diamond") => Marker::Diamond,
-            Some("dot") => Marker::Dot,
-            Some("one") => Marker::One,
-            Some("many") => Marker::Many,
-            Some("one-many") => Marker::OneMany,
-            Some("zero-one") => Marker::ZeroOne,
-            Some("zero-many") => Marker::ZeroMany,
-            _ => Marker::None,
+        let mut marker = |key: &str| {
+            a.get(key)
+                .and_then(|x| attrs::word(x, Marker::NAMES, &mut self.diags))
+                .and_then(Marker::from_name)
+                .unwrap_or(Marker::None)
         };
-        let start = marker(
-            a.get("start")
-                .and_then(|x| attrs::word(x, MARKERS, &mut self.diags)),
-        );
-        let end = marker(
-            a.get("end")
-                .and_then(|x| attrs::word(x, MARKERS, &mut self.diags)),
-        );
+        let start = marker("start");
+        let end = marker("end");
         let mut props = StyleProps {
             font_size: Some(12.0),
             ..StyleProps::default()

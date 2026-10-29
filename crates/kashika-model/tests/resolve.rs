@@ -1118,6 +1118,19 @@ fn crows_foot_markers_parse_to_their_kinds() {
 }
 
 #[test]
+fn every_marker_name_parses_to_its_marker() {
+    use kashika_model::Marker;
+    assert_eq!(Marker::NAMES.len(), Marker::ALL.len());
+    for (m, name) in Marker::ALL.into_iter().zip(Marker::NAMES) {
+        assert_eq!(m.name(), *name);
+        assert_eq!(Marker::from_name(name), Some(m));
+        let s = ok(&format!("line l (0,0) -> h 10 end={name}\n"));
+        assert_eq!(s.lines[0].end, m, "{name}");
+    }
+    assert_eq!(Marker::from_name("arow"), None);
+}
+
+#[test]
 fn crows_foot_parts_sit_on_the_line_and_touch_the_tip() {
     let s = ok("line l (0,0) -> h 100 start=zero-one end=many\n");
     let l = &s.lines[0];
