@@ -1,0 +1,14 @@
+// spec: 3, 7
+// Short Z and S steps between parallel runs, at a start or end anchor and mid-path; U-turns, long steps, curves and collinear pieces are not jogs.
+diagram "jog" size (800,500)
+box a "A" at (40,20) size (100,50)
+box b "B" at (65,200) size (60,50)
+box c "C" at (40,320) size (80,60)
+line a_b a.bottom -> v 30 -> hv b.top@0.35 end=arrow
+line from_c c.right -> h 60 -> v -3 -> h 80 end=arrow
+line mid (240,40) -> v 60 -> h 3 -> v 60 -> h 100
+line rounded (240,220) -> h 100 -> v 5 -> h 100 radius=8
+line u_turn (500,40) -> h 100 -> v 4 -> h -100
+line long_step (500,120) -> h 100 -> v 20 -> h 100
+line curved (500,220) -> h 80 -> curve left 2 (584,224) -> h 80
+line collinear (500,300) -> h 80 -> v 0 -> h 80

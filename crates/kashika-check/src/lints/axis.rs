@@ -85,7 +85,7 @@ pub fn near_axis(ctx: &Ctx, out: &mut Sink) {
 
 /// An anchor for `q` on the box that `at` attaches to, when `q` lies on its outline: `id.side@t`
 /// when that lands within 0.25px of `q`, otherwise `id.side+(dx,dy)`.
-fn anchor_at(ctx: &Ctx, at: Pt, q: Pt) -> Option<String> {
+pub(crate) fn anchor_at(ctx: &Ctx, at: Pt, q: Pt) -> Option<String> {
     let id = ctx.attached(at).into_iter().next()?;
     let geom: &ShapeGeom = ctx.boxes().find(|s| s.shape.id == id)?;
     if boundary_nearest(q, &geom.poly).0 > TOLERANCE {

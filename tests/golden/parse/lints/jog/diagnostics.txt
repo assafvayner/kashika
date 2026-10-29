@@ -1,0 +1,19 @@
+warn[jog] 7:30-7:43: segment 2 of a_b jogs 4px in x between two vertical runs, from (90,100) to (86,100)
+  = help: end at `b.top@0.42` to keep x=90
+  = help: start at `a.bottom@0.46` to keep x=86
+  = help: or move the run after the step to x=90 or the run before it to x=86, so both vertical runs share x
+  elements: [{"from":[90,100],"id":"a_b","kind":"line","segment":2,"span":{"col":1,"end_col":53,"end_line":7,"line":7},"to":[86,200]}]
+  facts: {"clearance":6,"step":4}
+warn[jog] 8:32-8:36: segment 2 of from_c jogs 3px in y between two horizontal runs, from (180,350) to (180,347)
+  = help: start at `c.right@0.45` to keep y=347
+  = help: or move the run after the step to y=350 or the run before it to y=347, so both horizontal runs share y
+  elements: [{"from":[180,350],"id":"from_c","kind":"line","segment":2,"span":{"col":1,"end_col":54,"end_line":8,"line":8},"to":[180,347]}]
+  facts: {"clearance":6,"step":3}
+warn[jog] 9:30-9:33: segment 2 of mid jogs 3px in x between two vertical runs, from (240,100) to (243,100)
+  = help: move the run after the step to x=240 or the run before it to x=243, so both vertical runs share x
+  elements: [{"from":[240,100],"id":"mid","kind":"line","segment":2,"span":{"col":1,"end_col":50,"end_line":9,"line":9},"to":[243,100]}]
+  facts: {"clearance":6,"step":3}
+warn[jog] 10:36-10:39: segment 2 of rounded jogs 5px in y between two horizontal runs, from (340,220) to (340,225)
+  = help: move the run after the step to y=220 or the run before it to y=225, so both horizontal runs share y
+  elements: [{"from":[340,220],"id":"rounded","kind":"line","segment":2,"span":{"col":1,"end_col":57,"end_line":10,"line":10},"to":[340,225]}]
+  facts: {"clearance":6,"step":5}

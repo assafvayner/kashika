@@ -10,6 +10,7 @@ mod endpoint;
 mod glyph;
 mod grid;
 mod image;
+mod jog;
 mod near;
 mod overlap;
 mod shared;
@@ -36,6 +37,7 @@ pub const ALL: &[Lint] = &[
     glyph::missing_glyph,
     grid::off_grid,
     image::image_distort,
+    jog::jog,
     near::near,
     axis::near_axis,
     overlap::overlap,

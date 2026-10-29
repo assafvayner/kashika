@@ -188,6 +188,7 @@ Comments: `// to end of line` and `/* block */` (no nesting; an unclosed `/*` is
 - `not-ortho` / `diagonal-tail`: finish with `hv`/`vh` or `x`/`y`.
 - `label-collision` on a group border or title: move the label to a `label@t` from the help, and route lines below a group's title band, not through its title, or move the title out of the way with `text-align=right` (or `center`) on the group.
 - `near-axis`: a straight hop within 5° of horizontal/vertical (two anchors a few px apart) renders slanted; use the level anchor from the help (`cdn.left@0.42`) or `hv`/`vh`.
+- `jog`: a step shorter than `clearance` between two parallel runs (`a.bottom -> v 20 -> hv b.top@0.35` with the two x a few px apart) looks like a slip; use the level anchor from the help (`b.top@0.42`) or move one run onto the other's x/y.
 - `missing-glyph`: the bundled fonts cover Latin, Greek and Cyrillic only; replace CJK, emoji and similar characters with an `icon=` or `image`. A tab in text is four spaces.
 - `text-conflict`: move `label`/`sublabel` into the block as its first items, or give every block item an `at`.
 
