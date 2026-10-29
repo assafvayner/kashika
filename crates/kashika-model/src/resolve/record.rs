@@ -62,6 +62,7 @@ impl Resolver<'_> {
                 self.literal(owner, "dy", dy, *span);
             }
             Point::Ref { offset: None, .. } => {}
+            Point::Group { inner, .. } => self.record_point(owner, inner),
         }
     }
 
@@ -108,6 +109,7 @@ impl Resolver<'_> {
 pub(super) fn point_refs(p: &Point) -> Vec<&ast::Ref> {
     match p {
         Point::Ref { r, .. } => vec![r],
+        Point::Group { inner, .. } => point_refs(inner),
         Point::Lit { x, y, .. } => [x, y]
             .into_iter()
             .filter_map(|c| match c {
@@ -133,7 +135,7 @@ pub(super) fn segment_kind(k: &SegKind) -> SegmentKind {
 }
 
 pub(super) fn is_literal(p: &Point) -> bool {
-    !matches!(p, Point::Ref { .. })
+    !matches!(p.ungrouped(), Point::Ref { .. })
 }
 
 pub(super) fn end_is_literal(segs: &[ast::Seg]) -> bool {

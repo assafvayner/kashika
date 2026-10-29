@@ -1,0 +1,8 @@
+error[parse] 5:27-5:31: expected `)` to close the `(` around the point, found `size`
+  = help: close it: `(a.center+(0,80))`
+error[parse] 6:20-6:26: an offset cannot follow a parenthesized point
+  = help: put the offset inside the parentheses: `(a.center+(0,4))`
+error[parse] 7:17-7:18: expected `)` to close the `(` around the point, found `.`
+  = help: `.x`/`.y` take one axis of a mixed point, which needs both: `(a.left.x, other.y)`
+error[parse] 8:18-8:20: expected `)` to close the `(` around the point, found `->`
+  = help: close it: `(a.bottom)`

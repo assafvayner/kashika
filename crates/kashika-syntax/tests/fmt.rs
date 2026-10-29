@@ -48,6 +48,18 @@ fn normalizes_token_spacing() {
 }
 
 #[test]
+fn keeps_point_parentheses() {
+    assert_eq!(
+        fmt("box b at ( a.center + ( 0 , 40 ) ) size (1,1)\n"),
+        "box b at (a.center+(0,40)) size (1,1)\n"
+    );
+    assert_eq!(
+        fmt("line l ((a.bottom)) -> x ( c.left ) -> curve via (fan) ( b.top-(0,4) ) (d.left)\n"),
+        "line l ((a.bottom)) -> x (c.left) -> curve via (fan) (b.top-(0,4)) (d.left)\n"
+    );
+}
+
+#[test]
 fn keeps_number_and_string_spelling() {
     assert_eq!(
         fmt("box a \"a\\*b \\\"q\\\"\" at (10.50,020) size (1,1)\n"),

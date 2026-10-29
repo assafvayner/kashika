@@ -156,7 +156,7 @@ fn connecting_lines(
         return Vec::new();
     };
     fn owner(p: Option<&ast::Point>) -> Option<&str> {
-        match p {
+        match p.map(ast::Point::ungrouped) {
             Some(ast::Point::Ref { r, .. }) => Some(r.id.name.as_str()),
             _ => None,
         }

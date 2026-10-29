@@ -227,6 +227,7 @@ impl<'a> Resolver<'a> {
                 let p = base + Pt::new(dx, dy);
                 self.finite(&[p.x, p.y], *span).then_some(p)
             }
+            Point::Group { inner, .. } => self.eval_point(inner, origin),
         }
     }
 

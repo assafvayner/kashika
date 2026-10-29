@@ -65,6 +65,45 @@ fn mixed_point_inside_a_group_frame() {
 }
 
 #[test]
+fn parenthesized_points_resolve_like_bare_ones() {
+    let src = |p: fn(&str) -> String| {
+        format!(
+            "box a at (40,20) size (80,40)\n\
+             group g at {} size (200,100) {{\n  box b at {} size (40,40)\n}}\n\
+             junction fan at {}\n\
+             line l {} -> {} -> x {} -> y {} -> hv {} -> curve via {} {} {}\n",
+            p("a.center+(0,80)"),
+            p("a.left.x, 10"),
+            p("a.right+(60,0)"),
+            p("a.bottom+(20,0)"),
+            p("fan"),
+            p("b.right"),
+            p("fan+(0,200)"),
+            p("b.left@0.25-(4,0)"),
+            p("b.top+(10,-20)"),
+            p("a.tr"),
+            p("a.right"),
+        )
+    };
+    let bare = ok(&src(|p| {
+        if p.contains(',') && !p.contains('(') {
+            format!("({p})")
+        } else {
+            p.to_string()
+        }
+    }));
+    let wraps: [fn(&str) -> String; 2] = [|p| format!("({p})"), |p| format!("(({p}))")];
+    for wrap in wraps {
+        let grouped = ok(&src(wrap));
+        for id in ["a", "g", "b"] {
+            assert_eq!(rect(&grouped, id), rect(&bare, id), "{id}");
+        }
+        assert_eq!(grouped.junctions[0].at, bare.junctions[0].at);
+        assert_eq!(pts(&grouped, "l"), pts(&bare, "l"));
+    }
+}
+
+#[test]
 fn groups_default_to_the_boundary_style() {
     let s = ok("group g at (0,0) size (10,10) {\n}\n");
     assert_eq!(s.shapes[0].style.stroke_style, StrokeStyle::Dashed);

@@ -190,6 +190,11 @@ pub enum Point {
         offset: Option<Offset>,
         span: Span,
     },
+    /// `(P)`: parentheses around a point, which mean `P`.
+    Group {
+        inner: Box<Point>,
+        span: Span,
+    },
 }
 
 /// `+(dx,dy)` or `-(dx,dy)`; `neg` records which sign was written.
@@ -214,7 +219,15 @@ impl Offset {
 impl Point {
     pub fn span(&self) -> Span {
         match self {
-            Point::Lit { span, .. } | Point::Ref { span, .. } => *span,
+            Point::Lit { span, .. } | Point::Ref { span, .. } | Point::Group { span, .. } => *span,
+        }
+    }
+
+    /// The point without its grouping parentheses.
+    pub fn ungrouped(&self) -> &Point {
+        match self {
+            Point::Group { inner, .. } => inner.ungrouped(),
+            p => p,
         }
     }
 }

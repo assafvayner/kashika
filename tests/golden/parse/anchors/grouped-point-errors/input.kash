@@ -1,0 +1,8 @@
+// spec: 4
+// An unclosed `(` around a point, a lone `.x` axis in parentheses, and an offset after a grouped point, are parse errors.
+diagram "grouped errors" size (300,200)
+box a at (40,20) size (80,40)
+box b at (a.center+(0,80) size (20,20)
+box c at (a.center)+(0,4) size (20,20)
+box d at (a.left.x) size (20,20)
+line l (a.bottom -> b.top

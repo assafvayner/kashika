@@ -858,6 +858,9 @@ impl Parser<'_> {
 
     fn point(&mut self) -> PResult<Point> {
         let start = self.span();
+        if *self.tok() == Tok::LParen && self.paren_is_group() {
+            return self.group();
+        }
         if *self.tok() == Tok::LParen {
             self.bump();
             let x = self.coord()?;
@@ -883,6 +886,84 @@ impl Parser<'_> {
             r,
             offset,
             span: start.to(self.prev_span()),
+        })
+    }
+
+    /// Whether the `(` here opens a grouped point rather than `(x,y)`: it is followed by `(`,
+    /// or by a reference with no `,` before its closing `)`.
+    fn paren_is_group(&self) -> bool {
+        match self.tok_at(1) {
+            Tok::LParen => return true,
+            Tok::Ident(_) => {}
+            _ => return false,
+        }
+        let mut depth = 0usize;
+        let mut n = 2;
+        loop {
+            match self.tok_at(n) {
+                Tok::LParen => depth += 1,
+                Tok::RParen if depth == 0 => return true,
+                Tok::RParen => depth -= 1,
+                Tok::Comma if depth == 0 => return false,
+                Tok::Newline | Tok::Eof => return true,
+                _ => {}
+            }
+            n += 1;
+        }
+    }
+
+    fn group(&mut self) -> PResult<Point> {
+        let open = self.bump();
+        let inner = self.point()?;
+        if *self.tok() != Tok::RParen {
+            let found = self.tok().describe();
+            let written = self.source(open, inner.span());
+            let help = if *self.tok() == Tok::Dot
+                && matches!(self.tok_at(1), Tok::Ident(a) if a == "x" || a == "y")
+            {
+                format!(
+                    "`.x`/`.y` take one axis of a mixed point, which needs both: `{written}.x, other.y)`"
+                )
+            } else {
+                format!("close it: `{written})`")
+            };
+            self.diags.push(
+                Diagnostic::error(
+                    "parse",
+                    self.span(),
+                    format!("expected `)` to close the `(` around the point, found {found}"),
+                )
+                .with_help(help),
+            );
+            return Err(());
+        }
+        self.bump();
+        let span = open.to(self.prev_span());
+        if matches!(self.tok(), Tok::Plus | Tok::Minus) && *self.tok_at(1) == Tok::LParen {
+            let sign = self.bump();
+            self.pair()?;
+            let offset = sign.to(self.prev_span());
+            let help = match inner.ungrouped() {
+                p @ Point::Ref { offset: None, .. } => format!(
+                    "put the offset inside the parentheses: `({}{})`",
+                    self.source(p.span(), p.span()),
+                    self.source(offset, offset)
+                ),
+                _ => "put the offset inside the parentheses, e.g. `(db.center+(0,40))`".into(),
+            };
+            self.diags.push(
+                Diagnostic::error(
+                    "parse",
+                    offset,
+                    "an offset cannot follow a parenthesized point",
+                )
+                .with_help(help),
+            );
+            return Err(());
+        }
+        Ok(Point::Group {
+            inner: Box::new(inner),
+            span,
         })
     }
 

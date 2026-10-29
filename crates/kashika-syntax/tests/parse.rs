@@ -797,3 +797,130 @@ fn bom_does_not_shift_help_text() {
     let (_, plain) = parse("kashika==\"0.1\"\n");
     assert_eq!(diags[0].help, plain[0].help);
 }
+
+fn box_at(src: &str) -> Point {
+    let f = parse_ok(src);
+    let Stmt::Box(b) = &f.stmts[0] else {
+        panic!("expected box")
+    };
+    b.at.clone()
+}
+
+#[test]
+fn parenthesized_points_mean_the_bare_point() {
+    for (grouped, bare) in [
+        ("(a.center)", "a.center"),
+        ("(a.center+(0,40))", "a.center+(0,40)"),
+        ("(db.top-(10,0))", "db.top-(10,0)"),
+        ("(a.left@0.25+(4,0))", "a.left@0.25+(4,0)"),
+        ("(fan)", "fan"),
+        ("(fan+(0,10))", "fan+(0,10)"),
+        ("((a.center))", "a.center"),
+        ("((10,20))", "(10,20)"),
+        ("((a.left.x, lane.y))", "(a.left.x, lane.y)"),
+    ] {
+        let g = box_at(&format!("box b at {grouped} size (1,1)\n"));
+        let depth = grouped.find(|c| c != '(').unwrap() - bare.find(|c| c != '(').unwrap();
+        let pad = " ".repeat(depth);
+        let b = box_at(&format!("box b at {pad}{bare} size (1,1)\n"));
+        assert!(matches!(g, Point::Group { .. }), "{grouped}");
+        let strip = |p: &Point| match p {
+            Point::Lit { x, y, .. } => format!("{x:?} {y:?}"),
+            Point::Ref { r, offset, .. } => format!("{r:?} {offset:?}"),
+            Point::Group { .. } => panic!("still grouped"),
+        };
+        assert_eq!(strip(g.ungrouped()), strip(&b), "{grouped}");
+    }
+}
+
+#[test]
+fn nested_groups_keep_each_level() {
+    let Point::Group { inner, span } = box_at("box b at ((a.center)) size (1,1)\n") else {
+        panic!("expected group")
+    };
+    assert_eq!((span.col, span.end_col), (10, 22));
+    assert!(matches!(*inner, Point::Group { .. }));
+}
+
+#[test]
+fn parenthesized_points_in_line_endpoints_and_segments() {
+    let f = parse_ok(
+        "line l (a.bottom) -> (b.top-(0,4)) -> x (c.left) -> y (lane) -> hv (d.top) \
+         -> vh (e.left) -> curve left 20 (f.top) -> curve via (g.center) ((h.center)) (i.right)\n",
+    );
+    let l = line_stmt(&f);
+    assert!(matches!(l.start, Point::Group { .. }));
+    let points: Vec<&Point> = l
+        .segs
+        .iter()
+        .flat_map(|s| match &s.kind {
+            SegKind::To(p) | SegKind::Hv(p) | SegKind::Vh(p) | SegKind::Curve { to: p, .. } => {
+                vec![p]
+            }
+            SegKind::X(Target::Point(p)) | SegKind::Y(Target::Point(p)) => vec![p],
+            SegKind::CurveVia { c1, c2, to } => vec![c1, c2, to],
+            _ => vec![],
+        })
+        .collect();
+    assert_eq!(points.len(), 9);
+    assert!(points.iter().all(|p| matches!(p, Point::Group { .. })));
+    assert!(matches!(
+        points[1].ungrouped(),
+        Point::Ref { offset: None, r, .. } if r.anchor.as_ref().unwrap().name.name == "left"
+    ));
+}
+
+#[test]
+fn literal_and_mixed_points_are_not_groups() {
+    assert!(matches!(
+        box_at("box b at (10,20) size (1,1)\n"),
+        Point::Lit { .. }
+    ));
+    let Point::Lit { x, y, .. } = box_at("box b at (a.left.x, lane.y) size (1,1)\n") else {
+        panic!("expected mixed point")
+    };
+    assert!(matches!(x, Coord::Axis { axis: Axis::X, .. }));
+    assert!(matches!(y, Coord::Axis { axis: Axis::Y, .. }));
+    let (_, d) = parse("box b at (a.left, lane.y) size (1,1)\n");
+    assert_eq!(d.len(), 1);
+    assert_eq!(d[0].message, "expected `.`, found `,`");
+}
+
+#[test]
+fn unclosed_point_paren_is_an_error_with_help() {
+    let (_, d) = parse("box b at (a.center+(0,40) size (1,1)\n");
+    assert_eq!(d.len(), 1);
+    assert_eq!(d[0].code, "parse");
+    assert_eq!(
+        d[0].message,
+        "expected `)` to close the `(` around the point, found `size`"
+    );
+    assert_eq!((d[0].span.line, d[0].span.col), (1, 27));
+    assert_eq!(d[0].help, ["close it: `(a.center+(0,40))`"]);
+    let (_, d) = parse("line l (a.center -> b.top\n");
+    assert_eq!(d.len(), 1);
+    assert_eq!(
+        d[0].message,
+        "expected `)` to close the `(` around the point, found `->`"
+    );
+    let (_, d) = parse("box b at (a.left.x) size (1,1)\n");
+    assert_eq!(d.len(), 1);
+    assert_eq!(
+        d[0].help,
+        ["`.x`/`.y` take one axis of a mixed point, which needs both: `(a.left.x, other.y)`"]
+    );
+}
+
+#[test]
+fn offset_after_a_group_is_an_error_with_help() {
+    let (_, d) = parse("box b at ((a.center))+(0,4) size (1,1)\n");
+    assert_eq!(d.len(), 1);
+    assert_eq!(
+        d[0].message,
+        "an offset cannot follow a parenthesized point"
+    );
+    assert_eq!(
+        d[0].help,
+        ["put the offset inside the parentheses: `(a.center+(0,4))`"]
+    );
+}

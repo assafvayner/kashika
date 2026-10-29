@@ -89,6 +89,7 @@ impl Endpoint {
                     ..Endpoint::literal(at)
                 }
             }
+            ast::Point::Group { inner, .. } => Endpoint::of(inner, text, at),
         }
     }
 }
