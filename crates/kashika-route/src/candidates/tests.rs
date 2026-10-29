@@ -109,7 +109,7 @@ const SYNTHETIC: &[(&str, &str, &str)] = &[
          group g \"G\" at (160,40) size (200,240) {\n  box inner at (40,60) size (80,40)\n}\n\
          box a at (20,140) size (80,40)\n\
          box b at (420,140) size (80,40)\n\
-         line x: inner.bottom -> (260,300)\n",
+         line down inner.bottom -> (260,300)\n",
         "a.right",
         "b.left",
     ),
@@ -117,7 +117,7 @@ const SYNTHETIC: &[(&str, &str, &str)] = &[
         "diagram \"corner\" size (400,300)\n\
          box a at (20,20) size (100,60)\n\
          box b at (260,200) size (100,60)\n\
-         box mid at (150,110) size (80,60) shape=circle\n",
+         box mid at (150,110) size (80,60) shape=ellipse\n",
         "(70,80)",
         "b.top",
     ),
@@ -129,6 +129,8 @@ fn synthetic_cases() -> Vec<Case> {
         .enumerate()
         .map(|(i, &(src, from, to))| {
             let opts = Options::default();
+            let (_, diags) = kashika_model::compile_with(src, &opts);
+            assert!(diags.is_empty(), "synthetic {i}: {diags:#?}");
             let (from, to) = resolve_endpoints(src, from, to, &opts).unwrap();
             Case {
                 name: format!("synthetic {i}"),
