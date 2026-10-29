@@ -558,54 +558,25 @@ fn library_files_check_on_their_own() {
 }
 
 #[test]
-fn repeated_errors_collapse_in_text_but_not_in_json() {
+fn repeated_errors_are_all_printed() {
     let mut src = String::from("diagram \"t\" size (100,100)\n");
     for i in 0..10 {
         src.push_str(&format!("line l{i}: (0,{i}) -> h 10\n"));
     }
+    src.push_str("box a at (50,50) size (10,10)\nbox a at (70,50) size (10,10)\n");
     let out = kashika()
-        .args(["check", "-", "--stdin-name", "r.kash"])
-        .write_stdin(src.clone())
+        .args(["check", "-", "--stdin-name", "r.kash", "--max", "3"])
+        .write_stdin(src)
         .assert()
         .code(2)
         .get_output()
         .stdout
         .clone();
     let out = String::from_utf8(out).unwrap();
-    assert_eq!(out.matches("a line id takes no `:`").count(), 3, "{out}");
-    assert!(
-        out.contains(
-            "      = help: remove the `:`: write `line l2 (0,2) -> h 10`\n... and 7 more like this\n10 errors, 0 warnings"
-        ),
-        "{out}"
-    );
-    kashika()
-        .args(["check", "-", "--format", "json"])
-        .write_stdin(src)
-        .assert()
-        .code(2)
-        .stdout(predicate::function(|s: &str| {
-            s.matches("a line id takes no `:`").count() == 10
-        }));
-}
-
-#[test]
-fn collapsed_errors_do_not_count_against_max() {
-    let mut src = String::from("diagram \"t\" size (100,100)\n");
-    for i in 0..6 {
-        src.push_str(&format!("line l{i}: (0,{i}) -> h 10\n"));
-    }
-    src.push_str("box a at (50,50) size (10,10)\nbox a at (70,50) size (10,10)\n");
-    kashika()
-        .args(["check", "-", "--max", "3"])
-        .write_stdin(src)
-        .assert()
-        .code(2)
-        .stdout(
-            predicate::str::contains("... and 3 more like this\n")
-                .and(predicate::str::contains("error[duplicate-id]"))
-                .and(predicate::str::contains("... and 1 more").not()),
-        );
+    assert_eq!(out.matches("a line id takes no `:`").count(), 10, "{out}");
+    assert!(out.contains("error[duplicate-id]"), "{out}");
+    assert!(!out.contains("more like this"), "{out}");
+    assert!(out.contains("11 errors, 0 warnings"), "{out}");
 }
 
 /// `n` boxes off a 100x100 canvas, one distinct `out-of-canvas` warning each, then a parse error.
@@ -683,9 +654,9 @@ fn errors_print_even_when_they_alone_exceed_max() {
         .stdout
         .clone();
     let out = String::from_utf8(out).unwrap();
-    assert_eq!(out.matches("error[duplicate-id]").count(), 3, "{out}");
+    assert_eq!(out.matches("error[duplicate-id]").count(), 4, "{out}");
     assert!(
-        out.contains("... and 1 more like this\n... and 6 more\n4 errors, 6 warnings"),
+        out.contains("... and 6 more\n4 errors, 6 warnings"),
         "{out}"
     );
 }

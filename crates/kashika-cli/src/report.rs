@@ -104,81 +104,30 @@ pub fn visible(diags: &[Diagnostic], show_suppressed: bool) -> Vec<&Diagnostic> 
         .collect()
 }
 
-/// How many diagnostics with the same severity, code and message template the text output
-/// prints before collapsing the rest into one `... and N more like this` line.
-const ALIKE_SHOWN: usize = 3;
-
-type Key = (Severity, &'static str, bool, String);
-
-/// The message with quoted text and numbers blanked, so diagnostics that differ only in
-/// the names or values they mention share a key.
-fn key(d: &Diagnostic) -> Key {
-    let mut template = String::new();
-    let mut word = String::new();
-    let mut quoted = false;
-    let flush = |template: &mut String, word: &mut String| {
-        if !word.chars().all(|c| c.is_ascii_digit()) {
-            template.push_str(word);
-        }
-        word.clear();
-    };
-    for c in d.message.chars() {
-        if c == '`' {
-            quoted = !quoted;
-            word.clear();
-            template.push(c);
-        } else if !quoted && (c.is_ascii_alphanumeric() || c == '_') {
-            word.push(c);
-        } else if !quoted {
-            flush(&mut template, &mut word);
-            template.push(c);
-        }
-    }
-    flush(&mut template, &mut word);
-    (d.severity, d.code, d.suppressed, template)
-}
-
 /// What the report does with a visible diagnostic.
 #[derive(Clone, Copy, PartialEq)]
 enum Show {
     Print,
-    /// Folded into a `... and N more like this` line.
-    Alike,
     /// Cut by `--max`.
     Over,
 }
 
-/// Every error is printed; warnings fill what is left of `max`, in source order. With
-/// `collapse`, diagnostics past the `ALIKE_SHOWN`th printed one of their key fold away and
-/// don't count toward `max`.
-fn plan(shown: &[&Diagnostic], keys: &[Key], max: usize, collapse: bool) -> Vec<Show> {
-    let mut errors: BTreeMap<&Key, usize> = BTreeMap::new();
-    for (d, k) in shown.iter().zip(keys) {
-        if d.severity == Severity::Error {
-            *errors.entry(k).or_default() += 1;
-        }
-    }
-    let printed_errors: usize = errors
-        .values()
-        .map(|&n| if collapse { n.min(ALIKE_SHOWN) } else { n })
-        .sum();
-    let mut budget = max.saturating_sub(printed_errors);
-    let mut seen: BTreeMap<&Key, usize> = BTreeMap::new();
+/// Every error is printed; warnings fill what is left of `max`, in source order.
+fn plan(shown: &[&Diagnostic], max: usize) -> Vec<Show> {
+    let errors = shown
+        .iter()
+        .filter(|d| d.severity == Severity::Error)
+        .count();
+    let mut budget = max.saturating_sub(errors);
     shown
         .iter()
-        .zip(keys)
-        .map(|(d, k)| {
-            let n = seen.entry(k).or_default();
-            if collapse && *n >= ALIKE_SHOWN {
-                return Show::Alike;
-            }
+        .map(|d| {
             if d.severity != Severity::Error {
                 if budget == 0 {
                     return Show::Over;
                 }
                 budget -= 1;
             }
-            *n += 1;
             Show::Print
         })
         .collect()
@@ -187,20 +136,18 @@ fn plan(shown: &[&Diagnostic], keys: &[Key], max: usize, collapse: bool) -> Vec<
 struct Selection {
     /// Indices into the diagnostics of the visible ones.
     idx: Vec<usize>,
-    keys: Vec<Key>,
     plan: Vec<Show>,
 }
 
 /// Picks what to show, errors first and each severity in source order, and fills in the
 /// deferred help of the diagnostics that are printed.
-fn select(diags: &mut [Diagnostic], opts: &Opts, collapse: bool) -> Selection {
+fn select(diags: &mut [Diagnostic], opts: &Opts) -> Selection {
     let mut idx: Vec<usize> = (0..diags.len())
         .filter(|&i| opts.show_suppressed || !diags[i].suppressed)
         .collect();
     idx.sort_by_key(|&i| diags[i].severity != Severity::Error);
     let shown: Vec<&Diagnostic> = idx.iter().map(|&i| &diags[i]).collect();
-    let keys: Vec<Key> = shown.iter().map(|d| key(d)).collect();
-    let plan = plan(&shown, &keys, opts.max, collapse);
+    let plan = plan(&shown, opts.max);
     if let Some(scene) = opts.scene {
         let mut print = vec![false; diags.len()];
         for (&i, &s) in idx.iter().zip(&plan) {
@@ -215,7 +162,7 @@ fn select(diags: &mut [Diagnostic], opts: &Opts, collapse: bool) -> Selection {
                 .map(|(d, _)| d),
         );
     }
-    Selection { idx, keys, plan }
+    Selection { idx, plan }
 }
 
 pub fn text(
@@ -225,7 +172,7 @@ pub fn text(
     opts: &Opts,
     output: Option<&Output>,
 ) -> String {
-    let sel = select(diags, opts, true);
+    let sel = select(diags, opts);
     let diags = &*diags;
     let name = term::line(name);
     let lines: Vec<&str> = src.lines().collect();
@@ -234,25 +181,14 @@ pub fn text(
             out.push_str(&format!("{line:>5} | {}\n", term::line(l)));
         }
     };
-    let mut totals: BTreeMap<&Key, usize> = BTreeMap::new();
-    for k in &sel.keys {
-        *totals.entry(k).or_default() += 1;
-    }
-    let mut seen: BTreeMap<&Key, usize> = BTreeMap::new();
     let mut overflow = omitted_visible(opts);
     let mut out = String::new();
-    for ((&i, k), show) in sel.idx.iter().zip(&sel.keys).zip(&sel.plan) {
-        match show {
-            Show::Alike => continue,
-            Show::Over => {
-                overflow += 1;
-                continue;
-            }
-            Show::Print => {}
+    for (&i, show) in sel.idx.iter().zip(&sel.plan) {
+        if *show == Show::Over {
+            overflow += 1;
+            continue;
         }
         let d = &diags[i];
-        let n = seen.entry(k).or_default();
-        *n += 1;
         let sev = match d.severity {
             Severity::Error => "error",
             Severity::Warn => "warn",
@@ -278,12 +214,6 @@ pub fn text(
         }
         if let Some(r) = &d.reason {
             out.push_str(&format!("      = reason: {}\n", term::line(r)));
-        }
-        if *n == ALIKE_SHOWN && totals[k] > ALIKE_SHOWN {
-            out.push_str(&format!(
-                "... and {} more like this\n",
-                totals[k] - ALIKE_SHOWN
-            ));
         }
     }
     if overflow > 0 {
@@ -332,7 +262,7 @@ pub fn json(
     opts: &Opts,
     output: Option<&Output>,
 ) -> String {
-    let sel = select(diags, opts, false);
+    let sel = select(diags, opts);
     let listed: Vec<&Diagnostic> = sel
         .idx
         .iter()
