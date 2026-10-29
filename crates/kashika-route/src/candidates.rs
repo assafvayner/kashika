@@ -2,7 +2,9 @@ use std::cmp::Ordering;
 
 use kashika_check::ctx::Ctx;
 use kashika_check::free::{Axis, free_intervals};
-use kashika_geom::{Hit, Pt, Rect, TOLERANCE, dot, inside_runs, seg_hit};
+use kashika_geom::{
+    Hit, Pt, Rect, TOLERANCE, boundary_nearest, dot, inside_runs, point_in_polygon, seg_hit,
+};
 use kashika_model::{Scene, ShapeKind};
 
 use crate::text::num;
@@ -167,7 +169,7 @@ fn orthogonal(ctx: &Ctx, a: &Endpoint, b: &Endpoint, skip: &[&str]) -> Vec<Plan>
     let field = Field::new(ctx, a, b, skip);
     let mut found = Vec::new();
     for (axis, cross) in [(Axis::X, Hop::Vh), (Axis::Y, Hop::Hv)] {
-        for lane in lanes(ctx.scene, a, b, axis) {
+        for lane in lane_pool(ctx, a, b, axis, skip) {
             let hops = vec![hop(axis.name(), &lane), cross.clone()];
             field.consider(&mut found, hops, (axis.name(), lane.value));
         }
@@ -228,18 +230,31 @@ fn hop(axis: &str, lane: &Lane) -> Hop {
     }
 }
 
-/// Lanes for detours on one axis: the box lanes of [`lanes`], plus the middle of each free
-/// interval (as `inspect --corridors` reports between the endpoints) that holds none of them,
-/// at least `clearance` inside the canvas. The [`DETOUR_LANES`] nearest either endpoint are kept.
-fn detour_lanes(ctx: &Ctx, a: &Endpoint, b: &Endpoint, axis: Axis, skip: &[&str]) -> Vec<Lane> {
+/// Lanes on one axis: those of [`lanes`], plus the middle of each free interval (as
+/// `inspect --corridors` reports between the endpoints) that holds none of them other than a
+/// group's, at least `clearance` inside the canvas.
+fn lane_pool(ctx: &Ctx, a: &Endpoint, b: &Endpoint, axis: Axis, skip: &[&str]) -> Vec<Lane> {
     let scene = ctx.scene;
-    let (pa, pb, band, limit) = match axis {
-        Axis::X => (a.at.x, b.at.x, (a.at.y, b.at.y), scene.size.0),
-        Axis::Y => (a.at.y, b.at.y, (a.at.x, b.at.x), scene.size.1),
+    let (band, limit) = match axis {
+        Axis::X => ((a.at.y, b.at.y), scene.size.0),
+        Axis::Y => ((a.at.x, b.at.x), scene.size.1),
+    };
+    let margin = scene.clearance.max(TOLERANCE);
+    let on_group = |l: &Lane| {
+        l.expr.as_deref().is_some_and(|e| {
+            let id = e.split('.').next().unwrap_or_default();
+            scene
+                .shapes
+                .iter()
+                .any(|s| s.id == id && s.kind == ShapeKind::Group)
+        })
     };
     let mut pool = lanes(scene, a, b, axis);
     for (lo, hi) in free_intervals(ctx, axis, band, (0.0, limit), skip) {
-        if pool.iter().any(|l| lo <= l.value && l.value <= hi) {
+        if pool
+            .iter()
+            .any(|l| lo <= l.value && l.value <= hi && !on_group(l))
+        {
             continue;
         }
         let v = snap(scene, (lo + hi) / 2.0);
@@ -248,12 +263,26 @@ fn detour_lanes(ctx: &Ctx, a: &Endpoint, b: &Endpoint, axis: Axis, skip: &[&str]
         } else {
             (lo + hi) / 2.0
         };
-        pool.push(Lane {
-            value: v,
-            expr: None,
-        });
+        if v >= margin && v <= limit - margin {
+            pool.push(Lane {
+                value: v,
+                expr: None,
+            });
+        }
     }
+    pool
+}
+
+/// Lanes for detours on one axis: the [`lane_pool`] lanes at least `clearance` inside the
+/// canvas. The [`DETOUR_LANES`] nearest either endpoint are kept.
+fn detour_lanes(ctx: &Ctx, a: &Endpoint, b: &Endpoint, axis: Axis, skip: &[&str]) -> Vec<Lane> {
+    let scene = ctx.scene;
+    let (pa, pb, limit) = match axis {
+        Axis::X => (a.at.x, b.at.x, scene.size.0),
+        Axis::Y => (a.at.y, b.at.y, scene.size.1),
+    };
     let margin = scene.clearance.max(TOLERANCE);
+    let mut pool = lane_pool(ctx, a, b, axis, skip);
     pool.retain(|l| l.value >= margin && l.value <= limit - margin);
     pool.sort_by_key(|l| l.expr.is_none());
     let mut out: Vec<Lane> = Vec::new();
@@ -275,7 +304,8 @@ fn snap(scene: &Scene, v: f64) -> f64 {
     }
 }
 
-/// Estimated crossings, near-misses and segments, then length: the order `route` ranks by.
+/// Estimated crossings and group transits, near-misses and segments, then length: the order
+/// `route` ranks by.
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct Estimate(usize, usize, usize, f64);
 
@@ -298,6 +328,8 @@ impl Ord for Estimate {
 /// The obstacles a plan's corners are measured against.
 struct Field<'a> {
     boxes: Vec<(&'a str, Rect, &'a [Pt])>,
+    /// Groups that hold neither endpoint: passing through one is a transit.
+    groups: Vec<&'a [Pt]>,
     pieces: Vec<(Pt, Pt)>,
     starts: Vec<&'a str>,
     ends: Vec<&'a str>,
@@ -312,6 +344,15 @@ impl<'a> Field<'a> {
             boxes: ctx
                 .boxes()
                 .map(|s| (s.shape.id.as_str(), s.shape.rect, s.poly.as_slice()))
+                .collect(),
+            groups: ctx
+                .groups()
+                .map(|g| g.poly.as_slice())
+                .filter(|poly| {
+                    ![from.at, to.at].iter().any(|&p| {
+                        point_in_polygon(p, poly) || boundary_nearest(p, poly).0 <= TOLERANCE
+                    })
+                })
                 .collect(),
             pieces: ctx
                 .lines
@@ -345,7 +386,8 @@ impl<'a> Field<'a> {
     }
 
     /// `None` when the path doubles back, leaves or enters a side anchor the wrong way, or
-    /// enters a box. The first and last segments may touch the boxes they attach to.
+    /// enters a box. The first and last segments may touch the boxes they attach to. Each
+    /// group the path passes through counts as a crossing.
     fn estimate(&self, pts: &[Pt]) -> Option<Estimate> {
         let n = pts.len() - 1;
         if doubles_back(pts) {
@@ -401,13 +443,21 @@ impl<'a> Field<'a> {
                 }
             }
         }
+        crossings += self
+            .groups
+            .iter()
+            .filter(|poly| {
+                pts.windows(2)
+                    .any(|w| !inside_runs(w[0], w[1], poly).is_empty())
+            })
+            .count();
         Some(Estimate(crossings, near, n, length))
     }
 }
 
 /// Lane positions on one axis, inside the canvas: the midpoint between the endpoints, and
-/// `2 × clearance` outside each box edge, written relative to the box's corner so the lane
-/// follows the box. Of lanes within 0.5px of each other only one is kept: one on a box the
+/// `2 × clearance` outside each box or group edge, written relative to its corner so the lane
+/// follows it. Of lanes within 0.5px of each other only one is kept: one on a box the
 /// path starts or ends at, otherwise the box nearest the endpoints, before the midpoint. They
 /// come in that order of preference.
 fn lanes(scene: &Scene, a: &Endpoint, b: &Endpoint, axis: Axis) -> Vec<Lane> {
@@ -431,11 +481,7 @@ fn lanes(scene: &Scene, a: &Endpoint, b: &Endpoint, axis: Axis) -> Vec<Lane> {
             expr: None,
         },
     )];
-    for s in scene
-        .shapes
-        .iter()
-        .filter(|s| s.kind != ShapeKind::Group && s.layer.is_normal())
-    {
+    for s in scene.shapes.iter().filter(|s| s.layer.is_normal()) {
         let (r, id) = (s.rect, &s.id);
         let rank = Rank(false, !owns(id), gap_between(r, ends));
         let (before, after) = match axis {

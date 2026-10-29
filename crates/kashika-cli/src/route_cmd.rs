@@ -151,8 +151,17 @@ fn candidates_text(s: &Suggestion) -> String {
                 .collect();
             crossings.push_str(&format!(" ({})", list.join(", ")));
         }
+        let mut transits = format!("transits={}", c.transits);
+        if !c.transited.is_empty() {
+            let list: Vec<String> = c
+                .transited
+                .iter()
+                .map(|t| format!("{} at ({},{})", t.group, num(t.at.x), num(t.at.y)))
+                .collect();
+            transits.push_str(&format!(" ({})", list.join(", ")));
+        }
         out.push_str(&format!(
-            "#{}  {crossings} near={} segments={} length={}px",
+            "#{}  {crossings} {transits} near={} segments={} length={}px",
             i + 1,
             c.near,
             c.segments,

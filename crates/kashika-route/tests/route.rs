@@ -221,7 +221,9 @@ fn avoids_a_lane_on_a_group_border() {
 box a at (20,20) size (100,40)\n\
 group vpc \"VPC\" at (200,110) size (220,120) style=dashed {\n}\n\
 box b at (300,160) size (100,40)\n";
-    let s = suggest(&req(src, "a.bottom", "b.top", Style::Corner)).unwrap();
+    let mut r = req(src, "a.bottom", "b.top", Style::Corner);
+    r.max = 10;
+    let s = suggest(&r).unwrap();
     let border = s
         .candidates
         .iter()
@@ -239,6 +241,127 @@ box b at (300,160) size (100,40)\n";
             band: [66.0, 104.0]
         })
     );
+}
+
+const TRANSIT: &str = "diagram \"groups\" size (560,260)\n\
+box a \"A\" at (20,100) size (80,50)\n\
+box b \"B\" at (460,100) size (80,50)\n\
+group ns \"namespace\" at (170,40) size (220,170) {\n\
+  box p \"pod\" at (70,110) size (80,40)\n\
+}\n\
+line ab a.right -> b.left end=arrow\n";
+
+#[test]
+fn detours_around_a_group_instead_of_transiting_it() {
+    let mut r = reroute_req(TRANSIT, "ab");
+    r.max = 20;
+    let s = suggest(&r).unwrap();
+    let c = &s.candidates[0];
+    assert_eq!((c.crossings, c.transits, c.near), (0, 0, 0), "{c:?}");
+    assert!(c.transited.is_empty(), "{c:?}");
+    let straight = s
+        .candidates
+        .iter()
+        .find(|c| c.statement == "line ab a.right -> b.left end=arrow")
+        .expect("the straight path, ranked lower");
+    assert_eq!((straight.crossings, straight.transits), (0, 1));
+    assert_eq!(straight.transited[0].group, "ns");
+    assert_eq!(straight.transited[0].at, Pt::new(170.0, 125.0));
+    let src = TRANSIT.replace("line ab a.right -> b.left end=arrow\n", "");
+    agrees_with_check(&src, &s);
+}
+
+const CROSS_OR_TRANSIT: &str = "diagram \"t\" size (490,260)\n\
+box a at (10,20) size (90,40)\n\
+box b at (400,200) size (80,40)\n\
+group g \"G\" at (150,100) size (200,60) {\n}\n\
+line w1 (0,130) -> (140,130)\n\
+line w2 (360,130) -> (490,130)\n";
+
+#[test]
+fn a_transit_ranks_the_same_as_a_crossing() {
+    let mut r = req(CROSS_OR_TRANSIT, "a.right", "b.left", Style::Corner);
+    r.max = 20;
+    let s = suggest(&r).unwrap();
+    let rows: Vec<(usize, usize, usize, usize, &str)> = s
+        .candidates
+        .iter()
+        .map(|c| {
+            (
+                c.crossings,
+                c.transits,
+                c.near,
+                c.segments,
+                c.statement.as_str(),
+            )
+        })
+        .collect();
+    assert!(
+        rows.iter()
+            .all(|&(c, t, n, seg, _)| c + t == 1 && n == 0 && seg == 3),
+        "every lane crosses `w1` or `w2`, or transits `g`, with the same length: {rows:#?}"
+    );
+    assert_eq!(
+        rows[..3],
+        [
+            (
+                1,
+                0,
+                0,
+                3,
+                "line a_b a.right -> x a.tr+(12,0) -> vh b.left end=arrow"
+            ),
+            (
+                1,
+                0,
+                0,
+                3,
+                "line a_b a.right -> x b.tl+(-12,0) -> vh b.left end=arrow"
+            ),
+            (
+                0,
+                1,
+                0,
+                3,
+                "line a_b a.right -> x 250 -> vh b.left end=arrow"
+            ),
+        ],
+        "a tie, broken by lanes on the endpoints' own boxes: {rows:#?}"
+    );
+    assert_eq!(s.candidates[2].transited[0].group, "g");
+    agrees_with_check(CROSS_OR_TRANSIT, &s);
+}
+
+const STACKED: &str = "diagram \"s\" size (600,400)\n\
+group upper \"U\" at (40,20) size (300,160) {\n}\n\
+group lower \"L\" at (40,220) size (520,160) {\n\
+  box t at (60,10) size (80,40)\n\
+}\n\
+box p at (420,40) size (100,50)\n";
+
+#[test]
+fn one_lane_through_the_gap_between_two_groups() {
+    let mut r = req(STACKED, "p.bottom", "t.top", Style::Corner);
+    r.max = 20;
+    let s = suggest(&r).unwrap();
+    let c = &s.candidates[0];
+    assert_eq!(
+        (c.crossings, c.transits, c.near, c.segments),
+        (0, 0, 0, 3),
+        "{c:?}"
+    );
+    assert_eq!(
+        c.statement,
+        "line p_t p.bottom -> y 200 -> hv t.top end=arrow"
+    );
+    assert_eq!(
+        c.corridor,
+        Some(Corridor {
+            axis: "y",
+            band: [186.0, 214.0]
+        })
+    );
+    agrees_with_check(STACKED, &s);
 }
 
 #[test]
@@ -319,16 +442,23 @@ group g \"G\" at (100,100) size (280,180) {\n\
   line ab a.right -> (180,60) end=open label=\"x\" radius=4\n\
 }\n";
 
-fn reroute(src: &str, id: &str, style: Style) -> Result<Suggestion, Error> {
-    suggest(&Request {
+fn reroute_req<'a>(src: &'a str, id: &'a str) -> Request<'a> {
+    Request {
         src,
         from: None,
         to: None,
-        style,
+        style: Style::Corner,
         line: Some(id),
         radius: 8.0,
         max: 3,
         opts: &OPTS,
+    }
+}
+
+fn reroute(src: &str, id: &str, style: Style) -> Result<Suggestion, Error> {
+    suggest(&Request {
+        style,
+        ..reroute_req(src, id)
     })
 }
 
@@ -403,6 +533,12 @@ fn agrees_with_check(src: &str, s: &Suggestion) {
         let count = |codes: &[&str]| mine.iter().filter(|d| codes.contains(&d.code)).count();
         assert_eq!(count(&["through"]), 0, "{}: {mine:#?}", c.statement);
         assert_eq!(count(&["cross"]), c.crossings, "{}: {mine:#?}", c.statement);
+        assert_eq!(
+            count(&["group-transit"]),
+            c.transits,
+            "{}: {mine:#?}",
+            c.statement
+        );
         assert_eq!(
             count(&["near", "shared-segment"]),
             c.near,

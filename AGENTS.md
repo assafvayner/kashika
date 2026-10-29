@@ -12,7 +12,7 @@ In dependency order (`crates/`):
 - `kashika-syntax`: lexer, parser, AST and the whitespace-only formatter.
 - `kashika-model`: resolver; turns the AST into a `Scene` with anchors, attributes, styles and laid-out text (`compile`, `compile_with`). Also the built-in shape library (`shapes.rs`), outlines (`form.rs`), sandboxed file loading (`loader.rs`), imports (`library.rs`), SVG/PNG/JPEG assets (`assets.rs`) and the bundled icons (`icons/`).
 - `kashika-check`: warning lints (one file each under `src/lints/`), suppression, metrics, free intervals and ports, built on a shared `Ctx` of shape polygons and flattened line pieces. `Ctx::boxes()` is boxes and images: the opaque shapes lines must avoid.
-- `kashika-route`: `kashika route` path suggestions. Each candidate is compiled as a real `line` and scored with `kashika_check::check`, so it ranks by the `cross` and `near`/`shared-segment` findings `check` reports (`through` drops it), then segments and length.
+- `kashika-route`: `kashika route` path suggestions. Each candidate is compiled as a real `line` and scored with `kashika_check::check`, so it ranks by the `cross` plus `group-transit` findings (each counted alike, listed apart), then the `near`/`shared-segment` findings `check` reports (`through` drops it), then segments and length.
 - `kashika-render`: `Scene` to SVG, PNG, JPEG and WebP (resvg, jpeg-encoder, image-webp), with images and icons embedded as `data:` URIs, and the `render --force`/`--debug` overlay.
 - `kashika-cli`: the `kashika` binary (`check`, `render`, `inspect`, `route`, `measure`, `fmt`, `icons`, `ref`), text and JSON reports. `ref` pages are Markdown in `crates/kashika-cli/ref/`.
 

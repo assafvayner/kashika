@@ -45,6 +45,14 @@ pub struct Crossing {
     pub at: Pt,
 }
 
+/// A group the path passes through without connecting to anything inside it, and where it
+/// enters, as `check` reports with `group-transit`.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Transit {
+    pub group: String,
+    pub at: Pt,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Corridor {
     /// `"y"` for a horizontal lane (the band is a y range), `"x"` for a vertical one.
@@ -56,6 +64,8 @@ pub struct Corridor {
 pub struct Candidate {
     pub crossings: usize,
     pub crossed: Vec<Crossing>,
+    pub transits: usize,
+    pub transited: Vec<Transit>,
     pub near: usize,
     pub segments: usize,
     pub length: f64,
@@ -296,6 +306,8 @@ fn rank(
         candidates.push(Candidate {
             crossings: s.crossed.len(),
             crossed: s.crossed,
+            transits: s.transited.len(),
+            transited: s.transited,
             near: s.near,
             segments: segments(&line.path, req.style),
             length: s.length.round(),
@@ -320,20 +332,20 @@ fn rank(
         .filter_map(|(c, d)| (!d).then_some(c))
         .collect();
     ranked.sort_by(|(ta, a), (tb, b)| {
-        (a.crossings, a.near, a.segments)
-            .cmp(&(b.crossings, b.near, b.segments))
+        (a.crossings + a.transits, a.near, a.segments)
+            .cmp(&(b.crossings + b.transits, b.near, b.segments))
             .then(a.length.total_cmp(&b.length))
             .then(ta.cmp(tb))
     });
     ranked.into_iter().take(req.max).map(|(_, c)| c).collect()
 }
 
-/// A detour is dropped when a simpler candidate is at least as good on crossings, near-misses
-/// and length.
+/// A detour is dropped when a simpler candidate is at least as good on crossings and
+/// transits, near-misses and length.
 fn dominated(c: &Candidate, simple: &[&Candidate]) -> bool {
     simple.iter().any(|s| {
         s.segments < c.segments
-            && s.crossings <= c.crossings
+            && s.crossings + s.transits <= c.crossings + c.transits
             && s.near <= c.near
             && s.length <= c.length
     })

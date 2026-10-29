@@ -423,26 +423,28 @@ Suggests up to `--max` (default 3) candidate paths from `<from>` to `<to>`. Both
   | `bezier` | smooth paths written with `curve left N` / `right N` where possible, otherwise `curve via` |
 - `--line <id>` reroutes an existing line. The line is ignored as an obstacle, its endpoints are used when `<from>`/`<to>` are omitted, and its attributes are kept in the output.
 - Candidates must not cross into any box (`through`), and paths must keep `clearance`. They are ranked by:
-  1. crossings
+  1. crossings plus group transits: a transit (a `group-transit` finding, one per group the path passes through) weighs the same as a crossing
   2. `near` findings
   3. number of segments
   4. length
   5. on a tie, lanes that follow the endpoints' own boxes: fewer lanes on other boxes, then fewer literal lanes
 
-Each candidate lists these numbers, which line it crosses and where, and the corridor it uses. It is printed as a ready-to-paste `line` statement:
+Each candidate lists these numbers, which line it crosses and where, which group it transits and where it enters it, and the corridor it uses. `crossings` and `transits` are listed separately, and every count is printed even when it is 0. It is printed as a ready-to-paste `line` statement:
 
 ```
-#1  crossings=0 near=0 segments=3 length=412px  via corridor y 200..220
+#1  crossings=0 transits=0 near=0 segments=3 length=412px  via corridor y 200..220
     line app1_db app1.top -> y 210 -> hv pg.left@0.25 end=arrow
-#2  crossings=1 (l_lb3 at (640,210)) near=0 segments=2 length=388px
+#2  crossings=1 (l_lb3 at (640,210)) transits=0 near=0 segments=2 length=388px
     line app1_db app1.right -> hv pg.left@0.25 end=arrow
+#3  crossings=0 transits=1 (vpc at (520,180)) near=0 segments=2 length=396px
+    line app1_db app1.bottom -> vh pg.left@0.25 end=arrow
 ```
 
-Suggestions use anchors and axis targets rather than literals wherever possible, so they survive later moves. `--format json` returns the same data structured. It is a suggestion tool, not a layout engine; the search is bounded:
+Suggestions use anchors and axis targets rather than literals wherever possible, so they survive later moves. `--format json` returns the same data structured: each candidate has `crossings` and `crossed` (`line`, `at`), and `transits` and `transited` (`group`, `at`, the entry point). It is a suggestion tool, not a layout engine; the search is bounded:
 
 - `bezier` tries single curves only. `curve left N` / `right N` is tried only when it leaves and enters side anchors square; `curve via` places its control points out along the side normals, written as offsets from the endpoints' references.
-- `corner` and `arc` try the straight path, `hv`, `vh`, and one lane (`x <lane> -> vh`, `y <lane> -> hv`) at the midpoint or `2 × clearance` outside any box edge. Of lanes within 0.5px of each other only one is kept, preferring a lane written relative to a box the path starts or ends at, then the box nearest the endpoints, then the literal midpoint. Of the one-lane paths that enter no box and leave and enter side anchors square, only the 32 best by estimated crossings, near-misses, segments and length are scored.
-- They also try detours with 3 or 4 elbows through two or three lanes: `x -> y -> hv` and `y -> x -> vh`, which end on the other axis than they start, and `x -> y -> x -> vh` and `y -> x -> y -> hv`, which end on the same one. Detour lanes are the box lanes above plus the middle of each free interval between the endpoints (as `inspect --corridors` reports it), at least `clearance` inside the canvas. Only the 16 lanes per axis nearest either endpoint are used, and of the detours that enter no box and leave and enter side anchors square, only the 32 best by the same estimate are scored.
+- `corner` and `arc` try the straight path, `hv`, `vh`, and one lane (`x <lane> -> vh`, `y <lane> -> hv`) at the midpoint, `2 × clearance` outside any box or group edge, or the middle of a free interval between the endpoints (as `inspect --corridors` reports it) that holds no lane other than a group's, at least `clearance` inside the canvas, written as a literal. Of lanes within 0.5px of each other only one is kept, preferring a lane written relative to a box the path starts or ends at, then the box or group nearest the endpoints, then the literal midpoint. Of the one-lane paths that enter no box and leave and enter side anchors square, only the 32 best by estimated crossings and group transits, near-misses, segments and length are scored.
+- They also try detours with 3 or 4 elbows through two or three lanes: `x -> y -> hv` and `y -> x -> vh`, which end on the other axis than they start, and `x -> y -> x -> vh` and `y -> x -> y -> hv`, which end on the same one. Detour lanes are the same lanes, at least `clearance` inside the canvas. Only the 16 lanes per axis nearest either endpoint are used, and of the detours that enter no box and leave and enter side anchors square, only the 32 best by the same estimate are scored.
 - Paths that double back (a zero-length segment, or one that reverses the segment before it) are dropped, and of paths that draw the same geometry only the first is kept.
 
 A detour lists its second lane as its corridor. When no candidate is clear of every box, `route` prints `no candidate path avoids every box with at most 4 elbows (or 1 curve)` and exits 1.
