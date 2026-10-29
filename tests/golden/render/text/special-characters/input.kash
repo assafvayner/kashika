@@ -1,0 +1,18 @@
+// spec: 6, 7
+// raster: png
+// Symbols, accents, scripts, box drawing in the mono face, and color emoji with skin tone, ZWJ, flag and keycap sequences; ✘ has no glyph.
+diagram "special characters" size (640,480) background=#ffffff
+text arrows "Arrows: → ← ⇒ ↔" at (20,24) align=left
+text checks "Checks: ✓ ✔ ✗ ✘ ★ • …" at (20,52) align=left
+text math "Math: ± × ÷ ≤ ≥ ≠ ≈ ∞ √ ∑ π µ °" at (20,80) align=left
+text money "Currency: $ € £ ¥ ₹ ₿ © ® ™ § ¶" at (20,108) align=left
+text accents "Accents: café naïve Ångström Straße" at (20,136) align=left
+text scripts "Greek: αβγ ΔΣΩ  Cyrillic: Привет мир" at (20,164) align=left
+text boxes "Box drawing: ┌─┬─┐ │ ├─┼─┤ └─┴─┘" at (20,192) align=left
+text emoji "Emoji: 🚀 ✅ ⚠️ 🔥 👍🏽 👩‍💻 🇺🇸 1️⃣" at (20,220) align=left
+text bold "**Ship it 🚀** then `┌─┐ │ └─┘`" at (20,248) align=left
+text big "🔥👍🏽👩‍💻" at (20,290) align=left font-size=32
+box hot "🔥 Hot path" at (20,340) size (160,50)
+box fit "Deploy 🚀✅" at (360,348)
+line l hot.right -> fit.left end=arrow label="✅ ok"
+text code "`┌──────┐`\n`│ mono │`\n`└──────┘`" at (20,420) align=left

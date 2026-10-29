@@ -41,7 +41,7 @@ If a warning is intentional, suppress it narrowly on the line or shape: `allow=c
 | `endpoint-off-edge` | warn | a literal endpoint near but off an outline | use the anchor in the help line |
 | `port-crowding` | warn | two endpoints on a shape within 8px (12px for two crow's feet) | spread them with `side@t` |
 | `group-transit` | warn | a line crosses a group it doesn't connect to (a junction on it that taps into the group counts as connecting) | route around the group |
-| `low-contrast` | warn | text contrast below 3:1, or a `currentColor` icon (every bundled icon) against the fill under it | change the color or fill; an icon follows the shape's `color` |
+| `low-contrast` | warn | text contrast below 3:1 (emoji-only text is skipped), or a `currentColor` icon (every bundled icon) against the fill under it | change the color or fill; an icon follows the shape's `color` |
 | `label-collision` | warn | a label or text overlaps another element, a group's title or border, or a label its own line's marker (or its own line, with `label-side`); or a line crosses a group's title | move it; the help lists clear `t`, the run a label needs, or the title's extent; put text over a box in its block |
 | `out-of-canvas` | warn | an element extends past `size`, or above or left of `(0,0)` (children of a group that itself extends past it aren't reported again) | move it, grow `size`, or leave `size` out to fit the canvas |
 | `off-grid` | warn | a literal is not a multiple of `grid` | round it |
@@ -49,4 +49,4 @@ If a warning is intentional, suppress it narrowly on the line or shape: `allow=c
 | `text-outside-shape` | warn | an absolute block item outside the text area | move it inside the range in the help line |
 | `image-distort` | warn | `fit=stretch` distorts by over 5% | use `fit=contain` |
 | `svg-dropped` | warn | an SVG file's `<image>` (not a `data:` URI) or `foreignObject` is lost when embedded | embed it as a path, or use a separate `image` |
-| `missing-glyph` | warn | text has a character the bundled fonts cannot draw | use Latin, Greek or Cyrillic, or an `icon=`/`image` |
+| `missing-glyph` | warn | text has a character no bundled font can draw (CJK, `✘`, ...) | use Latin, Greek, Cyrillic, box drawing or emoji, or an `icon=`/`image` |

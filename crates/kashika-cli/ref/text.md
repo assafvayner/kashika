@@ -7,7 +7,7 @@
 - A group's label (and sublabel) sits top-left in its title band. `text-align` works on a group, `text-valign` is an error. Keep group titles short: a line leaving a child near the group's top edge often runs through the title.
 - A free `text` is centered on `at`, or aligned to it with `text-align=left|right`, and takes `font-size`, `color` and `muted`. Use it only on empty canvas.
 - `text-area=below` on an SVG shape puts the label under it (`kashika ref shapes`); lines leaving that side collide with it, so route them from another side.
-- The bundled fonts cover Latin, Greek and Cyrillic (`missing-glyph` otherwise; use an `icon=` or `image` for symbols). A tab is four spaces.
+- The bundled fonts cover Latin, Greek, Cyrillic, common symbols and arrows, box drawing (`┌─┐│└┘`, from the mono face) and color emoji, sequences such as `👍🏽`, `👩‍💻` and `🇺🇸` included. Emoji keep their own colors and are 1 em wide. CJK, Hangul and dingbats such as `✘` are `missing-glyph`: use an `icon=` or `image`. A tab is four spaces.
 
 ## Text blocks
 

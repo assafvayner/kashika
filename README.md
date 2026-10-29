@@ -21,4 +21,4 @@ The language is specified in [`docs/spec/language.md`](docs/spec/language.md). A
 
 ## License
 
-Apache-2.0, see [LICENSE](LICENSE). The bundled fonts in `crates/kashika-text/fonts/` are under the SIL Open Font License; their license files sit next to them.
+Apache-2.0, see [LICENSE](LICENSE). The bundled fonts in `crates/kashika-text/fonts/` have their license files next to them: Inter and JetBrains Mono are under the SIL Open Font License, and the emoji are [Twemoji](https://github.com/twitter/twemoji) graphics, Copyright 2019 Twitter, Inc and other contributors, licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), in Mozilla's [Twemoji Mozilla](https://github.com/mozilla/twemoji-colr) v0.7.0 COLR build.

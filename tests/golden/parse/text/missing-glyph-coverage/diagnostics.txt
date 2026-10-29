@@ -1,0 +1,8 @@
+warn[missing-glyph] 7:1-7:43: text 'cjk' uses characters the bundled fonts cannot draw: '日', '本', '한', '국', 'か', 'な'
+  = help: they draw as an empty box; use characters from Latin, Greek, Cyrillic, box drawing or emoji, or an `icon=`/`image`
+  elements: [{"bbox":[[20,101.25],[83,118.75]],"id":"cjk","kind":"text","span":{"col":1,"end_col":43,"end_line":7,"line":7}}]
+  facts: {"codepoints":["U+65E5","U+672C","U+D55C","U+AD6D","U+304B","U+306A"]}
+warn[missing-glyph] 8:1-8:45: text 'dingbats' uses characters the bundled fonts cannot draw: '✘', '☐', '☒'
+  = help: they draw as an empty box; use characters from Latin, Greek, Cyrillic, box drawing or emoji, or an `icon=`/`image`
+  elements: [{"bbox":[[20,131.25],[55.44,148.75]],"id":"dingbats","kind":"text","span":{"col":1,"end_col":45,"end_line":8,"line":8}}]
+  facts: {"codepoints":["U+2718","U+2610","U+2612"]}

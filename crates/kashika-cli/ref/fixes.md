@@ -10,5 +10,5 @@ Errors stop `render` (unless `--force`) and are listed first; fix them before wa
 - `label-collision`: move a line label to a `label@t` from the help, widen the gap to the run the help names, or use `label-side`. Route lines below a group's title band, or move the title with `text-align=right` on the group. A free `text` over a box goes into the box's block.
 - `near-axis` / `jog`: a slant or a small step between runs a few px apart; use the level anchor from the help (`cdn.left@0.42`), or `hv`/`vh`.
 - `out-of-canvas`: leave `size` off the `diagram` line so the canvas fits, and keep content at x, y ≥ 0.
-- `missing-glyph`: replace CJK, emoji and similar characters with an `icon=` or `image`.
+- `missing-glyph`: replace CJK and similar characters with an `icon=` or `image`; emoji and box drawing are covered.
 - `text-conflict`: move `label`/`sublabel` into the block as its first items, or give every block item an `at`.

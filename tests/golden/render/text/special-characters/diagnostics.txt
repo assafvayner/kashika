@@ -1,0 +1,4 @@
+warn[missing-glyph] 6:1-6:58: text 'checks' uses a character the bundled fonts cannot draw: '✘'
+  = help: they draw as an empty box; use characters from Latin, Greek, Cyrillic, box drawing or emoji, or an `icon=`/`image`
+  elements: [{"bbox":[[20,43.25],[183.91,60.75]],"id":"checks","kind":"text","span":{"col":1,"end_col":58,"end_line":6,"line":6}}]
+  facts: {"codepoints":["U+2718"]}

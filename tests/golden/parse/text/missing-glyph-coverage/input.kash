@@ -1,0 +1,8 @@
+// spec: 6, 7
+// Fallback coverage: box drawing (mono face), emoji and their sequences, and symbols draw; CJK, Hangul, ✘ and ☐ still warn.
+diagram "glyph coverage" size (400,300)
+text box "┌─┐ │ └─┘ `├─┤` **╔═╗**" at (20,20) align=left
+text emoji "🚀 ✅ ⚠️ 🔥 👍🏽 👩‍💻 🇺🇸 1️⃣ ✔ ✖ ☑" at (20,50) align=left
+text symbols "→ ⇒ ✓ ✗ ★ ± ≠ ∞ € ₹ `₹ ★`" at (20,80) align=left
+text cjk "日本 한국 かな" at (20,110) align=left
+text dingbats "✘ ☐ ☒" at (20,140) align=left

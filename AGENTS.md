@@ -8,7 +8,7 @@ In dependency order (`crates/`):
 
 - `kashika-diag`: `Diagnostic`, severity, spans and the lint code list.
 - `kashika-geom`: points, rects and path math (flattening, length, rounded corners), intersections, unit paths and convex hulls.
-- `kashika-text`: bundled fonts (`fonts/`, OFL), inline markup, measurement, block layout and glyph outlines.
+- `kashika-text`: bundled fonts (`fonts/`, OFL, and Twemoji under CC BY 4.0), inline markup, font fallback, measurement, emoji shaping (rustybuzz), block layout, glyph outlines and COLR color layers.
 - `kashika-syntax`: lexer, parser, AST and the whitespace-only formatter.
 - `kashika-model`: resolver; turns the AST into a `Scene` with anchors, attributes, styles and laid-out text (`compile`, `compile_with`). Also the built-in shape library (`shapes.rs`), outlines (`form.rs`), sandboxed file loading (`loader.rs`), imports (`library.rs`), SVG/PNG/JPEG assets (`assets.rs`) and the bundled icons (`icons/`).
 - `kashika-check`: warning lints (one file each under `src/lints/`), suppression, metrics, free intervals and ports, built on a shared `Ctx` of shape polygons and flattened line pieces. `Ctx::boxes()` is boxes and images: the opaque shapes lines must avoid.
@@ -69,7 +69,7 @@ Each kind has one registry. The `ref` pages print their name lists from it throu
 - **Icon:** add `crates/kashika-model/icons/<name>.svg`, neutral and license-clean, painting with `currentColor`, and a `<name> = ["keyword", ...]` line to `icons/keywords.toml`, whose order is the listing order. `build.rs` generates `BUNDLED_ICONS` and `ICON_KEYWORDS` from the two. `tests/registry.rs` fails on an SVG without keywords or keywords without an SVG. Add a `render/` golden with `icon="<name>"` (`coverage/builtin-shapes-and-icons`) and list it in the spec's licensing rule (§3a).
 - **Style:** add a `BuiltinStyle` to `STYLES` in `crates/kashika-model/src/style.rs`; `ref styles` prints its colors. List it in the spec's built-in styles (§3).
 - **Line end:** add a `Marker` variant in `crates/kashika-model/src/scene.rs` to `ALL` and `name()` (which make `NAMES`), with its `length()` and `half_width()`, then draw it in `kashika-render/src/svg.rs` and give it an outline in `kashika-check/src/lints/collision.rs`. Describe it in the spec (§5 `start=`/`end=`) and `ref paths`, and add a golden that draws it.
-- **Font:** add the file and its license to `crates/kashika-text/fonts/`, load it in `font.rs` next to the `Font` faces, and say in the spec (§6) which text uses it. Metrics change for every label, so re-bless all goldens and example renders and review the diff.
+- **Font:** add the file and its license to `crates/kashika-text/fonts/`, load it in `font.rs` as a `FaceId` (in `font_files()` order), put it in the fallback `chain`, and say in the spec (§6) which text uses it. A face ahead of others in a chain changes metrics for every label it covers, so re-bless all goldens and example renders and review the diff; a face added last changes only text that was `missing-glyph`. Credit its license in the README.
 
 ## Invariants
 
@@ -82,7 +82,7 @@ Each kind has one registry. The `ref` pages print their name lists from it throu
 - `route` never edits files.
 - All file access in the model goes through `loader.rs`, which enforces local-only paths, the project root and the search path. The model never reads the environment; the CLI passes `KASHIKA_ICON_PATH` in `Options`.
 - Embedded SVG is always the usvg re-serialization, never the input bytes.
-- Text is measured and drawn only with the fonts in `crates/kashika-text/fonts/`. SVG text is glyph outlines (`<path aria-label=…>`), never `<text>`, so checks and every viewer agree.
+- Text is measured and drawn only with the fonts in `crates/kashika-text/fonts/` (Inter, JetBrains Mono and the Twemoji emoji font), each character by the same fallback face in both. SVG text is glyph outlines (`<path aria-label=…>`; a line with emoji is a `<g aria-label=…>` of the text path and one path per COLR color layer), never `<text>`, so checks and every viewer agree.
 - Nothing paints the canvas unless `background=` is set. Line labels hide their own line with a per-line SVG `<mask>` of their rects, never with a painted rect, so the fill beneath shows through.
 
 ## Conventions
