@@ -12,7 +12,7 @@ pub const SCHEMA: &str = "kashika.icons/1";
 pub struct IconsArgs {
     /// Directories to scan (default: the KASHIKA_ICON_PATH entries)
     dirs: Vec<PathBuf>,
-    /// Only list entries whose name or path contains this term; exits 1 when nothing matches
+    /// Only list entries whose name, path or keyword contains this term; exits 1 when nothing matches
     #[arg(long)]
     search: Option<String>,
     #[arg(long, value_enum, default_value_t = Format::Text)]
@@ -58,9 +58,13 @@ pub struct Entry {
     pub path: String,
     pub size: Option<[f64; 2]>,
     pub library: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub matched_keyword: Option<String>,
+    #[serde(skip)]
+    keywords: &'static [&'static str],
 }
 
-/// Bundled icons first, then every image and `.kash` shape under `dirs`, in sorted order.
+/// Bundled icons and built-in shapes first, then every image and `.kash` shape under `dirs`, in sorted order.
 pub fn list(dirs: &[PathBuf], search: Option<&str>) -> Vec<Entry> {
     let mut out: Vec<Entry> = kashika_model::BUNDLED_ICONS
         .iter()
@@ -71,8 +75,18 @@ pub fn list(dirs: &[PathBuf], search: Option<&str>) -> Vec<Entry> {
                 .ok()
                 .map(|(w, h)| [w, h]),
             library: "kashika".into(),
+            matched_keyword: None,
+            keywords: keywords(kashika_model::ICON_KEYWORDS, name),
         })
         .collect();
+    out.extend(kashika_model::BUILTIN_SHAPES.iter().map(|name| Entry {
+        name: name.to_string(),
+        path: format!("builtin:shape:{name}"),
+        size: None,
+        library: "kashika".into(),
+        matched_keyword: None,
+        keywords: keywords(kashika_model::SHAPE_KEYWORDS, name),
+    }));
     for dir in dirs {
         let mut files = Vec::new();
         walk(dir, &mut files);
@@ -83,11 +97,26 @@ pub fn list(dirs: &[PathBuf], search: Option<&str>) -> Vec<Entry> {
     }
     if let Some(term) = search {
         let term = term.to_lowercase();
-        out.retain(|e| {
-            e.name.to_lowercase().contains(&term) || e.path.to_lowercase().contains(&term)
+        out.retain_mut(|e| {
+            if e.name.to_lowercase().contains(&term) || e.path.to_lowercase().contains(&term) {
+                return true;
+            }
+            e.matched_keyword = e
+                .keywords
+                .iter()
+                .find(|k| k.contains(&term))
+                .map(|k| k.to_string());
+            e.matched_keyword.is_some()
         });
     }
     out
+}
+
+fn keywords(table: &'static [(&str, &[&str])], name: &str) -> &'static [&'static str] {
+    table
+        .iter()
+        .find(|(n, _)| *n == name)
+        .map_or(&[], |(_, k)| *k)
 }
 
 fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
@@ -136,6 +165,8 @@ fn entries(dir: &Path, f: &Path, out: &mut Vec<Entry>) {
                 path: rel,
                 size,
                 library,
+                matched_keyword: None,
+                keywords: &[],
             });
         }
         "kash" => {
@@ -150,6 +181,8 @@ fn entries(dir: &Path, f: &Path, out: &mut Vec<Entry>) {
                         path: rel.clone(),
                         size: None,
                         library: library.clone(),
+                        matched_keyword: None,
+                        keywords: &[],
                     });
                 }
             }
@@ -164,9 +197,13 @@ pub fn text(entries: &[Entry]) -> String {
         let size = e
             .size
             .map_or_else(|| "-".to_string(), |[w, h]| format!("{w}x{h}"));
+        let note = e
+            .matched_keyword
+            .as_ref()
+            .map_or(String::new(), |k| format!("  (matches \"{k}\")"));
         out.push_str(&format!(
-            "{:<16} {:<32} {:<9} {}\n",
-            e.name, e.path, size, e.library
+            "{:<16} {:<32} {:<9} {}{}\n",
+            e.name, e.path, size, e.library, note
         ));
     }
     out

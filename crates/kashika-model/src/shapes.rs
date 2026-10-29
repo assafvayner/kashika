@@ -7,6 +7,25 @@ pub const BUILTIN_SHAPES: &[&str] = &[
     "rect", "rounded", "cylinder", "diamond", "ellipse", "hexagon", "doc", "cloud", "person",
 ];
 
+/// Search keywords per built-in shape, for `kashika icons --search`.
+pub const SHAPE_KEYWORDS: &[(&str, &[&str])] = &[
+    ("rect", &[]),
+    ("rounded", &["process", "step"]),
+    (
+        "cylinder",
+        &["db", "database", "storage", "datastore", "sql"],
+    ),
+    ("diamond", &["decision", "condition"]),
+    ("ellipse", &["circle", "oval", "state"]),
+    ("hexagon", &["service", "component"]),
+    ("doc", &["document", "file", "page"]),
+    ("cloud", &["internet", "saas", "external"]),
+    (
+        "person",
+        &["user", "users", "people", "human", "account", "actor"],
+    ),
+];
+
 /// Largest cylinder cap height in px.
 const CAP: f64 = 20.0;
 

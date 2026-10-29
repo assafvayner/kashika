@@ -18,12 +18,12 @@ use kashika_diag::Diagnostic;
 
 pub use assets::{MAX_RASTER_PIXELS, MAX_RASTER_SIDE, probe};
 pub use form::Form;
-pub use icons::BUNDLED_ICONS;
+pub use icons::{BUNDLED_ICONS, ICON_KEYWORDS};
 pub use kashika_text::{Font, PlacedLine, Run};
 pub use loader::Options;
 pub use resolve::{resolve, resolve_library_with, resolve_with};
 pub use scene::*;
-pub use shapes::{BUILTIN_SHAPES, builtin_source};
+pub use shapes::{BUILTIN_SHAPES, SHAPE_KEYWORDS, builtin_source};
 pub use style::{FontWeight, Padding, StrokeStyle, Style};
 pub use textlayout::{TextItem, TextRole};
 

@@ -210,6 +210,48 @@ fn icons_lists_bundled_icons_and_directory_contents() {
 }
 
 #[test]
+fn icons_search_matches_keywords() {
+    kashika()
+        .args(["icons", "--search", "user"])
+        .assert()
+        .code(0)
+        .stdout(
+            predicate::str::contains("builtin:person")
+                .and(predicate::str::contains("builtin:shape:person"))
+                .and(predicate::str::contains("(matches \"user\")")),
+        );
+    kashika()
+        .args(["icons", "--search", "database"])
+        .assert()
+        .code(0)
+        .stdout(
+            predicate::str::contains("cylinder")
+                .and(predicate::str::contains("(matches \"database\")")),
+        );
+    kashika()
+        .args(["icons", "--search", "cylinder"])
+        .assert()
+        .code(0)
+        .stdout(
+            predicate::str::contains("cylinder").and(predicate::str::contains("matches").not()),
+        );
+    let out = kashika()
+        .args(["icons", "--search", "db", "--format", "json"])
+        .output()
+        .unwrap();
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(v["icons"][0]["name"], "cylinder");
+    assert_eq!(v["icons"][0]["matched_keyword"], "db");
+    kashika()
+        .args(["icons", "--search", "zzznomatch"])
+        .assert()
+        .code(1)
+        .stderr(predicate::str::contains(
+            "no icons or shapes match `zzznomatch`",
+        ));
+}
+
+#[test]
 fn icons_defaults_to_the_icon_path() {
     let dir = tempfile::tempdir().unwrap();
     write(dir.path(), "db.svg", SVG);

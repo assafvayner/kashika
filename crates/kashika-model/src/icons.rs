@@ -8,6 +8,19 @@ pub const BUNDLED_ICONS: &[(&str, &str)] = &[
     ("person", include_str!("../icons/person.svg")),
 ];
 
+/// Search keywords per bundled icon, for `kashika icons --search`.
+pub const ICON_KEYWORDS: &[(&str, &[&str])] = &[
+    ("server", &["host", "machine", "vm", "compute", "backend"]),
+    ("browser", &["web", "client", "frontend", "ui"]),
+    ("queue", &["mq", "broker", "messages", "kafka", "stream"]),
+    ("lock", &["security", "auth", "secret", "encryption"]),
+    ("cloud", &["internet", "saas", "external"]),
+    (
+        "person",
+        &["user", "users", "people", "human", "account", "actor"],
+    ),
+];
+
 pub(crate) fn bundled(name: &str) -> Option<(&'static str, &'static str)> {
     BUNDLED_ICONS.iter().copied().find(|(n, _)| *n == name)
 }

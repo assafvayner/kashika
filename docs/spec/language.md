@@ -324,7 +324,7 @@ kashika inspect <file|-> [ids...] [--ports] [--corridors <x1,y1,x2,y2>]
 kashika fmt     <file|-> [--check]            // `-` formats stdin to stdout
 kashika measure "<text>"... [--size N] [--weight bold]
 kashika route   <file|-> <from> <to> [corner|arc|bezier] [--line <id>]
-kashika icons   [dir...] [--search <term>]     // list importable shapes and icons: name, path, natural size, library
+kashika icons   [dir...] [--search <term>]     // list built-in shapes, bundled icons and importable files: name, path, natural size, library; --search matches names and built-in keywords ("user" finds person)
 kashika ref     [topic] [--json]          // topics: syntax anchors paths shapes styles metrics lints <lint-code> examples cli
 kashika --version
 ```
