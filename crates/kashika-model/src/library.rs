@@ -9,7 +9,7 @@ use kashika_syntax::ast::{self, ShapeBody, Stmt};
 use crate::assets::Store;
 use crate::attrs::{self, Attrs};
 use crate::loader::{FileError, Found, Loader};
-use crate::shapes::{BUILTIN_SHAPES, UnitShape};
+use crate::shapes::{UnitShape, builtin_shape, shape_names};
 use crate::style::{self, StyleProps};
 
 /// Deepest chain of nested imports followed before giving up.
@@ -439,7 +439,7 @@ impl Library {
 
     /// Whether `s` may be defined under `prefix`: not a built-in name, not defined yet.
     fn name_free(&self, s: &ast::ShapeDef, prefix: &str, ctx: &mut Ctx) -> bool {
-        if BUILTIN_SHAPES.contains(&s.name.name.as_str()) {
+        if builtin_shape(&s.name.name).is_some() {
             ctx.diags.push(
                 Diagnostic::error(
                     "duplicate-style",
@@ -594,16 +594,15 @@ pub(crate) fn shape_name(
         diags.push(attrs::type_err(a, "a shape name"));
         return None;
     };
-    if BUILTIN_SHAPES.contains(&w.as_str()) {
+    if builtin_shape(w).is_some() {
         return Some(w.clone());
     }
     let name = format!("{ns}{w}");
     if shapes.contains_key(&name) {
         return Some(name);
     }
-    let names = BUILTIN_SHAPES
-        .iter()
-        .copied()
+    let names = shape_names()
+        .map(|n| -> &str { n })
         .chain(shapes.keys().filter_map(|k| k.strip_prefix(ns)));
     let mut d = Diagnostic::error("unknown-shape", a.span, format!("unknown shape `{w}`"));
     if let Some(s) = did_you_mean(w, names) {

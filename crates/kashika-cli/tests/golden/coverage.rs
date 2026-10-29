@@ -197,7 +197,7 @@ fn builtin_shapes_and_icons() -> Result<(), Failed> {
         .filter(|c| c.suite == Suite::Render)
         .collect();
     let mut problems = Vec::new();
-    for shape in kashika_model::BUILTIN_SHAPES {
+    for shape in kashika_model::shape_names() {
         let needle = format!("shape={shape}\n");
         let needle_sp = format!("shape={shape} ");
         if !render

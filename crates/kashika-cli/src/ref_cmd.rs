@@ -1,6 +1,7 @@
 use std::process::ExitCode;
 
 use kashika_diag::did_you_mean;
+use kashika_model::StrokeStyle;
 
 use crate::Format;
 
@@ -32,8 +33,9 @@ fn shapes() -> String {
     let mut t = String::from(
         "| shape | unit path (120x80 box) | outline | text area |\n|---|---|---|---|\n",
     );
-    for name in kashika_model::BUILTIN_SHAPES {
-        if let Some((d, outline, a)) = kashika_model::builtin_source(name, 120.0, 80.0) {
+    for s in kashika_model::SHAPES {
+        if let Some((d, outline, a)) = s.source.map(|f| f(120.0, 80.0)) {
+            let name = s.name;
             let n = |v: f64| format!("{}", (v * 1000.0).round() / 1000.0);
             let d: Vec<String> = d
                 .split_whitespace()
@@ -50,6 +52,51 @@ fn shapes() -> String {
         }
     }
     SHAPES.replace("{builtins}", t.trim_end())
+}
+
+/// `` `a`, `b`, `c` `` for a list of names.
+fn code_list<'a>(names: impl IntoIterator<Item = &'a str>) -> String {
+    names
+        .into_iter()
+        .map(|n| format!("`{n}`"))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn styles_table() -> String {
+    let mut t = String::from("| built-in | fill | stroke |\n|---|---|---|");
+    for s in kashika_model::STYLES {
+        let fill = match s.fill {
+            "none" => "none".to_string(),
+            f => format!("`{f}`"),
+        };
+        let mut stroke = format!("`{}`", s.stroke);
+        match s.stroke_style {
+            Some(StrokeStyle::Dashed) => stroke.push_str(", dashed"),
+            Some(StrokeStyle::Dotted) => stroke.push_str(", dotted"),
+            Some(StrokeStyle::Solid) | None => {}
+        }
+        if let Some(c) = s.color {
+            stroke.push_str(&format!(", text `{c}`"));
+        }
+        t.push_str(&format!("\n| `{}` | {fill} | {stroke} |", s.name));
+    }
+    t
+}
+
+/// Fills the `{shapes}`, `{icons}`, `{styles}` and `{markers}` placeholders from the
+/// built-in registries, so the pages never drift from them.
+fn fill(md: &str) -> String {
+    md.replace("{shapes}", &code_list(kashika_model::shape_names()))
+        .replace(
+            "{icons}",
+            &code_list(kashika_model::BUNDLED_ICONS.iter().map(|(n, _)| *n)),
+        )
+        .replace("{styles}", &styles_table())
+        .replace(
+            "{markers}",
+            &code_list(kashika_model::Marker::NAMES.iter().copied()),
+        )
 }
 
 fn metrics() -> String {
@@ -72,6 +119,10 @@ fn metrics() -> String {
 }
 
 pub fn page(topic: Option<&str>) -> Result<String, String> {
+    raw_page(topic).map(|md| fill(&md))
+}
+
+fn raw_page(topic: Option<&str>) -> Result<String, String> {
     let Some(topic) = topic else {
         let ex = examples();
         return Ok([RULES, SYNTAX, ANCHORS, PATHS, LINTS, ex.as_str(), LIMITS].join("\n"));

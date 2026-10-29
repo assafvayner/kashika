@@ -23,8 +23,8 @@ pub use kashika_text::{Font, PlacedLine, Run};
 pub use loader::Options;
 pub use resolve::{attribute_keys, resolve, resolve_library_with, resolve_with};
 pub use scene::*;
-pub use shapes::{BUILTIN_SHAPES, SHAPE_KEYWORDS, builtin_source};
-pub use style::{FontWeight, Padding, StrokeStyle, Style};
+pub use shapes::{BuiltinShape, SHAPES, ShapeSource, builtin_shape, builtin_source, shape_names};
+pub use style::{BuiltinStyle, FontWeight, Padding, STYLES, StrokeStyle, Style};
 pub use textlayout::{TextItem, TextRole};
 
 /// Parses and resolves a source file. Always returns a (possibly partial) scene, so tools

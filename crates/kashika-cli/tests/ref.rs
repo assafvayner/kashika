@@ -201,7 +201,7 @@ fn assert_blocks_clean_and_formatted(blocks: Vec<String>) {
 #[test]
 fn shapes_page_lists_every_builtin_shape() {
     let p = page(&["shapes"]);
-    for name in kashika_model::BUILTIN_SHAPES {
+    for name in kashika_model::shape_names() {
         assert!(p.contains(&format!("\n| `{name}`")), "missing {name}");
     }
 }
@@ -229,4 +229,60 @@ fn skill_points_at_real_ref_topics() {
         checked > 0,
         "SKILL.md should point at `kashika ref <topic>` pages"
     );
+}
+
+/// Every token inside the inline code spans and code blocks of `md`.
+fn code_tokens(md: &str) -> std::collections::BTreeSet<&str> {
+    let ticks = |s: &str| s.len() - s.trim_start_matches('`').len();
+    let mut code = Vec::new();
+    let mut rest = md;
+    while let Some(i) = rest.find('`') {
+        let n = ticks(&rest[i..]);
+        let body = &rest[i + n..];
+        let mut close = None;
+        let mut from = 0;
+        while let Some(j) = body[from..].find('`') {
+            let k = ticks(&body[from + j..]);
+            if k == n {
+                close = Some(from + j);
+                break;
+            }
+            from += j + k;
+        }
+        match close {
+            Some(j) => {
+                code.push(&body[..j]);
+                rest = &body[j + n..];
+            }
+            None => rest = body,
+        }
+    }
+    code.into_iter()
+        .flat_map(|c| c.split(|c: char| !(c.is_ascii_alphanumeric() || c == '-' || c == '_')))
+        .filter(|t| !t.is_empty())
+        .collect()
+}
+
+#[test]
+fn skill_and_spec_name_every_builtin_asset() {
+    let shapes = kashika_model::shape_names().map(|n| ("shape", n));
+    let icons = kashika_model::BUNDLED_ICONS
+        .iter()
+        .map(|(n, _)| ("icon", *n));
+    let styles = kashika_model::STYLES.iter().map(|s| ("style", s.name));
+    let markers = kashika_model::Marker::NAMES
+        .iter()
+        .map(|n| ("line end", *n));
+    let all: Vec<(&str, &str)> = shapes.chain(icons).chain(styles).chain(markers).collect();
+    for doc in ["skills/kashika/SKILL.md", "docs/spec/language.md"] {
+        let text =
+            std::fs::read_to_string(format!("{}/../../{doc}", env!("CARGO_MANIFEST_DIR"))).unwrap();
+        let tokens = code_tokens(&text);
+        for (kind, name) in &all {
+            assert!(
+                tokens.contains(name),
+                "{doc} never names the built-in {kind} `{name}` in code"
+            );
+        }
+    }
 }

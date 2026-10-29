@@ -90,13 +90,17 @@ fn group_outline_polygon_is_its_rect() {
     assert_eq!(g.outline_polygon().len(), 4);
 }
 
-const BUILTINS: [&str; 7] = [
-    "cylinder", "diamond", "ellipse", "hexagon", "doc", "cloud", "person",
-];
+/// The built-in shapes drawn from unit paths: all but `rect` and `rounded`.
+fn path_shapes() -> impl Iterator<Item = &'static str> {
+    kashika_model::SHAPES
+        .iter()
+        .filter(|s| s.source.is_some())
+        .map(|s| s.name)
+}
 
 #[test]
 fn every_builtin_shape_resolves_inside_its_box() {
-    for name in BUILTINS {
+    for name in path_shapes() {
         let s = ok(&format!(
             "box a \"A\" at (0,0) size (160,100) shape={name}\n"
         ));
@@ -178,7 +182,7 @@ fn builtin_text_areas() {
 #[test]
 fn builtin_text_areas_stay_inside_the_outline() {
     use kashika_geom::{boundary_nearest, point_in_polygon};
-    for name in BUILTINS {
+    for name in path_shapes() {
         for (w, h) in [
             (120, 80),
             (60, 160),
@@ -248,7 +252,7 @@ const BIG: &str = "diagram \"t\" size (4000,4000)\n";
 
 #[test]
 fn fitted_sizes_hold_their_text_and_are_minimal() {
-    for name in ["rect", "rounded"].into_iter().chain(BUILTINS) {
+    for name in kashika_model::shape_names() {
         for size in [9, 12, 14, 20, 28] {
             for label in ["Q", "Payments API", "Two\\nlines here"] {
                 let (s, d) = compile(&format!(
@@ -295,7 +299,7 @@ fn unknown_shape_suggests_a_name() {
 
 #[test]
 fn label_overflow_suggests_a_size_that_fits_the_shape() {
-    for name in BUILTINS {
+    for name in path_shapes() {
         let d = errors(&format!(
             "box a \"A rather long label\" at (0,0) size (60,30) shape={name}\n"
         ));

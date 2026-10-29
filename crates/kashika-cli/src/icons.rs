@@ -79,13 +79,13 @@ pub fn list(dirs: &[PathBuf], search: Option<&str>) -> Vec<Entry> {
             keywords: keywords(kashika_model::ICON_KEYWORDS, name),
         })
         .collect();
-    out.extend(kashika_model::BUILTIN_SHAPES.iter().map(|name| Entry {
-        name: name.to_string(),
-        path: format!("builtin:shape:{name}"),
+    out.extend(kashika_model::SHAPES.iter().map(|s| Entry {
+        name: s.name.to_string(),
+        path: format!("builtin:shape:{}", s.name),
         size: None,
         library: "kashika".into(),
         matched_keyword: None,
-        keywords: keywords(kashika_model::SHAPE_KEYWORDS, name),
+        keywords: s.keywords,
     }));
     for dir in dirs {
         let mut files = Vec::new();

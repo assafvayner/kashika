@@ -1,0 +1,8 @@
+# Search keywords per bundled icon, for `kashika icons --search`. Every `<name>.svg` in
+# this directory needs a line here; the lines set the order icons are listed in.
+server = ["host", "machine", "vm", "compute", "backend"]
+browser = ["web", "client", "frontend", "ui"]
+queue = ["mq", "broker", "messages", "kafka", "stream"]
+lock = ["security", "auth", "secret", "encryption"]
+cloud = ["internet", "saas", "external"]
+person = ["user", "users", "people", "human", "account", "actor"]

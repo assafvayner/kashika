@@ -23,14 +23,54 @@ pub fn def_keys() -> Vec<&'static str> {
         .collect()
 }
 
-pub const BUILTIN_STYLES: &[&str] = &[
-    "service",
-    "datastore",
-    "external",
-    "queue",
-    "boundary",
-    "note",
+/// A built-in style: colors only, so it sets no shape or size.
+#[derive(Debug, Clone, Copy)]
+pub struct BuiltinStyle {
+    pub name: &'static str,
+    pub fill: &'static str,
+    pub stroke: &'static str,
+    pub stroke_style: Option<StrokeStyle>,
+    /// The text color, when the style sets one.
+    pub color: Option<&'static str>,
+}
+
+/// Every built-in style, in the order docs list them.
+pub const STYLES: &[BuiltinStyle] = &[
+    BuiltinStyle::colors("service", "#e8f0fe", "#1a73e8"),
+    BuiltinStyle::colors("datastore", "#e6f4ea", "#137333"),
+    BuiltinStyle::colors("external", "#f1f3f4", "#5f6368"),
+    BuiltinStyle::colors("queue", "#fef7e0", "#b06000"),
+    BuiltinStyle {
+        name: "boundary",
+        fill: "none",
+        stroke: "#94a3b8",
+        stroke_style: Some(StrokeStyle::Dashed),
+        color: Some("#475569"),
+    },
+    BuiltinStyle::colors("note", "#fffbe6", "#d4b106"),
 ];
+
+impl BuiltinStyle {
+    const fn colors(name: &'static str, fill: &'static str, stroke: &'static str) -> Self {
+        BuiltinStyle {
+            name,
+            fill,
+            stroke,
+            stroke_style: None,
+            color: None,
+        }
+    }
+
+    pub fn props(&self) -> StyleProps {
+        StyleProps {
+            fill: Some(self.fill.into()),
+            stroke: Some(self.stroke.into()),
+            stroke_style: self.stroke_style,
+            color: self.color.map(Into::into),
+            ..StyleProps::default()
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -176,28 +216,10 @@ impl StyleProps {
 }
 
 pub fn builtin(name: &str) -> Option<StyleProps> {
-    let (fill, stroke) = match name {
-        "service" => ("#e8f0fe", "#1a73e8"),
-        "datastore" => ("#e6f4ea", "#137333"),
-        "external" => ("#f1f3f4", "#5f6368"),
-        "queue" => ("#fef7e0", "#b06000"),
-        "note" => ("#fffbe6", "#d4b106"),
-        "boundary" => {
-            return Some(StyleProps {
-                fill: Some("none".into()),
-                stroke: Some("#94a3b8".into()),
-                stroke_style: Some(StrokeStyle::Dashed),
-                color: Some("#475569".into()),
-                ..StyleProps::default()
-            });
-        }
-        _ => return None,
-    };
-    Some(StyleProps {
-        fill: Some(fill.into()),
-        stroke: Some(stroke.into()),
-        ..StyleProps::default()
-    })
+    STYLES
+        .iter()
+        .find(|s| s.name == name)
+        .map(BuiltinStyle::props)
 }
 
 #[cfg(test)]

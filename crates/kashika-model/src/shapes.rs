@@ -2,29 +2,79 @@ use std::f64::consts::FRAC_1_SQRT_2;
 
 use kashika_geom::{PathSeg, Rect, parse_unit_path};
 
-/// Every built-in `shape=` name. `rect` and `rounded` use native outlines; the rest are unit paths.
-pub const BUILTIN_SHAPES: &[&str] = &[
-    "rect", "rounded", "cylinder", "diamond", "ellipse", "hexagon", "doc", "cloud", "person",
+/// Builds a unit-path shape for a `w`×`h` box: path data, outline subpath (1-based) and
+/// unit text area.
+pub type ShapeSource = fn(f64, f64) -> (String, usize, Rect);
+
+/// A built-in `shape=`.
+#[derive(Debug, Clone, Copy)]
+pub struct BuiltinShape {
+    pub name: &'static str,
+    /// Search keywords for `kashika icons --search`.
+    pub keywords: &'static [&'static str],
+    /// The unit path, outline subpath (1-based) and unit text area on a `w`×`h` box;
+    /// `None` for `rect` and `rounded`, which use native outlines.
+    pub source: Option<ShapeSource>,
+}
+
+/// Every built-in shape, in the order docs and `kashika icons` list them.
+pub const SHAPES: &[BuiltinShape] = &[
+    BuiltinShape {
+        name: "rect",
+        keywords: &["box", "rectangle", "square"],
+        source: None,
+    },
+    BuiltinShape {
+        name: "rounded",
+        keywords: &["process", "step"],
+        source: None,
+    },
+    BuiltinShape {
+        name: "cylinder",
+        keywords: &["db", "database", "storage", "datastore", "sql"],
+        source: Some(cylinder),
+    },
+    BuiltinShape {
+        name: "diamond",
+        keywords: &["decision", "condition"],
+        source: Some(diamond),
+    },
+    BuiltinShape {
+        name: "ellipse",
+        keywords: &["circle", "oval", "state"],
+        source: Some(ellipse),
+    },
+    BuiltinShape {
+        name: "hexagon",
+        keywords: &["service", "component"],
+        source: Some(hexagon),
+    },
+    BuiltinShape {
+        name: "doc",
+        keywords: &["document", "file", "page"],
+        source: Some(doc),
+    },
+    BuiltinShape {
+        name: "cloud",
+        keywords: &["internet", "saas", "external"],
+        source: Some(cloud),
+    },
+    BuiltinShape {
+        name: "person",
+        keywords: &["user", "users", "people", "human", "account", "actor"],
+        source: Some(person),
+    },
 ];
 
-/// Search keywords per built-in shape, for `kashika icons --search`.
-pub const SHAPE_KEYWORDS: &[(&str, &[&str])] = &[
-    ("rect", &[]),
-    ("rounded", &["process", "step"]),
-    (
-        "cylinder",
-        &["db", "database", "storage", "datastore", "sql"],
-    ),
-    ("diamond", &["decision", "condition"]),
-    ("ellipse", &["circle", "oval", "state"]),
-    ("hexagon", &["service", "component"]),
-    ("doc", &["document", "file", "page"]),
-    ("cloud", &["internet", "saas", "external"]),
-    (
-        "person",
-        &["user", "users", "people", "human", "account", "actor"],
-    ),
-];
+/// The built-in shape called `name`.
+pub fn builtin_shape(name: &str) -> Option<&'static BuiltinShape> {
+    SHAPES.iter().find(|s| s.name == name)
+}
+
+/// Every built-in shape name, in `SHAPES` order.
+pub fn shape_names() -> impl Iterator<Item = &'static str> {
+    SHAPES.iter().map(|s| s.name)
+}
 
 /// Largest cylinder cap height in px.
 const CAP: f64 = 20.0;
@@ -48,56 +98,58 @@ pub(crate) struct UnitShape {
 /// The unit-path definition of a built-in shape for a `w`×`h` box: path data, outline
 /// subpath (1-based) and unit text area. `None` for `rect`/`rounded` and unknown names.
 pub fn builtin_source(name: &str, w: f64, h: f64) -> Option<(String, usize, Rect)> {
-    let unit = Rect::new;
-    Some(match name {
-        "cylinder" => {
-            let c = CAP.min(h / 4.0) / h;
-            let b = 1.0 - c;
-            (
-                format!(
-                    "M 0 {c} A 0.5 {c} 0 0 1 1 {c} L 1 {b} A 0.5 {c} 0 0 1 0 {b} Z \
-                     M 1 {c} A 0.5 {c} 0 0 1 0 {c}"
-                ),
-                1,
-                unit(0.0, 2.0 * c, 1.0, 1.0 - 2.0 * c),
-            )
-        }
-        "diamond" => (
-            "M 0.5 0 L 1 0.5 L 0.5 1 L 0 0.5 Z".into(),
-            1,
-            unit(0.22, 0.28, 0.56, 0.44),
+    builtin_shape(name)?.source.map(|f| f(w, h))
+}
+
+fn cylinder(_w: f64, h: f64) -> (String, usize, Rect) {
+    let c = CAP.min(h / 4.0) / h;
+    let b = 1.0 - c;
+    (
+        format!(
+            "M 0 {c} A 0.5 {c} 0 0 1 1 {c} L 1 {b} A 0.5 {c} 0 0 1 0 {b} Z \
+             M 1 {c} A 0.5 {c} 0 0 1 0 {c}"
         ),
-        "ellipse" => {
-            let k = 0.5 - 0.5 * FRAC_1_SQRT_2;
-            (
-                "M 0 0.5 A 0.5 0.5 0 0 1 1 0.5 A 0.5 0.5 0 0 1 0 0.5 Z".into(),
-                1,
-                unit(k, k, FRAC_1_SQRT_2, FRAC_1_SQRT_2),
-            )
-        }
-        "hexagon" => {
-            let n = (h / 4.0).min(w / 4.0) / w;
-            let m = 1.0 - n;
-            (
-                format!("M {n} 0 L {m} 0 L 1 0.5 L {m} 1 L {n} 1 L 0 0.5 Z"),
-                1,
-                unit(n, 0.0, 1.0 - 2.0 * n, 1.0),
-            )
-        }
-        "doc" => {
-            let d = WAVE.min(0.15 * h) / h;
-            let b = 1.0 - d;
-            let c = b - d;
-            (
-                format!("M 0 0 L 1 0 L 1 {b} Q 0.75 {c} 0.5 {b} Q 0.25 1 0 {b} Z"),
-                1,
-                unit(0.0, 0.0, 1.0, b - d / 2.0),
-            )
-        }
-        "cloud" => cloud(w, h),
-        "person" => person(w, h),
-        _ => return None,
-    })
+        1,
+        Rect::new(0.0, 2.0 * c, 1.0, 1.0 - 2.0 * c),
+    )
+}
+
+fn diamond(_w: f64, _h: f64) -> (String, usize, Rect) {
+    (
+        "M 0.5 0 L 1 0.5 L 0.5 1 L 0 0.5 Z".into(),
+        1,
+        Rect::new(0.22, 0.28, 0.56, 0.44),
+    )
+}
+
+fn ellipse(_w: f64, _h: f64) -> (String, usize, Rect) {
+    let k = 0.5 - 0.5 * FRAC_1_SQRT_2;
+    (
+        "M 0 0.5 A 0.5 0.5 0 0 1 1 0.5 A 0.5 0.5 0 0 1 0 0.5 Z".into(),
+        1,
+        Rect::new(k, k, FRAC_1_SQRT_2, FRAC_1_SQRT_2),
+    )
+}
+
+fn hexagon(w: f64, h: f64) -> (String, usize, Rect) {
+    let n = (h / 4.0).min(w / 4.0) / w;
+    let m = 1.0 - n;
+    (
+        format!("M {n} 0 L {m} 0 L 1 0.5 L {m} 1 L {n} 1 L 0 0.5 Z"),
+        1,
+        Rect::new(n, 0.0, 1.0 - 2.0 * n, 1.0),
+    )
+}
+
+fn doc(_w: f64, h: f64) -> (String, usize, Rect) {
+    let d = WAVE.min(0.15 * h) / h;
+    let b = 1.0 - d;
+    let c = b - d;
+    (
+        format!("M 0 0 L 1 0 L 1 {b} Q 0.75 {c} 0.5 {b} Q 0.25 1 0 {b} Z"),
+        1,
+        Rect::new(0.0, 0.0, 1.0, b - d / 2.0),
+    )
 }
 
 /// A flat-bottomed cloud: bumps of at most `BUMP` px along the top and as many

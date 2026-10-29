@@ -371,9 +371,9 @@ impl<'a> Resolver<'a> {
         let builtin = style::builtin(name);
         let user = self.user_styles.get(name).cloned();
         if builtin.is_none() && user.is_none() {
-            let names: Vec<&str> = style::BUILTIN_STYLES
+            let names: Vec<&str> = style::STYLES
                 .iter()
-                .copied()
+                .map(|s| s.name)
                 .chain(self.user_styles.keys().map(String::as_str))
                 .collect();
             let mut d =

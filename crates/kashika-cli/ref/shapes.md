@@ -1,6 +1,6 @@
 # Shapes
 
-`shape=` on a `box` takes a built-in shape or one you define or import. Corner anchors (`tl`, `tr`, `bl`, `br`) and `center` are always on the bounding box. Edge anchors (`top`, `left@0.3`, ...) keep the bounding-box point's x (top/bottom) or y (left/right) and slide along that axis onto the outline, so a vertical line into `db.top` stays vertical. Checks use the same outline.
+`shape=` on a `box` takes a built-in shape ({shapes}) or one you define or import. Corner anchors (`tl`, `tr`, `bl`, `br`) and `center` are always on the bounding box. Edge anchors (`top`, `left@0.3`, ...) keep the bounding-box point's x (top/bottom) or y (left/right) and slide along that axis onto the outline, so a vertical line into `db.top` stays vertical. Checks use the same outline.
 
 | shape | outline | text area |
 |---|---|---|
@@ -41,7 +41,7 @@ image logo "browser" at (20,120) size (60,60)
 - `shape <name> from "<file.svg>" [outline=bbox|hull] [text-area=below|inside]` draws the SVG stretched onto the box instead of a fill and stroke. Anchors and checks use the box, or the drawing's convex hull with `outline=hull`. `text-area=below` puts the label `padding` under the box; checks look for it there.
 - `image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stretch] [layer=under|over]` places an SVG, PNG or JPEG. It is top-level only, defaults to `fit=contain`, and checks treat it as an opaque box. `fit=stretch` that distorts the aspect ratio by over 5% is `image-distort`. `kashika inspect` shows the natural size. SVG `<text>` is drawn in the bundled fonts (Inter, or JetBrains Mono for `monospace`); an SVG `<image>` that is not a `data:` URI is dropped with `svg-dropped`.
 - `icon="<file>"` on a box or group, with `icon-pos=left|top` (default `left`) and `icon-size=N` (default 24; on a group, the title's line height). The text area shrinks by `icon-size + padding` on the icon's side. Groups only take `left`.
-- Bundled icons, by bare name: `server`, `browser`, `queue`, `lock`, `cloud`, `person`.
+- Bundled icons, by bare name: {icons}.
 - An icon that paints with `currentColor` (every bundled icon) is drawn in the shape's `color`, so `fill=#1e293b color=white icon="lock"` shows a white lock. Without a `color` on the shape or its style it is `#334155`. Icons with explicit colors keep them.
 
 ## Imports and files
