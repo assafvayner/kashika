@@ -60,3 +60,27 @@ Analytics pipeline: sublabels, `{ }` text blocks, inline markup, boxes sized wit
 Engineering org: a junction bus per level, a strict `grid=`, and relative placement with `pin`, including `pin=<side>@t`.
 
 ![org-chart](org-chart/org-chart.svg)
+
+## sequence
+
+Checkout sequence diagram: participant headers from a `style` with `size`, dashed `layer=under` lifelines and activation bars, `label-side=above` requests, dashed replies with `open` ends, emoji in labels, and messages that skip a lifeline with `label@t`.
+
+![sequence](sequence/sequence.svg)
+
+## er
+
+Orders schema as table cards: `layer=under` outlines with header and row boxes, monospace columns, and crow's-foot ends (`zero-many`, `zero-one`, `one-many`, `one`), with two relationships leaving one card through a shared lane.
+
+![er](er/er.svg)
+
+## git-graph
+
+Release branches as a commit graph: guide junctions (no `dot`) for lanes and columns, commit styles with `shape=ellipse`, tag boxes with `padding=(6,3)`, `vhv` branch and merge edges with `radius=`, and a `background=` color.
+
+![git-graph](git-graph/git-graph.svg)
+
+## class-diagram
+
+Billing classes in UML: a `package` shape as a `layer=under` backdrop, class boxes as text blocks, a `triangle` generalization through a junction, a `hollow-diamond` aggregation and a `note` attached with a dotted line.
+
+![class-diagram](class-diagram/class-diagram.svg)

@@ -1,0 +1,35 @@
+diagram "Billing classes" kashika="0.1.0"
+
+style class { fill=white stroke=#334155 padding=(10,8) }
+
+box billing "**billing**" at (180,20) size (440,300) shape=package layer=under fill=#f8fafc stroke=#64748b text-align=left text-valign=top
+
+box payment at (400,80) pin=top style=class text-align=left {
+  text "«abstract»" font-size=11 muted
+  text "**Payment**"
+  text "`amount: Money`" font-size=12
+  text "`capture(): Receipt`" font-size=12
+}
+junction gen at payment.bottom+(0,40)
+box card at payment.bottom+(-110,80) pin=top style=class text-align=left {
+  text "**CardPayment**"
+  text "`last4: String`" font-size=12
+  text "`capture(): Receipt`" font-size=12
+}
+box bank at payment.bottom+(110,80) pin=top style=class text-align=left {
+  text "**BankTransfer**"
+  text "`iban: String`" font-size=12
+  text "`capture(): Receipt`" font-size=12
+}
+
+box invoice at payment.left+(-170,0) pin=right style=class text-align=left {
+  text "**Invoice**"
+  text "`total(): Money`" font-size=12
+}
+box refunds "Refunds reuse the\noriginal Payment." at (billing.right.x, payment.right.y)+(40,0) pin=left shape=note style=note font-size=12
+
+line card_gen card.top -> vh gen
+line bank_gen bank.top -> vh gen
+line gen_payment gen -> payment.bottom end=triangle
+line holds invoice.right -> payment.left start=hollow-diamond label@0.8="0..*" label-side=above
+line note_link refunds.left -> payment.right stroke-style=dotted

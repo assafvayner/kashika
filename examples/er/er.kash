@@ -1,0 +1,38 @@
+diagram "Orders schema" kashika="0.1.0"
+
+style card { stroke=#475569 }
+style head { size=(180,26) fill=#dbeafe stroke=none padding=4 }
+style row { size=(180,22) stroke=none padding=3 font-size=12 }
+
+box orders at (300,20) size (180,114) style=card layer=under
+box orders_h "**orders**" at orders.tl style=head
+box orders_id "`id           uuid  PK`" at orders_h.bl style=row text-align=left
+box orders_cust "`customer_id  uuid  FK`" at orders_id.bl style=row text-align=left
+box orders_status "`status       text`" at orders_cust.bl style=row text-align=left
+box orders_at "`created_at   tstz`" at orders_status.bl style=row text-align=left
+
+box customers at orders.tl+(-280,22) size (180,114) style=card layer=under
+box customers_h "**customers**" at customers.tl style=head
+box customers_id "`id          uuid  PK`" at customers_h.bl style=row text-align=left
+box customers_email "`email       text`" at customers_id.bl style=row text-align=left
+box customers_name "`name        text`" at customers_email.bl style=row text-align=left
+box customers_at "`created_at  tstz`" at customers_name.bl style=row text-align=left
+
+box products at orders.bl+(0,60) size (180,114) style=card layer=under
+box products_h "**products**" at products.tl style=head
+box products_id "`id           uuid  PK`" at products_h.bl style=row text-align=left
+box products_sku "`sku          text`" at products_id.bl style=row text-align=left
+box products_name "`name         text`" at products_sku.bl style=row text-align=left
+box products_price "`price_cents  int`" at products_name.bl style=row text-align=left
+
+box items at orders.tr+(100,80) size (180,136) style=card layer=under
+box items_h "**line_items**" at items.tl style=head
+box items_id "`id          uuid  PK`" at items_h.bl style=row text-align=left
+box items_order "`order_id    uuid  FK`" at items_id.bl style=row text-align=left
+box items_product "`product_id  uuid  FK`" at items_order.bl style=row text-align=left
+box items_qty "`quantity    int`" at items_product.bl style=row text-align=left
+box items_price "`unit_price  int`" at items_qty.bl style=row text-align=left
+
+line fk_customer orders_cust.left -> customers_id.right start=zero-many end=zero-one ortho
+line fk_order items_order.left -> x 530 -> vh orders_id.right start=one-many end=one ortho
+line fk_product items_product.left -> x 530 -> vh products_id.right start=zero-many end=one ortho
