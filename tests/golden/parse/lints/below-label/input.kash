@@ -1,0 +1,14 @@
+// spec: 3a, 7
+// The label under a `text-area=below` shape is checked where it sits: `spill`, `out-of-canvas`, `label-collision` and `low-contrast`.
+diagram "below label" size (520,320) background=#0f172a
+shape tri from "tri.svg" text-area=below
+group g "zone" at (20,20) size (200,110) fill=#ffffff {
+  box spilled "spills out" at (60,60) size (80,40) shape=tri
+}
+box edge "off canvas" at (400,260) size (80,40) shape=tri color=#ffffff
+box crossed "crossed" at (260,40) size (80,40) shape=tri color=#ffffff
+line under (240,95) -> h 120
+group zone2 "zone 2" at (260,160) size (200,80) color=#ffffff {
+}
+box straddle "straddle" at (320,110) size (60,40) shape=tri color=#ffffff
+box dim "dim" at (40,200) size (60,40) shape=tri

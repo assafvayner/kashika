@@ -1,0 +1,21 @@
+// spec: 3, 7
+// `low-contrast` paints the backgrounds under each text in paint order: the canvas, group fills, and `layer=under`/`over` fills.
+diagram "contrast backgrounds" size (640,420) background=#0f172a
+text on_dark "on dark" at (80,30)
+text on_dark_ok "on dark" at (200,30) color=#ffffff
+box sheet at (250,10) size (200,40) layer=under fill=#ffffff
+text left "left aligned" at (240,30) align=left color=#ffffff
+group gd "dark group" at (20,70) size (280,150) fill=#1e293b color=#ffffff {
+  box hollow "hollow" at (20,40) size (100,40) fill=none
+  line wire (20,110) -> h 240 label="wire"
+}
+group gw "light group" at (320,70) size (300,150) fill=#ffffff {
+  box backdrop at (20,40) size (260,90) layer=under fill=#111827
+  text inner "inner" at (80,70)
+  text inner_ok "inner" at (200,70) color=#ffffff
+}
+box white_under at (20,250) size (160,40) layer=under fill=#ffffff
+text on_under "on under" at (100,270)
+box over "over" at (260,290) size (200,90) layer=over fill=#ffffff text-valign=top
+text beneath "beneath" at (300,360) color=#ffffff
+box later "later" at (280,330) size (160,40) layer=over fill=none color=#ffffff

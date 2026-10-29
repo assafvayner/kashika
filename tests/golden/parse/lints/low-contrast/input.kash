@@ -1,5 +1,6 @@
 // spec: 7
-// Text below 3:1 contrast against its fill.
+// Text below 3:1 contrast against its fill; a transparent canvas counts as white.
 diagram "contrast" size (300,200)
 box a "pale" at (20,20) size (120,60) fill=#ffffff color=#dddddd
 text t "faint" at (220,50) color=#eeeeee
+text w "white" at (220,120) color=#ffffff

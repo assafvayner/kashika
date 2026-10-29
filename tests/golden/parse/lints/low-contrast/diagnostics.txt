@@ -6,3 +6,7 @@ warn[low-contrast] 5:1-5:41: text 't' has contrast 1.2:1 against its background 
   = help: darken the text `color` or lighten the `fill` behind it
   elements: [{"bbox":[[205.36,41.25],[234.64,58.75]],"id":"t","kind":"text","span":{"col":1,"end_col":41,"end_line":5,"line":5}}]
   facts: {"background":"#ffffff","color":"#eeeeee","ratio":1.16}
+warn[low-contrast] 6:1-6:42: text 'w' has contrast 1.0:1 against its background (minimum 3:1)
+  = help: darken the text `color` or lighten the `fill` behind it
+  elements: [{"bbox":[[202.07,111.25],[237.93,128.75]],"id":"w","kind":"text","span":{"col":1,"end_col":42,"end_line":6,"line":6}}]
+  facts: {"background":"#ffffff","color":"#ffffff","ratio":1}

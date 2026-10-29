@@ -1,0 +1,4 @@
+warn[port-crowding] 7:1-7:52: m2 and m1 meet 'b' 10px apart (minimum 12px)
+  = help: spread the endpoints at least 12px apart, e.g. `b.left@0.3` and `b.left@0.7`, or meet at a `junction`
+  elements: [{"from":[100,85],"id":"m2","kind":"line","segment":1,"span":{"col":1,"end_col":52,"end_line":7,"line":7},"to":[300,85]},{"from":[100,75],"id":"m1","kind":"line","segment":1,"span":{"col":1,"end_col":49,"end_line":6,"line":6},"to":[300,75]},{"bbox":[[300,40],[380,120]],"id":"b","kind":"box","span":{"col":1,"end_col":31,"end_line":5,"line":5}}]
+  facts: {"gap":10}

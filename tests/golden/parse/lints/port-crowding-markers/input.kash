@@ -1,0 +1,11 @@
+// spec: 5, 7
+// `port-crowding` widens with the end markers: two crow's feet 10px apart crowd (minimum 12px); an arrow and a dot 8px apart do not.
+diagram "marker crowding" size (400,300)
+box a at (20,40) size (80,80)
+box b at (300,40) size (80,80)
+line m1 a.right+(0,-5) -> b.left+(0,-5) end=many
+line m2 a.right+(0,5) -> b.left+(0,5) end=zero-many
+box c at (20,180) size (80,80)
+box d at (300,180) size (80,80)
+line p1 c.right+(0,-4) -> d.left+(0,-4) end=arrow
+line p2 c.right+(0,4) -> d.left+(0,4) end=dot

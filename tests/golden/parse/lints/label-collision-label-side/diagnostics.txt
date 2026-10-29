@@ -1,0 +1,12 @@
+warn[label-collision] 4:37-4:54: label "below" of elbow collides with line elbow
+  = help: clear label positions on elbow: label@0.05..0.45
+  elements: [{"bbox":[[92.87,44.75],[127.13,59.75]],"id":"elbow","kind":"label","span":{"col":37,"end_col":54,"end_line":4,"line":4}},{"id":"elbow","kind":"line","span":{"col":1,"end_col":71,"end_line":4,"line":4}}]
+  facts: {"bbox":[[92.87,44.75],[127.13,59.75]],"clear_t":[0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45]}
+warn[label-collision] 6:30-6:42: label "left" of edge collides with the border of group 'g'
+  = help: no clear label position on edge; move the line or the obstacle
+  elements: [{"bbox":[[186.98,112.5],[205.25,127.5]],"id":"edge","kind":"label","span":{"col":30,"end_col":42,"end_line":6,"line":6}},{"bbox":[[200,20],[400,180]],"id":"g","kind":"group","span":{"col":1,"end_col":42,"end_line":5,"line":5}}]
+  facts: {"bbox":[[186.98,112.5],[205.25,127.5]],"clear_t":[]}
+warn[label-collision] 8:35-8:50: label "fk" of er collides with the end crow's foot of er
+  = help: clear label positions on er: label@0.05..0.7
+  elements: [{"bbox":[[65.49,232.5],[76.51,247.5]],"id":"er","kind":"label","span":{"col":35,"end_col":50,"end_line":8,"line":8}},{"from":[20,240],"id":"er","kind":"line","segment":1,"span":{"col":1,"end_col":50,"end_line":8,"line":8},"to":[80,240]}]
+  facts: {"bbox":[[65.49,232.5],[76.51,247.5]],"clear_t":[0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7]}

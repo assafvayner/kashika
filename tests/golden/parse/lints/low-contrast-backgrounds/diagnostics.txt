@@ -1,0 +1,24 @@
+warn[low-contrast] 4:1-4:34: text 'on_dark' has contrast 1.0:1 against its background (minimum 3:1)
+  = help: darken the text `color` or lighten the `fill` behind it
+  elements: [{"bbox":[[55,21.25],[105,38.75]],"id":"on_dark","kind":"text","span":{"col":1,"end_col":34,"end_line":4,"line":4}}]
+  facts: {"background":"#0f172a","color":"#0f172a","ratio":1}
+warn[low-contrast] 7:1-7:62: text 'left' has contrast 1.0:1 against its background (minimum 3:1)
+  = help: darken the text `color` or lighten the `fill` behind it
+  elements: [{"bbox":[[240,21.25],[313.49,38.75]],"id":"left","kind":"text","span":{"col":1,"end_col":62,"end_line":7,"line":7}}]
+  facts: {"background":"#ffffff","color":"#ffffff","ratio":1}
+warn[low-contrast] 9:3-9:57: label "hollow" of 'hollow' has contrast 1.2:1 against its background (minimum 3:1)
+  = help: darken the text `color` or lighten the `fill` behind it
+  elements: [{"bbox":[[40,110],[140,150]],"frame":"gd","id":"hollow","kind":"box","local_bbox":[[20,40],[120,80]],"span":{"col":3,"end_col":57,"end_line":9,"line":9}}]
+  facts: {"background":"#1e293b","color":"#0f172a","ratio":1.22}
+warn[low-contrast] 10:31-10:43: label "wire" of wire has contrast 1.2:1 against its background (minimum 3:1)
+  = help: darken the text `color` or lighten the `fill` behind it
+  elements: [{"id":"wire","kind":"line","span":{"col":3,"end_col":43,"end_line":10,"line":10}}]
+  facts: {"background":"#1e293b","color":"#0f172a","ratio":1.22}
+warn[low-contrast] 14:3-14:32: text 'inner' has contrast 1.0:1 against its background (minimum 3:1)
+  = help: darken the text `color` or lighten the `fill` behind it
+  elements: [{"bbox":[[383.32,131.25],[416.68,148.75]],"id":"inner","kind":"text","span":{"col":3,"end_col":32,"end_line":14,"line":14}}]
+  facts: {"background":"#111827","color":"#0f172a","ratio":1.01}
+warn[low-contrast] 21:1-21:80: label "later" of 'later' has contrast 1.0:1 against its background (minimum 3:1)
+  = help: darken the text `color` or lighten the `fill` behind it
+  elements: [{"bbox":[[280,330],[440,370]],"id":"later","kind":"box","span":{"col":1,"end_col":80,"end_line":21,"line":21}}]
+  facts: {"background":"#ffffff","color":"#ffffff","ratio":1}

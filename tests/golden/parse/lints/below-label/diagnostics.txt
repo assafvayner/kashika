@@ -1,0 +1,25 @@
+warn[label-collision] 6:3-6:61: the label under box 'spilled' collides with the border of group 'g'
+  elements: [{"bbox":[[90.64,128],[149.36,145.5]],"id":"spilled","kind":"label","span":{"col":3,"end_col":61,"end_line":6,"line":6}},{"bbox":[[20,20],[220,130]],"id":"g","kind":"group","span":{"col":1,"end_col":54,"end_line":5,"line":5}}]
+  facts: {"bbox":[[90.64,128],[149.36,145.5]]}
+warn[low-contrast] 6:3-6:61: label "spills out" of 'spilled' has contrast 1.0:1 against its background (minimum 3:1)
+  = help: darken the text `color` or lighten the `fill` behind it
+  elements: [{"bbox":[[80,80],[160,120]],"frame":"g","id":"spilled","kind":"box","local_bbox":[[60,60],[140,100]],"span":{"col":3,"end_col":61,"end_line":6,"line":6}}]
+  facts: {"background":"#0f172a","color":"#0f172a","ratio":1}
+warn[spill] 6:3-6:61: the label under box 'spilled' extends outside group 'g' (bottom by 15.5px)
+  = help: enlarge 'g' or move the child inside it
+  elements: [{"bbox":[[80,80],[160,120]],"frame":"g","id":"spilled","kind":"box","local_bbox":[[60,60],[140,100]],"span":{"col":3,"end_col":61,"end_line":6,"line":6}},{"bbox":[[20,20],[220,130]],"id":"g","kind":"group","span":{"col":1,"end_col":54,"end_line":5,"line":5}}]
+  facts: {"overflow":{"bottom":15.5}}
+warn[out-of-canvas] 8:1-8:72: the label under box 'edge' extends beyond the 520x320 canvas (bottom by 5.5px)
+  = help: move it inside (0,0)-(520,320) or enlarge `size` on the `diagram` line
+  elements: [{"bbox":[[400,260],[480,300]],"id":"edge","kind":"box","span":{"col":1,"end_col":72,"end_line":8,"line":8}}]
+  facts: {"overflow":{"bottom":5.5}}
+warn[label-collision] 9:1-9:71: the label under box 'crossed' collides with line under
+  elements: [{"bbox":[[273.41,88],[326.59,105.5]],"id":"crossed","kind":"label","span":{"col":1,"end_col":71,"end_line":9,"line":9}},{"id":"under","kind":"line","span":{"col":1,"end_col":29,"end_line":10,"line":10}}]
+  facts: {"bbox":[[273.41,88],[326.59,105.5]]}
+warn[label-collision] 13:1-13:74: the label under box 'straddle' collides with the border of group 'zone2'
+  elements: [{"bbox":[[323.1,158],[376.9,175.5]],"id":"straddle","kind":"label","span":{"col":1,"end_col":74,"end_line":13,"line":13}},{"bbox":[[260,160],[460,240]],"id":"zone2","kind":"group","span":{"col":1,"end_col":62,"end_line":11,"line":11}}]
+  facts: {"bbox":[[323.1,158],[376.9,175.5]]}
+warn[low-contrast] 14:1-14:49: label "dim" of 'dim' has contrast 1.0:1 against its background (minimum 3:1)
+  = help: darken the text `color` or lighten the `fill` behind it
+  elements: [{"bbox":[[40,200],[100,240]],"id":"dim","kind":"box","span":{"col":1,"end_col":49,"end_line":14,"line":14}}]
+  facts: {"background":"#0f172a","color":"#0f172a","ratio":1}

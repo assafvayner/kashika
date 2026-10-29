@@ -1,0 +1,8 @@
+// spec: 5, 7
+// A `label-side` label collides with its own line past an elbow and with a group border it straddles; an `on` label covers crow's-foot prongs.
+diagram "label side collisions" size (420,320)
+line elbow (20,40) -> h 100 -> v 80 label@0.5="below" label-side=below
+group g "zone" at (200,20) size (200,160) {
+  line edge (10,50) -> v 100 label="left" label-side=left
+}
+line er (20,240) -> h 60 end=many label@0.85="fk"

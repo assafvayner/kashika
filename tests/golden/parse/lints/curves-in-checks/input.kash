@@ -1,0 +1,21 @@
+// spec: 5, 7
+// Curves take part in `through`, `near`, `group-transit`, `label-collision` and `spill` like straight segments.
+diagram "curves in checks" size (640,500)
+box a "A" at (20,20) size (80,40)
+box b "B" at (220,20) size (80,40)
+box mid "M" at (130,100) size (40,40)
+line over a.bottom -> curve right 80 b.bottom
+box n at (380,60) size (40,26)
+line skim (340,120) -> curve left 30 (460,120)
+group outer "outer" at (20,200) size (280,160) {
+  group inner "inner" at (100,40) size (100,100) {
+  }
+}
+line transit (20,380) -> curve left 120 (300,380)
+line tag (340,300) -> curve right 40 (600,300) label="covering"
+text note "note" at (470,352)
+line rail (380,345) -> h 40 label-side=above label="rail"
+group pod "pod" at (340,400) size (200,80) {
+  box e at (20,30) size (40,30)
+  line leak e.right -> curve left 60 (180,40)
+}
