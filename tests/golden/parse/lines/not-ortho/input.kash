@@ -1,4 +1,6 @@
 // spec: 5, 7
-// A diagonal segment on an `ortho` line is an error.
-diagram "not ortho" size (300,200)
+// A diagonal segment or a curve on an `ortho` line is an error.
+diagram "not ortho" size (300,340)
+box a at (20,120) size (60,40)
 line l (20,20) -> h 50 -> (150,90) -> v 50 ortho
+line c a.bottom -> curve left 40 (200,300) ortho

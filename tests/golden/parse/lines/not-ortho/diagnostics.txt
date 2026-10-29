@@ -1,2 +1,4 @@
-error[not-ortho] 4:27-4:35: segment is not horizontal or vertical on a line marked `ortho`
+error[not-ortho] 5:27-5:35: segment is not horizontal or vertical on a line marked `ortho`
+  = help: use `hv`/`vh` elbows or `x`/`y` targets
+error[not-ortho] 6:20-6:43: segment is not horizontal or vertical on a line marked `ortho`
   = help: use `hv`/`vh` elbows or `x`/`y` targets

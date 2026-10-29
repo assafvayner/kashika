@@ -1,7 +1,0 @@
-// spec: 2
-// dump: ast
-// Attributes after the required parts come in any order.
-diagram "order" size (300,200)
-box a "A" at (20,20) size (60,40) shape=rounded style=service pin=tl
-box b "B" at (200,20) size (60,40) pin=tl style=service shape=rounded
-line l a.right -> b.left label="x" end=arrow start=dot

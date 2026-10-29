@@ -1,7 +1,7 @@
 // spec: 2, 3, 6
 // dump: ast
 // `at`, `size` and attributes mix in any order on every statement that takes them.
-diagram "any order" grid=10 size (400,300) clearance=4
+diagram "any order" grid=10 size (400,420) clearance=4
 box a size (100,60) at (20,20) style=service
 box b "B" style=datastore at (200,20) pin=tl size (100,60) shape=rounded
 group g "G" size (360,120) style=boundary at (20,140) {
@@ -11,3 +11,7 @@ group g "G" size (360,120) style=boundary at (20,140) {
 box c at (200,180) size (120,60) {
   text "x" muted at (20,20)
 }
+box d "D" sublabel="v2" at (20,280) size (100,60)
+box e "E" at (140,280) size (60,40) shape=rounded style=service pin=tl
+box f "F" at (240,280) size (60,40) pin=tl style=service shape=rounded
+line l e.bottom -> v 40 label="x" end=arrow start=dot
