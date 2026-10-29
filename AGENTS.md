@@ -84,6 +84,7 @@ Each kind has one registry. The `ref` pages print their name lists from it throu
 - Embedded SVG is always the usvg re-serialization, never the input bytes.
 - Text is measured and drawn only with the fonts in `crates/kashika-text/fonts/` (Inter, JetBrains Mono and the Twemoji emoji font), each character by the same fallback face in both. SVG text is glyph outlines (`<path aria-label=…>`; a line with emoji is a `<g aria-label=…>` of the text path and one path per COLR color layer), never `<text>`, so checks and every viewer agree.
 - Nothing paints the canvas unless `background=` is set. Line labels hide their own line with a per-line SVG `<mask>` of their rects, never with a painted rect, so the fill beneath shows through.
+- Every crate builds from its own directory, since each is published to crates.io (see [`RELEASING.md`](RELEASING.md)): nothing in `src/` or `build.rs` reads a path outside the crate. `crates/*/LICENSE` and `crates/kashika-cli/ref/upload.kash` are copies of `LICENSE` and `examples/upload/upload.kash`, kept identical by tests.
 
 ## Conventions
 
