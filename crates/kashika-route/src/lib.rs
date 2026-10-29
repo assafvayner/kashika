@@ -9,7 +9,6 @@ mod text;
 use std::collections::HashMap;
 
 use kashika_check::ctx::Ctx;
-pub use kashika_check::free::Axis;
 use kashika_diag::{Diagnostic, Severity};
 use kashika_geom::{PathSeg, Pt, flatten, fmt_num};
 use kashika_model::{Line, Scene};
@@ -22,6 +21,7 @@ use crate::source::Source;
 use crate::text::{path_text, statement};
 
 pub use endpoint::{Endpoint, Side};
+pub use kashika_check::free::Axis;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]

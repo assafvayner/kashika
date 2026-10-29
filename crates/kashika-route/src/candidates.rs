@@ -3,12 +3,12 @@ use std::cmp::Ordering;
 use kashika_check::ctx::Ctx;
 use kashika_check::free::{Axis, free_intervals};
 use kashika_geom::{
-    Hit, Pt, Rect, TOLERANCE, boundary_nearest, dot, inside_runs, point_in_polygon, seg_hit,
+    Hit, Pt, Rect, TOLERANCE, boundary_nearest, dot, fmt_num as num, inside_runs, point_in_polygon,
+    seg_hit,
 };
 use kashika_model::{Scene, ShapeKind};
 
 use crate::{Endpoint, SQUARE, Style};
-use kashika_geom::fmt_num as num;
 
 #[cfg(test)]
 mod tests;

@@ -1,7 +1,7 @@
 use std::time::Instant;
 
 use kashika_check::ctx::Ctx;
-use kashika_geom::Pt;
+use kashika_geom::{Pt, fmt_num as num};
 use kashika_model::{Options, Scene};
 
 use crate::candidates::{
@@ -10,7 +10,6 @@ use crate::candidates::{
 use crate::endpoint::resolve_endpoints;
 use crate::text::{path_text, statement};
 use crate::{Endpoint, Error, Side, Style};
-use kashika_geom::fmt_num as num;
 
 const WALL: &str = "diagram \"w\" size (460,240)\n\
 box a \"A\" at (20,100) size (100,40)\n\
