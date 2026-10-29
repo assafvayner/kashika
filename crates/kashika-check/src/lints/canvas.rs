@@ -16,30 +16,51 @@ pub fn out_of_canvas(ctx: &Ctx, out: &mut Sink) {
         return;
     }
     let canvas = Rect::new(0.0, 0.0, w, h);
+    let fitted = ctx.scene.fitted;
     let mut check = |what: String, el: Element, span: Span, extent: Rect| {
         let over = overflow(canvas, extent);
         if over.is_empty() {
             return;
         }
-        out.push(
-            Diagnostic::warn(
-                "out-of-canvas",
-                span,
-                format!(
-                    "{what} extends beyond the {}x{} canvas ({})",
-                    fmt_num(w),
-                    fmt_num(h),
-                    describe_overflow(&over)
-                ),
-            )
-            .with_element(el)
-            .with_fact("overflow", overflow_fact(&over))
-            .with_help(format!(
+        let mut d = Diagnostic::warn(
+            "out-of-canvas",
+            span,
+            format!(
+                "{what} extends beyond the {}x{} canvas ({})",
+                fmt_num(w),
+                fmt_num(h),
+                describe_overflow(&over)
+            ),
+        )
+        .with_element(el)
+        .with_fact("overflow", overflow_fact(&over));
+        let shifts: Vec<String> = over
+            .iter()
+            .filter_map(|&(side, by)| match side {
+                "left" => Some(format!("right by {}px", fmt_num(by))),
+                "top" => Some(format!("down by {}px", fmt_num(by))),
+                _ => None,
+            })
+            .collect();
+        if !shifts.is_empty() {
+            let fitted = if fitted.0 || fitted.1 {
+                "; a fitted canvas grows only right and down"
+            } else {
+                ""
+            };
+            d = d.with_help(format!(
+                "move it {} (or everything, to keep the layout): the canvas starts at (0,0){fitted}",
+                shifts.join(" and ")
+            ));
+        }
+        if shifts.len() < over.len() {
+            d = d.with_help(format!(
                 "move it inside (0,0)-({},{}) or enlarge `size` on the `diagram` line",
                 fmt_num(w),
                 fmt_num(h)
-            )),
-        );
+            ));
+        }
+        out.push(d);
     };
     let escapes = |s: &Shape| !overflow(canvas, s.rect).is_empty();
     let inside_escaping_group = |s: &Shape| {

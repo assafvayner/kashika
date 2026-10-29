@@ -214,8 +214,33 @@ impl Loader {
         cands.retain(|c| c != name);
         cands.sort();
         cands.dedup();
-        did_you_mean(name, cands.iter().map(String::as_str)).map(|s| format!("did you mean `{s}`?"))
+        did_you_mean(name, cands.iter().map(String::as_str))
+            .map(|s| format!("did you mean `{s}`?"))
+            .or_else(|| keyword_help(name))
     }
+}
+
+/// For a bare name that is a search keyword: the bundled icon or built-in shape it finds.
+fn keyword_help(name: &str) -> Option<String> {
+    if name.contains(['/', '\\', '.']) {
+        return None;
+    }
+    let w = name.to_ascii_lowercase();
+    if let Some((icon, _)) = crate::icons::ICON_KEYWORDS
+        .iter()
+        .find(|(_, words)| words.contains(&w.as_str()))
+    {
+        return Some(format!("did you mean the bundled icon `{icon}`?"));
+    }
+    crate::shapes::SHAPES
+        .iter()
+        .find(|s| s.keywords.contains(&w.as_str()))
+        .map(|s| {
+            format!(
+                "no icon is called `{name}`; the built-in shape `{}` matches it: `shape={}`",
+                s.name, s.name
+            )
+        })
 }
 
 fn show_bytes(n: u64) -> String {

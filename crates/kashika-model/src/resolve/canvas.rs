@@ -10,6 +10,7 @@ impl Resolver<'_> {
     /// Sets each `auto` canvas axis to the far edge of everything drawn, plus `margin`.
     pub(super) fn fit_canvas(&self, scene: &mut Scene) {
         let (fit_w, fit_h) = self.canvas_fit;
+        scene.fitted = self.canvas_fit;
         if !fit_w && !fit_h {
             return;
         }

@@ -1,5 +1,8 @@
 error[unknown-shape] 7:31-7:44: unknown shape `cylindr`
   = help: did you mean `cylinder`?
+  = help: built-in shapes: `rect`, `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`
 error[unknown-shape] 8:32-8:42: unknown shape `trii`
   = help: did you mean `tri`?
+  = help: built-in shapes: `rect`, `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`
 error[unknown-shape] 9:32-9:45: unknown shape `nothing`
+  = help: built-in shapes: `rect`, `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`

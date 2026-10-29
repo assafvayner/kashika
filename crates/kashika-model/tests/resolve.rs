@@ -1785,7 +1785,7 @@ fn unknown_shape_in_a_style_suggests() {
     let d = errors("style s { shape=elipse }\nbox a at (0,0) size (40,40) style=s\n");
     assert_eq!(codes_of(&d), vec!["unknown-shape"], "{d:#?}");
     assert_eq!((d[0].span.line, d[0].span.col), (2, 11));
-    assert_eq!(d[0].help, vec!["did you mean `ellipse`?".to_string()]);
+    assert_eq!(d[0].help[0], "did you mean `ellipse`?");
     let d = errors("style s { shape=\"ellipse\" }\n");
     assert_eq!(codes_of(&d), vec!["attr"], "{d:#?}");
 }
@@ -1971,4 +1971,72 @@ fn a_fitted_group_pins_on_its_top_left_edges() {
     let s = ok("group g at (100,100) size (40,auto) pin=top {\n  box a at (0,0) size (10,10)\n}\n");
     assert_eq!(rect(&s, "g"), Rect::new(80.0, 100.0, 40.0, 19.0));
     assert_eq!(rect(&s, "a"), Rect::new(80.0, 100.0, 10.0, 10.0));
+}
+
+#[test]
+fn common_attribute_slips_get_the_fix_as_help() {
+    let ab = "box a at (0,0) size (10,10)\nbox b at (100,0) size (10,10)\n";
+    for (body, help) in [
+        (
+            "box c label=\"C\" at (0,0) size (10,10)\n".to_string(),
+            "the label is the quoted string after the id, with no `label=`: `box <id> \"C\" …`",
+        ),
+        (
+            "group g at (0,0) size (50,50) label=\"G\" {\n}\n".to_string(),
+            "the label is the quoted string after the id, with no `label=`: `group <id> \"G\" …`",
+        ),
+        (
+            format!("{ab}line l a.right -> b.left arrow=end\n"),
+            "arrowheads are line ends: write `end=arrow`, or use the `arrow` statement",
+        ),
+        (
+            format!("{ab}line l a.right -> b.left arrow=both\n"),
+            "arrowheads are line ends: write `start=arrow end=arrow`, or use the `arrow` statement",
+        ),
+        (
+            "box c \"C\" at (0,0) width=10\n".to_string(),
+            "the size is a clause: write `size (w,h)`, without `=`",
+        ),
+        (
+            format!("{ab}line l a.right -> b.left dashed\n"),
+            "write `stroke-style=dashed`",
+        ),
+        (
+            format!("{ab}line l a.right -> b.left style=dotted\n"),
+            "a stroke pattern is `stroke-style=dotted`",
+        ),
+        (
+            "box c \"C\" at (0,0) icon=server\n".to_string(),
+            "quote it: `icon=\"server\"`",
+        ),
+        (
+            "box c \"C\" at (0,0) pin=middle\n".to_string(),
+            "did you mean `center`?",
+        ),
+        (
+            format!("{ab}line l a.middle -> b.left\n"),
+            "did you mean `center`?",
+        ),
+        (
+            "box c \"C\" at (0,0) icon=\"database\"\n".to_string(),
+            "no icon is called `database`; the built-in shape `cylinder` matches it: `shape=cylinder`",
+        ),
+    ] {
+        let d = errors(&body);
+        assert_eq!(d.len(), 1, "{body}: {d:#?}");
+        assert_eq!(d[0].help, [help], "{body}: {d:#?}");
+    }
+}
+
+#[test]
+fn unknown_shape_suggests_by_keyword_and_lists_the_builtins() {
+    let d = errors("box a \"A\" at (0,0) shape=database\n");
+    assert_eq!(d[0].help[0], "did you mean `cylinder`?", "{d:#?}");
+    assert!(d[0].help[1].starts_with("built-in shapes: `rect`, `rounded`, `cylinder`"));
+    let d = errors("box a \"A\" at (0,0) shape=server\n");
+    assert_eq!(d[0].help.len(), 2, "{d:#?}");
+    assert!(
+        d[0].help[0]
+            .starts_with("`server` is a bundled icon: put it on a box with `icon=\"server\"`")
+    );
 }

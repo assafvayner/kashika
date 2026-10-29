@@ -1,0 +1,6 @@
+// spec: 3, 3a, 7
+// An unknown `shape=` that is a search keyword suggests the built-in shape it finds, one that is a bundled icon says how to use it, and each lists the built-in shapes.
+diagram "shape keywords" size (300,200)
+box db "DB" at (20,20) size (100,60) shape=database
+box q "Q" at (160,20) size (100,60) shape=Decision
+box s "S" at (20,100) size (100,60) shape=server

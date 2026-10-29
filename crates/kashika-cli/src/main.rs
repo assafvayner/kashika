@@ -215,6 +215,12 @@ fn main() -> ExitCode {
         Err(e) => {
             let code = if e.use_stderr() { 3 } else { 0 };
             let _ = e.print();
+            let args: Vec<String> = std::env::args().skip(1).collect();
+            if args.first().is_some_and(|c| c == "route")
+                && args.iter().any(|a| a.ends_with("->") && a.starts_with('-'))
+            {
+                eprintln!("help: {}", route_cmd::NO_ARROW);
+            }
             return ExitCode::from(code);
         }
     };

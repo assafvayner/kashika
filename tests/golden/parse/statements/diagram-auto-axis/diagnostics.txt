@@ -3,6 +3,6 @@ warn[out-of-canvas] 6:1-6:55: box 'a' extends beyond the 200x349 canvas (right b
   elements: [{"bbox":[[20,20],[270,54]],"id":"a","kind":"box","span":{"col":1,"end_col":55,"end_line":6,"line":6}}]
   facts: {"overflow":{"right":70}}
 warn[out-of-canvas] 7:1-7:36: box 'b' extends beyond the 200x349 canvas (top by 30px)
-  = help: move it inside (0,0)-(200,349) or enlarge `size` on the `diagram` line
+  = help: move it down by 30px (or everything, to keep the layout): the canvas starts at (0,0); a fitted canvas grows only right and down
   elements: [{"bbox":[[20,-30],[80,10]],"id":"b","kind":"box","span":{"col":1,"end_col":36,"end_line":7,"line":7}}]
   facts: {"overflow":{"top":30}}

@@ -1,0 +1,15 @@
+error[parse] 6:28-6:31: expected `(`, found number `100`
+  = help: write `size (100,50)`
+error[parse] 7:14-7:17: expected a point: `(x,y)` or a reference like `db.left`, found number `200`
+  = help: a literal point is in parentheses: `(200,200)`
+error[parse] 8:11-8:12: expected `at`, found `(`
+  = help: a position starts with `at`: `at (x,y)`
+error[parse] 9:18-9:20: expected `(`, found `->`
+  = help: a line hop is `->`, not `-->`
+error[parse] 10:28-10:29: expected end of statement, found `.`
+  = help: `x` takes a point and uses its x: write `x b.left`
+error[parse] 11:20-11:22: `->` takes the point directly, with no `to`
+  = help: write `-> b.left`
+error[parse] 12:17-12:18: expected `->` followed by a segment, found `=`
+  = help: write `->`
+error[parse] 12:18-12:19: unexpected character `>`

@@ -1,0 +1,12 @@
+// spec: 2, 4, 5, 7
+// Common slips in sizes, points and line hops are `parse` errors whose help shows the fix.
+diagram "slips" size (400,300)
+box a "A" at (20,20) size (100,40)
+box b "B" at (220,120) size (100,40)
+box c "C" at (20,200) size 100x50
+box d "D" at 200,200 size (100,40)
+box e "E" (300,20) size (60,40)
+line l1 a.right --> b.left
+line l2 a.right -> x b.left.x -> b.left
+line l3 a.right -> to b.left
+line l4 a.right => b.left

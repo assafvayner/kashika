@@ -21,6 +21,27 @@ fn shapes_and_lines_beyond_the_canvas() {
 }
 
 #[test]
+fn content_above_or_left_of_the_origin_must_move() {
+    let d = lint("out-of-canvas", "box a at (750,10) size (100,60)\n");
+    assert_eq!(
+        d[0].help,
+        vec!["move it inside (0,0)-(800,600) or enlarge `size` on the `diagram` line"]
+    );
+    let s = scene_src("diagram \"t\"\nbox a at (-30,20) size (100,40)\n");
+    let d: Vec<_> = kashika_check::check(&s)
+        .into_iter()
+        .filter(|d| d.code == "out-of-canvas")
+        .collect();
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].help.len(), 1, "{d:#?}");
+    assert!(d[0].help[0].starts_with("move it right by 30px"), "{d:#?}");
+    assert!(
+        d[0].help[0].ends_with("a fitted canvas grows only right and down"),
+        "{d:#?}"
+    );
+}
+
+#[test]
 fn children_of_an_escaping_group_are_not_reported_again() {
     let d = lint(
         "out-of-canvas",

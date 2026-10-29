@@ -1,0 +1,16 @@
+warn[near] 7:1-7:36: into_left's last segment runs along the left side of its own box 'b'
+  = help: enter a `left`/`right` side horizontally: finish with `vh` (or an `x …` hop, then the anchor)
+  elements: [{"from":[120,40],"id":"into_left","kind":"line","segment":1,"span":{"col":1,"end_col":36,"end_line":7,"line":7},"to":[220,120]},{"bbox":[[220,100],[320,140]],"id":"b","kind":"box","span":{"col":1,"end_col":37,"end_line":5,"line":5}}]
+  facts: {"clearance":6,"distance":0}
+warn[near] 8:1-8:39: from_right's first segment runs along the right side of its own box 'c'
+  = help: leave a `left`/`right` side horizontally: start with `hv` (or an `x …` hop)
+  elements: [{"from":[120,220],"id":"from_right","kind":"line","segment":1,"span":{"col":1,"end_col":39,"end_line":8,"line":8},"to":[270,140]},{"bbox":[[20,200],[120,240]],"id":"c","kind":"box","span":{"col":1,"end_col":36,"end_line":6,"line":6}}]
+  facts: {"clearance":6,"distance":0}
+warn[near] 8:1-8:39: from_right's last segment runs along the bottom side of its own box 'b'
+  = help: enter a `top`/`bottom` side vertically: finish with `hv` (or a `y …` hop, then the anchor)
+  elements: [{"from":[120,220],"id":"from_right","kind":"line","segment":1,"span":{"col":1,"end_col":39,"end_line":8,"line":8},"to":[270,140]},{"bbox":[[220,100],[320,140]],"id":"b","kind":"box","span":{"col":1,"end_col":37,"end_line":5,"line":5}}]
+  facts: {"clearance":6,"distance":0}
+warn[near] 9:1-9:53: middle runs along the edge of its own box 'c', 0px away (clearance 6)
+  = help: segment 3 runs at x=20; free x-intervals across y 190..220: 0..14, 126..420
+  elements: [{"from":[20,190],"id":"middle","kind":"line","segment":3,"span":{"col":1,"end_col":53,"end_line":9,"line":9},"to":[20,220]},{"bbox":[[20,200],[120,240]],"id":"c","kind":"box","span":{"col":1,"end_col":36,"end_line":6,"line":6}}]
+  facts: {"clearance":6,"distance":0,"free":{"axis":"x","band":[190,220],"intervals":[[0,14],[126,420]]}}

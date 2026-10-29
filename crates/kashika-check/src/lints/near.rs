@@ -1,7 +1,7 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::{Pt, TOLERANCE, cross, dot, edges, inside_runs, seg_seg_dist};
 
-use crate::ctx::{Ctx, fmt_num, kind_name, line_el, round2, shape_el};
+use crate::ctx::{Ctx, LineGeom, ShapeGeom, fmt_num, kind_name, line_el, round2, shape_el};
 use crate::free::with_free;
 use crate::sink::Sink;
 
@@ -58,7 +58,7 @@ fn near_boxes(ctx: &Ctx, out: &mut Sink) {
             {
                 continue;
             }
-            let mut best: Option<(f64, usize)> = None;
+            let mut best: Option<(f64, usize, Pt, Pt)> = None;
             for &(p, q, k) in &l.pieces {
                 for (e0, e1) in edges(&s.poly) {
                     let gap = if attached {
@@ -68,12 +68,23 @@ fn near_boxes(ctx: &Ctx, out: &mut Sink) {
                     };
                     if let Some(g) = gap.filter(|g| *g < c) {
                         if best.is_none_or(|b| g < b.0) {
-                            best = Some((g, k));
+                            best = Some((g, k, p, q));
                         }
                     }
                 }
             }
-            let Some((gap, k)) = best else { continue };
+            let Some((gap, k, p, q)) = best else { continue };
+            if let Some((message, help)) = attached.then(|| wrong_elbow(ctx, l, s, p, q)).flatten()
+            {
+                let d = Diagnostic::warn("near", l.line.span, message)
+                    .with_element(line_el(l.line, Some(l.segment(k))))
+                    .with_element(shape_el(s.shape))
+                    .with_fact("distance", round2(gap))
+                    .with_fact("clearance", c)
+                    .with_help(help);
+                out.push(d);
+                continue;
+            }
             let message = if attached {
                 format!(
                     "{} runs along the edge of its own {} '{id}', {}px away (clearance {})",
@@ -101,6 +112,49 @@ fn near_boxes(ctx: &Ctx, out: &mut Sink) {
             out.push(with_free(d, l, k, &skip));
         }
     }
+}
+
+/// A first or last piece that runs along the side of the box the line starts or ends on: the
+/// elbow is the wrong way round (`hv` into a `left` side). The message and help to fix it.
+fn wrong_elbow(ctx: &Ctx, l: &LineGeom, s: &ShapeGeom, p: Pt, q: Pt) -> Option<(String, String)> {
+    let id = s.shape.id.as_str();
+    let r = s.shape.rect;
+    let vertical = (p.x - q.x).abs() <= TOLERANCE;
+    if !vertical && (p.y - q.y).abs() > TOLERANCE {
+        return None;
+    }
+    let side = match (vertical, (p.x - r.x).abs() <= (p.x - r.right()).abs()) {
+        (true, true) => "left",
+        (true, false) => "right",
+        (false, _) if (p.y - r.y).abs() <= (p.y - r.bottom()).abs() => "top",
+        (false, _) => "bottom",
+    };
+    let on = |pt: Pt| ctx.attached(pt).contains(&id);
+    let (which, help) = if q.dist(l.end) <= TOLERANCE && on(l.end) {
+        let help = if vertical {
+            "enter a `left`/`right` side horizontally: finish with `vh` (or an `x …` hop, then the anchor)"
+        } else {
+            "enter a `top`/`bottom` side vertically: finish with `hv` (or a `y …` hop, then the anchor)"
+        };
+        ("last", help)
+    } else if p.dist(l.start) <= TOLERANCE && on(l.start) {
+        let help = if vertical {
+            "leave a `left`/`right` side horizontally: start with `hv` (or an `x …` hop)"
+        } else {
+            "leave a `top`/`bottom` side vertically: start with `vh` (or a `y …` hop)"
+        };
+        ("first", help)
+    } else {
+        return None;
+    };
+    Some((
+        format!(
+            "{}'s {which} segment runs along the {side} side of its own {} '{id}'",
+            l.line.id,
+            kind_name(s.shape)
+        ),
+        help.into(),
+    ))
 }
 
 /// Pieces that run parallel to a group's border within `clearance`, on it included. Pieces

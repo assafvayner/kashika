@@ -1,4 +1,3 @@
-use kashika_diag::did_you_mean;
 use kashika_geom::{Pt, Rect};
 
 pub const ANCHORS: &[&str] = &[
@@ -69,7 +68,7 @@ pub fn resolve(
         "br" => Pt::new(x + w, y + h),
         _ => {
             let help =
-                did_you_mean(name, ANCHORS.iter().copied()).map(|s| format!("did you mean `{s}`?"));
+                crate::attrs::suggest_word(name, ANCHORS).map(|s| format!("did you mean `{s}`?"));
             return Err((format!("unknown anchor `{name}` on `{owner}`"), help));
         }
     };

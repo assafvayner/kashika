@@ -1,0 +1,20 @@
+warn[label-collision] 6:28-6:53: label "a long label here" of ab collides with box 'a'
+  = help: no clear label position on ab: the label is 94px wide and its segment 60px long; give it about 120px clear of boxes and arrowheads (widen the gap), shorten it or break it with `\n`
+  elements: [{"bbox":[[103.04,32.5],[196.96,47.5]],"id":"ab","kind":"label","span":{"col":28,"end_col":53,"end_line":6,"line":6}},{"bbox":[[20,20],[120,60]],"id":"a","kind":"box","span":{"col":1,"end_col":35,"end_line":4,"line":4}}]
+  facts: {"bbox":[[103.04,32.5],[196.96,47.5]],"clear_t":[]}
+warn[label-collision] 6:28-6:53: label "a long label here" of ab collides with box 'b'
+  = help: no clear label position on ab: the label is 94px wide and its segment 60px long; give it about 120px clear of boxes and arrowheads (widen the gap), shorten it or break it with `\n`
+  elements: [{"bbox":[[103.04,32.5],[196.96,47.5]],"id":"ab","kind":"label","span":{"col":28,"end_col":53,"end_line":6,"line":6}},{"bbox":[[180,20],[280,60]],"id":"b","kind":"box","span":{"col":1,"end_col":36,"end_line":5,"line":5}}]
+  facts: {"bbox":[[103.04,32.5],[196.96,47.5]],"clear_t":[]}
+warn[label-collision] 6:28-6:53: label "a long label here" of ab collides with the end arrowhead of ab
+  = help: no clear label position on ab: the label is 94px wide and its segment 60px long; give it about 120px clear of boxes and arrowheads (widen the gap), shorten it or break it with `\n`
+  elements: [{"bbox":[[103.04,32.5],[196.96,47.5]],"id":"ab","kind":"label","span":{"col":28,"end_col":53,"end_line":6,"line":6}},{"from":[120,40],"id":"ab","kind":"line","segment":1,"span":{"col":1,"end_col":53,"end_line":6,"line":6},"to":[180,40]}]
+  facts: {"bbox":[[103.04,32.5],[196.96,47.5]],"clear_t":[]}
+warn[label-collision] 7:42-7:55: label "hello" of short collides with the end arrowhead of short
+  = help: no clear label position on short: the label is 28px wide and its segment 40px long; give it about 54px clear of boxes and arrowheads (widen the gap), shorten it or break it with `\n`, or put it beside the line with `label-side=above`
+  elements: [{"bbox":[[26.45,132.5],[53.55,147.5]],"id":"short","kind":"label","span":{"col":42,"end_col":55,"end_line":7,"line":7}},{"from":[20,140],"id":"short","kind":"line","segment":1,"span":{"col":1,"end_col":55,"end_line":7,"line":7},"to":[60,140]}]
+  facts: {"bbox":[[26.45,132.5],[53.55,147.5]],"clear_t":[]}
+warn[label-collision] 7:42-7:55: label "hello" of short collides with the start arrowhead of short
+  = help: no clear label position on short: the label is 28px wide and its segment 40px long; give it about 54px clear of boxes and arrowheads (widen the gap), shorten it or break it with `\n`, or put it beside the line with `label-side=above`
+  elements: [{"bbox":[[26.45,132.5],[53.55,147.5]],"id":"short","kind":"label","span":{"col":42,"end_col":55,"end_line":7,"line":7}},{"from":[20,140],"id":"short","kind":"line","segment":1,"span":{"col":1,"end_col":55,"end_line":7,"line":7},"to":[60,140]}]
+  facts: {"bbox":[[26.45,132.5],[53.55,147.5]],"clear_t":[]}

@@ -8,6 +8,8 @@ use crate::{Format, term};
 
 pub const SCHEMA: &str = "kashika.route/1";
 
+pub const NO_ARROW: &str = "`route` takes the two points as separate arguments, with no `->`: `kashika route <file> a.right b.left`";
+
 #[derive(Args)]
 pub struct RouteArgs {
     /// Input .kash file, or `-` for stdin
@@ -58,11 +60,13 @@ pub fn run(a: &RouteArgs) -> ExitCode {
         [] => (None, None),
         [f, t] => (Some(*f), Some(*t)),
         _ => {
-            return crate::tool_error(
-                a.format,
-                SCHEMA,
-                "expected `<from> <to>` and an optional style (corner, arc, bezier)",
-            );
+            let mut msg =
+                "expected `<from> <to>` and an optional style (corner, arc, bezier)".to_string();
+            if rest.iter().any(|r| r.contains("->")) {
+                msg.push_str("; ");
+                msg.push_str(NO_ARROW);
+            }
+            return crate::tool_error(a.format, SCHEMA, &msg);
         }
     };
     let opts = match crate::options(&a.file, a.allow_path, &a.include) {

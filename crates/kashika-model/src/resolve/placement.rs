@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use kashika_diag::{Diagnostic, did_you_mean};
+use kashika_diag::Diagnostic;
 use kashika_geom::{Pt, Rect};
 use kashika_syntax::ast::{self, Axis, Coord, Point, Target};
 
@@ -254,7 +254,7 @@ impl<'a> Resolver<'a> {
         let Some(&name) = anchor::ANCHORS.iter().find(|n| **n == name.as_str()) else {
             let mut d =
                 Diagnostic::error("attr", a.span, format!("unknown anchor `{name}` in `pin`"));
-            if let Some(s) = did_you_mean(name, anchor::ANCHORS.iter().copied()) {
+            if let Some(s) = attrs::suggest_word(name, anchor::ANCHORS) {
                 d = d.with_help(format!("did you mean `{s}`?"));
             }
             self.diags.push(d);

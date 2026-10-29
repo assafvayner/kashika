@@ -323,7 +323,7 @@ fn unknown_shape_suggests_a_name() {
     let d = errors("box a at (0,0) size (10,10) shape=cylindr\n");
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].code, "unknown-shape");
-    assert_eq!(d[0].help, vec!["did you mean `cylinder`?".to_string()]);
+    assert_eq!(d[0].help[0], "did you mean `cylinder`?");
 }
 
 #[test]
@@ -454,5 +454,5 @@ fn unknown_custom_shape_suggests_a_definition() {
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].code, "unknown-shape");
-    assert_eq!(d[0].help, vec!["did you mean `tri`?".to_string()]);
+    assert_eq!(d[0].help[0], "did you mean `tri`?");
 }

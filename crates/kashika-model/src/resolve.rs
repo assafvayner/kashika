@@ -349,6 +349,7 @@ impl<'a> Resolver<'a> {
             assets: Vec::new(),
             placement: Vec::new(),
             literals: Vec::new(),
+            fitted: (false, false),
         };
         let mut seen = false;
         for stmt in &file.stmts {

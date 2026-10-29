@@ -1,0 +1,9 @@
+error[unknown-shape] 4:38-4:52: unknown shape `database`
+  = help: did you mean `cylinder`?
+  = help: built-in shapes: `rect`, `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`
+error[unknown-shape] 5:37-5:51: unknown shape `Decision`
+  = help: did you mean `diamond`?
+  = help: built-in shapes: `rect`, `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`
+error[unknown-shape] 6:37-6:49: unknown shape `server`
+  = help: `server` is a bundled icon: put it on a box with `icon="server"`, or draw the box as it with `shape server from "server"`
+  = help: built-in shapes: `rect`, `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`

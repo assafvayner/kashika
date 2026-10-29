@@ -1,0 +1,9 @@
+// spec: 5, 7
+// A first or last segment that runs along the side of its own box is a `near` whose help names the elbow that fixes it; a middle run along it keeps the general message.
+diagram "wrong elbow" size (420,300)
+box a "A" at (20,20) size (100,40)
+box b "B" at (220,100) size (100,40)
+box c "C" at (20,200) size (100,40)
+line into_left a.right -> hv b.left
+line from_right c.right -> vh b.bottom
+line middle c.top -> v -10 -> h -50 -> v 30 -> h -10

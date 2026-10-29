@@ -464,7 +464,7 @@ fn unknown_shape_in_a_library_style_points_at_the_import() {
         d[0].message,
         "in `lib/aws.kash` at 1:11: unknown shape `lc`"
     );
-    assert_eq!(d[0].help, vec!["did you mean `lb`?".to_string()]);
+    assert_eq!(d[0].help[0], "did you mean `lb`?");
     assert_eq!(shape(&s, "a").shape, "rect");
     assert_eq!(shape(&s, "b").shape, "aws.lb");
 
@@ -496,7 +496,7 @@ fn standalone_library_resolves_style_shapes() {
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].code, "unknown-shape");
     assert_eq!(d[0].span.line, 2);
-    assert_eq!(d[0].help, vec!["did you mean `lb`?".to_string()]);
+    assert_eq!(d[0].help[0], "did you mean `lb`?");
 }
 
 #[test]

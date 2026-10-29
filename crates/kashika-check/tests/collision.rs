@@ -151,6 +151,45 @@ fn label_over_the_boxes_its_line_connects() {
             "label \"calls the api\" of l collides with box 'b'"
         ]
     );
+    assert!(
+        d[0].help[0].starts_with(
+            "no clear label position on l: the label is 68px wide and its segment 40px long; give it about 74px clear"
+        ),
+        "{d:#?}"
+    );
+}
+
+#[test]
+fn a_label_too_wide_for_its_run_suggests_a_side() {
+    let d = lint(
+        "label-collision",
+        "line l (20,100) -> h 40 start=arrow end=arrow label=\"hello\"\n",
+    );
+    assert_eq!(d.len(), 2, "{d:#?}");
+    assert!(
+        d[0].help[0].ends_with("or put it beside the line with `label-side=above`"),
+        "{d:#?}"
+    );
+}
+
+#[test]
+fn free_text_over_a_box_suggests_its_block() {
+    let d = lint(
+        "label-collision",
+        "box a at (20,20) size (200,80)\ntext \"note\" at (120,70)\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].help,
+        vec![
+            "to put the text inside 'a', move it into its text block, in box-local coordinates: `box a … { text \"note\" at (100,50) }`"
+        ]
+    );
+    let d = lint(
+        "label-collision",
+        "box a at (20,20) size (200,80)\ntext \"note\" at (120,105)\n",
+    );
+    assert!(d[0].help.is_empty(), "{d:#?}");
 }
 
 #[test]

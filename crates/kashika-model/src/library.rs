@@ -9,7 +9,7 @@ use kashika_syntax::ast::{self, ShapeBody, Stmt};
 use crate::assets::Store;
 use crate::attrs::{self, Attrs};
 use crate::loader::{FileError, Found, Loader};
-use crate::shapes::{UnitShape, builtin_shape, shape_names};
+use crate::shapes::{SHAPES, UnitShape, builtin_shape, shape_names};
 use crate::style::{self, StyleProps};
 
 /// Deepest chain of nested imports followed before giving up.
@@ -605,9 +605,21 @@ pub(crate) fn shape_name(
         .map(|n| -> &str { n })
         .chain(shapes.keys().filter_map(|k| k.strip_prefix(ns)));
     let mut d = Diagnostic::error("unknown-shape", a.span, format!("unknown shape `{w}`"));
-    if let Some(s) = did_you_mean(w, names) {
+    let lower = w.to_ascii_lowercase();
+    let keyword = SHAPES
+        .iter()
+        .find(|s| s.name == lower || s.keywords.contains(&lower.as_str()))
+        .map(|s| s.name);
+    if let Some(s) = keyword.or_else(|| did_you_mean(w, names)) {
         d = d.with_help(format!("did you mean `{s}`?"));
     }
+    if crate::icons::bundled(w).is_some() {
+        d = d.with_help(format!(
+            "`{w}` is a bundled icon: put it on a box with `icon=\"{w}\"`, or draw the box as it with `shape {w} from \"{w}\"`"
+        ));
+    }
+    let list: Vec<String> = shape_names().map(|n| format!("`{n}`")).collect();
+    d = d.with_help(format!("built-in shapes: {}", list.join(", ")));
     diags.push(d);
     None
 }

@@ -404,7 +404,9 @@ impl<'a> Resolver<'a> {
                 .collect();
             let mut d =
                 Diagnostic::error("unknown-style", a.span, format!("unknown style `{name}`"));
-            if let Some(s) = did_you_mean(name, names) {
+            if matches!(name.as_str(), "dashed" | "dotted" | "solid") {
+                d = d.with_help(format!("a stroke pattern is `stroke-style={name}`"));
+            } else if let Some(s) = did_you_mean(name, names) {
                 d = d.with_help(format!("did you mean `{s}`?"));
             }
             self.diags.push(d);

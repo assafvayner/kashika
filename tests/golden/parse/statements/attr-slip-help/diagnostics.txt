@@ -1,0 +1,24 @@
+error[attr] 6:7-6:12: unknown attribute `label` on box
+  = help: the label is the quoted string after the id, with no `label=`: `box <id> "C" …`
+error[attr] 7:36-7:41: unknown attribute `label` on group
+  = help: the label is the quoted string after the id, with no `label=`: `group <id> "G" …`
+error[attr] 9:24-9:29: unknown attribute `width` on box
+  = help: the size is a clause: write `size (w,h)`, without `=`
+error[attr] 9:34-9:40: unknown attribute `height` on box
+  = help: the size is a clause: write `size (w,h)`, without `=`
+error[attr] 10:37-10:48: `icon` expects a string
+  = help: quote it: `icon="server"`
+error[file] 11:38-11:53: file `database` not found
+  = help: no icon is called `database`; the built-in shape `cylinder` matches it: `shape=cylinder`
+error[attr] 12:37-12:47: `pin` expects one of: top, bottom, left, right, center, tl, tr, bl, br, top-left, top-right, bottom-left, bottom-right
+  = help: did you mean `center`?
+error[attr] 13:27-13:32: unknown attribute `arrow` on line
+  = help: arrowheads are line ends: write `end=arrow`, or use the `arrow` statement
+error[attr] 14:25-14:30: unknown attribute `arrow` on line
+  = help: arrowheads are line ends: write `start=arrow end=arrow`, or use the `arrow` statement
+error[attr] 15:33-15:39: unknown attribute `dashed` on line
+  = help: write `stroke-style=dashed`
+error[unknown-anchor] 16:11-16:17: unknown anchor `middle` on `a`
+  = help: did you mean `center`?
+error[unknown-style] 16:28-16:40: unknown style `dotted`
+  = help: a stroke pattern is `stroke-style=dotted`

@@ -1,5 +1,5 @@
 use kashika_diag::{Diagnostic, Element, Span};
-use kashika_geom::{Pt, Rect, inside_runs, point_at, polygons_overlap, rect_polygon};
+use kashika_geom::{PathSeg, Pt, Rect, inside_runs, point_at, polygons_overlap, rect_polygon};
 use kashika_model::Marker;
 
 use crate::ctx::{
@@ -18,6 +18,8 @@ struct Subject<'c> {
     label: Option<(usize, &'c kashika_model::Label)>,
     /// For the label under a `text-area=below` shape: that shape's id.
     shape: Option<&'c str>,
+    /// For a free `text`: the text.
+    text: Option<&'c kashika_model::Text>,
 }
 
 /// `label-collision`: a line label, text or the label under a `text-area=below` shape
@@ -46,11 +48,19 @@ pub fn label_collision(ctx: &Ctx, out: &mut Sink) {
         if hits.is_empty() {
             continue;
         }
+        let shape_hit = hits
+            .iter()
+            .any(|(_, el)| matches!(el.kind, "box" | "image"));
         let clear = s.label.map(|(li, label)| {
             let ts = clear_positions(ctx, &subjects, &grid, i, li, label);
-            let help = describe_clear(&ctx.lines[li].line.id, &ts);
+            let help = if ts.is_empty() {
+                no_clear_position(ctx, ctx.lines[li].line, label, shape_hit)
+            } else {
+                describe_clear(&ctx.lines[li].line.id, &ts)
+            };
             (ts, help)
         });
+        let into_block = s.text.and_then(|t| text_in_box(ctx, t));
         for (other, el) in hits {
             let mut d = Diagnostic::warn(
                 "label-collision",
@@ -58,10 +68,15 @@ pub fn label_collision(ctx: &Ctx, out: &mut Sink) {
                 format!("{} collides with {other}", s.what),
             )
             .with_element(s.el.clone())
-            .with_element(el)
+            .with_element(el.clone())
             .with_fact("bbox", bbox(s.rect));
             if let Some((ts, help)) = &clear {
                 d = d.with_fact("clear_t", ts).with_help(help);
+            }
+            if let Some((id, help)) = &into_block {
+                if el.id == *id {
+                    d = d.with_help(help);
+                }
             }
             out.push(d);
         }
@@ -137,6 +152,7 @@ fn subjects<'c>(ctx: &'c Ctx) -> Vec<Subject<'c>> {
                 rect,
                 label: Some((li, lab)),
                 shape: None,
+                text: None,
             });
         }
     }
@@ -148,6 +164,7 @@ fn subjects<'c>(ctx: &'c Ctx) -> Vec<Subject<'c>> {
             rect: text_box(t),
             label: None,
             shape: None,
+            text: Some(t),
         });
     }
     for s in ctx.boxes() {
@@ -163,6 +180,7 @@ fn subjects<'c>(ctx: &'c Ctx) -> Vec<Subject<'c>> {
             rect,
             label: None,
             shape: Some(s.shape.id.as_str()),
+            text: None,
         });
     }
     out
@@ -282,10 +300,87 @@ fn clear_positions(
         .collect()
 }
 
-fn describe_clear(line: &str, ts: &[f64]) -> String {
-    if ts.is_empty() {
-        return format!("no clear label position on {line}; move the line or the obstacle");
+/// For a free text whose anchor point is inside a box: the box's id, and the help to move the
+/// text into that box's block, in box-local coordinates.
+fn text_in_box(ctx: &Ctx, t: &kashika_model::Text) -> Option<(String, String)> {
+    let at = Rect::new(t.at.x, t.at.y, 0.0, 0.0);
+    let s = ctx
+        .boxes_near(at, 0.0)
+        .find(|s| s.shape.kind == kashika_model::ShapeKind::Box && contains(s.shape.rect, at))?;
+    let r = s.shape.rect;
+    let id = &s.shape.id;
+    let help = format!(
+        "to put the text inside '{id}', move it into its text block, in box-local coordinates: `box {id} … {{ text {:?} at ({},{}) }}`",
+        t.content,
+        fmt_num(t.at.x - r.x),
+        fmt_num(t.at.y - r.y),
+    );
+    Some((id.clone(), help))
+}
+
+/// The help for a line label with no clear position: how long a run it needs.
+fn no_clear_position(
+    ctx: &Ctx,
+    l: &kashika_model::Line,
+    label: &kashika_model::Label,
+    shape_hit: bool,
+) -> String {
+    let w = l.style.stroke_width;
+    let len = |m: Marker| match m {
+        Marker::Open => Marker::Arrow.length(w),
+        m => m.length(w),
+    };
+    let fallback = format!(
+        "no clear label position on {}; move the line or the obstacle",
+        l.id
+    );
+    let Some((from, to)) = l.path.iter().find_map(|s| match *s {
+        PathSeg::Line { from, to } if on_segment(label.at, from, to) => Some((from, to)),
+        _ => None,
+    }) else {
+        return fallback;
+    };
+    let horizontal = (to.x - from.x).abs() >= (to.y - from.y).abs();
+    let (extent, dim) = if horizontal {
+        (label.rect.w, "wide")
+    } else {
+        (label.rect.h, "tall")
+    };
+    let ends = len(l.start).max(len(l.end));
+    let need = (extent + 2.0 * ends + ctx.scene.clearance).ceil();
+    let run = from.dist(to);
+    if !label.side.is_on() || run >= need {
+        return fallback;
     }
+    let mut help = format!(
+        "no clear label position on {}: the label is {}px {dim} and its segment {}px long; give it about {}px clear of boxes and arrowheads (widen the gap), shorten it or break it with `\\n`",
+        l.id,
+        fmt_num(extent.ceil()),
+        fmt_num(run.round()),
+        fmt_num(need),
+    );
+    if !shape_hit {
+        let side = [
+            (kashika_model::LabelSide::Above, "above"),
+            (kashika_model::LabelSide::Left, "left"),
+        ]
+        .into_iter()
+        .find(|(s, _)| s.fits(&l.path, label.t).is_ok());
+        if let Some((_, side)) = side {
+            help.push_str(&format!(
+                ", or put it beside the line with `label-side={side}`"
+            ));
+        }
+    }
+    help
+}
+
+fn on_segment(p: Pt, a: Pt, b: Pt) -> bool {
+    let len = a.dist(b);
+    len > 0.0 && (p.dist(a) + p.dist(b) - len).abs() <= 0.5
+}
+
+fn describe_clear(line: &str, ts: &[f64]) -> String {
     let mut ranges: Vec<(f64, f64)> = Vec::new();
     for &t in ts {
         match ranges.last_mut() {

@@ -1,0 +1,16 @@
+// spec: 3, 3a, 4, 5, 7
+// Attributes written the way other tools spell them are `attr` errors whose help shows the Kashika form.
+diagram "attribute slips" size (500,300)
+box a "A" at (20,20) size (100,40)
+box b "B" at (220,20) size (100,40)
+box c label="C" at (20,100) size (100,40)
+group g at (300,200) size (150,80) label="G" {
+}
+box d "D" at (160,100) width=100 height=40
+box e "E" at (20,200) size (100,40) icon=server
+box f "F" at (160,200) size (100,40) icon="database"
+box hh "H" at (380,20) size (60,40) pin=middle
+line l1 a.right -> b.left arrow=end
+line l2 b.right -> h 40 arrow=both
+line l3 a.top -> v -10 -> h 200 dashed
+line l4 a.middle -> b.left style=dotted

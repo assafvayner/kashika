@@ -1156,3 +1156,40 @@ fn elbow_pair_position_is_inside_0_1() {
     let (_, d) = parse("box vhv at (0,0) size (1,1)\n");
     assert_eq!(d[0].message, "`vhv` is a reserved word and cannot be an id");
 }
+
+#[test]
+fn common_slips_get_the_fix_as_help() {
+    for (src, help) in [
+        ("box b at (0,0) size 100x50\n", "write `size (100,50)`"),
+        ("box b at (0,0) size 100 x 50\n", "write `size (100,50)`"),
+        ("box b at (0,0) size 100,50\n", "write `size (100,50)`"),
+        (
+            "line l a.right --> b.left\n",
+            "a line hop is `->`, not `-->`",
+        ),
+        (
+            "line l a.right -> x b.left.x -> b.left\n",
+            "`x` takes a point and uses its x: write `x b.left`",
+        ),
+        (
+            "line l a.right -> y b.top.y\n",
+            "`y` takes a point and uses its y: write `y b.top`",
+        ),
+        ("line l a.right -> to b.left\n", "write `-> b.left`"),
+        ("line l a.right => b.left\n", "write `->`"),
+        (
+            "box b at 20,30 size (1,1)\n",
+            "a literal point is in parentheses: `(20,30)`",
+        ),
+        (
+            "box b (20,30) size (1,1)\n",
+            "a position starts with `at`: `at (x,y)`",
+        ),
+    ] {
+        let (_, d) = parse(src);
+        assert!(
+            d.iter().any(|x| x.code == "parse" && x.help == [help]),
+            "{src}: {d:#?}"
+        );
+    }
+}

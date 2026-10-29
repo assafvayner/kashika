@@ -40,7 +40,7 @@ impl<'a> Attrs<'a> {
                     a.key.span,
                     format!("unknown attribute `{key}` on {what}"),
                 );
-                if let Some(h) = unknown_help(a, allowed) {
+                if let Some(h) = unknown_help(a, what, allowed) {
                     d = d.with_help(h);
                 }
                 diags.push(d);
@@ -83,12 +83,38 @@ impl<'a> Attrs<'a> {
 
 /// The help for an attribute `allowed` doesn't take: `size (w,h)` for a `size=` pair, else the
 /// name meant in this context, else the nearest allowed name.
-fn unknown_help(a: &Attr, allowed: &[&str]) -> Option<String> {
+fn unknown_help(a: &Attr, what: &str, allowed: &[&str]) -> Option<String> {
     let key = a.key.name.as_str();
     if key == "size" && matches!(a.value, Value::Pair(..) | Value::Size(_)) {
         return Some(
             "`size` is a clause, not an attribute: write `size (w,h)`, without `=`".into(),
         );
+    }
+    if key == "label" && matches!(what, "box" | "group" | "text") {
+        let text = match &a.value {
+            Value::Str(s) => s.as_str(),
+            _ => "…",
+        };
+        let id = if what == "text" { "" } else { "<id> " };
+        return Some(format!(
+            "the label is the quoted string after the id, with no `label=`: `{what} {id}\"{text}\" …`"
+        ));
+    }
+    if matches!(key, "arrow" | "arrowhead" | "head") && allowed.contains(&"end") {
+        let ends = match &a.value {
+            Value::Word(w) if w == "start" => "`start=arrow`",
+            Value::Word(w) if w == "both" => "`start=arrow end=arrow`",
+            _ => "`end=arrow`",
+        };
+        return Some(format!(
+            "arrowheads are line ends: write {ends}, or use the `arrow` statement"
+        ));
+    }
+    if matches!(key, "width" | "height" | "w" | "h") && matches!(what, "box" | "group" | "image") {
+        return Some("the size is a clause: write `size (w,h)`, without `=`".into());
+    }
+    if matches!(key, "dashed" | "dotted" | "solid") && allowed.contains(&"stroke-style") {
+        return Some(format!("write `stroke-style={key}`"));
     }
     MEANT
         .iter()
@@ -131,11 +157,17 @@ pub fn aliased<'a>(
 }
 
 pub fn type_err(a: &Attr, expected: &str) -> Diagnostic {
-    Diagnostic::error(
+    let d = Diagnostic::error(
         "attr",
         a.span,
         format!("`{}` expects {expected}", a.key.name),
-    )
+    );
+    match &a.value {
+        Value::Word(w) if expected == "a string" => {
+            d.with_help(format!("quote it: `{}=\"{w}\"`", a.key.name))
+        }
+        _ => d,
+    }
 }
 
 pub fn num(a: &Attr, diags: &mut Vec<Diagnostic>) -> Option<f64> {
@@ -293,12 +325,33 @@ pub fn word(
         format!("`{}` expects one of: {}", a.key.name, options.join(", ")),
     );
     if let Value::Word(w) = &a.value {
-        if let Some(s) = did_you_mean(w, options.iter().copied()) {
+        if let Some(s) = suggest_word(w, options) {
             d = d.with_help(format!("did you mean `{s}`?"));
         }
     }
     diags.push(d);
     None
+}
+
+/// Words written where one of `options` is meant: (written, meant), checked before spelling.
+const WORDS_MEANT: &[(&str, &str)] = &[
+    ("middle", "center"),
+    ("mid", "center"),
+    ("centre", "center"),
+    ("north", "top"),
+    ("south", "bottom"),
+    ("east", "right"),
+    ("west", "left"),
+    ("arrowhead", "arrow"),
+];
+
+/// The option meant by `w`: a known synonym, else the nearest spelling.
+pub fn suggest_word<'a>(w: &str, options: &[&'a str]) -> Option<&'a str> {
+    WORDS_MEANT
+        .iter()
+        .find(|(written, meant)| *written == w && options.contains(meant))
+        .and_then(|(_, meant)| options.iter().copied().find(|o| o == meant))
+        .or_else(|| did_you_mean(w, options.iter().copied()))
 }
 
 pub fn style_props(a: &Attrs, diags: &mut Vec<Diagnostic>) -> StyleProps {

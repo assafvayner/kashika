@@ -22,11 +22,50 @@ fn running_along_its_own_box_edge() {
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(
         d[0].message,
+        "l's first segment runs along the top side of its own box 'a'"
+    );
+    let d = lint(
+        "near",
+        "box a at (100,100) size (100,60)\nline l a.top -> v -20 -> h 50 -> v 60 -> h 40\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
         "l runs along the edge of its own box 'a', 0px away (clearance 6)"
     );
     assert!(lint(
         "near",
         "box a at (100,100) size (100,60)\nbox b at (400,100) size (100,60)\nline l a.right -> b.left\n"
+    )
+    .is_empty());
+}
+
+#[test]
+fn a_wrong_elbow_into_its_own_box_names_the_fix() {
+    let d = lint(
+        "near",
+        "box a at (20,20) size (100,40)\nbox b at (220,100) size (100,40)\nline l a.right -> hv b.left\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "l's last segment runs along the left side of its own box 'b'"
+    );
+    assert!(d[0].help[0].contains("finish with `vh`"), "{d:#?}");
+    let d = lint(
+        "near",
+        "box a at (20,140) size (100,40)\nbox b at (220,20) size (100,40)\nline l a.right -> vh b.bottom\n",
+    );
+    assert_eq!(d.len(), 2, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "l's first segment runs along the right side of its own box 'a'"
+    );
+    assert!(d[0].help[0].contains("start with `hv`"), "{d:#?}");
+    assert!(d[1].help[0].contains("finish with `hv`"), "{d:#?}");
+    assert!(lint(
+        "near",
+        "box a at (20,20) size (100,40)\nbox b at (220,100) size (100,40)\nline l a.right -> hvh b.left\n",
     )
     .is_empty());
 }

@@ -26,6 +26,9 @@ pub struct Scene {
     pub placement: Vec<PlacementEdge>,
     /// Every number the author wrote as a position, distance or size.
     pub literals: Vec<Literal>,
+    /// Whether each canvas axis was fitted to the drawing rather than given in `size`.
+    #[serde(skip)]
+    pub fitted: (bool, bool),
 }
 
 impl Scene {

@@ -157,6 +157,15 @@ impl Parser<'_> {
         Err(())
     }
 
+    /// `error`, with a help line.
+    fn error_help<T>(&mut self, expected: &str, help: String) -> PResult<T> {
+        let r = self.error(expected);
+        if let Some(d) = self.diags.pop() {
+            self.diags.push(d.with_help(help));
+        }
+        r
+    }
+
     /// The source text from the start of `from` to the end of `to`.
     fn source(&self, from: Span, to: Span) -> String {
         let lines = self
@@ -499,12 +508,29 @@ impl Parser<'_> {
 
     /// `size (w,h)`, where each axis is a number or `auto`.
     fn size(&mut self) -> PResult<Size> {
+        if let Some(help) = self.bare_size() {
+            return self.error_help("`(`", help);
+        }
         self.expect(Tok::LParen)?;
         let w = self.dim()?;
         self.expect(Tok::Comma)?;
         let h = self.dim()?;
         self.expect(Tok::RParen)?;
         Ok(Size { w, h })
+    }
+
+    /// The help for a size written without parentheses: `100x50`, `100 x 50` or `100,50`.
+    fn bare_size(&self) -> Option<String> {
+        let Tok::Num(w) = self.tok() else {
+            return None;
+        };
+        let h = match (self.tok_at(1), self.tok_at(2)) {
+            (Tok::Ident(s), Tok::Num(h)) if s == "x" => *h,
+            (Tok::Comma, Tok::Num(h)) => *h,
+            (Tok::Ident(s), _) => s.strip_prefix('x')?.parse().ok()?,
+            _ => return None,
+        };
+        Some(format!("write `size ({w},{h})`"))
     }
 
     fn dim(&mut self) -> PResult<Option<f64>> {
@@ -741,6 +767,9 @@ impl Parser<'_> {
             segs.push(self.seg()?);
         }
         if segs.is_empty() {
+            if *self.tok() == Tok::Eq {
+                return self.error_help("`->` followed by a segment", "write `->`".into());
+            }
             return self.error("`->` followed by a segment");
         }
         let attrs = self.attrs(LINE_FLAGS)?;
@@ -853,6 +882,9 @@ impl Parser<'_> {
     fn required<T>(&mut self, v: Option<T>, kw: &str) -> PResult<T> {
         match v {
             Some(v) => Ok(v),
+            None if kw == "at" && *self.tok() == Tok::LParen => {
+                self.error_help("`at`", "a position starts with `at`: `at (x,y)`".into())
+            }
             None => self.error(&format!("`{kw}`")),
         }
     }
@@ -995,6 +1027,9 @@ impl Parser<'_> {
         }
         let neg = *self.tok() == Tok::Minus;
         self.bump();
+        if neg && *self.tok() == Tok::Arrow {
+            return self.error_help("`(`", "a line hop is `->`, not `-->`".into());
+        }
         let (dx, dy) = self.pair()?;
         Ok(Some(Offset { neg, dx, dy }))
     }
@@ -1118,7 +1153,13 @@ impl Parser<'_> {
     }
 
     fn reference(&mut self) -> PResult<Ref> {
-        let id = self.ident("a point: `(x,y)` or a reference like `db.left`")?;
+        const EXPECTED: &str = "a point: `(x,y)` or a reference like `db.left`";
+        if let (Tok::Num(x), Tok::Comma, Tok::Num(y)) = (self.tok(), self.tok_at(1), self.tok_at(2))
+        {
+            let help = format!("a literal point is in parentheses: `({x},{y})`");
+            return self.error_help(EXPECTED, help);
+        }
+        let id = self.ident(EXPECTED)?;
         let next_is_anchor = *self.tok() == Tok::Dot
             && matches!(self.tok_at(1), Tok::Ident(s) if s != "x" && s != "y");
         let anchor = if next_is_anchor {
@@ -1139,6 +1180,16 @@ impl Parser<'_> {
 
     fn seg(&mut self) -> PResult<Seg> {
         let start = self.span();
+        if self.is_kw("to") && starts_point(self.tok_at(1)) {
+            let to = self.bump();
+            let p = self.point()?;
+            let p = self.source(p.span(), p.span());
+            self.diags.push(
+                Diagnostic::error("parse", to, "`->` takes the point directly, with no `to`")
+                    .with_help(format!("write `-> {p}`")),
+            );
+            return Err(());
+        }
         let kw = match self.tok() {
             Tok::Ident(s) if *self.tok_at(1) != Tok::Dot => Some(s.clone()),
             _ => None,
@@ -1154,11 +1205,11 @@ impl Parser<'_> {
             }
             Some("x") => {
                 self.bump();
-                SegKind::X(self.target()?)
+                SegKind::X(self.target("x")?)
             }
             Some("y") => {
                 self.bump();
-                SegKind::Y(self.target()?)
+                SegKind::Y(self.target("y")?)
             }
             Some("hv") => {
                 self.bump();
@@ -1220,13 +1271,23 @@ impl Parser<'_> {
         Err(())
     }
 
-    fn target(&mut self) -> PResult<Target> {
+    fn target(&mut self, kw: &str) -> PResult<Target> {
         if let Tok::Num(n) = self.tok() {
             let n = *n;
             self.bump();
             Ok(Target::Num(n))
         } else {
-            Ok(Target::Point(self.point()?))
+            let p = self.point()?;
+            if *self.tok() == Tok::Dot
+                && matches!(self.tok_at(1), Tok::Ident(a) if a == "x" || a == "y")
+            {
+                let p = self.source(p.span(), p.span());
+                return self.error_help(
+                    "end of statement",
+                    format!("`{kw}` takes a point and uses its {kw}: write `{kw} {p}`"),
+                );
+            }
+            Ok(Target::Point(p))
         }
     }
 
