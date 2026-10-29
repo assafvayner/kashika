@@ -19,6 +19,7 @@ box api "API" at (40,40) size (140,60) style=service fill=#ffffff
 | `muted` | `#64748b` | color of sublabels and muted text |
 | `text-align` | `center` (groups `left`) | `left`, `center`, `right`; boxes and groups |
 | `text-valign` | `middle` | `top`, `middle`, `bottom`; boxes only |
+| `title` | `top` | `top`, `bottom`: the edge a group's title sits along; groups only |
 | `shape` | `rect` | boxes only: any `shape=` name (`kashika ref shapes`) |
 | `size` | fitted | boxes and groups without their own `size`: `(w,h)`, either axis `auto` |
 
@@ -28,10 +29,10 @@ The canvas is transparent by default (JPEG: white). `background=C` on the `diagr
 
 - Precedence: inline attribute > `style=` > built-in default. This holds for `shape` and `size` too: an inline `shape=` beats the style's, and an inline `size (w,h)` replaces the style's `size=(w,h)` whole.
 - A user style with a built-in's name overrides it key by key, and so does a library style of that name imported without `as`.
-- Groups start from `boundary`. Groups take no shape: a group's `style=` naming a style with `shape` is an error, and so is `shape` in `style boundary`. A group may take its `size` from its style, but `size` in `style boundary` is an error. Groups take `text-align` from a style but not `text-valign`: naming a style that sets it is an error, and so is `text-valign` in `style boundary`. Without one, or on an `auto` axis, a group fits its children.
+- Groups start from `boundary`. Groups take no shape: a group's `style=` naming a style with `shape` is an error, and so is `shape` in `style boundary`. A group may take its `size` from its style, but `size` in `style boundary` is an error. Groups take `text-align` from a style but not `text-valign`: naming a style that sets it is an error, and so is `text-valign` in `style boundary`. `title=bottom` in `style boundary` puts every group's title at the bottom; a box naming a style that sets `title` is an error. Without one, or on an `auto` axis, a group fits its children.
 - `size=12` in a style is an error: the text size is `font-size`. Lines ignore a style's `size`.
 - In an imported library, a style's `shape` names the library's own shapes as the library writes them: `shape=s3` in `lib/aws.kash`, imported `as aws`, is `aws.s3`.
-- On lines, a style applies only its `stroke*` and font keys, never `text-align` or `text-valign`. Free `text` takes no `style=`.
+- On lines, a style applies only its `stroke*` and font keys, never `text-align`, `text-valign` or `title`. Free `text` takes no `style=`.
 
 ```kash
 diagram "commits" size (200, 60)

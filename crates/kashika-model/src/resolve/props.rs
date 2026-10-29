@@ -116,9 +116,19 @@ impl<'a> Resolver<'a> {
                         Diagnostic::error(
                             "attr",
                             x.span,
-                            "this style sets `text-valign`, but a group's title always sits at the top",
+                            "this style sets `text-valign`, but a group's title sits at its top or bottom edge",
                         )
-                        .with_help("use a style without `text-valign`, or drop `text-valign` from it"),
+                        .with_help("use a style without `text-valign`, or drop `text-valign` from it; `title=bottom` puts the title at the bottom"),
+                    );
+                }
+                if !group && named.title.is_some() {
+                    self.diags.push(
+                        Diagnostic::error(
+                            "attr",
+                            x.span,
+                            "this style sets `title`, but only groups have a title",
+                        )
+                        .with_help("use a style without `title`, or drop `title` from it; a box places its text with `text-valign`"),
                     );
                 }
                 color = named.color.clone().or(color);

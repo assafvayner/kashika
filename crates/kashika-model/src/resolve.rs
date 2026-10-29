@@ -70,6 +70,7 @@ fn node_keys(group: bool) -> Vec<&'static str> {
         .filter(|k| !group || !matches!(**k, "shape" | "layer"))
         .chain(style::STYLE_KEYS)
         .chain(textlayout::SHAPE_TEXT_KEYS)
+        .filter(|k| group || **k != "title")
         .copied()
         .collect()
 }

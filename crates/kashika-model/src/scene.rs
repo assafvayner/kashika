@@ -148,9 +148,11 @@ pub struct Shape {
     pub text_below: bool,
     /// Label, sublabel and text block items, laid out.
     pub text: Vec<TextItem>,
-    /// Height of a group's reserved title band from its top edge; 0 for boxes and
-    /// unlabeled groups.
+    /// Height of a group's reserved title band from its top edge (its bottom edge with
+    /// `title=bottom`); 0 for boxes and unlabeled groups.
     pub title_band: f64,
+    #[serde(skip_serializing_if = "TitlePos::is_top")]
+    pub title: TitlePos,
     pub allow: Vec<Allow>,
     pub reason: Option<String>,
     /// Canvas position of the frame this element's literals are written in.
@@ -261,6 +263,36 @@ impl Align {
             Align::Center => "center",
             Align::Right => "right",
         }
+    }
+}
+
+/// `title=`: the edge of a group its title and reserved title band sit along.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TitlePos {
+    #[default]
+    Top,
+    Bottom,
+}
+
+impl TitlePos {
+    pub const NAMES: &'static [&'static str] = &["top", "bottom"];
+
+    pub fn from_name(name: &str) -> Option<TitlePos> {
+        [TitlePos::Top, TitlePos::Bottom]
+            .into_iter()
+            .find(|x| x.name() == name)
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            TitlePos::Top => "top",
+            TitlePos::Bottom => "bottom",
+        }
+    }
+
+    pub fn is_top(&self) -> bool {
+        *self == TitlePos::Top
     }
 }
 

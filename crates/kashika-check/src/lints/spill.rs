@@ -1,5 +1,6 @@
 use kashika_diag::{Diagnostic, Element, Span};
 use kashika_geom::{Pt, Rect, fmt_num, inside_runs, rect_polygon};
+use kashika_model::TitlePos;
 
 use crate::ctx::{Ctx, describe_overflow, line_bbox, overflow, overflow_fact};
 use crate::element::{bbox, junction_el, line_el, shape_el, text_el};
@@ -62,7 +63,13 @@ pub fn spill(ctx: &Ctx, out: &mut Sink) {
                     .with_element(c.el)
                     .with_element(shape_el(g.shape))
                     .with_fact("band", bbox(b))
-                    .with_help(format!("keep children below local y={}", fmt_num(b.h))),
+                    .with_help(match g.shape.title {
+                        TitlePos::Top => format!("keep children below local y={}", fmt_num(b.h)),
+                        TitlePos::Bottom => format!(
+                            "keep children above local y={}",
+                            fmt_num(b.y - g.shape.rect.y)
+                        ),
+                    }),
                 );
             }
         }

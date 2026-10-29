@@ -135,6 +135,14 @@ fn group_title_band_and_box() {
     assert_eq!(title_box(&s.shapes[1]), None);
     assert_eq!(title_band(&s.shapes[2]), None);
     assert_eq!(title_box(&s.shapes[2]), None);
+    let s = scene("group g \"VPC\" at (0,100) size (200,100) title=bottom {\n}\n");
+    let g = &s.shapes[0];
+    let band = title_band(g).unwrap();
+    assert_eq!(
+        band,
+        Rect::new(0.0, 200.0 - g.title_band, 200.0, g.title_band)
+    );
+    assert!((title_box(g).unwrap().bottom() - (200.0 - g.style.padding.y)).abs() < 1e-9);
 }
 
 #[test]

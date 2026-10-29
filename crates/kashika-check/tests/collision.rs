@@ -247,6 +247,34 @@ fn lines_crossing_group_titles() {
         d[0].help[1],
         "or move the title away from the line: `text-align=right` on 'pub'"
     );
+    assert_eq!(
+        d[0].help[2],
+        "or move the title to the bottom edge: `title=bottom` on 'pub'"
+    );
+    let d = lint(
+        "label-collision",
+        &format!("{group}line l (40,-20) -> v 240\n"),
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].help.len(), 2, "{:?}", d[0].help);
+    let bottom = group.replacen("size (300,200)", "size (300,200) title=bottom", 1);
+    assert!(
+        lint(
+            "label-collision",
+            &format!("{bottom}line l nat.top -> y -40\n")
+        )
+        .is_empty()
+    );
+    let d = lint(
+        "label-collision",
+        &format!("{bottom}line l nat.bottom -> y 240\n"),
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert!(d[0].help[0].ends_with("inside the group above y=174.5 or outside it"));
+    assert_eq!(
+        d[0].help[2],
+        "or move the title to the top edge: `title=top` on 'pub'"
+    );
     assert!(
         lint(
             "label-collision",

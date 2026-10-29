@@ -546,8 +546,8 @@ pub(crate) fn style_attr<'s>(s: &'s ast::StyleDef, key: &str) -> Option<&'s ast:
 }
 
 /// Drops `size` and `text-valign` from the style `name` when it is `boundary`, which every
-/// group starts from: a size there would size every group, and a group's title always sits
-/// at the top.
+/// group starts from: a size there would size every group, and a group's title sits at its
+/// top or bottom edge (`title=`).
 pub(crate) fn boundary_keys(
     name: &str,
     s: &ast::StyleDef,
@@ -575,9 +575,9 @@ pub(crate) fn boundary_keys(
             Diagnostic::error(
                 "attr",
                 span,
-                "the `boundary` style can't set `text-valign`: every group starts from it, and a group's title always sits at the top",
+                "the `boundary` style can't set `text-valign`: every group starts from it, and a group's title sits at its top or bottom edge",
             )
-            .with_help("drop `text-valign` here, and set it with another style or inline on the box"),
+            .with_help("drop `text-valign` here, and set it with another style or inline on the box; `title=bottom` puts group titles at the bottom"),
         );
         props.text_valign = None;
     }

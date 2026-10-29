@@ -1,6 +1,6 @@
 error[attr] 3:8-3:24: in `lib/inner.kash` at 2:11: unknown attribute `fil` on style
   = help: did you mean `fill`?
-  = help: style keys: `fill`, `stroke`, `stroke-width`, `stroke-style`, `font-size`, `font-weight`, `color`, `radius`, `padding`, `muted`, `text-align`, `text-valign`, `shape`, `size`
+  = help: style keys: `fill`, `stroke`, `stroke-width`, `stroke-style`, `font-size`, `font-weight`, `color`, `radius`, `padding`, `muted`, `text-align`, `text-valign`, `title`, `shape`, `size`
 error[parse] 3:8-3:24: in `lib/inner.kash` at 1:1: `diagram` is not allowed in a library; library files may contain only `shape`, `style` and `import`
 error[file] 4:8-4:23: file `lib/gone.kash` not found
   = help: did you mean `lib/inner.kash`?

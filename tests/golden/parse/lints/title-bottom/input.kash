@@ -1,0 +1,9 @@
+// spec: 7
+// dump: scene
+// With `title=bottom`, a child in the bottom band spills, and a line leaving through the bottom title gets the `title=top` help.
+diagram "bottom titles" size (320, 260)
+group g "Region" at (20, 20) size (240, 140) title=bottom {
+  box a "A" at (5, 20) size (60, 40)
+  box b "B" at (130, 80) size (80, 40)
+}
+arrow out a.bottom -> v 140

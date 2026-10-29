@@ -1,5 +1,5 @@
 use kashika_geom::{Pt, Rect};
-use kashika_model::{Label, Shape, ShapeKind, Text, TextRole};
+use kashika_model::{Label, Shape, ShapeKind, Text, TextRole, TitlePos};
 
 pub fn text_box(t: &Text) -> Rect {
     t.rect
@@ -27,10 +27,19 @@ pub fn below_box(s: &Shape) -> Option<Rect> {
         .reduce(Rect::union)
 }
 
-/// The reserved band at the top of a group with a title: padding plus the title's height.
+/// The reserved band at the top (or, with `title=bottom`, the bottom) of a group with a
+/// title: padding plus the title's height.
 pub fn title_band(g: &Shape) -> Option<Rect> {
-    (g.kind == ShapeKind::Group && g.title_band > 0.0)
-        .then(|| Rect::new(g.rect.x, g.rect.y, g.rect.w, g.title_band))
+    (g.kind == ShapeKind::Group && g.title_band > 0.0).then(|| band_at(g, g.title))
+}
+
+/// Where `g`'s title band would sit with `title=pos`.
+pub fn band_at(g: &Shape, pos: TitlePos) -> Rect {
+    let y = match pos {
+        TitlePos::Top => g.rect.y,
+        TitlePos::Bottom => g.rect.bottom() - g.title_band,
+    };
+    Rect::new(g.rect.x, y, g.rect.w, g.title_band)
 }
 
 /// Where a group's title is drawn: the union of its label, sublabel and stacked block items.

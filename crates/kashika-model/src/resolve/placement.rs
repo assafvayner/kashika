@@ -7,7 +7,7 @@ use kashika_syntax::ast::{self, Axis, Coord, Point, Target};
 use crate::anchor;
 use crate::attrs;
 use crate::form;
-use crate::scene::ShapeKind;
+use crate::scene::{ShapeKind, TitlePos};
 use crate::textlayout::{self, ShapeInput};
 
 use super::build::Built;
@@ -334,7 +334,8 @@ impl<'a> Resolver<'a> {
     }
 
     /// Places a fitted group: from its frame to the far edge of everything inside it, plus
-    /// `padding`, and at least as large as its title. A fitted axis is rounded up to whole
+    /// `padding`, and at least as large as its title; with `title=bottom`, the title's
+    /// height goes below the far edge instead. A fitted axis is rounded up to whole
     /// pixels, then to the `grid`.
     fn place_fitted(&mut self, idx: usize, g: &'a ast::Group) -> Option<Rect> {
         let origin = self.fitted_frame(idx)?;
@@ -381,24 +382,25 @@ impl<'a> Resolver<'a> {
         }
         let pad = p.style.padding;
         let grid = self.grid;
-        let fit = |far: f64, o: f64, pad: f64, title: Option<f64>| {
-            let inner = if far == f64::NEG_INFINITY {
-                0.0
-            } else {
-                (far - o).max(0.0) + pad
-            };
-            let v = inner.max(title.unwrap_or(0.0)).ceil();
+        let fit = |far: f64, o: f64, pad: f64, title: Option<f64>, below: bool| {
+            let reach = (far != f64::NEG_INFINITY).then(|| (far - o).max(0.0));
+            let v = match (reach, title) {
+                (Some(r), Some(t)) if below => r + t,
+                (r, t) => r.map_or(0.0, |r| r + pad).max(t.unwrap_or(0.0)),
+            }
+            .ceil();
             grid.map_or(v, |g| (v / g).ceil() * g)
         };
+        let below = p.text.title == TitlePos::Bottom;
         let (fw, fh) = p.fitted;
         let size = (
             if fw {
-                fit(far_x, origin.x, pad.x, title.map(|t| t.0))
+                fit(far_x, origin.x, pad.x, title.map(|t| t.0), false)
             } else {
                 w
             },
             if fh {
-                fit(far_y, origin.y, pad.y, title.map(|t| t.1))
+                fit(far_y, origin.y, pad.y, title.map(|t| t.1), below)
             } else {
                 h
             },

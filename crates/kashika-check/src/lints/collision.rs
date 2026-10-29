@@ -2,13 +2,15 @@ use kashika_diag::{Diagnostic, Element, Span, fact};
 use kashika_geom::{
     PathSeg, Pt, Rect, fmt_num, inside_runs, point_at, polygons_overlap, rect_polygon,
 };
-use kashika_model::Marker;
+use kashika_model::{Marker, TitlePos};
 
 use crate::ctx::Ctx;
 use crate::element::{arr, bbox, line_el, shape_el, text_el};
 use crate::index::Grid;
 use crate::sink::Sink;
-use crate::text_box::{below_box, label_box, label_box_at, text_box, title_band, title_box};
+use crate::text_box::{
+    band_at, below_box, label_box, label_box_at, text_box, title_band, title_box,
+};
 
 struct Subject<'c> {
     el: Element,
@@ -127,14 +129,29 @@ fn titles_crossed(ctx: &Ctx, out: &mut Sink) {
             let Some((entry, k)) = hit else { continue };
             let seg = l.segment(k);
             let span = l.line.segments.get(seg).map_or(l.line.span, |s| s.span);
-            let band = title_band(g.shape).map_or(t.bottom(), |b| b.bottom());
+            let band = title_band(g.shape);
+            let inside = match g.shape.title {
+                TitlePos::Top => format!(
+                    "below y={}",
+                    fmt_num(band.map_or(t.bottom(), |b| b.bottom()))
+                ),
+                TitlePos::Bottom => format!("above y={}", fmt_num(band.map_or(t.y, |b| b.y))),
+            };
             let side = if entry.x < g.shape.rect.center().x {
                 "right"
             } else {
                 "left"
             };
-            out.push(
-                Diagnostic::warn(
+            let other = match g.shape.title {
+                TitlePos::Top => TitlePos::Bottom,
+                TitlePos::Bottom => TitlePos::Top,
+            };
+            let other_band = rect_polygon(band_at(g.shape, other));
+            let flip = band.is_some()
+                && l.pieces
+                    .iter()
+                    .all(|&(p, q, _)| inside_runs(p, q, &other_band).is_empty());
+            let mut d = Diagnostic::warn(
                     "label-collision",
                     span,
                     format!(
@@ -147,20 +164,27 @@ fn titles_crossed(ctx: &Ctx, out: &mut Sink) {
                 .with_fact("bbox", bbox(t))
                 .with_fact(fact::ENTRY, arr(entry))
                 .with_help(format!(
-                    "the title of '{}' covers x {}..{}, y {}..{}; route {} around it, e.g. inside the group below y={} or outside it",
+                    "the title of '{}' covers x {}..{}, y {}..{}; route {} around it, e.g. inside the group {inside} or outside it",
                     g.shape.id,
                     fmt_num(t.x),
                     fmt_num(t.right()),
                     fmt_num(t.y),
                     fmt_num(t.bottom()),
                     l.line.id,
-                    fmt_num(band)
                 ))
                 .with_help(format!(
                     "or move the title away from the line: `text-align={side}` on '{}'",
                     g.shape.id
-                )),
-            );
+                ));
+            if flip {
+                d = d.with_help(format!(
+                    "or move the title to the {} edge: `title={}` on '{}'",
+                    other.name(),
+                    other.name(),
+                    g.shape.id
+                ));
+            }
+            out.push(d);
         }
     }
 }

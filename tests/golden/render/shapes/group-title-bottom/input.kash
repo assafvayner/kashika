@@ -1,0 +1,18 @@
+// spec: 3, 6
+// raster: png
+// `title=bottom` reserves the title band at the bottom: with an icon and `text-align=right`, on a fitted group, and with a line entering from above.
+diagram "group titles"
+group top "Top title" at (20, 20) size (200, 120) {
+  box a "A" at (20, 40) size (100, 40)
+}
+group bottom "Bottom title" at (240, 20) size (200, 120) title=bottom icon="server" text-align=right sublabel="us-east-1" {
+  box b "B" at (20, 16) size (100, 40)
+}
+group fitted "Fitted" at (460, 20) title=bottom {
+  box c "C" at (16, 16) size (100, 40)
+}
+box client "Client" at (240, 180) size (100, 40)
+arrow down client.bottom -> v 30 -> hv d.top
+group lower "Entered from above" at (200, 260) size (240, 120) title=bottom {
+  box d "D" at (100, 20) size (100, 40)
+}

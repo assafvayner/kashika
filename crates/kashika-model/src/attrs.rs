@@ -3,7 +3,7 @@ use kashika_syntax::ast::{Attr, Size, Value};
 use kashika_text::VAlign;
 
 use crate::colors;
-use crate::scene::Align;
+use crate::scene::{Align, TitlePos};
 use crate::style::{FontWeight, Padding, StrokeStyle, StyleProps};
 
 /// Attribute names written where another name is meant: (written, meant). Each is suggested
@@ -118,6 +118,11 @@ fn unknown_help(a: &Attr, what: &str, allowed: &[&str]) -> Option<String> {
     }
     if matches!(key, "width" | "height" | "w" | "h") && matches!(what, "box" | "group" | "image") {
         return Some("the size is a clause: write `size (w,h)`, without `=`".into());
+    }
+    if key == "title" && what == "box" {
+        return Some(
+            "`title=` places a group's title; a box places its text with `text-valign`".into(),
+        );
     }
     if StrokeStyle::NAMES.contains(&key) && allowed.contains(&"stroke-style") {
         return Some(format!("write `stroke-style={key}`"));
@@ -403,6 +408,9 @@ pub fn style_props(a: &Attrs, diags: &mut Vec<Diagnostic>) -> StyleProps {
     }
     if let Some(x) = a.get("text-valign") {
         p.text_valign = valign(x, diags);
+    }
+    if let Some(x) = a.get("title") {
+        p.title = word(x, TitlePos::NAMES, diags).and_then(TitlePos::from_name);
     }
     p
 }

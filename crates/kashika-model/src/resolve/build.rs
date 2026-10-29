@@ -199,7 +199,14 @@ impl<'a> Resolver<'a> {
                 let lh = p.style.font_size * 1.25;
                 let r = match (kind, ic.pos) {
                     (ShapeKind::Group, _) => {
-                        Rect::new(rect.x + pad.x, rect.y + pad.y + (lh - s) / 2.0, s, s)
+                        let top = match p.text.title {
+                            TitlePos::Top => rect.y + pad.y,
+                            TitlePos::Bottom if text.title_band > 0.0 => {
+                                rect.bottom() - text.title_band
+                            }
+                            TitlePos::Bottom => rect.bottom() - pad.y - lh,
+                        };
+                        Rect::new(rect.x + pad.x, top + (lh - s) / 2.0, s, s)
                     }
                     (_, IconPos::Left) => {
                         Rect::new(rect.x + pad.x, rect.center().y - s / 2.0, s, s)
@@ -222,6 +229,7 @@ impl<'a> Resolver<'a> {
             text_below: svg.is_some_and(|s| s.below),
             text: text.items,
             title_band: text.title_band,
+            title: p.text.title,
             allow: p.allow.clone(),
             reason: p.reason.clone(),
             origin,
@@ -256,6 +264,7 @@ impl<'a> Resolver<'a> {
             text_below: false,
             text: Vec::new(),
             title_band: 0.0,
+            title: TitlePos::Top,
             allow: p.allow.clone(),
             reason: p.reason.clone(),
             origin,

@@ -1,0 +1,12 @@
+// spec: 3, 6
+// dump: scene
+// `title` is a style key: `style boundary` sets it for every group, and an inline `title=` beats `style=`.
+diagram "style title" size (600, 300)
+style boundary { title=bottom }
+style low { title=top }
+group g "G" at (20, 20) size (200, 120) {
+}
+group h2 "H" at (240, 20) size (200, 120) style=low {
+}
+group k "K" at (20, 160) size (200, 120) style=low title=bottom {
+}

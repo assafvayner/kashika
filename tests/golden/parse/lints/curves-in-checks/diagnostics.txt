@@ -15,6 +15,7 @@ warn[group-transit] 14:1-14:50: transit passes through group 'outer' without con
 warn[label-collision] 14:26-14:50: transit crosses the title of group 'inner'
   = help: the title of 'inner' covers x 128..161.37, y 248..265.5; route transit around it, e.g. inside the group below y=265.5 or outside it
   = help: or move the title away from the line: `text-align=right` on 'inner'
+  = help: or move the title to the bottom edge: `title=bottom` on 'inner'
   elements: [{"from":[20,380],"id":"transit","kind":"line","segment":1,"span":{"col":1,"end_col":50,"end_line":14,"line":14},"to":[300,380]},{"bbox":[[120,240],[220,340]],"frame":"outer","id":"inner","kind":"group","local_bbox":[[100,40],[200,140]],"span":{"col":3,"end_col":49,"end_line":11,"line":11}}]
   facts: {"bbox":[[128,248],[161.37,265.5]],"entry":[130.61,265.5]}
 warn[label-collision] 16:1-16:30: text 'note' collides with label "covering" of tag

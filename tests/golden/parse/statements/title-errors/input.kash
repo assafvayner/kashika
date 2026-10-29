@@ -1,0 +1,11 @@
+// spec: 3, 7
+// `title=` takes `top` or `bottom` and applies to groups only, inline or from a style.
+diagram "title errors" size (400, 200)
+box a "A" at (10, 10) size (80, 40) title=bottom
+group g "G" at (120, 10) size (120, 100) title=left {
+}
+group h2 "H" at (260, 10) size (120, 100) title {
+}
+text "T" at (10, 120) title=top
+style low { title=top }
+box c "C" at (10, 150) size (80, 40) style=low

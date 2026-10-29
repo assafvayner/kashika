@@ -5,7 +5,7 @@ use kashika_text::{Block, HAlign, MarkupError, PlacedLine, VAlign, measure, stac
 use serde::Serialize;
 
 use crate::attrs::{self, Attrs, LIMIT, Min};
-use crate::scene::{Align, Fit, ShapeKind};
+use crate::scene::{Align, Fit, ShapeKind, TitlePos};
 use crate::shapes;
 use crate::style::{FontWeight, Padding, Style, StyleProps};
 
@@ -44,6 +44,7 @@ pub(crate) struct ShapeTextProps {
     align: Align,
     valign: VAlign,
     gap: f64,
+    pub(crate) title: TitlePos,
 }
 
 impl Default for ShapeTextProps {
@@ -53,6 +54,7 @@ impl Default for ShapeTextProps {
             align: Align::Center,
             valign: VAlign::Middle,
             gap: DEFAULT_GAP,
+            title: TitlePos::Top,
         }
     }
 }
@@ -71,18 +73,22 @@ pub(crate) fn shape_text_props(
         None if group => Align::Left,
         None => Align::Center,
     };
+    let title = style.title.unwrap_or_default();
     let valign = if group {
         if let Some(x) = a.get("text-valign") {
             diags.push(
                 Diagnostic::error(
                     "attr",
                     x.span,
-                    "a group's title always sits at the top; `text-valign` applies to boxes only",
+                    "a group's title sits at its top or bottom edge; `text-valign` applies to boxes only",
                 )
-                .with_help("remove `text-valign`"),
+                .with_help("remove `text-valign`; `title=bottom` puts the title at the bottom"),
             );
         }
-        VAlign::Top
+        match title {
+            TitlePos::Top => VAlign::Top,
+            TitlePos::Bottom => VAlign::Bottom,
+        }
     } else {
         style.text_valign.unwrap_or(VAlign::Middle)
     };
@@ -95,6 +101,7 @@ pub(crate) fn shape_text_props(
         align,
         valign,
         gap,
+        title,
     }
 }
 

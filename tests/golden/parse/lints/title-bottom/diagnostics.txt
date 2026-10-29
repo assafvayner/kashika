@@ -1,0 +1,10 @@
+warn[spill] 7:3-7:39: box 'b' intrudes on the title band of group 'g'
+  = help: keep children above local y=114.5
+  elements: [{"bbox":[[150,100],[230,140]],"frame":"g","id":"b","kind":"box","local_bbox":[[130,80],[210,120]],"span":{"col":3,"end_col":39,"end_line":7,"line":7}},{"bbox":[[20,20],[260,160]],"id":"g","kind":"group","span":{"col":1,"end_col":58,"end_line":5,"line":5}}]
+  facts: {"band":[[20,134.5],[260,160]]}
+warn[label-collision] 9:23-9:28: out crosses the title of group 'g'
+  = help: the title of 'g' covers x 28..73.81, y 134.5..152; route out around it, e.g. inside the group above y=134.5 or outside it
+  = help: or move the title away from the line: `text-align=right` on 'g'
+  = help: or move the title to the top edge: `title=top` on 'g'
+  elements: [{"from":[55,80],"id":"out","kind":"line","segment":1,"span":{"col":1,"end_col":28,"end_line":9,"line":9},"to":[55,220]},{"bbox":[[20,20],[260,160]],"id":"g","kind":"group","span":{"col":1,"end_col":58,"end_line":5,"line":5}}]
+  facts: {"bbox":[[28,134.5],[73.81,152]],"entry":[55,134.5]}

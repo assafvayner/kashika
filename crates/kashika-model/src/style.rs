@@ -2,7 +2,7 @@ use kashika_syntax::ast::Size;
 use kashika_text::VAlign;
 use serde::{Serialize, Serializer};
 
-use crate::scene::Align;
+use crate::scene::{Align, TitlePos};
 
 pub const STYLE_KEYS: &[&str] = &[
     "fill",
@@ -17,6 +17,7 @@ pub const STYLE_KEYS: &[&str] = &[
     "muted",
     "text-align",
     "text-valign",
+    "title",
 ];
 
 /// Keys a `style` definition takes: the style keys, `shape` and `size`.
@@ -186,6 +187,8 @@ pub struct StyleProps {
     pub text_align: Option<Align>,
     /// Boxes only.
     pub text_valign: Option<VAlign>,
+    /// Groups only.
+    pub title: Option<TitlePos>,
     /// The qualified shape name; boxes only.
     pub shape: Option<String>,
     /// Boxes and groups only.
@@ -208,6 +211,7 @@ impl StyleProps {
             muted: top.muted.clone().or_else(|| self.muted.clone()),
             text_align: top.text_align.or(self.text_align),
             text_valign: top.text_valign.or(self.text_valign),
+            title: top.title.or(self.title),
             shape: top.shape.clone().or_else(|| self.shape.clone()),
             size: top.size.or(self.size),
         }

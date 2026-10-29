@@ -1,0 +1,7 @@
+error[attr] 4:37-4:42: unknown attribute `title` on box
+  = help: `title=` places a group's title; a box places its text with `text-valign`
+error[attr] 5:42-5:52: `title` expects one of: top, bottom
+error[attr] 7:43-7:48: `title` expects one of: top, bottom
+error[attr] 9:23-9:28: unknown attribute `title` on text
+error[attr] 11:38-11:47: this style sets `title`, but only groups have a title
+  = help: use a style without `title`, or drop `title` from it; a box places its text with `text-valign`

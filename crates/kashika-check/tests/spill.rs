@@ -17,6 +17,23 @@ fn child_outside_its_group() {
 }
 
 #[test]
+fn bottom_title_band_is_reserved() {
+    let group = |y: u32| {
+        format!(
+            "group g \"VPC\" at (0,0) size (200,100) title=bottom {{\n  box a at (10,{y}) size (40,40)\n}}\n"
+        )
+    };
+    let d = lint("spill", &group(50));
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "box 'a' intrudes on the title band of group 'g'"
+    );
+    assert_eq!(d[0].help[0], "keep children above local y=74.5");
+    assert!(lint("spill", &group(0)).is_empty());
+}
+
+#[test]
 fn title_band_is_reserved() {
     let d = lint(
         "spill",

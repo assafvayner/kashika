@@ -1,6 +1,7 @@
 warn[label-collision] 12:25-12:29: nat_igw crosses the title of group 'pub'
   = help: the title of 'pub' covers x 28..117.39, y 48..65.5; route nat_igw around it, e.g. inside the group below y=65.5 or outside it
   = help: or move the title away from the line: `text-align=right` on 'pub'
+  = help: or move the title to the bottom edge: `title=bottom` on 'pub'
   elements: [{"from":[80,100],"id":"nat_igw","kind":"line","segment":1,"span":{"col":1,"end_col":39,"end_line":12,"line":12},"to":[80,10]},{"bbox":[[20,40],[250,270]],"frame":"vpc","id":"pub","kind":"group","local_bbox":[[10,30],[240,260]],"span":{"col":3,"end_col":54,"end_line":5,"line":5}}]
   facts: {"bbox":[[28,48],[117.39,65.5]],"entry":[80,65.5]}
 warn[label-collision] 13:61-13:80: label "egress" of nat_app collides with the border of group 'priv'

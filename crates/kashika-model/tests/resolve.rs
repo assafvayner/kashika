@@ -1934,6 +1934,14 @@ fn fitted_groups_hold_their_title_and_round_to_the_grid() {
 }
 
 #[test]
+fn fitted_groups_with_a_bottom_title_reserve_it_below_the_children() {
+    let s = ok("group g \"G\" at (0,0) title=bottom {\n  box a at (10,10) size (40,40)\n}\n");
+    assert_eq!(rect(&s, "g"), Rect::new(0.0, 0.0, 59.0, 85.0));
+    let s = ok("group g \"G\" at (0,0) title=bottom {\n}\n");
+    assert_eq!(rect(&s, "g").h, 34.0);
+}
+
+#[test]
 fn children_cannot_be_placed_against_a_fitted_group() {
     let d = errors(
         "group g at (0,0) {\n  box a at (0,0) size (10,10)\n  box b at g.right size (10,10)\n}\n",

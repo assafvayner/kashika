@@ -1,6 +1,6 @@
 use kashika_diag::Diagnostic;
 use kashika_geom::Rect;
-use kashika_model::{Font, Scene, Shape, TextRole, compile};
+use kashika_model::{Font, Scene, Shape, TextRole, TitlePos, compile};
 
 const HEAD: &str = "diagram \"t\" size (800,600)\n";
 
@@ -310,6 +310,50 @@ fn group_title_sits_top_left_and_reserves_a_band() {
     assert_eq!(shape(&s, "g").title_band, 0.0);
     let s = ok("group g \"VPC\" at (0,0) size (300,200) text-align=center {\n}\n");
     assert!(close(shape(&s, "g").text[0].rect.center().x, 150.0));
+}
+
+#[test]
+fn group_title_bottom_reserves_a_band_at_the_bottom() {
+    let s = ok(
+        "group g \"VPC\" at (10,10) size (300,200) title=bottom icon=\"server\" text-align=right {\n}\n",
+    );
+    let g = shape(&s, "g");
+    assert_eq!(g.title, TitlePos::Bottom);
+    assert_eq!(g.title_band, 8.0 + 17.5);
+    let t = g.text[0].rect;
+    assert!(close(t.bottom(), 202.0) && close(t.right(), 302.0), "{t:?}");
+    let icon = g.icon.as_ref().unwrap().rect;
+    assert_eq!(icon.x, 18.0);
+    assert!(close(icon.center().y, t.center().y));
+    let s = ok("group g \"VPC\" at (0,0) size (300,200) title=top {\n}\n");
+    assert_eq!(shape(&s, "g").title, TitlePos::Top);
+}
+
+#[test]
+fn title_is_a_style_key_with_inline_precedence() {
+    let s = ok("style boundary { title=bottom }\nstyle low { title=top }\n\
+         group a \"A\" at (0,0) size (100,80) {\n}\n\
+         group b \"B\" at (120,0) size (100,80) style=low {\n}\n\
+         group c \"C\" at (240,0) size (100,80) style=low title=bottom {\n}\n");
+    let titles: Vec<TitlePos> = ["a", "b", "c"].map(|id| shape(&s, id).title).into();
+    assert_eq!(titles, [TitlePos::Bottom, TitlePos::Top, TitlePos::Bottom]);
+    let d = errors("style low { title=top }\nbox b \"B\" at (0,0) size (80,40) style=low\n");
+    assert_eq!(
+        d[0].message,
+        "this style sets `title`, but only groups have a title"
+    );
+}
+
+#[test]
+fn title_is_a_group_attribute() {
+    let d = errors("box b \"B\" at (0,0) size (80,40) title=bottom\n");
+    assert_eq!(d[0].code, "attr");
+    assert_eq!(
+        d[0].help,
+        ["`title=` places a group's title; a box places its text with `text-valign`"]
+    );
+    let d = errors("group g \"G\" at (0,0) size (300,200) title=left {\n}\n");
+    assert_eq!(d[0].message, "`title` expects one of: top, bottom");
 }
 
 #[test]
