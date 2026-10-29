@@ -1,6 +1,6 @@
 use kashika_diag::{Diagnostic, Severity, Span, fact};
 use kashika_geom::{PathSeg, Pt, Rect, point_at};
-use kashika_model::{Font, Run, Scene};
+use kashika_model::{ANCHORS, Font, Run, Scene};
 
 use crate::svg::{esc, n, path_data, render_svg};
 
@@ -8,9 +8,6 @@ const ERROR: &str = "#dc2626";
 const WARN: &str = "#ea580c";
 const GUIDE: &str = "#2563eb";
 const RULER: &str = "#94a3b8";
-const ANCHORS: [&str; 9] = [
-    "top", "bottom", "left", "right", "center", "tl", "tr", "bl", "br",
-];
 
 /// What to draw over the diagram. The default draws nothing, leaving the SVG unchanged.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

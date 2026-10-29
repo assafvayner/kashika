@@ -1,6 +1,12 @@
 use kashika_geom::{Pt, Rect};
 
-pub const ANCHORS: &[&str] = &[
+/// The anchors of a shape, with corners by their short names.
+pub const ANCHORS: [&str; 9] = [
+    "top", "bottom", "left", "right", "center", "tl", "tr", "bl", "br",
+];
+
+/// Every anchor name, the long corner names included.
+pub(crate) const ANCHOR_NAMES: &[&str] = &[
     "top",
     "bottom",
     "left",
@@ -38,7 +44,7 @@ pub fn resolve(
 ) -> Result<Pt, (String, Option<String>)> {
     let name_c = canonical(name);
     let is_side = matches!(name_c, "top" | "bottom" | "left" | "right");
-    if t.is_some() && !is_side && ANCHORS.contains(&name) {
+    if t.is_some() && !is_side && ANCHOR_NAMES.contains(&name) {
         return Err((
             "`@t` only applies to `top`/`bottom`/`left`/`right`".into(),
             Some(format!(
@@ -67,8 +73,8 @@ pub fn resolve(
         "bl" => Pt::new(x, y + h),
         "br" => Pt::new(x + w, y + h),
         _ => {
-            let help =
-                crate::attrs::suggest_word(name, ANCHORS).map(|s| format!("did you mean `{s}`?"));
+            let help = crate::attrs::suggest_word(name, ANCHOR_NAMES)
+                .map(|s| format!("did you mean `{s}`?"));
             return Err((format!("unknown anchor `{name}` on `{owner}`"), help));
         }
     };

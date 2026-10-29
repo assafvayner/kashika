@@ -16,6 +16,7 @@ mod version;
 
 use kashika_diag::Diagnostic;
 
+pub use anchor::ANCHORS;
 pub use assets::{MAX_RASTER_PIXELS, MAX_RASTER_SIDE, probe};
 pub use form::Form;
 pub use icons::{BUNDLED_ICONS, ICON_KEYWORDS};

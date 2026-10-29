@@ -249,12 +249,12 @@ impl<'a> Resolver<'a> {
 
     pub(super) fn pin(&mut self, a: &ast::Attr) -> Option<(&'static str, Option<f64>)> {
         let ast::Value::AnchorAt(name, t) = &a.value else {
-            return attrs::word(a, anchor::ANCHORS, &mut self.diags).map(|n| (n, None));
+            return attrs::word(a, anchor::ANCHOR_NAMES, &mut self.diags).map(|n| (n, None));
         };
-        let Some(&name) = anchor::ANCHORS.iter().find(|n| **n == name.as_str()) else {
+        let Some(&name) = anchor::ANCHOR_NAMES.iter().find(|n| **n == name.as_str()) else {
             let mut d =
                 Diagnostic::error("attr", a.span, format!("unknown anchor `{name}` in `pin`"));
-            if let Some(s) = attrs::suggest_word(name, anchor::ANCHORS) {
+            if let Some(s) = attrs::suggest_word(name, anchor::ANCHOR_NAMES) {
                 d = d.with_help(format!("did you mean `{s}`?"));
             }
             self.diags.push(d);
