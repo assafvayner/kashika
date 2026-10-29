@@ -3,7 +3,7 @@ use kashika_geom::fmt_num;
 use kashika_model::TextRole;
 
 use crate::ctx::{Ctx, describe_overflow, overflow, overflow_fact};
-use crate::element::{bbox, kind_name, shape_el};
+use crate::element::{bbox, shape_el};
 use crate::sink::Sink;
 
 /// `text-outside-shape`: an absolute block item (`at` in the box-local frame) lies outside
@@ -25,7 +25,7 @@ pub fn text_outside_shape(ctx: &Ctx, out: &mut Sink) {
                     format!(
                         "block item \"{}\" lies outside the text area of {} '{}' ({})",
                         item.content,
-                        kind_name(s),
+                        s.kind.name(),
                         s.id,
                         describe_overflow(&over)
                     ),

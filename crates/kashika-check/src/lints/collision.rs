@@ -5,7 +5,7 @@ use kashika_geom::{
 use kashika_model::Marker;
 
 use crate::ctx::Ctx;
-use crate::element::{arr, bbox, kind_name, line_el, shape_el, text_el, text_id};
+use crate::element::{arr, bbox, line_el, shape_el, text_el, text_id};
 use crate::index::Grid;
 use crate::sink::Sink;
 use crate::text_box::{below_box, label_box, label_box_at, text_box, title_band, title_box};
@@ -177,7 +177,7 @@ fn subjects<'c>(ctx: &'c Ctx) -> Vec<Subject<'c>> {
         out.push(Subject {
             el,
             span: s.shape.span,
-            what: format!("the label under {} '{}'", kind_name(s.shape), s.shape.id),
+            what: format!("the label under {} '{}'", s.shape.kind.name(), s.shape.id),
             rect,
             label: None,
             shape: Some(s.shape.id.as_str()),
@@ -201,7 +201,7 @@ fn obstacles(
     for s in ctx.boxes_near(rect, 0.0) {
         if own_shape != Some(s.shape.id.as_str()) && polygons_overlap(&poly, &s.poly) {
             out.push((
-                format!("{} '{}'", kind_name(s.shape), s.shape.id),
+                format!("{} '{}'", s.shape.kind.name(), s.shape.id),
                 shape_el(s.shape),
             ));
         }

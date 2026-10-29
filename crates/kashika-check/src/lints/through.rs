@@ -2,7 +2,7 @@ use kashika_diag::{Diagnostic, code, fact};
 use kashika_geom::{Pt, TOLERANCE, inside_runs, strictly_inside};
 
 use crate::ctx::Ctx;
-use crate::element::{arr, kind_name, line_el, shape_el};
+use crate::element::{arr, line_el, shape_el};
 use crate::free::with_free;
 use crate::sink::Sink;
 
@@ -55,7 +55,7 @@ pub fn through(ctx: &Ctx, out: &mut Sink) {
                         format!(
                             "{} runs through the inside of its own endpoint {} '{id}'",
                             l.line.id,
-                            kind_name(s.shape)
+                            s.shape.kind.name()
                         ),
                     )
                     .with_element(line_el(l.line, Some(l.segment(k))))
@@ -74,7 +74,11 @@ pub fn through(ctx: &Ctx, out: &mut Sink) {
             let d = Diagnostic::warn(
                 code::THROUGH,
                 l.line.span,
-                format!("{} passes through {} '{id}'", l.line.id, kind_name(s.shape)),
+                format!(
+                    "{} passes through {} '{id}'",
+                    l.line.id,
+                    s.shape.kind.name()
+                ),
             )
             .with_element(line_el(l.line, Some(l.segment(k))))
             .with_element(shape_el(s.shape))

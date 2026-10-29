@@ -84,6 +84,17 @@ pub enum ShapeKind {
     Image,
 }
 
+impl ShapeKind {
+    /// `box`, `group` or `image`.
+    pub fn name(self) -> &'static str {
+        match self {
+            ShapeKind::Box => "box",
+            ShapeKind::Group => "group",
+            ShapeKind::Image => "image",
+        }
+    }
+}
+
 /// `layer=`: when a box or image paints, and whether checks treat it as an obstacle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default, Serialize)]
 #[serde(rename_all = "lowercase")]

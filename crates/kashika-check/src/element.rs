@@ -2,7 +2,7 @@
 
 use kashika_diag::Element;
 use kashika_geom::{Pt, Rect, round2};
-use kashika_model::{Junction, Line, Shape, ShapeKind, Text};
+use kashika_model::{Junction, Line, Shape, Text};
 
 use crate::text_box::text_box;
 
@@ -14,14 +14,6 @@ pub fn bbox(r: Rect) -> [[f64; 2]; 2] {
     [arr(r.origin()), arr(Pt::new(r.right(), r.bottom()))]
 }
 
-pub fn kind_name(s: &Shape) -> &'static str {
-    match s.kind {
-        ShapeKind::Box => "box",
-        ShapeKind::Group => "group",
-        ShapeKind::Image => "image",
-    }
-}
-
 /// The id of a text, or `text@L<n>` when it has none.
 pub fn text_id(t: &Text) -> String {
     t.id.clone()
@@ -29,7 +21,7 @@ pub fn text_id(t: &Text) -> String {
 }
 
 pub fn shape_el(s: &Shape) -> Element {
-    let mut e = Element::new(s.id.clone(), kind_name(s), s.span);
+    let mut e = Element::new(s.id.clone(), s.kind.name(), s.span);
     e.bbox = Some(bbox(s.rect));
     if let Some(p) = &s.parent {
         e.frame = Some(p.clone());

@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use kashika_check::ctx::Ctx;
-use kashika_check::element::{bbox, kind_name, text_id};
+use kashika_check::element::{bbox, text_id};
 use kashika_check::free::corridors as free_corridors;
 use kashika_check::ports::ports as find_ports;
 use kashika_diag::{Diagnostic, Severity};
@@ -192,7 +192,7 @@ pub fn build(
                 .collect();
             ShapeInfo {
                 id: s.id.clone(),
-                kind: kind_name(s),
+                kind: s.kind.name(),
                 label: s.label.clone(),
                 parent: s.parent.clone(),
                 line: s.span.line,

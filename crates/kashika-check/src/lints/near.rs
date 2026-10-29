@@ -2,7 +2,7 @@ use kashika_diag::{Diagnostic, code};
 use kashika_geom::{Pt, TOLERANCE, cross, dot, edges, fmt_num, inside_runs, round2, seg_seg_dist};
 
 use crate::ctx::{Ctx, LineGeom, ShapeGeom};
-use crate::element::{kind_name, line_el, shape_el};
+use crate::element::{line_el, shape_el};
 use crate::free::with_free;
 use crate::sink::Sink;
 
@@ -90,7 +90,7 @@ fn near_boxes(ctx: &Ctx, out: &mut Sink) {
                 format!(
                     "{} runs along the edge of its own {} '{id}', {}px away (clearance {})",
                     l.line.id,
-                    kind_name(s.shape),
+                    s.shape.kind.name(),
                     fmt_num(gap),
                     fmt_num(c)
                 )
@@ -99,7 +99,7 @@ fn near_boxes(ctx: &Ctx, out: &mut Sink) {
                     "{} runs {}px from {} '{id}' (clearance {})",
                     l.line.id,
                     fmt_num(gap),
-                    kind_name(s.shape),
+                    s.shape.kind.name(),
                     fmt_num(c)
                 )
             };
@@ -152,7 +152,7 @@ fn wrong_elbow(ctx: &Ctx, l: &LineGeom, s: &ShapeGeom, p: Pt, q: Pt) -> Option<(
         format!(
             "{}'s {which} segment runs along the {side} side of its own {} '{id}'",
             l.line.id,
-            kind_name(s.shape)
+            s.shape.kind.name()
         ),
         help.into(),
     ))

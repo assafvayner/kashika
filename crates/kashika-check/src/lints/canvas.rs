@@ -3,7 +3,7 @@ use kashika_geom::{Rect, fmt_num};
 use kashika_model::Shape;
 
 use crate::ctx::{Ctx, describe_overflow, line_bbox, overflow, overflow_fact};
-use crate::element::{junction_el, kind_name, line_el, shape_el, text_el, text_id};
+use crate::element::{junction_el, line_el, shape_el, text_el, text_id};
 use crate::sink::Sink;
 use crate::text_box::{below_box, label_box, text_box};
 
@@ -79,14 +79,14 @@ pub fn out_of_canvas(ctx: &Ctx, out: &mut Sink) {
             continue;
         }
         check(
-            format!("{} '{}'", kind_name(s), s.id),
+            format!("{} '{}'", s.kind.name(), s.id),
             shape_el(s),
             s.span,
             s.rect,
         );
         if let Some(b) = below_box(s) {
             check(
-                format!("the label under {} '{}'", kind_name(s), s.id),
+                format!("the label under {} '{}'", s.kind.name(), s.id),
                 shape_el(s),
                 s.span,
                 b,

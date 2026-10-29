@@ -3,7 +3,7 @@ use kashika_geom::{Rect, TOLERANCE};
 use kashika_model::{Align, Shape, ShapeKind, TextItem, TextRole};
 
 use crate::ctx::Ctx;
-use crate::element::{kind_name, shape_el};
+use crate::element::shape_el;
 use crate::sink::Sink;
 
 /// Size of a `sublabel` relative to the label.
@@ -14,7 +14,7 @@ const SUBLABEL_SCALE: f64 = 0.8;
 pub fn block_reducible(ctx: &Ctx, out: &mut Sink) {
     for s in &ctx.scene.shapes {
         let Some(rewrite) = rewrite(s) else { continue };
-        let kind = kind_name(s);
+        let kind = s.kind.name();
         let span = s.text.first().map_or(s.span, |t| t.span);
         out.push(
             Diagnostic::warn(
