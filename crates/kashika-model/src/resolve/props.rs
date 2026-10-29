@@ -4,10 +4,10 @@ use kashika_syntax::ast::{self};
 
 use crate::attrs::{self, Attrs, Min};
 use crate::form::Form;
-use crate::library::{LibShape, SvgShape};
+use crate::library::{self, LibShape, SvgShape};
 use crate::markup;
 use crate::scene::*;
-use crate::shapes::{self, BUILTIN_SHAPES};
+use crate::shapes;
 use crate::style::{self, STYLE_KEYS, Style, StyleProps};
 use crate::textlayout::{self, SHAPE_TEXT_KEYS, ShapeTextProps};
 
@@ -108,10 +108,25 @@ impl<'a> Resolver<'a> {
         }
         if let Some(x) = a.get("style") {
             if let Some(named) = self.named_style(x) {
+                if group && named.shape.is_some() {
+                    self.diags.push(
+                        Diagnostic::error(
+                            "attr",
+                            x.span,
+                            "this style sets `shape`, but groups take no shape",
+                        )
+                        .with_help("use a style without `shape`, or drop `shape` from it"),
+                    );
+                }
                 props = props.overlay(&named);
             }
         }
         props = props.overlay(&attrs::style_props(&a, &mut self.diags));
+        let shape = if group {
+            None
+        } else {
+            shape.or_else(|| props.shape.clone())
+        };
         let rounded = shape.as_deref() == Some("rounded");
         if rounded && props.radius.is_none() {
             props.radius = Some(8.0);
@@ -244,23 +259,7 @@ impl<'a> Resolver<'a> {
 
     /// The shape a `shape=` attribute names, if it exists.
     pub(super) fn shape_attr(&mut self, a: &ast::Attr) -> Option<String> {
-        let ast::Value::Word(w) = &a.value else {
-            self.diags.push(attrs::type_err(a, "a shape name"));
-            return None;
-        };
-        if BUILTIN_SHAPES.contains(&w.as_str()) || self.lib.shapes.contains_key(w) {
-            return Some(w.clone());
-        }
-        let names = BUILTIN_SHAPES
-            .iter()
-            .copied()
-            .chain(self.lib.shapes.keys().map(String::as_str));
-        let mut d = Diagnostic::error("unknown-shape", a.span, format!("unknown shape `{w}`"));
-        if let Some(s) = did_you_mean(w, names) {
-            d = d.with_help(format!("did you mean `{s}`?"));
-        }
-        self.diags.push(d);
-        None
+        library::shape_name(a, "", &self.lib.shapes, &mut self.diags)
     }
 
     /// The outline and drawing of a shape name on `rect`: a custom definition, else a

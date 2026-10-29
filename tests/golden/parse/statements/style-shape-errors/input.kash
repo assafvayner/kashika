@@ -1,0 +1,10 @@
+// spec: 3, 7
+// A style's unknown `shape` is `unknown-shape` at the style; a shaped style on a group and `shape` in `style boundary` are `attr` errors.
+diagram "style shape errors" size (400,200)
+style dot { shape=elipse }
+style marker { shape=diamond stroke=#d93025 }
+style boundary { shape=ellipse }
+box a at (20,20) size (40,40) style=dot
+group g at (100,20) size (200,120) style=marker {
+  box b at (20,40) size (40,40) style=marker
+}

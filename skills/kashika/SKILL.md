@@ -50,7 +50,7 @@ diagram "Title" size (900,500) kashika="0.1.0"  // optional: grid=10 (skip it fo
 import "lib/aws.kash" as aws  // library shapes and styles: shape=aws.s3 style=aws.service
 shape tri { path "M 0.5 0 L 1 1 L 0 1 Z" }  // unit coordinates 0..1, stretched to the box; M L H V C Q A Z
 shape s3 from "icons/s3.svg" text-area=below  // an SVG file as a shape; outline=bbox|hull
-style svc { fill=#e8f0fe stroke=#1a73e8 }  // built-ins: service datastore external queue boundary note; colors are hex or CSS names (steelblue), case-insensitive
+style svc { fill=#e8f0fe stroke=#1a73e8 }  // any style key, plus shape= (not on groups); built-ins: service datastore external queue boundary note; colors are hex or CSS names (steelblue), case-insensitive
 box api "API" at (40,40) size (140,60) style=service fill=#1a73e833 stroke=steelblue stroke-width=2  // the text is positional (boxes have no label=); inline keys override style=; #rrggbbaa alpha works; shape=rect|rounded|cylinder|diamond|ellipse|hexagon|doc|cloud|person
 box db "DB" at api.right+(120,0) size (140,60) pin=left  // pin: any anchor, `side@t` included (`pin=left@0.25`); default `tl`
 box badge at db.tr size (16,16) pin=center allow=overlap:db reason="corner badge"
@@ -93,7 +93,8 @@ Line attributes: `start=`/`end=` (`arrow open diamond dot none`), `stroke-style=
 - **Self-loop:** `curve via` from `top@0.8` back to `top@0.2`, with control points above the box. `out-of-canvas` measures a curve's true extent, labels included, so leave room.
 - **Sequence diagram:** lifelines are 2px-wide dashed boxes under each participant, with `layer=under` so messages that skip past them raise no `through`/`near`/`label-collision`. An activation bar is a narrow white box on the lifeline, also `layer=under`, written after the lifeline so it paints on top. Place each message at an absolute height with an offset from the lifeline's top (`lc.top+(0,30) -> x ls.left`) and point it at the bar's side while active. A label sits at the middle of the line; on a message that skips lifelines, pick a `label@t` between two of them. Space lifelines by label width + ~30px.
 - **Table cards (ER diagrams):** a `layer=under` outline box, a header box, then one row box per column stacked with `at prev.bl`, each with `stroke=none padding=3 text-align=left`. `` `code` `` text is monospace and keeps its spaces, so pad the names to line the columns up. Draw relationships between row boxes (`orders_cust.right -> customers_id.left`); offset a card's y so the two rows are level. There are no crow's-foot line ends: use `1`/`N` labels near the ends, or build the prongs from short lines meeting at a junction.
-- **Graphs and timelines** (commit graphs, state dots): place small markers with `pin=center` on a computed column x, leave `grid=` off, and give hollow markers `fill=white`. Lines to a diamond's `left`/`right` meet its tips. Diagonal and curved edges are fine here; leave `ortho` off.
+- **Guides for rows and columns:** a junction without `dot` draws nothing, so use junctions as named lanes and columns, chained so they move together, and place shapes on them with mixed points. Moving a lane or the first column is then a one-line edit. Put repeated looks, `shape=` included, in a `style` (see below).
+- **Graphs and timelines** (commit graphs, state dots): place small markers with `pin=center` on guide columns and lanes, leave `grid=` off, and give hollow markers `fill=white`. Lines to a diamond's `left`/`right` meet its tips. Diagonal and curved edges are fine here; leave `ortho` off.
 
 ```kash
 diagram "Recipes" size (500,260) kashika="0.1.0"
@@ -123,6 +124,25 @@ line req lc.top+(0,30) -> x act.left end=arrow label="request"
 line q act.tr+(0,20) -> x ld.left end=arrow label="query"
 line skip lc.top+(0,130) -> x ld.left end=arrow label@0.75="audit"
 line res act.bl+(0,-10) -> x lc.right end=arrow stroke-style=dashed label="reply"
+```
+
+```kash
+diagram "Guides" size (420,200) kashika="0.1.0"
+style main { fill=#d33a3a stroke=#d33a3a shape=ellipse }
+style dev { fill=#1e9e5a stroke=#1e9e5a shape=ellipse }
+junction main_lane at (0,60)
+junction dev_lane at (0,140)
+junction c0 at (120,0)
+junction c1 at c0+(70,0)
+junction c2 at c1+(70,0)
+text "**main**" at (20, main_lane.y) align=left
+text "**develop**" at (20, dev_lane.y) align=left
+box m0 at (c0.x, main_lane.y) size (16,16) pin=center style=main
+box d1 at (c1.x, dev_lane.y) size (16,16) pin=center style=dev
+box m1 at (c2.x, main_lane.y) size (16,16) pin=center style=main
+line m0.right -> d1.left
+line d1.right -> m1.left
+line m0.right -> m1.left
 ```
 
 ```kash

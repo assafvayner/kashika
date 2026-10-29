@@ -373,6 +373,105 @@ fn imported_shapes_clash_by_qualified_name() {
 }
 
 #[test]
+fn library_style_shapes_resolve_in_the_library_namespace() {
+    let dir = tempfile::tempdir().unwrap();
+    write(dir.path(), "lib/icons/t.svg", SVG.as_bytes());
+    write(
+        dir.path(),
+        "lib/aws.kash",
+        format!(
+            "style service {{ shape=lb fill=#ff0000 }}\nstyle deep {{ shape=in.dot }}\n\
+             style icon {{ shape=t }}\nstyle db {{ shape=cylinder }}\n\
+             {TRI}shape t from \"icons/t.svg\"\nimport \"inner.kash\" as in\n"
+        )
+        .as_bytes(),
+    );
+    write(
+        dir.path(),
+        "lib/inner.kash",
+        b"shape dot {\n  path \"M 0 0 L 1 0 L 1 1 Z\"\n}\n",
+    );
+    let (s, d) = run(
+        dir.path(),
+        &format!(
+            "{HEAD}import \"lib/aws.kash\" as aws\nstyle mine {{ shape=aws.lb }}\n\
+             box a at (0,0) size (10,10) style=aws.service\n\
+             box b at (20,0) size (10,10) style=aws.deep\n\
+             box c at (40,0) size (10,10) style=aws.icon\n\
+             box d at (60,0) size (10,10) style=aws.db\n\
+             box e at (80,0) size (10,10) style=mine\n\
+             box f at (100,0) size (10,10) style=aws.service shape=rect\n"
+        ),
+    );
+    assert!(d.is_empty(), "{d:#?}");
+    assert_eq!(shape(&s, "a").shape, "aws.lb");
+    assert_eq!(shape(&s, "a").style.fill, "#ff0000");
+    assert_eq!(shape(&s, "b").shape, "aws.in.dot");
+    assert_eq!(shape(&s, "c").shape, "aws.t");
+    assert!(shape(&s, "c").image.is_some());
+    assert_eq!(shape(&s, "d").shape, "cylinder");
+    assert_eq!(shape(&s, "e").shape, "aws.lb");
+    assert_eq!(shape(&s, "f").shape, "rect");
+}
+
+#[test]
+fn unknown_shape_in_a_library_style_points_at_the_import() {
+    let dir = tempfile::tempdir().unwrap();
+    write(
+        dir.path(),
+        "lib/aws.kash",
+        format!("style s {{ shape=lc }}\nstyle boundary {{ shape=lb }}\n{TRI}").as_bytes(),
+    );
+    let (s, d) = run(
+        dir.path(),
+        &format!(
+            "{HEAD}import \"lib/aws.kash\" as aws\nbox a at (0,0) size (10,10) style=aws.s\n\
+             box b at (20,0) size (10,10) style=aws.boundary\n"
+        ),
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "unknown-shape");
+    assert_eq!(d[0].span.line, 2);
+    assert_eq!(
+        d[0].message,
+        "in `lib/aws.kash` at 1:11: unknown shape `lc`"
+    );
+    assert_eq!(d[0].help, vec!["did you mean `lb`?".to_string()]);
+    assert_eq!(shape(&s, "a").shape, "rect");
+    assert_eq!(shape(&s, "b").shape, "aws.lb");
+
+    let (s, d) = run(
+        dir.path(),
+        &format!("{HEAD}import \"lib/aws.kash\"\ngroup g at (0,0) size (50,50) {{\n}}\n"),
+    );
+    let mut got: Vec<_> = d.iter().map(|x| (x.code, x.message.as_str())).collect();
+    got.sort();
+    assert_eq!(got.len(), 2, "{d:#?}");
+    assert_eq!(got[0].0, "attr");
+    assert!(
+        got[0]
+            .1
+            .starts_with("in `lib/aws.kash` at 2:18: the `boundary` style can't set `shape`"),
+        "{}",
+        got[0].1
+    );
+    assert_eq!(got[1].0, "unknown-shape");
+    assert_eq!(shape(&s, "g").shape, "rect");
+}
+
+#[test]
+fn standalone_library_resolves_style_shapes() {
+    let dir = tempfile::tempdir().unwrap();
+    let src = format!("style a {{ shape=lb }}\nstyle b {{ shape=lc }}\n{TRI}");
+    write(dir.path(), "main.kash", src.as_bytes());
+    let d = kashika_model::compile_library_with(&src, &opts(dir.path())).expect("a library");
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "unknown-shape");
+    assert_eq!(d[0].span.line, 2);
+    assert_eq!(d[0].help, vec!["did you mean `lb`?".to_string()]);
+}
+
+#[test]
 fn imports_outside_the_root_need_allow_path() {
     let tmp = tempfile::tempdir().unwrap();
     let proj = tmp.path().join("proj");

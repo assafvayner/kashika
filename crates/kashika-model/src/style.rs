@@ -13,6 +13,11 @@ pub const STYLE_KEYS: &[&str] = &[
     "muted",
 ];
 
+/// Keys a `style` definition takes: the style keys and `shape`.
+pub fn def_keys() -> Vec<&'static str> {
+    STYLE_KEYS.iter().copied().chain(["shape"]).collect()
+}
+
 pub const BUILTIN_STYLES: &[&str] = &[
     "service",
     "datastore",
@@ -105,6 +110,8 @@ pub struct StyleProps {
     pub radius: Option<f64>,
     pub padding: Option<Padding>,
     pub muted: Option<String>,
+    /// The qualified shape name; boxes only.
+    pub shape: Option<String>,
 }
 
 impl StyleProps {
@@ -121,6 +128,7 @@ impl StyleProps {
             radius: top.radius.or(self.radius),
             padding: top.padding.or(self.padding),
             muted: top.muted.clone().or_else(|| self.muted.clone()),
+            shape: top.shape.clone().or_else(|| self.shape.clone()),
         }
     }
 

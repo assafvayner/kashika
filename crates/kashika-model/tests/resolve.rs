@@ -1414,3 +1414,116 @@ fn shapes_leading_into_a_cycle_are_not_part_of_it() {
     assert_eq!(codes_of(&d), vec!["placement-cycle"], "{d:#?}");
     assert_eq!(d[0].message, "placement cycle: a -> b -> a");
 }
+
+fn shape_of<'a>(s: &'a Scene, id: &str) -> &'a kashika_model::Shape {
+    s.shapes.iter().find(|x| x.id == id).unwrap()
+}
+
+#[test]
+fn style_sets_the_shape() {
+    let s = ok("style dot { shape=ellipse fill=#ff0000 }\n\
+         box a at (0,0) size (20,20) style=dot\n\
+         box b at (40,0) size (20,20)\n");
+    let a = shape_of(&s, "a");
+    assert_eq!(a.shape, "ellipse");
+    assert_eq!(a.outline, kashika_model::Outline::Path);
+    assert!(a.form.is_some());
+    assert_eq!(a.style.fill, "#ff0000");
+    assert_eq!(shape_of(&s, "b").shape, "rect");
+}
+
+#[test]
+fn inline_shape_overrides_the_style_shape() {
+    let s = ok("style dot { shape=ellipse }\n\
+         box a at (0,0) size (20,20) style=dot shape=diamond\n\
+         box b at (40,0) size (20,20) style=dot shape=rect\n");
+    assert_eq!(shape_of(&s, "a").shape, "diamond");
+    assert_eq!(shape_of(&s, "b").shape, "rect");
+    assert_eq!(shape_of(&s, "b").outline, kashika_model::Outline::Rect);
+}
+
+#[test]
+fn style_shape_can_name_a_user_shape() {
+    let s = ok("shape tri {\n  path \"M 0.5 0 L 1 1 L 0 1 Z\"\n}\n\
+         style t { shape=tri }\n\
+         box a at (0,0) size (40,40) style=t\n");
+    assert_eq!(shape_of(&s, "a").shape, "tri");
+    assert_eq!(shape_of(&s, "a").outline_polygon().len(), 3);
+}
+
+#[test]
+fn style_shape_rounded_defaults_the_radius() {
+    let s = ok(
+        "style r { shape=rounded }\nstyle r4 { shape=rounded radius=4 }\n\
+         box a at (0,0) size (40,40) style=r\n\
+         box b at (50,0) size (40,40) style=r4\n\
+         box c at (100,0) size (40,40) style=r radius=2\n",
+    );
+    assert_eq!(shape_of(&s, "a").style.radius, 8.0);
+    assert_eq!(shape_of(&s, "a").outline, kashika_model::Outline::Rounded);
+    assert_eq!(shape_of(&s, "b").style.radius, 4.0);
+    assert_eq!(shape_of(&s, "c").style.radius, 2.0);
+}
+
+#[test]
+fn builtin_style_override_may_set_a_shape() {
+    let s = ok("style service { shape=cylinder }\nbox a at (0,0) size (40,40) style=service\n");
+    assert_eq!(shape_of(&s, "a").shape, "cylinder");
+    assert_eq!(shape_of(&s, "a").style.fill, "#e8f0fe");
+    let s = ok("box a at (0,0) size (40,40) style=datastore\n");
+    assert_eq!(shape_of(&s, "a").shape, "rect");
+}
+
+#[test]
+fn unknown_shape_in_a_style_suggests() {
+    let d = errors("style s { shape=elipse }\nbox a at (0,0) size (40,40) style=s\n");
+    assert_eq!(codes_of(&d), vec!["unknown-shape"], "{d:#?}");
+    assert_eq!((d[0].span.line, d[0].span.col), (2, 11));
+    assert_eq!(d[0].help, vec!["did you mean `ellipse`?".to_string()]);
+    let d = errors("style s { shape=\"ellipse\" }\n");
+    assert_eq!(codes_of(&d), vec!["attr"], "{d:#?}");
+}
+
+#[test]
+fn group_with_a_shaped_style_is_an_error() {
+    let (s, d) = compile(&format!(
+        "{HEAD}style dot {{ shape=ellipse stroke=#ff0000 }}\ngroup g at (0,0) size (100,100) style=dot {{\n}}\n"
+    ));
+    assert_eq!(codes_of(&d), vec!["attr"], "{d:#?}");
+    assert_eq!(d[0].span.line, 3);
+    assert_eq!(
+        d[0].message,
+        "this style sets `shape`, but groups take no shape"
+    );
+    assert_eq!(
+        d[0].help,
+        vec!["use a style without `shape`, or drop `shape` from it".to_string()]
+    );
+    let g = shape_of(&s, "g");
+    assert_eq!(g.shape, "rect");
+    assert_eq!(g.style.stroke, "#ff0000");
+}
+
+#[test]
+fn boundary_style_takes_no_shape() {
+    let (s, d) = compile(&format!(
+        "{HEAD}style boundary {{ shape=ellipse stroke=#ff0000 }}\ngroup g at (0,0) size (100,100) {{\n}}\nbox a at (200,0) size (20,20) style=boundary\n"
+    ));
+    assert_eq!(codes_of(&d), vec!["attr"], "{d:#?}");
+    assert_eq!(d[0].span.line, 2);
+    assert!(
+        d[0].message
+            .starts_with("the `boundary` style can't set `shape`"),
+        "{}",
+        d[0].message
+    );
+    assert_eq!(shape_of(&s, "g").shape, "rect");
+    assert_eq!(shape_of(&s, "g").style.stroke, "#ff0000");
+    assert_eq!(shape_of(&s, "a").shape, "rect");
+}
+
+#[test]
+fn line_style_ignores_shape() {
+    let s = ok("style s { shape=ellipse stroke=#00ff00 }\nline l (0,0) -> h 100 style=s\n");
+    assert_eq!(s.lines[0].style.stroke, "#00ff00");
+}

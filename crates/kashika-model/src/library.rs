@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-use kashika_diag::{Diagnostic, Span};
+use kashika_diag::{Diagnostic, Span, did_you_mean};
 use kashika_geom::{Rect, parse_unit_path};
 use kashika_syntax::ast::{self, ShapeBody, Stmt};
 
@@ -10,7 +10,7 @@ use crate::assets::Store;
 use crate::attrs::{self, Attrs};
 use crate::loader::{FileError, Found, Loader};
 use crate::shapes::{BUILTIN_SHAPES, UnitShape};
-use crate::style::{STYLE_KEYS, StyleProps};
+use crate::style::{self, StyleProps};
 
 /// Deepest chain of nested imports followed before giving up.
 const MAX_IMPORT_DEPTH: usize = 32;
@@ -136,13 +136,17 @@ impl Library {
     /// Loads a library file checked on its own, as if it were imported without `as`.
     pub fn load_standalone(file: &ast::File, ctx: &mut Ctx) -> Library {
         let mut lib = Library::default();
+        let mut pending = Vec::new();
         for stmt in &file.stmts {
             if let Stmt::Style(s) = stmt {
                 let props = style_props(s, &mut ctx.diags);
-                lib.add_style(s, "", props, ctx);
+                if let Some(k) = lib.add_style(s, "", props, ctx) {
+                    pending.push((k, s));
+                }
             }
         }
         lib.main_defs(file, ctx);
+        lib.style_shapes(&pending, "", &mut ctx.diags);
         lib
     }
 
@@ -246,13 +250,16 @@ impl Library {
         let mut inner = m.parse_diags.clone();
         let outer = std::mem::take(&mut ctx.diags);
         let outer_nested = std::mem::take(&mut ctx.nested);
+        let mut pending = Vec::new();
         for (k, stmt) in m.file.stmts.iter().enumerate() {
             match stmt {
                 Stmt::Shape(_) | Stmt::Import(_) => {}
                 Stmt::Style(s) => {
                     let (props, diags) = &m.styles[&k];
                     ctx.diags.extend(diags.iter().cloned());
-                    self.add_style(s, &ns, props.clone(), ctx);
+                    if let Some(at) = self.add_style(s, &ns, props.clone(), ctx) {
+                        pending.push((at, s));
+                    }
                 }
                 other => ctx.diags.push(Diagnostic::error(
                     "parse",
@@ -269,6 +276,7 @@ impl Library {
         self.module_defs(&m, &ns, chain, ctx);
         chain.depth -= 1;
         chain.stack.pop();
+        self.style_shapes(&pending, &ns, &mut ctx.diags);
         inner.append(&mut ctx.diags);
         let mut found: Vec<Nested> = inner
             .into_iter()
@@ -334,7 +342,14 @@ impl Library {
         }
     }
 
-    fn add_style(&mut self, s: &ast::StyleDef, ns: &str, props: StyleProps, ctx: &mut Ctx) {
+    /// Registers `s` under `ns`; its index in `styles`, or `None` when the name is taken.
+    fn add_style(
+        &mut self,
+        s: &ast::StyleDef,
+        ns: &str,
+        props: StyleProps,
+        ctx: &mut Ctx,
+    ) -> Option<usize> {
         let name = format!("{ns}{}", s.name);
         if self.styles.iter().any(|(n, _)| *n == name) {
             ctx.diags.push(Diagnostic::error(
@@ -342,9 +357,29 @@ impl Library {
                 s.span,
                 format!("style `{name}` is defined twice"),
             ));
-            return;
+            return None;
         }
         self.styles.push((name, props));
+        Some(self.styles.len() - 1)
+    }
+
+    /// Resolves the `shape=` of each registered library style, once every shape under
+    /// `ns` is known.
+    fn style_shapes(
+        &mut self,
+        pending: &[(usize, &ast::StyleDef)],
+        ns: &str,
+        diags: &mut Vec<Diagnostic>,
+    ) {
+        for &(k, s) in pending {
+            let Some(a) = style_shape_attr(s) else {
+                continue;
+            };
+            let shape = style_shape(&self.styles[k].0, a, diags)
+                .then(|| shape_name(a, ns, &self.shapes, diags))
+                .flatten();
+            self.styles[k].1.shape = shape;
+        }
     }
 
     /// Whether `s` may be defined under `prefix`: not a built-in name, not defined yet.
@@ -428,8 +463,63 @@ fn find_import(loader: &Loader, dir: &Path, i: &ast::Import) -> Result<PathBuf, 
 }
 
 fn style_props(s: &ast::StyleDef, diags: &mut Vec<Diagnostic>) -> StyleProps {
-    let a = Attrs::new(&s.attrs, "style", STYLE_KEYS, diags);
+    let a = Attrs::new(&s.attrs, "style", &style::def_keys(), diags);
     attrs::style_props(&a, diags)
+}
+
+/// The `shape=` of a `style` definition that `Attrs` keeps: the first, without `@`.
+fn style_shape_attr(s: &ast::StyleDef) -> Option<&ast::Attr> {
+    s.attrs
+        .iter()
+        .find(|a| a.key.name == "shape" && a.at_t.is_none())
+}
+
+/// Whether the style `name` may take the `shape=` in `a`: every group draws with the
+/// `boundary` style, and groups take no shape.
+pub(crate) fn style_shape(name: &str, a: &ast::Attr, diags: &mut Vec<Diagnostic>) -> bool {
+    if name != "boundary" {
+        return true;
+    }
+    diags.push(
+        Diagnostic::error(
+            "attr",
+            a.span,
+            "the `boundary` style can't set `shape`: every group starts from it, and groups take no shape",
+        )
+        .with_help("drop `shape` here, and set it with another style or inline on the box"),
+    );
+    false
+}
+
+/// The qualified shape that `shape=` names when written under namespace `ns`, if it
+/// exists: a built-in, else `ns` followed by the name.
+pub(crate) fn shape_name(
+    a: &ast::Attr,
+    ns: &str,
+    shapes: &BTreeMap<String, LibShape>,
+    diags: &mut Vec<Diagnostic>,
+) -> Option<String> {
+    let ast::Value::Word(w) = &a.value else {
+        diags.push(attrs::type_err(a, "a shape name"));
+        return None;
+    };
+    if BUILTIN_SHAPES.contains(&w.as_str()) {
+        return Some(w.clone());
+    }
+    let name = format!("{ns}{w}");
+    if shapes.contains_key(&name) {
+        return Some(name);
+    }
+    let names = BUILTIN_SHAPES
+        .iter()
+        .copied()
+        .chain(shapes.keys().filter_map(|k| k.strip_prefix(ns)));
+    let mut d = Diagnostic::error("unknown-shape", a.span, format!("unknown shape `{w}`"));
+    if let Some(s) = did_you_mean(w, names) {
+        d = d.with_help(format!("did you mean `{s}`?"));
+    }
+    diags.push(d);
+    None
 }
 
 fn shape_body(s: &ast::ShapeDef, dir: &Path, ctx: &mut Ctx) -> Option<LibShape> {

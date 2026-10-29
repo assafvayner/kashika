@@ -64,13 +64,14 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
   - `fill`, `stroke`, `stroke-width`, `stroke-style=solid|dashed|dotted`
   - `font-size`, `font-weight=normal|bold`, `color`
   - `radius`, `padding`, `muted` (the color for sublabels and `muted` text)
+  - `shape`, in a `style` definition only, for boxes: any name `shape=` takes on a box. It is resolved where the style is defined, so an unknown name is an `unknown-shape` error there, with did-you-mean. The resolved shape drives everything an inline `shape=` does: outline, anchors, text area, checks, the `rounded` radius default and the scene's `shape`.
   - `padding=N` insets the text area by `N` on every side; `padding=(x,y)` insets it by `x` on the left and right and `y` on the top and bottom. Below, "`padding`" means `x` for horizontal distances and `y` for vertical ones.
 
-  Built-in styles: `service`, `datastore`, `external`, `queue`, `boundary`, `note`. A user style with a built-in's name overrides it **key by key**. Precedence: inline attribute > `style=` > built-in default.
+  Built-in styles: `service`, `datastore`, `external`, `queue`, `boundary`, `note`. A user style with a built-in's name overrides it **key by key**. Precedence: inline attribute > `style=` > built-in default; for `shape`, inline `shape=` > the style's `shape` > `rect`. Built-in styles set no shape; a user override of one may.
 - `box` shapes: built-in `rect` (default), `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`, or any `shape` that is defined or imported (§3a). Any other `shape=` name is an `unknown-shape` error.
 - `pin=<anchor>` picks which anchor of the new shape lands on `at` (default `tl`). Any anchor works, including `side@t`: `pin=left@0.25`. For example, `box cache at db.right+(60,0) size (120,60) pin=left` vertically centers `cache` beside `db`.
 - `at` may reference other shapes, so boxes can be placed relative to each other. Placement references form a DAG; a cycle is an error that prints the cycle (the first few shapes and its length when it is long). A chain of more than 256 placement references is also a `placement-cycle` error, whatever the statement order; a shape inside a group counts a reference to the group, whose frame it uses.
-- `group`: children are `box`, `group`, `junction`, `text`, `line`. `image` is top-level only; inside a group it is a `parse` error. Groups nest at most 64 deep; a deeper `group` is a `parse` error. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. The label sits inside the top-left corner, inset by `padding`, and its title band (`font line-height + padding`, using `y`) is reserved space. Children that intrude on the title band trigger `spill`.
+- `group`: children are `box`, `group`, `junction`, `text`, `line`. `image` is top-level only; inside a group it is a `parse` error. Groups nest at most 64 deep; a deeper `group` is a `parse` error. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. Groups take no shape: a group's `style=` naming a style that sets `shape` is an `attr` error at that attribute (the rest of the style still applies), and `shape` in a `style boundary` definition is an `attr` error there and is dropped. The label sits inside the top-left corner, inset by `padding`, and its title band (`font line-height + padding`, using `y`) is reserved space. Children that intrude on the title band trigger `spill`.
 - `junction`: a zero-size named point that lines can start or end at. Lines meeting at a junction are connected, not crossing. `dot` draws a 6px dot there. Junctions model buses and fan-in/fan-out.
 - `text`: `at` is the anchor point for the alignment. `color=none` is an `attr` error. Vertically, `at` is the **center** of the text block, not the baseline.
 
@@ -124,6 +125,7 @@ image logo "assets/hf.png" at (20,20) size (80,80) [fit=contain|cover|stretch]
 import "lib/aws.kash"          // brings in shape and style definitions
 import "lib/aws.kash" as aws   // namespaced: shape=aws.s3 style=aws.service
 ```
+- A `shape=` inside a library's `style` names shapes as the library writes them: a built-in, or a shape the library defines or imports, resolved under the library's namespace. In `lib/aws.kash` imported `as aws`, `style service { shape=s3 }` draws `aws.s3` wherever `style=aws.service` is used, and `shape=net.lb` in it names `aws.net.lb` for an `import "net.kash" as net` inside the library.
 Library files may contain only `shape`, `style` and `import`; any other statement is a `parse` error naming it. An import cycle is an error.
 - Errors inside an imported file are reported at the path string of the `import` in the file being checked, and the message starts with ``in `lib/aws.kash` at 3:5: `` (the line and column inside the library). Nested imports chain the prefix, one hop per file, each at the path string of the next `import`. A chain of more than 4 hops shows the first two, ``… N more imports …`` and the last.
 - `kashika check` accepts a library on its own: a file with no `diagram` that holds only `shape`, `style` and `import`. It resolves the definitions (imports, shape files, style keys) and reports their errors, with no lints. `render` on a library is a tool error. A file with no `diagram` and any other statement is a `diagram` error.
@@ -261,9 +263,9 @@ These block output unless `--force` is given:
 | `not-ortho` | A segment is diagonal on a line marked `ortho` |
 | `degenerate-curve` | A zero-length curve or a negative curve amount |
 | `zero-length` | A line whose segments all have zero length |
-| `attr` | Unknown, duplicate, mistyped (including an unknown color name) or out-of-range attribute (§3), or a duplicate label position |
+| `attr` | Unknown, duplicate, mistyped (including an unknown color name) or out-of-range attribute (§3), a duplicate label position, or a style `shape` that reaches a group (§3) |
 | `unknown-style` | `style=` names no built-in or user style |
-| `unknown-shape` | `shape=` names no built-in, defined or imported shape. Includes did-you-mean |
+| `unknown-shape` | `shape=`, on a box or in a `style`, names no built-in, defined or imported shape. Includes did-you-mean |
 | `size` | A non-positive size, or one larger than 1,000,000 |
 | `range` | A resolved coordinate or curve amount more than 1,000,000 from the origin, or not a finite number (§1) |
 | `diagram` | Missing, misplaced or repeated `diagram` statement |

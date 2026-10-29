@@ -1,0 +1,2 @@
+error[unknown-shape] 5:8-5:22: in `lib/aws.kash` at 4:16: unknown shape `s4`
+  = help: did you mean `s3`?

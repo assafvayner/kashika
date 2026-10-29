@@ -10,7 +10,7 @@ use crate::library::{self, Ctx, Library};
 use crate::loader::{FileError, Loader, Options};
 use crate::markup;
 use crate::scene::*;
-use crate::style::{STYLE_KEYS, Style, StyleProps};
+use crate::style::{self, Style, StyleProps};
 use crate::textlayout::ShapeTextProps;
 use crate::version;
 
@@ -114,7 +114,7 @@ struct Entry<'a> {
 
 struct NodeProps {
     outline: Outline,
-    /// The `shape=` name; `None` for groups and boxes without one.
+    /// The inline `shape=`, else the `style=` style's; `None` for groups and boxes without one.
     shape: Option<String>,
     style: Style,
     pin: (&'static str, Option<f64>),
@@ -360,8 +360,13 @@ impl<'a> Resolver<'a> {
         }
         for stmt in &file.stmts {
             let Stmt::Style(s) = stmt else { continue };
-            let a = Attrs::new(&s.attrs, "style", STYLE_KEYS, &mut self.diags);
-            let props = attrs::style_props(&a, &mut self.diags);
+            let a = Attrs::new(&s.attrs, "style", &style::def_keys(), &mut self.diags);
+            let mut props = attrs::style_props(&a, &mut self.diags);
+            if let Some(x) = a.get("shape") {
+                if library::style_shape(&s.name, x, &mut self.diags) {
+                    props.shape = self.shape_attr(x);
+                }
+            }
             if self.user_styles.insert(s.name.clone(), props).is_some() {
                 self.diags.push(Diagnostic::error(
                     "duplicate-style",

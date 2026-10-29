@@ -1,0 +1,6 @@
+error[unknown-shape] 4:13-4:25: unknown shape `elipse`
+  = help: did you mean `ellipse`?
+error[attr] 6:18-6:31: the `boundary` style can't set `shape`: every group starts from it, and groups take no shape
+  = help: drop `shape` here, and set it with another style or inline on the box
+error[attr] 8:36-8:48: this style sets `shape`, but groups take no shape
+  = help: use a style without `shape`, or drop `shape` from it

@@ -1,0 +1,18 @@
+// spec: 3
+// raster: png
+// Commit markers take their shape from a style; an inline `shape=` overrides it, and a `rounded` style gets radius 8.
+diagram "style shape" size (420,160)
+style main { shape=ellipse fill=#e8f0fe stroke=#1a73e8 stroke-width=2 }
+style dev { shape=ellipse fill=#e6f4ea stroke=#137333 stroke-width=2 }
+style tag { shape=rounded fill=#fef7e0 stroke=#b06000 font-size=12 padding=(6,3) }
+box m1 at (20,30) size (24,24) style=main
+box m2 at (120,30) size (24,24) style=main
+box m3 at (320,30) size (24,24) style=main shape=diamond
+box d1 at (170,100) size (24,24) style=dev
+box d2 at (250,100) size (24,24) style=dev
+box v1 "v1.0" at (40,100) size (56,24) style=tag
+line l1 m1.right -> m2.left
+line l2 m2.right -> m3.left
+line l3 m2.bottom -> (132,112) -> d1.left
+line l4 d1.right -> d2.left
+line l5 d2.right -> (332,112) -> m3.bottom

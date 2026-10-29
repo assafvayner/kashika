@@ -1,0 +1,8 @@
+style bucket { shape=s3 fill=#fef7e0 }
+style db { shape=cylinder }
+style deep { shape=net.lb }
+style broken { shape=s4 }
+shape s3 {
+  path "M 0 0 L 1 0 L 0.8 1 L 0.2 1 Z"
+}
+import "net.kash" as net

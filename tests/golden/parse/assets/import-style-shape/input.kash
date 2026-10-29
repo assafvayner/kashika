@@ -1,0 +1,9 @@
+// spec: 3, 3a, 7
+// dump: scene
+// A library style's `shape` resolves in the library's namespace; an unknown one is reported through the import.
+diagram "import style shape" size (400,120)
+import "lib/aws.kash" as aws
+box a "S3" at (20,20) size (80,60) style=aws.bucket
+box b "DB" at (120,20) size (80,70) style=aws.db
+box c "LB" at (220,20) size (80,60) style=aws.deep
+box d at (320,20) size (60,60) style=aws.broken
