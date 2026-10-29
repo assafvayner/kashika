@@ -1,6 +1,6 @@
 use kashika_diag::{Diagnostic, Element, Span};
 use kashika_model::PlacedLine;
-use kashika_text::missing_glyphs;
+use kashika_text::{covered_scripts, missing_glyphs};
 
 use crate::ctx::{Ctx, line_el, shape_el, text_el, text_id};
 use crate::sink::Sink;
@@ -70,6 +70,18 @@ fn check(out: &mut Sink, lines: &[PlacedLine], span: Span, what: String, el: Ele
         )
         .with_element(el)
         .with_fact("codepoints", list)
-        .with_help("they draw as an empty box; use characters from Latin, Greek or Cyrillic, or an `icon=`/`image`"),
+        .with_help(format!(
+            "they draw as an empty box; use characters from {}, or an `icon=`/`image`",
+            scripts()
+        )),
     );
+}
+
+/// The scripts the bundled fonts cover, as `A, B or C`.
+fn scripts() -> String {
+    match covered_scripts().as_slice() {
+        [] => "the bundled fonts".to_string(),
+        [one] => one.to_string(),
+        [rest @ .., last] => format!("{} or {last}", rest.join(", ")),
+    }
 }

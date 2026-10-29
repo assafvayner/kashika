@@ -1,0 +1,8 @@
+// spec: 6, 7
+// dump: scene
+// Default-ignorable characters (soft hyphen, zero-width space and joiners, word joiner, BOM, variation selectors) measure and draw as nothing and are not missing glyphs.
+diagram "default ignorable" size (300,200)
+box a "Kashika­Diagrams" at (20,20) size (200,40)
+text t "a​b‌c‍d⁠e﻿f" at (150,100)
+text u "a️b󠄀c" at (150,140)
+text plain "abcdef" at (150,170)

@@ -39,6 +39,65 @@ fn face(font: Font) -> &'static Face {
     }
 }
 
+/// Unicode's `Default_Ignorable_Code_Point` ranges (DerivedCoreProperties.txt): joiners,
+/// variation selectors, invisible format and bidi controls, the soft hyphen and fillers.
+const DEFAULT_IGNORABLE: &[(char, char)] = &[
+    ('\u{00AD}', '\u{00AD}'),
+    ('\u{034F}', '\u{034F}'),
+    ('\u{061C}', '\u{061C}'),
+    ('\u{115F}', '\u{1160}'),
+    ('\u{17B4}', '\u{17B5}'),
+    ('\u{180B}', '\u{180F}'),
+    ('\u{200B}', '\u{200F}'),
+    ('\u{202A}', '\u{202E}'),
+    ('\u{2060}', '\u{206F}'),
+    ('\u{3164}', '\u{3164}'),
+    ('\u{FE00}', '\u{FE0F}'),
+    ('\u{FEFF}', '\u{FEFF}'),
+    ('\u{FFA0}', '\u{FFA0}'),
+    ('\u{FFF0}', '\u{FFF8}'),
+    ('\u{1BCA0}', '\u{1BCA3}'),
+    ('\u{1D173}', '\u{1D17A}'),
+    ('\u{E0000}', '\u{E0FFF}'),
+];
+
+/// Whether `c` is a Unicode default-ignorable code point (ZWJ, ZWNJ, a variation selector,
+/// a zero-width space, the soft hyphen, ...). These measure and draw as nothing.
+pub fn is_default_ignorable(c: char) -> bool {
+    DEFAULT_IGNORABLE
+        .iter()
+        .any(|&(lo, hi)| (lo..=hi).contains(&c))
+}
+
+/// Scripts with a sample letter, in the order `covered_scripts` names them.
+const SCRIPTS: &[(&str, char)] = &[
+    ("Latin", 'A'),
+    ("Greek", 'Ω'),
+    ("Cyrillic", 'Ж'),
+    ("Armenian", 'Ա'),
+    ("Georgian", 'ა'),
+    ("Hebrew", 'א'),
+    ("Arabic", 'ب'),
+    ("Devanagari", 'क'),
+    ("Thai", 'ก'),
+    ("Han", '日'),
+    ("Kana", 'あ'),
+    ("Hangul", '한'),
+];
+
+/// The scripts every bundled font has a sample letter of, such as `["Latin", "Greek"]`.
+pub fn covered_scripts() -> Vec<&'static str> {
+    SCRIPTS
+        .iter()
+        .filter(|&&(_, c)| {
+            [Font::Regular, Font::Bold, Font::Mono]
+                .iter()
+                .all(|&f| face(f).font.charmap().map(c).is_some())
+        })
+        .map(|&(name, _)| name)
+        .collect()
+}
+
 fn glyph(f: &FontRef, c: char) -> GlyphId {
     f.charmap().map(c).unwrap_or(GlyphId::NOTDEF)
 }
@@ -50,13 +109,14 @@ fn advance(f: &FontRef, g: GlyphId) -> f32 {
 }
 
 /// The distinct characters, in order of first appearance, that the run's font has no glyph
-/// for. Drawing and measuring use the font's `.notdef` glyph for them.
+/// for. Drawing and measuring use the font's `.notdef` glyph for them. Default-ignorable
+/// characters are never missing.
 pub fn missing_glyphs<'a>(runs: impl IntoIterator<Item = &'a Run>) -> Vec<char> {
     let mut out = Vec::new();
     for run in runs {
         let f = &face(run.font).font;
         for c in run.text.chars() {
-            if f.charmap().map(c).is_none() && !out.contains(&c) {
+            if f.charmap().map(c).is_none() && !is_default_ignorable(c) && !out.contains(&c) {
                 out.push(c);
             }
         }
@@ -71,6 +131,7 @@ pub(crate) fn run_width(run: &Run, size: f64) -> f64 {
     let units: f64 = run
         .text
         .chars()
+        .filter(|&c| !is_default_ignorable(c))
         .map(|c| f64::from(advance(f, glyph(f, c))))
         .sum();
     units * size / face.units_per_em
@@ -156,7 +217,7 @@ pub fn outline(runs: &[Run], size: f64, x: f64, baseline: f64) -> String {
         let f = &face.font;
         let scale = size / face.units_per_em;
         let glyphs = f.outline_glyphs();
-        for c in run.text.chars() {
+        for c in run.text.chars().filter(|&c| !is_default_ignorable(c)) {
             let g = glyph(f, c);
             let mut b = PathOut {
                 out: &mut out,

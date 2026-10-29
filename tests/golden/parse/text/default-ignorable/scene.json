@@ -1,0 +1,128 @@
+{
+  "allow": [],
+  "assets": [],
+  "background": null,
+  "clearance": 6,
+  "grid": null,
+  "junctions": [],
+  "lines": [],
+  "literals": [
+    {"owner":"a","span":{"col":29,"end_col":36,"end_line":5,"line":5},"value":20,"what":"x"},
+    {"owner":"a","span":{"col":29,"end_col":36,"end_line":5,"line":5},"value":20,"what":"y"},
+    {"owner":"a","span":{"col":1,"end_col":50,"end_line":5,"line":5},"value":200,"what":"width"},
+    {"owner":"a","span":{"col":1,"end_col":50,"end_line":5,"line":5},"value":40,"what":"height"},
+    {"owner":"t","span":{"col":25,"end_col":34,"end_line":6,"line":6},"value":150,"what":"x"},
+    {"owner":"t","span":{"col":25,"end_col":34,"end_line":6,"line":6},"value":100,"what":"y"},
+    {"owner":"u","span":{"col":19,"end_col":28,"end_line":7,"line":7},"value":150,"what":"x"},
+    {"owner":"u","span":{"col":19,"end_col":28,"end_line":7,"line":7},"value":140,"what":"y"},
+    {"owner":"plain","span":{"col":24,"end_col":33,"end_line":8,"line":8},"value":150,"what":"x"},
+    {"owner":"plain","span":{"col":24,"end_col":33,"end_line":8,"line":8},"value":170,"what":"y"}
+  ],
+  "placement": [],
+  "shapes": [
+    {
+      "allow": [],
+      "depth": 0,
+      "form": null,
+      "icon": null,
+      "id": "a",
+      "image": null,
+      "kind": "box",
+      "label": "Kashika­Diagrams",
+      "origin": {"x":0,"y":0},
+      "outline": "rect",
+      "parent": null,
+      "reason": null,
+      "rect": {"h":40,"w":200,"x":20,"y":20},
+      "shape": "rect",
+      "span": {"col":1,"end_col":50,"end_line":5,"line":5},
+      "style": {"color":"#0f172a","fill":"#ffffff","font_size":14,"font_weight":"normal","muted":"#64748b","padding":8,"radius":0,"stroke":"#334155","stroke_style":"solid","stroke_width":1.5},
+      "text": [
+        {
+          "bold": false,
+          "color": "#0f172a",
+          "content": "Kashika­Diagrams",
+          "lines": [
+            {
+              "baseline": 45.09,
+              "runs": [{"font":"regular","text":"Kashika­Diagrams"}],
+              "width": 114.6,
+              "x": 62.7
+            }
+          ],
+          "rect": {"h":17.5,"w":114.6,"x":62.7,"y":31.25},
+          "role": "label",
+          "size": 14,
+          "span": {"col":1,"end_col":50,"end_line":5,"line":5}
+        }
+      ],
+      "text_area": {"h":24,"w":184,"x":28,"y":28},
+      "text_below": false,
+      "title_band": 0
+    }
+  ],
+  "size": [300,200],
+  "texts": [
+    {
+      "align": "center",
+      "at": {"x":150,"y":100},
+      "color": "#0f172a",
+      "content": "a​b‌c‍d⁠e﻿f",
+      "id": "t",
+      "lines": [
+        {
+          "baseline": 105.09,
+          "runs": [{"font":"regular","text":"a​b‌c‍d⁠e﻿f"}],
+          "width": 46.35,
+          "x": 126.83
+        }
+      ],
+      "origin": {"x":0,"y":0},
+      "parent": null,
+      "rect": {"h":17.5,"w":46.35,"x":126.83,"y":91.25},
+      "size": 14,
+      "span": {"col":1,"end_col":34,"end_line":6,"line":6}
+    },
+    {
+      "align": "center",
+      "at": {"x":150,"y":140},
+      "color": "#0f172a",
+      "content": "a️b󠄀c",
+      "id": "u",
+      "lines": [
+        {
+          "baseline": 145.09,
+          "runs": [{"font":"regular","text":"a️b󠄀c"}],
+          "width": 24.43,
+          "x": 137.78
+        }
+      ],
+      "origin": {"x":0,"y":0},
+      "parent": null,
+      "rect": {"h":17.5,"w":24.43,"x":137.78,"y":131.25},
+      "size": 14,
+      "span": {"col":1,"end_col":28,"end_line":7,"line":7}
+    },
+    {
+      "align": "center",
+      "at": {"x":150,"y":170},
+      "color": "#0f172a",
+      "content": "abcdef",
+      "id": "plain",
+      "lines": [
+        {
+          "baseline": 175.09,
+          "runs": [{"font":"regular","text":"abcdef"}],
+          "width": 46.35,
+          "x": 126.83
+        }
+      ],
+      "origin": {"x":0,"y":0},
+      "parent": null,
+      "rect": {"h":17.5,"w":46.35,"x":126.83,"y":161.25},
+      "size": 14,
+      "span": {"col":1,"end_col":33,"end_line":8,"line":8}
+    }
+  ],
+  "title": "default ignorable"
+}

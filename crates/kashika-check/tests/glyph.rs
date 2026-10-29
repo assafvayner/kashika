@@ -28,7 +28,8 @@ fn missing_glyph_is_quiet_for_covered_text_and_tabs() {
         lint(
             "missing-glyph",
             "box a \"Café Ünï Ωmega Привет\" at (20,20) size (240,60)\n\
-             text t \"a\tb\" at (20,120)\n",
+             text t \"a\tb\" at (20,120)\n\
+             text u \"zero\u{200B}width\u{200D}join\u{FE0F}soft\u{00AD}hyphen\u{FEFF}\" at (20,160)\n",
         )
         .is_empty()
     );

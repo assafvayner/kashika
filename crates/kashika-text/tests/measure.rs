@@ -1,4 +1,4 @@
-use kashika_text::{measure, outline, parse_markup};
+use kashika_text::{covered_scripts, is_default_ignorable, measure, outline, parse_markup};
 
 #[test]
 fn widths_come_from_the_bundled_fonts() {
@@ -61,4 +61,35 @@ fn tabs_measure_as_four_spaces_and_are_not_missing() {
     let s = measure("a    b", 14.0, false).unwrap();
     assert_eq!(t.width(), s.width());
     assert!(t.missing_glyphs().is_empty());
+}
+
+#[test]
+fn default_ignorable_characters_are_zero_width_and_never_missing() {
+    let plain = measure("ab", 14.0, false).unwrap();
+    for c in [
+        '\u{200D}',
+        '\u{200C}',
+        '\u{FE0F}',
+        '\u{E0100}',
+        '\u{200B}',
+        '\u{2060}',
+        '\u{FEFF}',
+        '\u{00AD}',
+    ] {
+        assert!(is_default_ignorable(c), "{c:?}");
+        let text = format!("a{c}b");
+        let b = measure(&text, 14.0, false).unwrap();
+        assert_eq!(b.width(), plain.width(), "{c:?}");
+        assert!(b.missing_glyphs().is_empty(), "{c:?}");
+        let runs = parse_markup(&text, false).unwrap().remove(0);
+        let ab = parse_markup("ab", false).unwrap().remove(0);
+        assert_eq!(outline(&runs, 14.0, 0.0, 0.0), outline(&ab, 14.0, 0.0, 0.0));
+    }
+    assert!(!is_default_ignorable('a'));
+    assert!(!is_default_ignorable('\u{2010}'));
+}
+
+#[test]
+fn covered_scripts_come_from_the_fonts() {
+    assert_eq!(covered_scripts(), ["Latin", "Greek", "Cyrillic"]);
 }
