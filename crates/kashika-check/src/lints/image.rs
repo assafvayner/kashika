@@ -47,3 +47,44 @@ pub fn image_distort(ctx: &Ctx, out: &mut Sink) {
         );
     }
 }
+
+/// `svg-dropped`: an SVG file lost elements when it was embedded (`<image>`s that are not
+/// `data:` URIs, `foreignObject`). Reported once per file, at its first use.
+pub fn svg_dropped(ctx: &Ctx, out: &mut Sink) {
+    let assets = &ctx.scene.assets;
+    let mut seen = Vec::new();
+    for s in &ctx.scene.shapes {
+        for img in [&s.image, &s.icon].into_iter().flatten() {
+            let a = &assets[img.asset];
+            if a.dropped.is_empty() || seen.contains(&img.asset) {
+                continue;
+            }
+            seen.push(img.asset);
+            let lost = a
+                .dropped
+                .iter()
+                .map(|&(name, n)| {
+                    format!("{n} `<{name}>` element{}", if n == 1 { "" } else { "s" })
+                })
+                .collect::<Vec<_>>()
+                .join(" and ");
+            out.push(
+                Diagnostic::warn(
+                    "svg-dropped",
+                    s.span,
+                    format!("'{}' drops {lost} when embedded", a.path),
+                )
+                .with_element(shape_el(s))
+                .with_fact("file", a.path.clone())
+                .with_fact(
+                    "dropped",
+                    a.dropped
+                        .iter()
+                        .map(|&(name, n)| (name.to_string(), n))
+                        .collect::<std::collections::BTreeMap<_, _>>(),
+                )
+                .with_help("embed it as a path, or use a separate `image`"),
+            );
+        }
+    }
+}

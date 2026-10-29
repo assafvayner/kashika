@@ -38,6 +38,7 @@ pub const ALL: &[Lint] = &[
     grid::off_grid,
     image::image_distort,
     jog::jog,
+    image::svg_dropped,
     near::near,
     axis::near_axis,
     overlap::overlap,

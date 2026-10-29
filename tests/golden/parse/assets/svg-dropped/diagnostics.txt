@@ -1,0 +1,4 @@
+warn[svg-dropped] 4:1-4:50: 'linked.svg' drops 1 `<image>` element when embedded
+  = help: embed it as a path, or use a separate `image`
+  elements: [{"bbox":[[20,20],[80,80]],"id":"linked","kind":"image","span":{"col":1,"end_col":50,"end_line":4,"line":4}}]
+  facts: {"dropped":{"image":1},"file":"linked.svg"}

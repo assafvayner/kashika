@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="90" viewBox="0 0 160 90">
+  <rect x="1" y="1" width="158" height="88" rx="10" fill="#e8f0fe" stroke="#1a73e8" stroke-width="2"/>
+  <text x="80" y="30" font-size="18" font-weight="bold" text-anchor="middle" fill="#1a73e8">Release</text>
+  <text x="80" y="52" font-family="Helvetica, Arial, sans-serif" font-size="13" text-anchor="middle" fill="#334155">no font-family match</text>
+  <text x="80" y="74" font-family="monospace" font-size="13" text-anchor="middle" fill="#137333">v2.4.1</text>
+</svg>

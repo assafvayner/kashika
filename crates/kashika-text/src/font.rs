@@ -14,6 +14,11 @@ static INTER_REGULAR: &[u8] = include_bytes!("../fonts/Inter-Regular.ttf");
 static INTER_BOLD: &[u8] = include_bytes!("../fonts/Inter-Bold.ttf");
 static JETBRAINS_MONO: &[u8] = include_bytes!("../fonts/JetBrainsMono-Regular.ttf");
 
+/// The bytes of every bundled font file: Inter regular and bold, then JetBrains Mono.
+pub fn font_files() -> [&'static [u8]; 3] {
+    [INTER_REGULAR, INTER_BOLD, JETBRAINS_MONO]
+}
+
 /// A bundled font, parsed once, with the metrics every measurement needs.
 struct Face {
     font: FontRef<'static>,
@@ -23,7 +28,7 @@ struct Face {
 fn face(font: Font) -> &'static Face {
     static FACES: OnceLock<[Face; 3]> = OnceLock::new();
     let faces = FACES.get_or_init(|| {
-        [INTER_REGULAR, INTER_BOLD, JETBRAINS_MONO].map(|data| {
+        font_files().map(|data| {
             let font = FontRef::new(data).expect("bundled font parses");
             let units_per_em = f64::from(
                 font.metrics(Size::unscaled(), LocationRef::default())

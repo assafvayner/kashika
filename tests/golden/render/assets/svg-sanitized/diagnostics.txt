@@ -1,1 +1,4 @@
-(no diagnostics)
+warn[svg-dropped] 4:1-4:44: 'dirty.svg' drops 1 `<image>` element and 1 `<foreignObject>` element when embedded
+  = help: embed it as a path, or use a separate `image`
+  elements: [{"bbox":[[20,20],[80,80]],"id":"d","kind":"image","span":{"col":1,"end_col":44,"end_line":4,"line":4}}]
+  facts: {"dropped":{"foreignObject":1,"image":1},"file":"dirty.svg"}

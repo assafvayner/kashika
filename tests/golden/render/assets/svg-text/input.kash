@@ -1,0 +1,6 @@
+// spec: 3a
+// raster: png
+// `<text>` in a user SVG is drawn with the bundled fonts: Inter (also for unknown families) and the mono face for `monospace`.
+diagram "svg text" size (360,140) background=white
+image badge "badge.svg" at (20,20) size (160,90)
+box b "Badge" at (200,40) size (140,50) icon="badge.svg" icon-size=40

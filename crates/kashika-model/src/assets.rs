@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, OnceLock};
 
 use kashika_geom::{Pt, convex_hull};
 
@@ -154,18 +155,48 @@ fn raster(path: String, bytes: &[u8]) -> Result<Asset, String> {
         bytes: bytes.to_vec(),
         unit_hull: unit_square(),
         current_color: None,
+        dropped: Vec::new(),
     })
+}
+
+/// The bundled fonts, for `<text>` in SVG files. Every generic family resolves to Inter
+/// but `monospace`, which is the mono face.
+fn fonts() -> Arc<usvg::fontdb::Database> {
+    static DB: OnceLock<Arc<usvg::fontdb::Database>> = OnceLock::new();
+    DB.get_or_init(|| {
+        let mut db = usvg::fontdb::Database::new();
+        for data in kashika_text::font_files() {
+            db.load_font_source(usvg::fontdb::Source::Binary(Arc::new(data)));
+        }
+        let family = |mono: bool| {
+            db.faces()
+                .find(|f| f.monospaced == mono)
+                .and_then(|f| f.families.first())
+                .map(|(name, _)| name.clone())
+                .unwrap_or_default()
+        };
+        let (sans, mono) = (family(false), family(true));
+        db.set_serif_family(sans.clone());
+        db.set_sans_serif_family(sans.clone());
+        db.set_cursive_family(sans.clone());
+        db.set_fantasy_family(sans);
+        db.set_monospace_family(mono);
+        Arc::new(db)
+    })
+    .clone()
 }
 
 /// Parses with usvg and re-serializes. The round trip is the sanitizer: scripts, event
 /// handlers, `foreignObject` and external references don't survive it, and the href
-/// resolver refuses everything but `data:` URIs. With `color`, an SVG that uses
-/// `currentColor` and sets no `color` on its root resolves it to `color`.
+/// resolver refuses everything but `data:` URIs. `<text>` is set in the bundled fonts and
+/// written as paths. With `color`, an SVG that uses `currentColor` and sets no `color` on
+/// its root resolves it to `color`.
 fn svg(path: String, bytes: &[u8], color: Option<&str>) -> Result<Asset, String> {
     check_depth(bytes)?;
     let current_color = color.filter(|_| uses_current_color(bytes));
     let too_deep = AtomicBool::new(false);
     let data = usvg::ImageHrefResolver::default_data_resolver();
+    let fontdb = fonts();
     let opt = usvg::Options {
         image_href_resolver: usvg::ImageHrefResolver {
             resolve_data: Box::new(|mime, bytes, opts| {
@@ -180,6 +211,10 @@ fn svg(path: String, bytes: &[u8], color: Option<&str>) -> Result<Asset, String>
             resolve_string: Box::new(|_, _| None),
         },
         style_sheet: current_color.map(|c| format!("svg {{ color: {c} }}")),
+        font_family: fontdb
+            .family_name(&usvg::fontdb::Family::SansSerif)
+            .to_string(),
+        fontdb,
         ..usvg::Options::default()
     };
     let tree = usvg::Tree::from_data(bytes, &opt).map_err(|e| format!("not a valid SVG: {e}"))?;
@@ -202,7 +237,63 @@ fn svg(path: String, bytes: &[u8], color: Option<&str>) -> Result<Asset, String>
         bytes: tree.to_string(&usvg::WriteOptions::default()).into_bytes(),
         unit_hull: if hull.len() >= 3 { hull } else { unit_square() },
         current_color: current_color.map(str::to_string),
+        dropped: dropped(bytes, &tree),
     })
+}
+
+/// The elements of the SVG source that its usvg tree lost, as (element name, count):
+/// `<image>`s that reference anything but a `data:` URI or fail to decode, and
+/// `foreignObject`s.
+fn dropped(bytes: &[u8], tree: &usvg::Tree) -> Vec<(&'static str, usize)> {
+    let Ok(text) = std::str::from_utf8(bytes) else {
+        return Vec::new();
+    };
+    let Ok(doc) = usvg::roxmltree::Document::parse_with_options(
+        text,
+        usvg::roxmltree::ParsingOptions {
+            allow_dtd: true,
+            ..Default::default()
+        },
+    ) else {
+        return Vec::new();
+    };
+    let count = |name: &str| {
+        doc.descendants()
+            .filter(|n| n.is_element() && n.tag_name().name() == name)
+            .count()
+    };
+    [
+        (
+            "image",
+            count("image").saturating_sub(count_images(tree.root())),
+        ),
+        ("foreignObject", count("foreignObject")),
+    ]
+    .into_iter()
+    .filter(|&(_, n)| n > 0)
+    .collect()
+}
+
+/// The image nodes of a usvg tree: in groups, masks and pattern fills or strokes, but not
+/// inside embedded SVG images.
+fn count_images(g: &usvg::Group) -> usize {
+    let mut n = g.mask().map_or(0, |m| count_images(m.root()));
+    for node in g.children() {
+        n += match node {
+            usvg::Node::Group(g) => count_images(g),
+            usvg::Node::Image(_) => 1,
+            usvg::Node::Path(p) => [p.fill().map(|f| f.paint()), p.stroke().map(|s| s.paint())]
+                .into_iter()
+                .flatten()
+                .map(|paint| match paint {
+                    usvg::Paint::Pattern(pat) => count_images(pat.root()),
+                    _ => 0,
+                })
+                .sum(),
+            usvg::Node::Text(_) => 0,
+        };
+    }
+    n
 }
 
 /// Whether an SVG paints with `currentColor` and leaves its root's `color` unset.
@@ -364,6 +455,29 @@ mod tests {
         assert!(out.contains("<path"), "{out}");
         assert_eq!(a.mime, "image/svg+xml");
         assert_eq!(a.natural, (10.0, 10.0));
+        assert_eq!(a.dropped, [("image", 2), ("foreignObject", 1)]);
+    }
+
+    #[test]
+    fn svg_text_is_drawn_as_paths_in_the_bundled_fonts() {
+        let text = |family: &str| {
+            let src = format!(
+                r#"<svg xmlns="http://www.w3.org/2000/svg" width="80" height="20"><text x="2" y="15" font-size="12"{family}>Hello</text></svg>"#
+            );
+            let a = decode("t.svg".into(), src.as_bytes(), true, None).unwrap();
+            assert!(a.dropped.is_empty());
+            String::from_utf8(a.bytes).unwrap()
+        };
+        let inter = text("");
+        assert!(!inter.contains("<text"), "{inter}");
+        assert!(inter.contains("<path"), "{inter}");
+        assert_eq!(inter, text(r#" font-family="Inter""#));
+        assert_eq!(inter, text(r#" font-family="Helvetica, sans-serif""#));
+        assert_eq!(inter, text(r#" font-family="Times""#));
+        let mono = text(r#" font-family="monospace""#);
+        assert_ne!(inter, mono);
+        assert_eq!(mono, text(r#" font-family="JetBrains Mono""#));
+        assert_eq!(mono, text(r#" font-family="Courier New, monospace""#));
     }
 
     #[test]

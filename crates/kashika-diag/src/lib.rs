@@ -48,6 +48,7 @@ pub const LINT_CODES: &[&str] = &[
     "block-reducible",
     "text-outside-shape",
     "image-distort",
+    "svg-dropped",
     "missing-glyph",
 ];
 

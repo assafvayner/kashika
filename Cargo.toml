@@ -28,7 +28,7 @@ predicates = "3"
 tempfile = "3"
 skrifa = "0.44"
 resvg = { version = "=0.45.1", default-features = false, features = ["raster-images"] }
-usvg = { version = "=0.45.1", default-features = false }
+usvg = { version = "=0.45.1", default-features = false, features = ["text"] }
 jpeg-encoder = { version = "=0.7.1", default-features = false, features = ["std"] }
 image-webp = { version = "=0.2.4", default-features = false }
 imagesize = "=0.13.0"

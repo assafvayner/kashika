@@ -761,6 +761,9 @@ pub struct Asset {
     /// The color an SVG icon's `currentColor` resolved to: the box's text color.
     #[serde(skip)]
     pub current_color: Option<String>,
+    /// Elements of an SVG file that embedding lost, as (element name, count).
+    #[serde(skip)]
+    pub dropped: Vec<(&'static str, usize)>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
