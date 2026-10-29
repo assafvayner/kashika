@@ -267,15 +267,19 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
         Ok(o) => o,
         Err(msg) => return fail(&msg),
     };
-    if let Some(diags) = kashika_model::compile_library_with(&src, &opts) {
+    let kashika_model::Compiled {
+        file,
+        scene,
+        mut diags,
+    } = kashika_model::compile_file(&src, &opts);
+    let Some(scene) = scene else {
         if render.is_some() {
             return fail(&format!(
                 "{name} is a library (no `diagram` statement); render a diagram that imports it"
             ));
         }
-        return report_library(c, &name, &src, diags);
-    }
-    let (scene, mut diags) = kashika_model::compile_with(&src, &opts);
+        return report_library(c, &name, &src, &file, diags);
+    };
     if !c.focus.is_empty() {
         if let Err(msg) = known_ids(&scene_ids(&scene), &c.focus, "--focus") {
             return fail(&msg);
@@ -339,15 +343,15 @@ fn report_library(
     c: &Common,
     name: &str,
     src: &str,
+    file: &kashika_syntax::ast::File,
     mut diags: Vec<kashika_diag::Diagnostic>,
 ) -> ExitCode {
     if !c.focus.is_empty() {
-        let (file, _) = kashika_syntax::parse(src);
         let defined: Vec<String> = file
             .stmts
-            .into_iter()
+            .iter()
             .filter_map(|s| match s {
-                kashika_syntax::ast::Stmt::Shape(s) => Some(s.name.name),
+                kashika_syntax::ast::Stmt::Shape(s) => Some(s.name.name.clone()),
                 _ => None,
             })
             .collect();

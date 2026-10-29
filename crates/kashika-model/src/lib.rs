@@ -43,6 +43,34 @@ pub fn compile_with(src: &str, opts: &Options) -> (Scene, Vec<Diagnostic>) {
     (scene, diags)
 }
 
+/// A source file, parsed once and resolved.
+pub struct Compiled {
+    pub file: kashika_syntax::ast::File,
+    /// The scene, or `None` for a library file (§3a), which resolves only its definitions.
+    pub scene: Option<Scene>,
+    /// Parse and resolve diagnostics, sorted.
+    pub diags: Vec<Diagnostic>,
+}
+
+/// Parses `src` and resolves it as a library when it is one, otherwise as a diagram, like
+/// `compile_library_with` and then `compile_with`.
+pub fn compile_file(src: &str, opts: &Options) -> Compiled {
+    let (file, mut diags) = kashika_syntax::parse(src);
+    let scene = match resolve_library_with(&file, opts) {
+        Some(more) => {
+            diags.extend(more);
+            None
+        }
+        None => {
+            let (scene, mut more) = resolve_with(&file, opts);
+            diags.append(&mut more);
+            Some(scene)
+        }
+    };
+    kashika_diag::sort(&mut diags);
+    Compiled { file, scene, diags }
+}
+
 /// Checks a library file (§3a: no `diagram`, only `shape`, `style` and `import`) on its own,
 /// resolving its definitions. `None` when `src` is not a library; compile it as a diagram.
 pub fn compile_library_with(src: &str, opts: &Options) -> Option<Vec<Diagnostic>> {

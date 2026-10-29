@@ -101,7 +101,7 @@ pub struct Request<'a> {
 
 pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
     let (file, _) = kashika_syntax::parse(req.src);
-    let (scene, _) = kashika_model::compile_with(req.src, req.opts);
+    let (scene, _) = kashika_model::resolve_with(&file, req.opts);
     let src = Source::new(req.src);
     let target = req
         .line
