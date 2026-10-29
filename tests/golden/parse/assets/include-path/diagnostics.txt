@@ -1,0 +1,4 @@
+error[file] 6:8-6:33: in `../shared/included.kash` at 2:8: `outside.kash` is outside the project root
+  = help: move it under the diagram's directory, pass `--include <file>` for this file, add its directory to KASHIKA_ICON_PATH, or pass --allow-path
+error[file] 7:8-7:32: `../shared/outside.kash` is outside the project root
+  = help: move it under the diagram's directory, pass `--include <file>` for this file, add its directory to KASHIKA_ICON_PATH, or pass --allow-path

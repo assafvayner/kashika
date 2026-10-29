@@ -34,6 +34,8 @@ pub struct Case {
     pub allow_path: bool,
     pub raster: Vec<String>,
     pub icon_path: Option<String>,
+    /// `--include` files, relative to the case directory.
+    pub include: Vec<String>,
 }
 
 pub fn golden_root() -> PathBuf {
@@ -92,6 +94,7 @@ impl Case {
             allow_path: false,
             raster: Vec::new(),
             icon_path: None,
+            include: Vec::new(),
         };
         case.read_directives()?;
         Ok(case)
@@ -146,6 +149,7 @@ impl Case {
                     self.raster = values;
                 }
                 ("icon-path", _) => self.icon_path = values.into_iter().next(),
+                ("include", _) => self.include.extend(values),
                 _ => {
                     return Err(format!(
                         "{}: unknown directive `{key}` for this suite",

@@ -1,0 +1,8 @@
+// spec: 3a, 7
+// dump: scene
+// include: ../shared/included.kash
+// `--include` allows exactly one file outside the project root: its own import of a sibling, and a direct import of another outside file, are still rejected.
+diagram "include" size (300,120)
+import "../shared/included.kash"
+import "../shared/outside.kash"
+box a "A" at (20,20) size (100,60) style=included

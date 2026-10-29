@@ -50,7 +50,7 @@ cargo run -p kashika-cli -- ref
 diagram "not ortho" size (300,200)
 ```
 
-`spec` (required) names the spec sections covered. `flags` takes `force`, `debug` (render only) and `allow-path`; `icon-path: <dir>` sets the icon search path to a directory in the case. Imports, images and icons go next to `input.kash`, because the case directory is the project root.
+`spec` (required) names the spec sections covered. `flags` takes `force`, `debug` (render only) and `allow-path`; `icon-path: <dir>` sets the icon search path to a directory in the case, and `include: <file>` passes `--include` for a file relative to the case directory. Imports, images and icons go next to `input.kash`, because the case directory is the project root.
 
 To add a case, create the directory and `input.kash`, then bless it and the coverage map:
 

@@ -1,0 +1,2 @@
+style included { fill=#ecfccb }
+import "outside.kash"

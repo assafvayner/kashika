@@ -65,7 +65,7 @@ fn run_parse(case: &Case) -> Result<Vec<Output>, String> {
         path: Some(input),
         allow_path: case.allow_path,
         icon_path: case.icon_path.iter().map(|p| case.dir.join(p)).collect(),
-        include: Vec::new(),
+        include: case.include.iter().map(|p| case.dir.join(p)).collect(),
     };
     let (scene, diags) = match kashika_model::compile_library_with(&case.src, &opts) {
         Some(diags) => (None, diags),
@@ -111,6 +111,9 @@ fn kashika(case: &Case, out: &Path) -> Command {
         .arg(out);
     if let Some(p) = &case.icon_path {
         cmd.env("KASHIKA_ICON_PATH", case.dir.join(p));
+    }
+    for p in &case.include {
+        cmd.arg("--include").arg(case.dir.join(p));
     }
     for (on, flag) in [
         (case.force, "--force"),
