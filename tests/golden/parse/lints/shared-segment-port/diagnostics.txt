@@ -1,0 +1,6 @@
+warn[shared-segment] 8:1-8:41: to_b runs along to_a for 60px, from (100,120) to (160,120)
+  = help: nearest free lane: y=146
+  = help: free y-intervals across x 100..160: 0..34, 146..240
+  = help: both lines leave or reach the same point: spread them along the side with `side@t` (`a.right@0.3`, `a.right@0.7`), or fan out from a `junction`
+  elements: [{"from":[100,120],"id":"to_b","kind":"line","segment":1,"span":{"col":1,"end_col":41,"end_line":8,"line":8},"to":[160,120]},{"from":[100,120],"id":"to_a","kind":"line","segment":1,"span":{"col":1,"end_col":41,"end_line":7,"line":7},"to":[160,120]}]
+  facts: {"free":{"axis":"y","band":[100,160],"intervals":[[0,34],[146,240]]},"from":[100,120],"lane":{"at":146,"axis":"y"},"length":60,"to":[160,120]}

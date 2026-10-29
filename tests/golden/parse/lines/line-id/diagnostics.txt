@@ -1,5 +1,6 @@
 warn[shared-segment] 10:1-10:15: line@L10 runs along jb for 50px, from (150,150) to (200,150)
   = help: nearest free lane: y=144
   = help: free y-intervals across x 150..200: 0..14, 66..144, 156..200
+  = help: both lines leave or reach the same point: spread them along the side with `side@t` (`a.right@0.3`, `a.right@0.7`), or fan out from a `junction`
   elements: [{"from":[150,150],"id":"line@L10","kind":"line","segment":1,"span":{"col":1,"end_col":15,"end_line":10,"line":10},"to":[200,150]},{"from":[150,150],"id":"jb","kind":"line","segment":1,"span":{"col":1,"end_col":33,"end_line":9,"line":9},"to":[230,60]}]
   facts: {"free":{"axis":"y","band":[150,200],"intervals":[[0,14],[66,144],[156,200]]},"from":[150,150],"lane":{"at":144,"axis":"y"},"length":50,"to":[200,150]}

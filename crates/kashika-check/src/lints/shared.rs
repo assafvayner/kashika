@@ -58,5 +58,15 @@ fn report(
     .with_fact("from", arr(p))
     .with_fact("to", arr(q))
     .with_fact("length", round2(total));
-    with_deferred(d, DeferredKind::Lane, p, q, &[id])
+    let d = with_deferred(d, DeferredKind::Lane, p, q, &[id]);
+    let shared_end = [(l.start, other.start), (l.end, other.end)]
+        .into_iter()
+        .any(|(a, b)| a.dist(b) <= TOLERANCE);
+    if shared_end {
+        d.with_help(
+            "both lines leave or reach the same point: spread them along the side with `side@t` (`a.right@0.3`, `a.right@0.7`), or fan out from a `junction`",
+        )
+    } else {
+        d
+    }
 }

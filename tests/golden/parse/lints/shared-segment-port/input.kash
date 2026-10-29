@@ -1,0 +1,8 @@
+// spec: 7
+// Two lines that leave the same anchor and overlap get help to spread their ports.
+diagram "shared port" size (400,240)
+box lb "LB" at (20,100) size (80,40)
+box a "A" at (240,20) size (80,40)
+box b "B" at (240,180) size (80,40)
+arrow to_a lb.right -> h 60 -> vh a.left
+arrow to_b lb.right -> h 60 -> vh b.left

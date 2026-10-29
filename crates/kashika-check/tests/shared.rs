@@ -20,8 +20,14 @@ fn collinear_overlap_is_reported_with_the_nearest_free_lane() {
         vec![
             "nearest free lane: y=74".to_string(),
             "free y-intervals across x 100..200: 0..74, 126..600".to_string(),
+            "both lines leave or reach the same point: spread them along the side with `side@t` (`a.right@0.3`, `a.right@0.7`), or fan out from a `junction`".to_string(),
         ]
     );
+    let d = lint(
+        "shared-segment",
+        "line a (20,100) -> h 200\nline b (100,100) -> h 180\n",
+    );
+    assert_eq!(d[0].help.len(), 2, "{d:#?}");
 }
 
 #[test]
