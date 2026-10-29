@@ -26,8 +26,13 @@ fn example_renders_are_committed_and_current() {
     names.sort();
     assert!(!names.is_empty());
 
+    let readme = std::fs::read_to_string(examples_dir().join("README.md")).unwrap();
     let tmp = tempfile::tempdir().unwrap();
     for name in names {
+        assert!(
+            readme.lines().any(|l| l == format!("## {name}")),
+            "examples/README.md has no `## {name}` section"
+        );
         let dir = examples_dir().join(&name);
         let src = dir.join(format!("{name}.kash"));
         let regen = format!(
@@ -61,6 +66,11 @@ fn example_renders_are_committed_and_current() {
             .assert()
             .code(0)
             .stdout(predicates::str::contains("0 errors, 0 warnings"));
+
+        kashika()
+            .args(["fmt", "--check", src.to_str().unwrap()])
+            .assert()
+            .code(0);
 
         for ext in ["svg", "png"] {
             let out = tmp.path().join(format!("{name}.{ext}"));
