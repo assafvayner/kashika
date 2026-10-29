@@ -1,0 +1,12 @@
+// spec: 3a, 7
+// raster: png
+// Icons drawn with `currentColor` take the shape's `color`; an icon with explicit colors keeps them, and an icon too close to its fill is `low-contrast`. A bundled icon used as a shape or image keeps the default `#334155`.
+diagram "icon color" size (460,150)
+shape srv from "server"
+box vault "Vault" at (10,10) size (140,50) fill=#1e293b color=white icon="lock"
+box user "User" at (160,10) size (140,50) fill=#1e293b color=#fde68a icon="cur.svg"
+box fixed "Fixed" at (310,10) size (140,50) fill=#1e293b color=white icon="fixed.svg"
+box plain "Plain" at (10,80) size (140,50) icon="lock"
+box dim at (160,80) size (140,50) fill=#1e293b icon="server"
+box drawn at (310,80) size (50,50) shape=srv
+image pic "browser" at (380,80) size (50,50)

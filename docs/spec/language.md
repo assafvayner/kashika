@@ -117,6 +117,7 @@ image logo "assets/hf.png" at (20,20) size (80,80) [fit=contain|cover|stretch]
 - Formats: SVG, PNG, JPEG.
 - `fit` defaults to `contain`. Images take `pin=`, can be anchored to like boxes, and paint with the boxes in file order.
 - `icon-pos` defaults to `left` and `icon-size` to 24. A `left` icon sits `padding` (`x`) from the left edge, vertically centered; a `top` icon sits `padding` (`y`) from the top edge, horizontally centered. The text area shrinks by `icon-size + padding` on that side. On a group, the icon sits in the title band before the title, its size defaults to the title's line height (`1.25 × font-size`), and `icon-pos=top` is an `attr` error. `icon-pos` or `icon-size` without `icon=` is an `attr` error.
+- An SVG icon that paints with `currentColor` (all bundled icons do) is drawn in the shape's `color`, the color of its label, so it stays visible on a dark fill. When neither the shape nor a style it names sets `color` (a group's built-in `boundary` color doesn't count), `currentColor` is `#334155`, the default stroke. An icon that sets `color` on its root element, or paints with explicit colors only, keeps its own colors. The color is resolved before the usvg re-serialization, so the embedded SVG has no `currentColor` left. Images and `shape ... from` SVGs don't follow a `color`: a bundled icon used as one is drawn in `#334155`, and a user SVG's `currentColor` is black.
 - The checker treats an image as an opaque rectangle: lines are checked against it like a box, and it takes part in `overlap`, `spill` and `out-of-canvas`. It adds no fill behind text for `low-contrast`.
 - `inspect` reports each image's natural size and aspect ratio.
 
@@ -297,7 +298,7 @@ These block output unless `--force` is given:
 | `endpoint-off-edge` | A literal endpoint is within 8px of a shape outline but not on it. A start point is literal unless it is written `id.anchor[+offset]` or a junction (a mixed point is literal). An end is literal when the last segment is `h`, `v`, a numeric `x`/`y`, or goes to a literal point; `x`/`y` with a point target is not |
 | `port-crowding` | Two endpoints on the same shape are within 8px of each other, or closer than their two end markers' half-widths add up to (crow's-foot ends reach 6px to each side of the line, arrowheads and diamonds 4px, dots 3px), so two crow's feet need 12px. This includes identical endpoints where both lines draw a marker (stacked arrowheads). Junctions are exempt |
 | `group-transit` | A line passes through a group's interior while neither of its endpoints is inside that group. A line also connects into the group when a junction lies on it (an endpoint or a point along it) and another line with an endpoint at that junction has an endpoint inside the group: a trunk that taps a child through a junction does not transit the child's group |
-| `low-contrast` | The contrast ratio between text color and its background is below 3:1. The background is the `background=` color with every group and box fill under the text painted on top in paint order; a transparent canvas counts as white. Texts and line labels use the fills under the center of their box (not the `at` anchor of a left- or right-aligned text); line labels hide only their own line |
+| `low-contrast` | The contrast ratio between text color and its background is below 3:1, or between an icon drawn in `currentColor` (§3a) and the fill under its center. Icons with their own colors are not judged. The background is the `background=` color with every group and box fill under the text painted on top in paint order; a transparent canvas counts as white. Texts and line labels use the fills under the center of their box (not the `at` anchor of a left- or right-aligned text); line labels hide only their own line |
 | `block-reducible` | A text block holds only 1–2 stacked items, in one alignment, that a `label` would draw the same: the first in the box's font size and color, the second either in that style too (a second label line, `\n`) or in the `sublabel` style (`0.8 × font-size`, `muted`, not bold). The help line shows the `label`/`sublabel` rewrite |
 | `text-outside-shape` | An absolute block item lies outside the shape's text area (§6), or outside the band under a `text-area=below` shape. The help line gives the text area in the box-local frame |
 | `image-distort` | `fit=stretch` changes an image's aspect ratio by more than 5% |
@@ -481,7 +482,7 @@ All examples in `ref` are tested fixtures.
 - arithmetic expressions in literals
 - named guides
 - remote URLs for images and imports
-- recoloring icons
+- recoloring icons beyond `currentColor` (§3a)
 - font files supplied by the user
 - automatic text wrapping (use `\n` or a text block)
 - themes

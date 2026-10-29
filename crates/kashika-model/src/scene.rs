@@ -683,6 +683,9 @@ pub struct Asset {
     /// Convex hull of the drawing in unit coordinates (the unit square for rasters).
     #[serde(skip)]
     pub unit_hull: Vec<Pt>,
+    /// The color an SVG icon's `currentColor` resolved to: the box's text color.
+    #[serde(skip)]
+    pub current_color: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]

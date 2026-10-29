@@ -47,6 +47,22 @@ pub fn low_contrast(ctx: &Ctx, out: &mut Sink) {
                 format!("{what} of '{}'", sh.id),
             );
         }
+        let Some(icon) = &sh.icon else { continue };
+        let Some(color) = &ctx.scene.assets[icon.asset].current_color else {
+            continue;
+        };
+        let bg = backdrop(icon.rect.center(), Some(&sh.id));
+        if let Some(d) = finding(
+            color,
+            bg,
+            shape_el(sh),
+            sh.span,
+            format!("icon of '{}'", sh.id),
+        ) {
+            out.push(d.with_help(
+                "set the shape's `color`, which the icon is drawn in, to contrast with the `fill` behind it",
+            ));
+        }
     }
     for t in &ctx.scene.texts {
         let bg = backdrop(text_box(t).center(), None);
@@ -76,12 +92,18 @@ pub fn low_contrast(ctx: &Ctx, out: &mut Sink) {
 }
 
 fn check(out: &mut Sink, color: &str, bg: [f64; 3], el: Element, span: Span, what: String) {
-    let Some(fg) = rgba(color) else { return };
+    if let Some(d) = finding(color, bg, el, span, what) {
+        out.push(d.with_help("darken the text `color` or lighten the `fill` behind it"));
+    }
+}
+
+fn finding(color: &str, bg: [f64; 3], el: Element, span: Span, what: String) -> Option<Diagnostic> {
+    let fg = rgba(color)?;
     let r = ratio(over(fg, bg), bg);
     if r >= MIN_RATIO {
-        return;
+        return None;
     }
-    out.push(
+    Some(
         Diagnostic::warn(
             "low-contrast",
             span,
@@ -90,9 +112,8 @@ fn check(out: &mut Sink, color: &str, bg: [f64; 3], el: Element, span: Span, wha
         .with_element(el)
         .with_fact("ratio", round2(r))
         .with_fact("color", color)
-        .with_fact("background", hex(bg))
-        .with_help("darken the text `color` or lighten the `fill` behind it"),
-    );
+        .with_fact("background", hex(bg)),
+    )
 }
 
 /// The canvas with every fill containing `p` painted on top in paint order (`rank`, from

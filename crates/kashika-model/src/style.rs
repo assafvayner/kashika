@@ -66,6 +66,11 @@ impl Serialize for Padding {
     }
 }
 
+/// What `currentColor` in an icon resolves to when neither the shape nor a style it names sets
+/// `color` (a group's built-in `boundary` color doesn't count): the default stroke, which
+/// bundled icons were drawn in.
+pub const ICON_COLOR: &str = "#334155";
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Style {
     pub fill: String,

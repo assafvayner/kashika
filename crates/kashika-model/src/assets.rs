@@ -5,6 +5,7 @@ use kashika_geom::{Pt, convex_hull};
 
 use crate::loader::{FileError, Found, Loader};
 use crate::scene::Asset;
+use crate::style::ICON_COLOR;
 
 /// Largest image or SVG file read.
 const MAX_BYTES: u64 = 16 * 1024 * 1024;
@@ -39,7 +40,20 @@ impl Store {
     /// Finds `name` from the directory `from`, loads it once and returns its index.
     pub fn load(&mut self, loader: &Loader, from: &Path, name: &str) -> Result<usize, FileError> {
         let found = loader.find(from, name)?;
-        self.load_found(loader, found, name)
+        self.load_found(loader, found, name, None)
+    }
+
+    /// Like `load`, for an icon: an SVG that uses `currentColor` and sets no `color` on its root
+    /// is drawn in `color`, and is kept apart from the same file loaded in another color.
+    pub fn load_icon(
+        &mut self,
+        loader: &Loader,
+        from: &Path,
+        name: &str,
+        color: &str,
+    ) -> Result<usize, FileError> {
+        let found = loader.find(from, name)?;
+        self.load_found(loader, found, name, Some(color))
     }
 
     /// Like `load`, but only accepts SVG files; anything else is refused before it is read.
@@ -58,7 +72,7 @@ impl Store {
                 )));
             }
         }
-        self.load_found(loader, found, name)
+        self.load_found(loader, found, name, None)
     }
 
     fn load_found(
@@ -66,12 +80,14 @@ impl Store {
         loader: &Loader,
         found: Found,
         name: &str,
+        color: Option<&str>,
     ) -> Result<usize, FileError> {
-        let key = match &found {
-            Found::File(p) => p.to_string_lossy().into_owned(),
-            Found::Bundled(n) => format!("builtin:{n}"),
+        let (key, color) = match &found {
+            Found::File(p) => (p.to_string_lossy().into_owned(), color),
+            Found::Bundled(n) => (format!("builtin:{n}"), color.or(Some(ICON_COLOR))),
         };
-        if let Some(i) = self.keys.iter().position(|k| *k == key) {
+        let colored = format!("{key}\u{0}{}", color.unwrap_or_default());
+        if let Some(i) = self.keys.iter().position(|k| *k == key || *k == colored) {
             return Ok(i);
         }
         let bytes = loader.read(&found, name, MAX_BYTES)?;
@@ -79,9 +95,10 @@ impl Store {
             Found::File(p) => (is_svg_path(p), name.to_string()),
             Found::Bundled(_) => (true, key.clone()),
         };
-        let asset = decode(shown, &bytes, is_svg)
+        let asset = decode(shown, &bytes, is_svg, color)
             .map_err(|m| FileError::new(format!("cannot use `{name}`: {m}")))?;
-        self.keys.push(key);
+        let recolorable = is_svg && uses_current_color(&bytes);
+        self.keys.push(if recolorable { colored } else { key });
         self.assets.push(asset);
         Ok(self.assets.len() - 1)
     }
@@ -101,12 +118,12 @@ fn is_svg_path(p: &Path) -> bool {
 
 /// The natural size of an image file's contents, for `kashika icons`.
 pub fn probe(bytes: &[u8], is_svg: bool) -> Result<(f64, f64), String> {
-    decode(String::new(), bytes, is_svg).map(|a| a.natural)
+    decode(String::new(), bytes, is_svg, None).map(|a| a.natural)
 }
 
-fn decode(path: String, bytes: &[u8], is_svg: bool) -> Result<Asset, String> {
+fn decode(path: String, bytes: &[u8], is_svg: bool, color: Option<&str>) -> Result<Asset, String> {
     if is_svg {
-        svg(path, bytes)
+        svg(path, bytes, color)
     } else {
         raster(path, bytes)
     }
@@ -136,14 +153,17 @@ fn raster(path: String, bytes: &[u8]) -> Result<Asset, String> {
         natural: (size.width as f64, size.height as f64),
         bytes: bytes.to_vec(),
         unit_hull: unit_square(),
+        current_color: None,
     })
 }
 
 /// Parses with usvg and re-serializes. The round trip is the sanitizer: scripts, event
 /// handlers, `foreignObject` and external references don't survive it, and the href
-/// resolver refuses everything but `data:` URIs.
-fn svg(path: String, bytes: &[u8]) -> Result<Asset, String> {
+/// resolver refuses everything but `data:` URIs. With `color`, an SVG that uses
+/// `currentColor` and sets no `color` on its root resolves it to `color`.
+fn svg(path: String, bytes: &[u8], color: Option<&str>) -> Result<Asset, String> {
     check_depth(bytes)?;
+    let current_color = color.filter(|_| uses_current_color(bytes));
     let too_deep = AtomicBool::new(false);
     let data = usvg::ImageHrefResolver::default_data_resolver();
     let opt = usvg::Options {
@@ -159,6 +179,7 @@ fn svg(path: String, bytes: &[u8]) -> Result<Asset, String> {
             }),
             resolve_string: Box::new(|_, _| None),
         },
+        style_sheet: current_color.map(|c| format!("svg {{ color: {c} }}")),
         ..usvg::Options::default()
     };
     let tree = usvg::Tree::from_data(bytes, &opt).map_err(|e| format!("not a valid SVG: {e}"))?;
@@ -180,7 +201,26 @@ fn svg(path: String, bytes: &[u8]) -> Result<Asset, String> {
         natural: (w, h),
         bytes: tree.to_string(&usvg::WriteOptions::default()).into_bytes(),
         unit_hull: if hull.len() >= 3 { hull } else { unit_square() },
+        current_color: current_color.map(str::to_string),
     })
+}
+
+/// Whether an SVG paints with `currentColor` and leaves its root's `color` unset.
+fn uses_current_color(bytes: &[u8]) -> bool {
+    let Ok(text) = std::str::from_utf8(bytes) else {
+        return false;
+    };
+    if !text.to_ascii_lowercase().contains("currentcolor") {
+        return false;
+    }
+    usvg::roxmltree::Document::parse_with_options(
+        text,
+        usvg::roxmltree::ParsingOptions {
+            allow_dtd: true,
+            ..Default::default()
+        },
+    )
+    .is_ok_and(|d| d.root_element().attribute("color").is_none())
 }
 
 /// Refuses markup nested more than `MAX_SVG_DEPTH` deep before the recursive parsers see
@@ -309,7 +349,7 @@ mod tests {
 
     #[test]
     fn svg_is_sanitized() {
-        let a = decode("evil.svg".into(), EVIL.as_bytes(), true).unwrap();
+        let a = decode("evil.svg".into(), EVIL.as_bytes(), true, None).unwrap();
         let out = String::from_utf8(a.bytes).unwrap();
         for bad in [
             "script",
@@ -329,7 +369,7 @@ mod tests {
     #[test]
     fn svg_hull_is_in_unit_coordinates() {
         let src = r##"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20" viewBox="0 0 40 20"><path d="M 10 0 L 30 0 L 40 20 L 0 20 Z"/></svg>"##;
-        let a = decode("t.svg".into(), src.as_bytes(), true).unwrap();
+        let a = decode("t.svg".into(), src.as_bytes(), true, None).unwrap();
         assert_eq!(a.natural, (40.0, 20.0));
         let mut h = a.unit_hull.clone();
         h.sort_by(|p, q| p.x.total_cmp(&q.x).then(p.y.total_cmp(&q.y)));
@@ -345,20 +385,59 @@ mod tests {
     }
 
     #[test]
+    fn current_color_resolves_to_the_given_color() {
+        let svg = |root: &str, paint: &str| {
+            format!(
+                r##"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"{root}><rect width="10" height="10" fill="{paint}"/></svg>"##
+            )
+        };
+        let a = decode(
+            "c.svg".into(),
+            svg("", "currentColor").as_bytes(),
+            true,
+            Some("#ffffff"),
+        )
+        .unwrap();
+        assert_eq!(a.current_color.as_deref(), Some("#ffffff"));
+        let out = String::from_utf8(a.bytes).unwrap();
+        assert!(out.contains("fill=\"#ffffff\""), "{out}");
+        for (root, paint) in [("", "#123456"), (" color=\"#123456\"", "currentColor")] {
+            let a = decode(
+                "c.svg".into(),
+                svg(root, paint).as_bytes(),
+                true,
+                Some("#ffffff"),
+            )
+            .unwrap();
+            assert_eq!(a.current_color, None, "{root} {paint}");
+            assert!(String::from_utf8(a.bytes).unwrap().contains("#123456"));
+        }
+        let a = decode(
+            "c.svg".into(),
+            svg("", "currentColor").as_bytes(),
+            true,
+            None,
+        )
+        .unwrap();
+        assert_eq!(a.current_color, None);
+        assert!(String::from_utf8(a.bytes).unwrap().contains("#000000"));
+    }
+
+    #[test]
     fn raster_sizes_come_from_the_header() {
-        let a = decode("x.png".into(), &png(200, 100), false).unwrap();
+        let a = decode("x.png".into(), &png(200, 100), false, None).unwrap();
         assert_eq!((a.mime, a.natural), ("image/png", (200.0, 100.0)));
         assert_eq!(a.bytes, png(200, 100));
         assert_eq!(a.unit_hull.len(), 4);
-        let e = decode("x.gif".into(), b"GIF89a\x01\x00\x01\x00", false).unwrap_err();
+        let e = decode("x.gif".into(), b"GIF89a\x01\x00\x01\x00", false, None).unwrap_err();
         assert!(e.contains("only SVG, PNG and JPEG"), "{e}");
-        assert!(decode("bad.svg".into(), b"<svg", true).is_err());
+        assert!(decode("bad.svg".into(), b"<svg", true, None).is_err());
     }
 
     #[test]
     fn bundled_icons_decode() {
         for (name, src) in BUNDLED_ICONS {
-            let a = decode(format!("builtin:{name}"), src.as_bytes(), true).unwrap();
+            let a = decode(format!("builtin:{name}"), src.as_bytes(), true, None).unwrap();
             assert_eq!(a.natural, (24.0, 24.0), "{name}");
             assert!(a.unit_hull.len() >= 3, "{name}");
         }
@@ -366,11 +445,11 @@ mod tests {
 
     #[test]
     fn oversized_images_are_refused_from_the_header() {
-        let e = decode("x.png".into(), &png(100_000, 10), false).unwrap_err();
+        let e = decode("x.png".into(), &png(100_000, 10), false, None).unwrap_err();
         assert!(e.contains("100000x10") && e.contains("too large"), "{e}");
-        let e = decode("x.png".into(), &png(8_000, 8_000), false).unwrap_err();
+        let e = decode("x.png".into(), &png(8_000, 8_000), false, None).unwrap_err();
         assert!(e.contains("too large"), "{e}");
-        assert!(decode("x.png".into(), &png(8_192, 3_906), false).is_ok());
+        assert!(decode("x.png".into(), &png(8_192, 3_906), false, None).is_ok());
     }
 
     fn b64(b: &[u8]) -> String {
@@ -401,10 +480,10 @@ mod tests {
 
     #[test]
     fn deep_nesting_is_refused_before_parsing() {
-        let e = decode("d.svg".into(), nested(20_000).as_bytes(), true).unwrap_err();
+        let e = decode("d.svg".into(), nested(20_000).as_bytes(), true, None).unwrap_err();
         assert!(e.contains("nested more than 256 deep"), "{e}");
-        assert!(decode("d.svg".into(), nested(256).as_bytes(), true).is_ok());
-        let e = decode("d.svg".into(), nested(257).as_bytes(), true).unwrap_err();
+        assert!(decode("d.svg".into(), nested(256).as_bytes(), true, None).is_ok());
+        let e = decode("d.svg".into(), nested(257).as_bytes(), true, None).unwrap_err();
         assert!(e.contains("nested more than 256 deep"), "{e}");
         let flat = format!(
             r#"<?xml version="1.0"?><!-- <g><g> --><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">{}<![CDATA[<g>]]></svg>"#,
@@ -419,7 +498,7 @@ mod tests {
             r#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><image width="10" height="10" href="data:image/svg+xml;base64,{}"/></svg>"#,
             b64(nested(20_000).as_bytes())
         );
-        let e = decode("n.svg".into(), src.as_bytes(), true).unwrap_err();
+        let e = decode("n.svg".into(), src.as_bytes(), true, None).unwrap_err();
         assert!(
             e.contains("embedded SVG nests elements more than 256 deep"),
             "{e}"
@@ -435,7 +514,7 @@ mod tests {
             b64(&png(100_000, 10))
         )
         .unwrap();
-        let e = decode("n.svg".into(), src.as_bytes(), true).unwrap_err();
+        let e = decode("n.svg".into(), src.as_bytes(), true, None).unwrap_err();
         assert!(e.contains("too large"), "{e}");
     }
 

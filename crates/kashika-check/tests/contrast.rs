@@ -151,3 +151,47 @@ fn named_colors_are_checked_like_hex() {
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].facts["background"], "#ffffff");
 }
+
+#[test]
+fn icons_drawn_in_the_shape_color_are_checked() {
+    let d = lint(
+        "low-contrast",
+        "box k at (0,0) size (100,60) fill=#1e293b icon=\"lock\"\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "icon of 'k' has contrast 1.4:1 against its background (minimum 3:1)"
+    );
+    assert_eq!(d[0].facts["color"], "#334155");
+    assert_eq!(d[0].facts["background"], "#1e293b");
+    assert!(d[0].help[0].contains("`color`"), "{d:#?}");
+    assert!(
+        lint(
+            "low-contrast",
+            "box k \"Vault\" at (0,0) size (100,60) fill=#1e293b color=white icon=\"lock\"\n"
+        )
+        .is_empty()
+    );
+}
+
+#[test]
+fn user_icons_are_checked_only_when_they_use_current_color() {
+    let dir = tempfile::tempdir().unwrap();
+    let svg = |paint: &str| {
+        format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect x="4" y="4" width="16" height="16" fill="{paint}"/></svg>"#
+        )
+    };
+    std::fs::write(dir.path().join("cur.svg"), svg("currentColor")).unwrap();
+    std::fs::write(dir.path().join("fixed.svg"), svg("#1e293b")).unwrap();
+    let d = lint_in(
+        dir.path(),
+        "low-contrast",
+        "box a at (0,0) size (100,60) fill=#1e293b icon=\"cur.svg\"\n\
+         box b at (0,100) size (100,60) fill=#1e293b icon=\"fixed.svg\"\n\
+         box c at (0,200) size (100,60) fill=#1e293b color=#f8fafc icon=\"cur.svg\"\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].elements[0].id, "a");
+}

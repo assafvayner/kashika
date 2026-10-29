@@ -34,7 +34,7 @@ Errors stop `render` unless `--force`; warnings exit 1 and `allow=code[:other]` 
 | `endpoint-off-edge` | warn | a literal endpoint near but off an outline | use the anchor in the help line |
 | `port-crowding` | warn | two endpoints on a shape within 8px (12px for two crow's feet) | spread them with `side@t` |
 | `group-transit` | warn | a line crosses a group it doesn't connect to (a junction on it that taps into the group counts as connecting) | route around the group |
-| `low-contrast` | warn | text contrast below 3:1 | change the color or fill |
+| `low-contrast` | warn | text contrast below 3:1, or a `currentColor` icon (every bundled icon) against the fill under it | change the color or fill; an icon follows the shape's `color` |
 | `label-collision` | warn | a label or text overlaps another element, a group's title or border, or a label its own line's marker (or its own line, with `label-side`); or a line crosses a group's title | move it; the help lists clear `t` or the title's extent |
 | `out-of-canvas` | warn | an element extends past `size` (children of a group that itself extends past it aren't reported again) | move it or grow `size` |
 | `off-grid` | warn | a literal is not a multiple of `grid` | round it |

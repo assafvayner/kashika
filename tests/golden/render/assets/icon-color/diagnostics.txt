@@ -1,0 +1,4 @@
+warn[low-contrast] 10:1-10:61: icon of 'dim' has contrast 1.4:1 against its background (minimum 3:1)
+  = help: set the shape's `color`, which the icon is drawn in, to contrast with the `fill` behind it
+  elements: [{"bbox":[[160,80],[300,130]],"id":"dim","kind":"box","span":{"col":1,"end_col":61,"end_line":10,"line":10}}]
+  facts: {"background":"#1e293b","color":"#334155","ratio":1.41}

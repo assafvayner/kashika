@@ -96,12 +96,14 @@ impl<'a> Resolver<'a> {
         let size_ok = self.size_ok(n.size, n.span, &format!("`{}`", n.id.name));
         let shape = a.get("shape").and_then(|x| self.shape_attr(x));
         let mut props = StyleProps::default();
+        let mut color = None;
         if group {
             let user = self
                 .user_styles
                 .get("boundary")
                 .cloned()
                 .unwrap_or_default();
+            color = user.color.clone();
             props = props
                 .overlay(&style::builtin("boundary").unwrap_or_default())
                 .overlay(&user);
@@ -118,10 +120,13 @@ impl<'a> Resolver<'a> {
                         .with_help("use a style without `shape`, or drop `shape` from it"),
                     );
                 }
+                color = named.color.clone().or(color);
                 props = props.overlay(&named);
             }
         }
-        props = props.overlay(&attrs::style_props(&a, &mut self.diags));
+        let own = attrs::style_props(&a, &mut self.diags);
+        color = own.color.clone().or(color);
+        props = props.overlay(&own);
         let shape = if group {
             None
         } else {
@@ -143,7 +148,11 @@ impl<'a> Resolver<'a> {
         let text = textlayout::shape_text_props(&a, group, &mut self.diags);
         let (allow, reason) = self.allow_reason(&a);
         let style = props.resolve();
-        let icon = self.icon_props(&a, group, style.font_size);
+        let icon_color = color
+            .as_deref()
+            .filter(|c| *c != "none")
+            .unwrap_or(style::ICON_COLOR);
+        let icon = self.icon_props(&a, group, style.font_size, icon_color);
         let layer = self.layer(&a);
         NodeProps {
             outline,
@@ -176,6 +185,7 @@ impl<'a> Resolver<'a> {
         a: &Attrs<'_>,
         group: bool,
         font_size: f64,
+        color: &str,
     ) -> Option<IconProps> {
         let pos = match a.get("icon-pos") {
             Some(x) => match attrs::word(x, &["left", "top"], &mut self.diags) {
@@ -209,7 +219,14 @@ impl<'a> Resolver<'a> {
             return None;
         };
         let name = attrs::text(x, &mut self.diags)?;
-        let asset = self.load_asset(&name, x.span)?;
+        let root = self.loader.root().to_path_buf();
+        let asset = match self.store.load_icon(&self.loader, &root, &name, color) {
+            Ok(i) => i,
+            Err(e) => {
+                self.file_error(x.span, e);
+                return None;
+            }
+        };
         Some(IconProps { asset, pos, size })
     }
 

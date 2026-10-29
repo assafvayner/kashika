@@ -57,7 +57,7 @@ box badge at db.tr size (16,16) pin=center allow=overlap:db reason="corner badge
 line api_db api.right -> db.left end=arrow label="SQL"  // the optional id follows `line` directly, with no colon
 group vpc "VPC" at (20,180) size (600,280) {  // children use vpc-relative coordinates
   box pay "Payments API" at (20,60) size (140,60) sublabel="v2.4.1"  // muted second line at 0.8 × size
-  box q "Jobs" at (300,60) size (160,60) icon="queue"  // icon-pos=left|top icon-size=24; bundled: server browser queue lock cloud person (use person for users)
+  box q "Jobs" at (300,60) size (160,60) icon="queue"  // icon-pos=left|top icon-size=24; bundled: server browser queue lock cloud person (use person for users); currentColor icons take the box's color=
 }
 junction fan at api.bottom+(0,40) dot  // a point lines meet at; draws nothing without `dot`
 text note1 "note" at (880,480) size=12 align=right muted  // the id is optional (a text is not a line endpoint); centered on `at` unless align=left|right
