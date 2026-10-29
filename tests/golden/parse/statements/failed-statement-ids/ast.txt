@@ -22,6 +22,7 @@ File {
         Line(
             Line {
                 id: Some(Ident { name: "l1", span: 7:6-7:8 }),
+                arrow: false,
                 start: Ref {
                     r: Ref { id: Ident { name: "fan", span: 7:9-7:12 }, anchor: None },
                     offset: None,
@@ -54,6 +55,7 @@ File {
         Line(
             Line {
                 id: Some(Ident { name: "l2", span: 8:6-8:8 }),
+                arrow: false,
                 start: Ref {
                     r: Ref { id: Ident { name: "fan", span: 8:9-8:12 }, anchor: None },
                     offset: None,
@@ -101,6 +103,7 @@ File {
         Line(
             Line {
                 id: Some(Ident { name: "l3", span: 13:6-13:8 }),
+                arrow: false,
                 start: Ref {
                     r: Ref {
                         id: Ident { name: "inner", span: 13:9-13:14 },
@@ -135,6 +138,7 @@ File {
         Line(
             Line {
                 id: Some(Ident { name: "l4", span: 16:6-16:8 }),
+                arrow: false,
                 start: Ref {
                     r: Ref {
                         id: Ident { name: "c", span: 16:9-16:10 },

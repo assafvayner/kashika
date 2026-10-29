@@ -1,0 +1,11 @@
+// spec: 2, 5
+// dump: ast
+// `arrow` is a `line` whose `end` defaults to `arrow`: same id rules, segments and attributes,
+// and an explicit `end=` wins. Its mistakes get the same help, written with `arrow`.
+diagram "arrows" size (300,200)
+box a "A" at (20,20) size (60,40)
+box b "B" at (200,20) size (60,40)
+arrow ab a.right -> b.left label="call"
+arrow a.bottom -> v 40
+  -> h 120 end=diamond start=dot
+arrow back: b.bottom -> v 100

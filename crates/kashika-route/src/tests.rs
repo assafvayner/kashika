@@ -251,12 +251,16 @@ fn literals_are_written_in_the_line_frame() {
 #[test]
 fn statements_and_numbers() {
     assert_eq!(
-        statement("ab", "a.right -> b.left", "end=arrow"),
+        statement(false, "ab", "a.right -> b.left", "end=arrow"),
         "line ab a.right -> b.left end=arrow"
     );
     assert_eq!(
-        statement("ab", "a.right -> b.left", ""),
+        statement(false, "ab", "a.right -> b.left", ""),
         "line ab a.right -> b.left"
+    );
+    assert_eq!(
+        statement(true, "ab", "a.right -> b.left", "label=\"x\""),
+        "arrow ab a.right -> b.left label=\"x\""
     );
     assert_eq!(
         (num(12.0), num(-0.0), num(0.256)),

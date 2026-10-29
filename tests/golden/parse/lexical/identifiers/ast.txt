@@ -33,6 +33,7 @@ File {
         Line(
             Line {
                 id: Some(Ident { name: "_private-to-api", span: 7:6-7:21 }),
+                arrow: false,
                 start: Ref {
                     r: Ref {
                         id: Ident { name: "_private", span: 7:22-7:30 },

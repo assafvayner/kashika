@@ -8,11 +8,14 @@ use crate::lexer::{Tok, Token, lex_raw};
 mod defs;
 
 const STATEMENTS: &[&str] = &[
-    "diagram", "style", "box", "group", "junction", "text", "line", "import", "shape", "image",
+    "diagram", "style", "box", "group", "junction", "text", "line", "arrow", "import", "shape",
+    "image",
 ];
 const LINE_FLAGS: &[&str] = &["ortho"];
-/// Segment keywords; an id with one of these names could not be a bare segment target.
-pub const RESERVED_IDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve"];
+/// Segment keywords, which could not be bare segment targets, and the `arrow` statement keyword.
+pub const RESERVED_IDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve", "arrow"];
+/// The reserved ids that are segment keywords.
+const SEGMENT_KEYWORDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve"];
 const MAX_GROUP_DEPTH: usize = 64;
 
 pub fn parse(src: &str) -> (File, Vec<Diagnostic>) {
@@ -335,9 +338,9 @@ impl Parser<'_> {
                 self.bump();
                 Stmt::Text(self.text(start)?)
             }
-            "line" => {
+            "line" | "arrow" => {
                 self.bump();
-                Stmt::Line(self.line(start)?)
+                Stmt::Line(self.line(start, kw == "arrow")?)
             }
             "import" => {
                 self.bump();
@@ -432,11 +435,18 @@ impl Parser<'_> {
                     id.span,
                     format!("`{}` is a reserved word and cannot be an id", id.name),
                 )
-                .with_help(format!(
-                    "segment keywords ({}) are reserved; pick another name, e.g. `{}_1`",
-                    RESERVED_IDS.join(" "),
-                    id.name
-                )),
+                .with_help(if SEGMENT_KEYWORDS.contains(&id.name.as_str()) {
+                    format!(
+                        "segment keywords ({}) are reserved; pick another name, e.g. `{}_1`",
+                        SEGMENT_KEYWORDS.join(" "),
+                        id.name
+                    )
+                } else {
+                    format!(
+                        "`{0}` is a statement keyword; pick another name, e.g. `{0}_1`",
+                        id.name
+                    )
+                }),
             );
             return Err(());
         }
@@ -666,7 +676,8 @@ impl Parser<'_> {
 
     /// A line id is an identifier followed by something that starts a point; a point that
     /// starts with an identifier never continues with another identifier or `(`.
-    fn line(&mut self, start: Span) -> PResult<Line> {
+    fn line(&mut self, start: Span, arrow: bool) -> PResult<Line> {
+        let kw = if arrow { "arrow" } else { "line" };
         let mut colon_diag = None;
         let mut id = if matches!(self.tok(), Tok::Ident(_)) && *self.tok_at(1) == Tok::Colon {
             let id = self.decl_id("a line id")?;
@@ -679,7 +690,7 @@ impl Parser<'_> {
             colon_diag = Some(self.diags.len());
             self.diags.push(
                 Diagnostic::error("parse", colon, "a line id takes no `:`")
-                    .with_help(format!("remove the `:`: write `line {} {rest}`", id.name)),
+                    .with_help(format!("remove the `:`: write `{kw} {} {rest}`", id.name)),
             );
             Some(id)
         } else if matches!(self.tok(), Tok::Ident(_)) && starts_point(self.tok_at(1)) {
@@ -715,7 +726,7 @@ impl Parser<'_> {
                     start.to(self.prev_span()),
                     "a line is written with `->`, not `from … to`",
                 )
-                .with_help(format!("write `line {id}{a} -> {b}`")),
+                .with_help(format!("write `{kw} {id}{a} -> {b}`")),
             );
             return Err(());
         }
@@ -737,6 +748,7 @@ impl Parser<'_> {
         let attrs = self.attrs(LINE_FLAGS)?;
         Ok(Line {
             id,
+            arrow,
             start: start_pt,
             segs,
             attrs,

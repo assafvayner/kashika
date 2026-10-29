@@ -434,7 +434,11 @@ impl<'a> Resolver<'a> {
                 .unwrap_or(Marker::None)
         };
         let start = marker("start");
-        let end = marker("end");
+        let end = match a.get("end") {
+            Some(_) => marker("end"),
+            None if l.arrow => Marker::Arrow,
+            None => Marker::None,
+        };
         let mut props = StyleProps {
             font_size: Some(12.0),
             ..StyleProps::default()

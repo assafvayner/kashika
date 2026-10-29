@@ -70,7 +70,7 @@ pub struct Candidate {
     pub segments: usize,
     pub length: f64,
     pub corridor: Option<Corridor>,
-    /// A ready-to-paste `line` statement.
+    /// A ready-to-paste `line` statement, or `arrow` when rerouting one.
     pub statement: String,
 }
 
@@ -116,6 +116,7 @@ pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
             ));
         }
     };
+    let arrow = target.as_ref().is_some_and(|t| t.arrow);
     let (id, attrs, frame) = match &target {
         Some(t) => (
             t.id.clone(),
@@ -135,7 +136,7 @@ pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
         Some(_) => Vec::new(),
         None => connecting_lines(&file, &scene, &from, &to),
     };
-    let candidates = rank(req, &scene, &src, (&from, &to), (&id, &attrs), frame);
+    let candidates = rank(req, &scene, &src, (&from, &to), (arrow, &id, &attrs), frame);
     Ok(Suggestion {
         from,
         to,
@@ -197,6 +198,8 @@ struct Frame {
 /// origin of the frame its literals are written in and where its statement ends.
 struct Target {
     id: String,
+    /// Written as an `arrow` statement.
+    arrow: bool,
     from: Endpoint,
     to: Endpoint,
     attrs: Vec<String>,
@@ -223,6 +226,7 @@ fn existing(file: &ast::File, scene: &Scene, src: &Source, id: &str) -> Result<T
     };
     Ok(Target {
         id: id.to_string(),
+        arrow: ast_line.arrow,
         from: endpoint(Some(&ast_line.start), first.from()),
         to: endpoint(end_point(ast_line), last.to()),
         attrs: ast_line.attrs.iter().map(|a| src.slice(a.span)).collect(),
@@ -242,7 +246,7 @@ fn rank(
     scene: &Scene,
     src: &Source,
     (from, to): (&Endpoint, &Endpoint),
-    (id, attrs): (&str, &str),
+    (arrow, id, attrs): (bool, &str, &str),
     frame: Frame,
 ) -> Vec<Candidate> {
     let ctx = Ctx::new(scene);
@@ -255,7 +259,7 @@ fn rank(
     let probes: Vec<String> = paths
         .iter()
         .enumerate()
-        .map(|(i, p)| statement(&probe_id(i), p, attrs))
+        .map(|(i, p)| statement(arrow, &probe_id(i), p, attrs))
         .collect();
     let (text, first) = src.with_lines(frame.after, &probes);
     let (probed, diags) = kashika_model::compile_with(&text, req.opts);
@@ -312,7 +316,7 @@ fn rank(
             segments: segments(&line.path, req.style),
             length: s.length.round(),
             corridor,
-            statement: statement(id, path, attrs),
+            statement: statement(arrow, id, path, attrs),
         });
     }
     let simple: Vec<&Candidate> = candidates

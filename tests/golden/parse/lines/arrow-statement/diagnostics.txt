@@ -1,0 +1,2 @@
+error[parse] 11:11-11:12: a line id takes no `:`
+  = help: remove the `:`: write `arrow back b.bottom -> v 100`

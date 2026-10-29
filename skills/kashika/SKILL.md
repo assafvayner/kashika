@@ -22,7 +22,7 @@ Kashika has **no auto-layout**. You decide every box position and every line pat
 
 1. **y grows down.** `(0,0)` is the top-left. `v -40` moves up.
 2. **Literal coordinates are relative to the enclosing group.** Anchors (`db.left`) are always absolute. `kashika inspect file.kash <id>` prints a child's absolute box.
-3. **Ids are global** and referenced bare (`db.left`, never `vpc.db.left`). Shapes, groups and lines share one namespace, so a line can't be named after a box. The segment keywords `h v x y hv vh curve` can't be ids. Groups have anchors too, and a line can start or end on one (`web.right`).
+3. **Ids are global** and referenced bare (`db.left`, never `vpc.db.left`). Shapes, groups and lines share one namespace, so a line can't be named after a box. The segment keywords `h v x y hv vh curve` and `arrow` can't be ids. Groups have anchors too, and a line can start or end on one (`web.right`).
 4. **Prefer relationships to numbers.** `at api.right+(80,0) pin=left`, `-> hv db.top`, `-> y queue.left`, `junction j at stock.bottom+(0,50)`. They survive later edits; literals don't.
 5. **The last hop must line up**, so the path stays orthogonal. `check` doesn't flag a diagonal, since some diagrams want them, so look for unintended ones in the render. `ortho` on a line makes any diagonal (or curve) in it an error: add it to lines meant to run at right angles, such as boxes-and-arrows architecture and flow diagrams, or when a reviewer points out a stray diagonal, so `check` catches it from then on. Leave it off where diagonals and curves are intended. The last segment sets the arrow direction: `hv` is horizontal then vertical, `vh` vertical then horizontal.
 
@@ -54,7 +54,7 @@ style svc { fill=#e8f0fe stroke=#1a73e8 }  // any style key, plus shape= (not on
 box api "API" at (40,40) size (140,60) style=service fill=#1a73e833 stroke=steelblue stroke-width=2  // the text is positional (boxes have no label=); inline keys override style=; #rrggbbaa alpha works; shape=rect|rounded|cylinder|diamond|ellipse|hexagon|doc|cloud|person
 box db "DB" at api.right+(120,0) size (140,60) pin=left  // pin: any anchor, `side@t` included (`pin=left@0.25`); default `tl`
 box badge at db.tr size (16,16) pin=center allow=overlap:db reason="corner badge"
-line api_db api.right -> db.left end=arrow label="SQL"  // the optional id follows `line` directly, with no colon
+arrow api_db api.right -> db.left label="SQL"  // `arrow` is `line` with end=arrow; the optional id follows the keyword directly, with no colon
 group vpc "VPC" at (20,180) size (600,280) {  // children use vpc-relative coordinates
   box pay "Payments API" at (20,60) size (140,60) sublabel="v2.4.1"  // muted second line at 0.8 × size
   box q "Jobs" at (300,60) size (160,60) icon="queue"  // icon-pos=left|top icon-size=24; bundled: server browser queue lock cloud person (use person for users); currentColor icons take the box's color=

@@ -1,6 +1,6 @@
 ## Line paths
 
-A line is `start -> segment -> segment ...`. Each segment ends at a point, which starts the next one. The optional id follows `line` directly, with no colon: `line api_db api.right -> db.left`.
+A line is `start -> segment -> segment ...`. Each segment ends at a point, which starts the next one. The optional id follows `line` directly, with no colon: `line api_db api.right -> db.left`. `arrow` is the same statement with `end=arrow` as its default: `arrow api_db api.right -> db.left`; an explicit `end=` wins. `arrow` can't be an id.
 
 | segment | path |
 |---|---|
@@ -15,7 +15,7 @@ A line is `start -> segment -> segment ...`. Each segment ends at a point, which
 
 | attribute | default | meaning |
 |---|---|---|
-| `start=` `end=` | `none` | `arrow`, `open`, `diamond`, `dot` or `none`; the tip sits on the endpoint. Crow's-foot (ER) ends `one`, `many`, `one-many`, `zero-one`, `zero-many` sit on the line without trimming it; a `zero-*` circle is open |
+| `start=` `end=` | `none` (`end` on `arrow`: `arrow`) | `arrow`, `open`, `diamond`, `dot` or `none`; the tip sits on the endpoint. Crow's-foot (ER) ends `one`, `many`, `one-many`, `zero-one`, `zero-many` sit on the line without trimming it; a `zero-*` circle is open |
 | `label="..."` `label@t="..."` | `t=0.5` | label at fraction `t` of the path length, markup allowed; repeatable |
 | `label-side=` | `on` | `on` centers labels on the line and cuts it out under them; `above`/`below` (horizontal segment) or `left`/`right` (vertical) put them beside it, 4px off the stroke, unmasked |
 | `radius=N` | `0` | rounds every corner |
@@ -29,6 +29,6 @@ A line is `start -> segment -> segment ...`. Each segment ends at a point, which
 
 ```kash
 diagram "Messages" size (320,140) kashika="0.1.0"
-line req (20,40) -> h 280 end=arrow label="request" label-side=above
-line res (300,100) -> h -280 end=arrow stroke-style=dashed label="reply" label-side=below
+arrow req (20,40) -> h 280 label="request" label-side=above
+arrow res (300,100) -> h -280 stroke-style=dashed label="reply" label-side=below
 ```

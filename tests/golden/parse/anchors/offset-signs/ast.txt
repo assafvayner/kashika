@@ -102,6 +102,7 @@ File {
         Line(
             Line {
                 id: Some(Ident { name: "l", span: 11:6-11:7 }),
+                arrow: false,
                 start: Ref {
                     r: Ref {
                         id: Ident { name: "a", span: 11:8-11:9 },

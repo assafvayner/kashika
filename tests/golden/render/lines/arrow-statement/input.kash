@@ -1,0 +1,9 @@
+// spec: 5
+// `arrow` draws an arrowhead at the end unless `end=` says otherwise.
+diagram "arrows" size (300,160)
+box a "Client" at (20,20) size (80,40)
+box b "Server" at (200,20) size (80,40)
+arrow ab a.right -> b.left label="call"
+arrow ba b.bottom -> v 50 -> hv a.bottom stroke-style=dashed
+line plain (20,140) -> h 260
+arrow open (20,120) -> h 260 end=open start=dot

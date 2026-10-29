@@ -745,6 +745,38 @@ fn line_stmt(f: &File) -> &Line {
     l
 }
 
+#[test]
+fn arrow_is_a_line_statement() {
+    let f = parse_ok("arrow ab a.right -> b.left label=\"x\"\narrow a.bottom -> v 20 end=none\n");
+    let lines: Vec<&Line> = f
+        .stmts
+        .iter()
+        .map(|s| match s {
+            Stmt::Line(l) => l,
+            _ => panic!("expected line"),
+        })
+        .collect();
+    assert!(lines.iter().all(|l| l.arrow));
+    assert_eq!(lines[0].id.as_ref().map(|i| i.name.as_str()), Some("ab"));
+    assert_eq!(lines[1].id, None);
+    assert_eq!(lines[1].attrs[0].key.name, "end");
+    assert!(!line_stmt(&parse_ok("line a.right -> b.left\n")).arrow);
+}
+
+#[test]
+fn arrow_is_reserved() {
+    let h = helps("box arrow at (0,0) size (1,1)\n");
+    assert_eq!(
+        h,
+        [(
+            "`arrow` is a reserved word and cannot be an id".to_string(),
+            "`arrow` is a statement keyword; pick another name, e.g. `arrow_1`".to_string()
+        )]
+    );
+    let h = helps("arrow ab: a.right -> b.left\n");
+    assert_eq!(h[0].1, "remove the `:`: write `arrow ab a.right -> b.left`");
+}
+
 fn helps(src: &str) -> Vec<(String, String)> {
     parse(src)
         .1

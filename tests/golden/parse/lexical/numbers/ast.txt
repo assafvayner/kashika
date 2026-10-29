@@ -22,6 +22,7 @@ File {
         Line(
             Line {
                 id: Some(Ident { name: "l", span: 6:6-6:7 }),
+                arrow: false,
                 start: Lit { x: Num(250.0), y: Num(150.0), span: 6:8-6:17 },
                 segs: [
                     Seg { kind: H(-100.5), span: 6:21-6:29 },

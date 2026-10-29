@@ -84,6 +84,21 @@ fn reroutes_with_line_flag() {
 }
 
 #[test]
+fn rerouting_an_arrow_keeps_the_keyword() {
+    let dir = tempfile::tempdir().unwrap();
+    let f = dir.path().join("r.kash");
+    let src = std::fs::read_to_string(fixture("route.kash")).unwrap();
+    std::fs::write(&f, format!("{src}arrow ab a.top -> y 28 -> hv b.top\n")).unwrap();
+    kashika()
+        .args(["route", f.to_str().unwrap(), "--line", "ab"])
+        .assert()
+        .code(0)
+        .stdout(predicate::str::contains(
+            "arrow ab a.top -> y wall.tl+(0,-12) -> hv b.top\n",
+        ));
+}
+
+#[test]
 fn no_path_exits_one() {
     kashika()
         .args(["route", "-", "a.right", "b.left"])

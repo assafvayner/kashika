@@ -12,3 +12,5 @@ error[parse] 11:5-11:7: `vh` is a reserved word and cannot be an id
   = help: segment keywords (h v x y hv vh curve) are reserved; pick another name, e.g. `vh_1`
 error[parse] 12:6-12:11: `curve` is a reserved word and cannot be an id
   = help: segment keywords (h v x y hv vh curve) are reserved; pick another name, e.g. `curve_1`
+error[parse] 13:5-13:10: `arrow` is a reserved word and cannot be an id
+  = help: `arrow` is a statement keyword; pick another name, e.g. `arrow_1`

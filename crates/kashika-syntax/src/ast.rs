@@ -109,6 +109,8 @@ pub struct Text {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Line {
     pub id: Option<Ident>,
+    /// Written as an `arrow` statement, whose `end` defaults to `arrow`.
+    pub arrow: bool,
     pub start: Point,
     pub segs: Vec<Seg>,
     pub attrs: Vec<Attr>,

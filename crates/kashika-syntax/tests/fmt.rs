@@ -216,3 +216,11 @@ fn truncated_examples_never_panic_and_format_idempotently() {
         }
     }
 }
+
+#[test]
+fn keeps_keywords_and_attribute_names_as_written() {
+    assert_eq!(
+        fmt("arrow  ab a.right ->  b.left\n  end=none\nbox  a \"A\" at (0,0) size ( auto , 40 )\n"),
+        "arrow ab a.right -> b.left\n  end=none\nbox a \"A\" at (0,0) size (auto, 40)\n"
+    );
+}

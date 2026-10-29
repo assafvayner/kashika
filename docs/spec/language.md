@@ -24,7 +24,7 @@ The CLI renders `.kash` files to SVG, PNG, JPEG or WebP and runs geometric check
 - Strings: `"..."` with escapes `\"`, `\\`, `\n`, and the markup escapes `\*` and `` \` `` (§6). Any other escape, such as `\q`, is a `parse` error.
 - Identifiers: `[a-zA-Z_][a-zA-Z0-9_-]*`, where a `-` that starts `->` or `-(` ends the identifier (`a->b`, `db.top-(10,0)`). **Ids are unique across the whole file** (boxes, groups, images, junctions, lines, texts) and are always referenced by bare id. There are no dotted paths. Only the names of imported shapes and styles are dotted (`shape=aws.s3`, §3a); shape and style names are separate from ids.
   Identifiers are ASCII only: a run of other characters, such as the `é` in `café`, is one `parse` error.
-- The segment keywords `h`, `v`, `x`, `y`, `hv`, `vh` and `curve` are reserved: declaring an id with one of these names is a `parse` error, since it could not be used as a bare segment target. Like any statement that fails to parse, the statement is dropped, so it is never resolved or linted.
+- The segment keywords `h`, `v`, `x`, `y`, `hv`, `vh` and `curve` are reserved: declaring an id with one of these names is a `parse` error, since it could not be used as a bare segment target. So is the statement keyword `arrow` (§5). Like any statement that fails to parse, the statement is dropped, so it is never resolved or linted.
 - Numbers: integers or decimals, optionally negative. Exponent notation (`1e5`) is not supported and is a `parse` error. Colors: `#rgb`, `#rrggbb` or `#rrggbbaa`, one of the 148 CSS Color Module Level 4 names (`steelblue`, `rebeccapurple`; case-insensitive, no `transparent`), or `none` where a style allows it. A name resolves to lowercase `#rrggbb` hex, so the scene, the SVG and `low-contrast` only ever see hex. An unknown word where a color is expected is an `attr` error with a did-you-mean over the names.
 - **Statements** end at a newline, except in three cases:
   - inside `{ }` blocks;
@@ -36,7 +36,7 @@ The CLI renders `.kash` files to SVG, PNG, JPEG or WebP and runs geometric check
       end=arrow label="SQL"
       ortho
     ```
-  - when the next non-blank line starts with an attribute (`key=` or `key@t=`) or, on a `line`, with a line flag (`ortho`). Neither can begin a new statement, because no statement keyword is followed by `=` or `@` and no statement keyword is also a flag.
+  - when the next non-blank line starts with an attribute (`key=` or `key@t=`) or, on a `line` or `arrow`, with a line flag (`ortho`). Neither can begin a new statement, because no statement keyword is followed by `=` or `@` and no statement keyword is also a flag.
 - Attributes are `key=value` pairs in any order. Unknown or duplicate attributes are errors.
 - After a statement's id and label, `at <point>`, `size (w,h)` and attributes come in any order: `box a "A" style=service size (120,60) at (20,20)` is the same box as the form in §3. A missing `at`, a missing `size` on a statement that requires one (§3), or a repeated `at` or `size`, is a `parse` error that drops the statement.
 - `auto` is a size axis, not a word: it is recognized only inside `size (…)` (`size (120, auto)`), so it remains a valid id.
@@ -53,6 +53,7 @@ group <id> ["<label>"] at <point> size (w,h) [pin=<anchor>] [style=<name>] [allo
 junction <id> at <point> [dot]
 text  [<id>] "<content>" at <point> [size=N] [color=C] [align=left|center|right] [muted]
 line  [<id>] <point> (-> <segment>)+ [attrs]
+arrow [<id>] <point> (-> <segment>)+ [attrs]   // a line with end=arrow (§5)
 image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stretch] [layer=under|over]   // §3a
 ```
 
@@ -74,7 +75,7 @@ image <id> "<file>" at <point> size (w,h) [pin=<anchor>] [fit=contain|cover|stre
 - `box` shapes: built-in `rect` (default), `rounded`, `cylinder`, `diamond`, `ellipse`, `hexagon`, `doc`, `cloud`, `person`, or any `shape` that is defined or imported (§3a). Any other `shape=` name is an `unknown-shape` error.
 - `pin=<anchor>` picks which anchor of the new shape lands on `at` (default `tl`). Any anchor works, including `side@t`: `pin=left@0.25`. For example, `box cache at db.right+(60,0) size (120,60) pin=left` vertically centers `cache` beside `db`.
 - `at` may reference other shapes, so boxes can be placed relative to each other. Placement references form a DAG; a cycle is an error that prints the cycle (the first few shapes and its length when it is long). A chain of more than 256 placement references is also a `placement-cycle` error, whatever the statement order; a shape inside a group counts a reference to the group, whose frame it uses.
-- `group`: children are `box`, `group`, `junction`, `text`, `line`. `image` is top-level only; inside a group it is a `parse` error. Groups nest at most 64 deep; a deeper `group` is a `parse` error. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. Groups take no shape: a group's `style=` naming a style that sets `shape` is an `attr` error at that attribute (the rest of the style still applies), and `shape` in a `style boundary` definition is an `attr` error there and is dropped. The label sits inside the top-left corner, inset by `padding`, and its title band (`font line-height + padding`, using `y`) is reserved space. Children that intrude on the title band trigger `spill`.
+- `group`: children are `box`, `group`, `junction`, `text`, `line` (and `arrow`). `image` is top-level only; inside a group it is a `parse` error. Groups nest at most 64 deep; a deeper `group` is a `parse` error. Groups start from the `boundary` style (including a user override of it), and `style=` and inline attributes apply on top. Groups take no shape: a group's `style=` naming a style that sets `shape` is an `attr` error at that attribute (the rest of the style still applies), and `shape` in a `style boundary` definition is an `attr` error there and is dropped. The label sits inside the top-left corner, inset by `padding`, and its title band (`font line-height + padding`, using `y`) is reserved space. Children that intrude on the title band trigger `spill`.
 - `junction`: a zero-size named point that lines can start or end at. Lines meeting at a junction are connected, not crossing. `dot` draws a 6px dot there. Junctions model buses and fan-in/fan-out.
 - `text`: `at` is the anchor point for the alignment. `color=none` is an `attr` error. Vertically, `at` is the **center** of the text block, not the baseline.
 
@@ -182,7 +183,9 @@ anchor := top | bottom | left | right | center
 
 A line is `start -> seg -> seg ...`. Every segment ends at a point, and that point becomes the "previous point" for the next segment.
 
-The optional id comes right after `line`, with no colon: `line api_db api.right -> db.left`. The first token is the id exactly when it is an identifier followed by something that starts a point (an identifier or `(`); a point that starts with an identifier continues only with `.`, `+`, `-(`, `->` or the end of the statement, never with another identifier or `(`, so `line a -> b` is unnamed and `line l a -> b` is named `l`. These common mistakes are `parse` errors whose help line gives the rewrite:
+**`arrow`** is a `line` statement whose `end` defaults to `arrow`: `arrow api_db api.right -> db.left` draws the same line as `line api_db api.right -> db.left end=arrow`. Everything else is the same: the grammar, the id rules, the attributes and every check. An explicit `end=` wins (`arrow a.right -> b.left end=open`, or `end=none` for no marker), and `end=arrow` on a `line` stays valid. It is a line everywhere downstream (the scene, `inspect` and the JSON call it one), `fmt` keeps the keyword as written, and `route --line` writes its suggestions with the keyword the line uses.
+
+The optional id comes right after `line` (or `arrow`), with no colon: `line api_db api.right -> db.left`. The first token is the id exactly when it is an identifier followed by something that starts a point (an identifier or `(`); a point that starts with an identifier continues only with `.`, `+`, `-(`, `->` or the end of the statement, never with another identifier or `(`, so `line a -> b` is unnamed and `line l a -> b` is named `l`. These common mistakes are `parse` errors whose help line gives the rewrite:
 
 - `line api_db: api.right -> db.left` (help: remove the `:`);
 - `line api_db from api.right to db.left`, with or without the `:` (help: ``write `line api_db api.right -> db.left` ``);

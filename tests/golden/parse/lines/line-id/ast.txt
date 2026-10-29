@@ -41,6 +41,7 @@ File {
         Line(
             Line {
                 id: Some(Ident { name: "ab", span: 8:6-8:8 }),
+                arrow: false,
                 start: Ref {
                     r: Ref {
                         id: Ident { name: "a", span: 8:9-8:10 },
@@ -78,6 +79,7 @@ File {
         Line(
             Line {
                 id: Some(Ident { name: "jb", span: 9:6-9:8 }),
+                arrow: false,
                 start: Lit { x: Num(150.0), y: Num(150.0), span: 9:9-9:18 },
                 segs: [
                     Seg {
@@ -106,6 +108,7 @@ File {
         Line(
             Line {
                 id: None,
+                arrow: false,
                 start: Ref {
                     r: Ref { id: Ident { name: "j", span: 10:6-10:7 }, anchor: None },
                     offset: None,
@@ -119,6 +122,7 @@ File {
         Line(
             Line {
                 id: None,
+                arrow: false,
                 start: Ref {
                     r: Ref {
                         id: Ident { name: "a", span: 11:6-11:7 },
@@ -148,6 +152,7 @@ File {
         Line(
             Line {
                 id: None,
+                arrow: false,
                 start: Lit { x: Num(20.0), y: Num(180.0), span: 12:6-12:14 },
                 segs: [Seg { kind: H(40.0), span: 12:18-12:22 }],
                 attrs: [],

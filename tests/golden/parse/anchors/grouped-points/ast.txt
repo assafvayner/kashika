@@ -65,6 +65,7 @@ File {
         Line(
             Line {
                 id: Some(Ident { name: "down", span: 8:6-8:10 }),
+                arrow: false,
                 start: Group {
                     inner: Ref {
                         r: Ref {
@@ -115,6 +116,7 @@ File {
         Line(
             Line {
                 id: Some(Ident { name: "elbow", span: 9:6-9:11 }),
+                arrow: false,
                 start: Group {
                     inner: Ref {
                         r: Ref { id: Ident { name: "fan", span: 9:13-9:16 }, anchor: None },

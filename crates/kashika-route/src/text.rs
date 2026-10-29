@@ -51,10 +51,12 @@ pub(crate) fn path_text(from: &Endpoint, to: &Endpoint, plan: &Plan, origin: Pt)
     s
 }
 
-pub(crate) fn statement(id: &str, path: &str, attrs: &str) -> String {
+/// A `line` statement, or an `arrow` one when `arrow` is set.
+pub(crate) fn statement(arrow: bool, id: &str, path: &str, attrs: &str) -> String {
+    let kw = if arrow { "arrow" } else { "line" };
     if attrs.is_empty() {
-        format!("line {id} {path}")
+        format!("{kw} {id} {path}")
     } else {
-        format!("line {id} {path} {attrs}")
+        format!("{kw} {id} {path} {attrs}")
     }
 }
