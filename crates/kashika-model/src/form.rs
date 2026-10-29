@@ -44,12 +44,15 @@ impl Shape {
 
 impl Form {
     pub(crate) fn from_unit(u: &UnitShape, r: Rect) -> Form {
-        let draw: Vec<Vec<PathSeg>> = u
+        let mut draw: Vec<Vec<PathSeg>> = u
             .subpaths
             .iter()
             .map(|sp| sp.iter().map(|s| s.map(|p| r.map_unit(p))).collect())
             .collect();
         let outline = closed(flatten(&draw[u.outline]));
+        if u.hidden_outline {
+            draw.remove(u.outline);
+        }
         Form { draw, outline }
     }
 

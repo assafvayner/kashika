@@ -7,7 +7,7 @@
 | `rect` (default) | the box | the box inset by `padding` |
 | `rounded` | the box with `radius` corners (default 8) | the box inset by `padding` |
 
-The other built-ins are unit paths (0..1, stretched onto the box). The text area is the unit rect mapped onto the box, then inset by `padding`. Some features are measured in pixels, so they keep their size when the box stretches: a `cylinder` cap is `min(20, h/4)` px tall, a `hexagon` side inset is `min(h/4, w/4)` px, a `doc` wave is `min(12, 0.15h)` px deep, a `cloud` has bumps up to 24px high (more of them on a wider or taller cloud) and a `person` head has a radius up to 18px. Their paths depend on the box size; the table shows them for a 120x80 box. Leave `size` out and a box gets the smallest size whose text area holds its text.
+The other built-ins are unit paths (0..1, stretched onto the box). The text area is the unit rect mapped onto the box, then inset by `padding`. Some features are measured in pixels, so they keep their size when the box stretches: a `cylinder` cap is `min(20, h/4)` px tall, a `hexagon` side inset is `min(h/4, w/4)` px, a `doc` wave is `min(12, 0.15h)` px deep, a `cloud` has bumps up to 24px high (more of them on a wider or taller cloud) and a `person` head is a circle of radius up to 18px (its outline, not drawn, joins the head to the body, so `top` is the top of the head). Their paths depend on the box size; the table shows them for a 120x80 box. Leave `size` out and a box gets the smallest size whose text area holds its text.
 
 {builtins}
 

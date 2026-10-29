@@ -15,6 +15,8 @@ pub struct BuiltinShape {
     /// The unit path, outline subpath (1-based) and unit text area on a `w`×`h` box;
     /// `None` for `rect` and `rounded`, which use native outlines.
     pub source: Option<ShapeSource>,
+    /// The outline subpath is used only for anchors and checks, and is not drawn.
+    pub hidden_outline: bool,
 }
 
 /// Every built-in shape, in the order docs and `kashika icons` list them.
@@ -23,46 +25,55 @@ pub const SHAPES: &[BuiltinShape] = &[
         name: "rect",
         keywords: &["box", "rectangle", "square"],
         source: None,
+        hidden_outline: false,
     },
     BuiltinShape {
         name: "rounded",
         keywords: &["process", "step"],
         source: None,
+        hidden_outline: false,
     },
     BuiltinShape {
         name: "cylinder",
         keywords: &["db", "database", "storage", "datastore", "sql"],
         source: Some(cylinder),
+        hidden_outline: false,
     },
     BuiltinShape {
         name: "diamond",
         keywords: &["decision", "condition"],
         source: Some(diamond),
+        hidden_outline: false,
     },
     BuiltinShape {
         name: "ellipse",
         keywords: &["circle", "oval", "state"],
         source: Some(ellipse),
+        hidden_outline: false,
     },
     BuiltinShape {
         name: "hexagon",
         keywords: &["service", "component"],
         source: Some(hexagon),
+        hidden_outline: false,
     },
     BuiltinShape {
         name: "doc",
         keywords: &["document", "file", "page"],
         source: Some(doc),
+        hidden_outline: false,
     },
     BuiltinShape {
         name: "cloud",
         keywords: &["internet", "saas", "external"],
         source: Some(cloud),
+        hidden_outline: false,
     },
     BuiltinShape {
         name: "person",
         keywords: &["user", "users", "people", "human", "account", "actor"],
         source: Some(person),
+        hidden_outline: true,
     },
 ];
 
@@ -91,6 +102,8 @@ pub(crate) struct UnitShape {
     pub subpaths: Vec<Vec<PathSeg>>,
     /// 0-based index of the subpath used for anchors and checks.
     pub outline: usize,
+    /// Whether the outline subpath is left out of the drawing.
+    pub hidden_outline: bool,
     /// Unit rect of the text area, before padding.
     pub text_area: Rect,
 }
@@ -185,40 +198,59 @@ fn cloud(w: f64, h: f64) -> (String, usize, Rect) {
     (d, 1, area)
 }
 
-/// A head of radius at most `HEAD` px over shoulders that slope from the neck to the
-/// sides of the box; the text sits in the torso.
+/// A round head of radius at most `HEAD` px over a body with rounded shoulders that
+/// spans the box; the text sits in the body. The third subpath, not drawn, is the
+/// silhouette of both joined by a neck, for anchors and checks.
 fn person(w: f64, h: f64) -> (String, usize, Rect) {
-    let r = HEAD.min(h / 4.5).min(w / 4.0);
-    let y = 2.2 * r;
-    let k = r.min((h - y) / 2.0);
+    let r = HEAD.min(0.2 * h).min(0.22 * w);
+    let top = (2.0 * r + (0.25 * r).max(3.0)).min(h);
+    let k = (0.6 * (h - top)).min(w / 2.0).min(1.6 * r);
     let cx = w / 2.0;
+    let n = 0.6 * r;
     let p = |x: f64, y: f64| format!("{} {}", x / w, y / h);
+    let head = |rx: f64, ry: f64| format!("{} {}", rx / w, ry / h);
+    let shoulders = |neck: &str| {
+        format!(
+            "M {} L {} A {} 0 0 1 {} {neck}L {} A {} 0 0 1 {} L {} Z",
+            p(0.0, h),
+            p(0.0, top + k),
+            head(k, k),
+            p(k, top),
+            p(w - k, top),
+            head(k, k),
+            p(w, top + k),
+            p(w, h),
+        )
+    };
     let d = format!(
-        "M {} A {} {} 0 1 1 {} L {} Q {} {} L {} L {} L {} Q {} {} Z",
-        p(cx - 0.6 * r, 1.8 * r),
-        r / w,
-        r / h,
-        p(cx + 0.6 * r, 1.8 * r),
-        p(cx + r, y),
-        p(w, y),
-        p(w, y + k),
-        p(w, h),
-        p(0.0, h),
-        p(0.0, y + k),
-        p(0.0, y),
-        p(cx - r, y),
+        "M {} A {} 0 1 1 {} A {} 0 1 1 {} Z {} {}",
+        p(cx + r, r),
+        head(r, r),
+        p(cx - r, r),
+        head(r, r),
+        p(cx + r, r),
+        shoulders(""),
+        shoulders(&format!(
+            "L {} L {} A {} 0 1 1 {} L {} ",
+            p(cx - n, top),
+            p(cx - n, 1.8 * r),
+            head(r, r),
+            p(cx + n, 1.8 * r),
+            p(cx + n, top),
+        )),
     );
-    let inset = (cx - r) / 4.0;
-    let top = y + k / 4.0;
-    let area = Rect::new(inset / w, top / h, 1.0 - 2.0 * inset / w, 1.0 - top / h);
-    (d, 1, area)
+    let i = 0.3 * k;
+    let area = Rect::new(i / w, (top + i) / h, 1.0 - 2.0 * i / w, (h - top - i) / h);
+    (d, 3, area)
 }
 
 pub(crate) fn builtin(name: &str, w: f64, h: f64) -> Option<UnitShape> {
-    let (d, outline, text_area) = builtin_source(name, w, h)?;
+    let shape = builtin_shape(name)?;
+    let (d, outline, text_area) = shape.source?(w, h);
     Some(UnitShape {
         subpaths: parse_unit_path(&d).expect("built-in shapes are valid unit paths"),
         outline: outline - 1,
+        hidden_outline: shape.hidden_outline,
         text_area,
     })
 }

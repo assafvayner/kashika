@@ -101,7 +101,7 @@ shape lb_icon {
 box lb "LB" at (100,80) size (120,80) shape=lb_icon
 ```
 - All built-in shapes except `rect` and `rounded` are defined this way in a standard library. `ref shapes` prints those definitions. `rect` and `rounded` keep native outlines, because a corner `radius` is in pixels.
-- `cylinder`, `hexagon`, `doc`, `cloud` and `person` have features measured in pixels, so stretching a box does not distort them: the cylinder's cap height is `min(20, h/4)`, the hexagon's side inset is `min(h/4, w/4)`, the doc's wave depth is `min(12, 0.15 × h)`, the cloud's bumps are `min(24, 0.3 × h, 0.175 × w)` high and repeat along the top and sides (a wider or taller cloud gets more of them), and the person's head radius is `min(18, h/4.5, w/4)`. Their unit paths are therefore computed for each box size; `ref shapes` prints them for one example size.
+- `cylinder`, `hexagon`, `doc`, `cloud` and `person` have features measured in pixels, so stretching a box does not distort them: the cylinder's cap height is `min(20, h/4)`, the hexagon's side inset is `min(h/4, w/4)`, the doc's wave depth is `min(12, 0.15 × h)`, the cloud's bumps are `min(24, 0.3 × h, 0.175 × w)` high and repeat along the top and sides (a wider or taller cloud gets more of them), and the person's head is a circle of radius `r = min(18, 0.2 × h, 0.22 × w)` at the top, `max(3, r/4)` above a full-width body whose shoulders are rounded with radius `min(0.6 × body height, 1.6 × r)`. Their unit paths are therefore computed for each box size; `ref shapes` prints them for one example size. The person's head and body are drawn as separate subpaths; its outline is a third, undrawn subpath that joins them with a neck, so `top` is the top of the head.
 - Shape names can't reuse a built-in shape name, and defining a name twice is a `duplicate-style` error.
 - Checks use the outline, flattened into straight segments.
 
@@ -270,7 +270,7 @@ Unnamed lines are referred to as `line@L<n>`, where n is the source line of the 
   | cylinder | below the top cap |
   | doc | above the wave |
   | cloud | inside the bumps: inset by the side bump depth on the left and right, the bump height on top and half of it at the bottom |
-  | person | the torso below the shoulders |
+  | person | the body, inset by 0.3 × the shoulder radius on the top, left and right |
   | rounded | same as `rect` |
 
   Every text area lies inside the shape's outline, except that a cylinder's runs down to the bottom of the box. The fitted size (§3) is found numerically from the shape's text area, so it is the smallest whole-pixel size whose text area holds the text.

@@ -773,6 +773,7 @@ fn unit_shape(
     Some(UnitShape {
         subpaths,
         outline,
+        hidden_outline: false,
         text_area,
     })
 }

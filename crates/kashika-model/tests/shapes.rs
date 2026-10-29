@@ -163,6 +163,17 @@ fn cylinder_top_follows_the_cap() {
 }
 
 #[test]
+fn person_anchors_reach_the_head_and_body() {
+    let s = ok("box p at (0,0) size (120,120) shape=person\n\
+                line a p.top -> v -20\nline b p.left@0.9 -> h -20\n\
+                line c p.right@0.9 -> h 20\nline e p.bottom -> v 20\n");
+    assert!(close(start(&s, "a"), Pt::new(60.0, 0.0)));
+    assert!(close(start(&s, "b"), Pt::new(0.0, 108.0)));
+    assert!(close(start(&s, "c"), Pt::new(120.0, 108.0)));
+    assert!(close(start(&s, "e"), Pt::new(60.0, 120.0)));
+}
+
+#[test]
 fn builtin_text_areas() {
     let s = ok(
         "box d at (0,0) size (120,80) shape=diamond\nbox c at (200,0) size (120,80) shape=cylinder\n",
@@ -228,6 +239,7 @@ fn tall_hexagons_keep_half_their_width_for_text() {
 fn pixel_features_do_not_stretch() {
     let s = ok("box d at (0,0) size (100,200) shape=doc padding=0\n\
                 box p at (200,0) size (300,300) shape=person padding=0\n\
+                box q at (500,300) size (300,100) shape=person padding=0\n\
                 box c at (0,300) size (400,200) shape=cloud padding=0\n");
     assert!(
         (shape(&s, "d").text_area.h - 182.0).abs() < 1e-9,
@@ -242,6 +254,23 @@ fn pixel_features_do_not_stretch() {
         (r - l - 36.0).abs() < 0.5,
         "the head is a circle of radius 18: {across:?}"
     );
+    let head = |id: &str| {
+        let f = shape(&s, id).form.as_ref().unwrap();
+        assert_eq!(f.draw.len(), 2, "the outline subpath is not drawn");
+        let pts = kashika_geom::flatten(&f.draw[0]);
+        let (x0, x1, y0, y1) = pts.iter().fold(
+            (f64::MAX, f64::MIN, f64::MAX, f64::MIN),
+            |(a, b, c, d), p| (a.min(p.x), b.max(p.x), c.min(p.y), d.max(p.y)),
+        );
+        (x1 - x0, y1 - y0, y0)
+    };
+    for (id, top) in [("p", 0.0), ("q", 300.0)] {
+        let (w, h, y) = head(id);
+        assert!(
+            (w - 36.0).abs() < 0.5 && (h - 36.0).abs() < 0.5 && (y - top).abs() < 1e-9,
+            "{id}: the head stays a circle of radius 18 at the top: {w}x{h} at y={y}"
+        );
+    }
     assert!(
         (shape(&s, "c").text_area.y - 324.0).abs() < 1e-9,
         "bumps are 24px high"

@@ -41,8 +41,9 @@ fn shapes() -> String {
                 .split_whitespace()
                 .map(|w| w.parse().map_or(w.to_string(), n))
                 .collect();
+            let hidden = if s.hidden_outline { " (not drawn)" } else { "" };
             t.push_str(&format!(
-                "| `{name}` | `{}` | {outline} | ({},{},{},{}) |\n",
+                "| `{name}` | `{}` | {outline}{hidden} | ({},{},{},{}) |\n",
                 d.join(" "),
                 n(a.x),
                 n(a.y),
