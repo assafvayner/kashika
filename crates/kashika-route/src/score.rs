@@ -23,6 +23,7 @@ pub(crate) struct Score {
 pub(crate) fn score(scene: &Scene, probe: &Line, ignore: Option<&str>) -> Option<Score> {
     let mine: Vec<Diagnostic> = kashika_check::check_deferred(scene)
         .into_iter()
+        .filter(|d| d.code != code::UNUSED_ALLOW)
         .filter(|d| involves(d, &probe.id) && !ignore.is_some_and(|id| involves(d, id)))
         .collect();
     if mine.iter().any(|d| d.code == code::THROUGH) {
@@ -75,7 +76,7 @@ pub(crate) fn suppresses(entry: &str, owner: &str, d: &Diagnostic) -> bool {
         Some((c, o)) => (c, Some(o)),
         None => (entry, None),
     };
-    code == d.code && involves(d, owner) && other.is_none_or(|o| o != owner && involves(d, o))
+    kashika_check::suppresses(code, other, owner, d)
 }
 
 fn involves(d: &Diagnostic, id: &str) -> bool {

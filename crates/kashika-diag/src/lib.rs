@@ -47,6 +47,7 @@ pub const LINT_CODES: &[&str] = &[
     "image-distort",
     "svg-dropped",
     "missing-glyph",
+    code::UNUSED_ALLOW,
 ];
 
 /// Lint codes that other passes read back.
@@ -56,6 +57,7 @@ pub mod code {
     pub const THROUGH: &str = "through";
     pub const NEAR: &str = "near";
     pub const GROUP_TRANSIT: &str = "group-transit";
+    pub const UNUSED_ALLOW: &str = "unused-allow";
 }
 
 /// Fact keys that other passes read back.

@@ -17,7 +17,11 @@ impl<'a> Resolver<'a> {
             return Vec::new();
         };
         let mut out = Vec::new();
+        let mut col = entries_start(a, w);
         for item in w.split(',') {
+            let len = item.chars().count() as u32;
+            let span = col.map_or(a.span, |c| Span::new(a.span.line, c, a.span.line, c + len));
+            col = col.map(|c| c + len + 1);
             let (code, other) = match item.split_once(':') {
                 Some((c, o)) => (c, Some(o.to_string())),
                 None => (item, None),
@@ -51,6 +55,7 @@ impl<'a> Resolver<'a> {
             out.push(Allow {
                 code: code.to_string(),
                 other,
+                span,
             });
         }
         out
@@ -111,4 +116,15 @@ impl<'a> Resolver<'a> {
         }
         d
     }
+}
+
+/// The column of the first entry of `allow=<w>`, when the attribute is written on one line
+/// with no space around `=` or the entries, so each entry's column follows from its length.
+fn entries_start(a: &ast::Attr, w: &str) -> Option<u32> {
+    let s = a.span;
+    let start = a.key.span.end_col + 1;
+    (s.line == s.end_line
+        && a.key.span.end_line == s.line
+        && s.end_col == start + w.chars().count() as u32)
+        .then_some(start)
 }

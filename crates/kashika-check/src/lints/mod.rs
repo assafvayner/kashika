@@ -18,9 +18,12 @@ mod spill;
 mod textarea;
 mod through;
 mod transit;
+mod unused;
 
 use crate::ctx::Ctx;
 use crate::sink::Sink;
+
+pub use unused::unused_allow;
 
 pub type Lint = fn(&Ctx, &mut Sink);
 

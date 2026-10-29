@@ -1657,13 +1657,10 @@ fn boxes_and_groups_accept_allow_and_reason() {
         "box a at (0,0) size (10,10) allow=overlap reason=\"badge\"\ngroup g at (0,0) size (50,50) allow=spill:a {\n}\n",
     );
     let a = s.shapes.iter().find(|x| x.id == "a").unwrap();
-    assert_eq!(
-        a.allow,
-        vec![kashika_model::Allow {
-            code: "overlap".into(),
-            other: None
-        }]
-    );
+    assert_eq!(a.allow.len(), 1);
+    assert_eq!(a.allow[0].code, "overlap");
+    assert_eq!(a.allow[0].other, None);
+    assert_eq!((a.allow[0].span.col, a.allow[0].span.end_col), (35, 42));
     assert_eq!(a.reason.as_deref(), Some("badge"));
     let g = s.shapes.iter().find(|x| x.id == "g").unwrap();
     assert_eq!(g.allow[0].other.as_deref(), Some("a"));

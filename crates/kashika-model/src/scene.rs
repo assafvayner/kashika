@@ -711,6 +711,9 @@ pub struct Label {
 pub struct Allow {
     pub code: String,
     pub other: Option<String>,
+    /// The entry in the source, or the whole `allow=` when it can't be told apart.
+    #[serde(skip)]
+    pub span: Span,
 }
 
 #[derive(Debug, Clone, Serialize)]

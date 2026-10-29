@@ -1,1 +1,3 @@
-(no diagnostics)
+warn[unused-allow] 5:90-5:97: `allow=overlap` on box 'a' suppresses nothing
+  = help: remove it, and `reason=` with it, which then explains nothing
+  elements: [{"bbox":[[120,60],[280,140]],"id":"a","kind":"box","span":{"col":1,"end_col":305,"end_line":5,"line":5}}]

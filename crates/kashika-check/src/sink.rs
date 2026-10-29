@@ -101,6 +101,10 @@ impl<'a> Sink<'a> {
         }
     }
 
+    pub(crate) fn suppressor(&self) -> &Suppressor<'a> {
+        &self.suppressor
+    }
+
     pub fn finish(self) -> Bounded {
         let mut kept = Vec::new();
         let mut omitted = Vec::new();

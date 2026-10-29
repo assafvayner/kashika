@@ -1,0 +1,28 @@
+warn[cross] 5:1-5:41: v1 crosses h1 at (100,100)
+  = help: segment 1 runs at x=100; free x-intervals across y 20..180: 0..14, 386..400
+  = help: if intentional: allow=cross:h1 on v1
+  = suppressed
+  elements: [{"from":[100,20],"id":"v1","kind":"line","segment":1,"span":{"col":1,"end_col":41,"end_line":5,"line":5},"to":[100,180]},{"from":[20,100],"id":"h1","kind":"line","segment":1,"span":{"col":1,"end_col":26,"end_line":4,"line":4},"to":[380,100]}]
+  facts: {"at":[100,100],"free":{"axis":"x","band":[20,180],"intervals":[[0,14],[386,400]]}}
+warn[unused-allow] 6:33-6:37: `allow=near` on v2 suppresses nothing
+  = help: remove it, and `reason=` with it, which then explains nothing
+  elements: [{"id":"v2","kind":"line","span":{"col":1,"end_col":50,"end_line":6,"line":6}}]
+warn[cross] 7:1-7:55: v3 crosses h1 at (300,100)
+  = help: segment 1 runs at x=300; free x-intervals across y 20..180: 0..14, 386..400
+  = help: if intentional: allow=cross:h1 on v3
+  = suppressed
+  elements: [{"from":[300,20],"id":"v3","kind":"line","segment":1,"span":{"col":1,"end_col":55,"end_line":7,"line":7},"to":[300,180]},{"from":[20,100],"id":"h1","kind":"line","segment":1,"span":{"col":1,"end_col":26,"end_line":4,"line":4},"to":[380,100]}]
+  facts: {"at":[300,100],"free":{"axis":"x","band":[20,180],"intervals":[[0,14],[386,400]]}}
+warn[unused-allow] 7:42-7:46: `allow=near` on v3 suppresses nothing
+  = help: remove it
+  elements: [{"id":"v3","kind":"line","span":{"col":1,"end_col":55,"end_line":7,"line":7}}]
+warn[unused-allow] 7:47-7:55: `allow=cross:v1` on v3 suppresses nothing
+  = help: remove it
+  elements: [{"id":"v3","kind":"line","span":{"col":1,"end_col":55,"end_line":7,"line":7}}]
+warn[unused-allow] 8:41-8:52: `allow=overlap:tag` on box 'card' suppresses nothing
+  = help: remove it
+  elements: [{"bbox":[[20,220],[80,260]],"id":"card","kind":"box","span":{"col":1,"end_col":52,"end_line":8,"line":8}}]
+warn[unused-allow] 9:41-9:48: `allow=overlap` on box 'tag' suppresses nothing
+  = help: remove it
+  = suppressed
+  elements: [{"bbox":[[320,220],[380,260]],"id":"tag","kind":"box","span":{"col":1,"end_col":61,"end_line":9,"line":9}}]

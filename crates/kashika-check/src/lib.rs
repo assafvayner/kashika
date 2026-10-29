@@ -15,7 +15,7 @@ use serde::Serialize;
 
 pub use free::{Deferred, DeferredKind, Finding};
 pub use sink::{Bounded, Omitted};
-pub use suppress::suppress;
+pub use suppress::{suppress, suppresses};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub struct Metrics {
@@ -23,7 +23,8 @@ pub struct Metrics {
     pub wire_px: u64,
 }
 
-/// Runs every warning lint on the scene and marks the suppressed findings.
+/// Runs every warning lint on the scene, `unused-allow` last, and marks the suppressed
+/// findings.
 pub fn check(scene: &Scene) -> Vec<Diagnostic> {
     let ctx = ctx::Ctx::new(scene);
     let found = lint(&ctx, sink::Sink::new(scene, usize::MAX, None));
@@ -60,6 +61,7 @@ fn lint(ctx: &ctx::Ctx, mut sink: sink::Sink) -> Bounded {
     for lint in lints::ALL {
         lint(ctx, &mut sink);
     }
+    lints::unused_allow(&mut sink);
     sink.finish()
 }
 

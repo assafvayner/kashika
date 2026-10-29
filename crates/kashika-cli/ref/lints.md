@@ -50,3 +50,4 @@ If a warning is intentional, suppress it narrowly on the line or shape: `allow=c
 | `image-distort` | warn | `fit=stretch` on an image or `shape from` SVG distorts by over 5% | use `fit=contain` |
 | `svg-dropped` | warn | an SVG file's `<image>` (not a `data:` URI) or `foreignObject` is lost when embedded | embed it as a path, or use a separate `image` |
 | `missing-glyph` | warn | text has a character no bundled font can draw (CJK, `✘`, ...) | use Latin, Greek, Cyrillic, box drawing or emoji, or an `icon=`/`image` |
+| `unused-allow` | warn | an `allow=` entry on a line, box or group suppresses no finding | remove it (and a `reason=` left with no entries) |

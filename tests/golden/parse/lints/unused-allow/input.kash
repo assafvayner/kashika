@@ -1,0 +1,9 @@
+// spec: 7
+// `allow=` entries that suppress nothing, one finding each; used entries and `allow=unused-allow` are not reported.
+diagram "unused allow" size (400,300)
+line h1 (20,100) -> h 360
+line v1 (100,20) -> v 160 allow=cross:h1
+line v2 (200,120) -> v 60 allow=near reason="old"
+line v3 (300,20) -> v 160 allow=cross:h1,near,cross:v1
+box card at (20,220) size (60,40) allow=overlap:tag
+box tag at (320,220) size (60,40) allow=overlap,unused-allow

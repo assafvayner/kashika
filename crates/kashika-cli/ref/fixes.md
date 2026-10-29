@@ -11,4 +11,5 @@ Errors stop `render` (unless `--force`) and are listed first; fix them before wa
 - `near-axis` / `jog`: a slant or a small step between runs a few px apart; use the level anchor from the help (`cdn.left@0.42`), or `hv`/`vh`.
 - `out-of-canvas`: leave `size` off the `diagram` line so the canvas fits, and keep content at x, y ≥ 0.
 - `missing-glyph`: replace CJK and similar characters with an `icon=` or `image`; emoji and box drawing are covered.
+- `unused-allow`: the `allow=` entry no longer suppresses anything; remove it, and `reason=` if no entry is left.
 - `text-conflict`: move `label`/`sublabel` into the block as its first items, or give every block item an `at`.
