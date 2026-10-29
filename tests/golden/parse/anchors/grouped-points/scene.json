@@ -5,7 +5,8 @@
   "clearance": 6,
   "grid": null,
   "junctions": [
-    {"at":{"x":180,"y":40},"dot":false,"id":"fan","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":33,"end_line":7,"line":7}}
+    {"at":{"x":180,"y":40},"dot":false,"id":"fan","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":33,"end_line":7,"line":7}},
+    {"at":{"x":39,"y":124},"dot":false,"id":"nest","origin":{"x":0,"y":0},"parent":null,"span":{"col":1,"end_col":51,"end_line":10,"line":10}}
   ],
   "lines": [
     {
@@ -109,9 +110,13 @@
     {"owner":"elbow","span":{"col":66,"end_col":81,"end_line":9,"line":9},"value":20,"what":"dx"},
     {"owner":"elbow","span":{"col":66,"end_col":81,"end_line":9,"line":9},"value":20,"what":"dy"},
     {"owner":"elbow","span":{"col":84,"end_col":100,"end_line":9,"line":9},"value":20,"what":"dx"},
-    {"owner":"elbow","span":{"col":84,"end_col":100,"end_line":9,"line":9},"value":20,"what":"dy"}
+    {"owner":"elbow","span":{"col":84,"end_col":100,"end_line":9,"line":9},"value":20,"what":"dy"},
+    {"owner":"nest","span":{"col":19,"end_col":44,"end_line":10,"line":10},"value":0,"what":"dx"},
+    {"owner":"nest","span":{"col":19,"end_col":44,"end_line":10,"line":10},"value":4,"what":"dy"},
+    {"owner":"nest","span":{"col":18,"end_col":51,"end_line":10,"line":10},"value":-1,"what":"dx"},
+    {"owner":"nest","span":{"col":18,"end_col":51,"end_line":10,"line":10},"value":0,"what":"dy"}
   ],
-  "placement": [{"from":"b","kind":"at","to":"a"},{"from":"fan","kind":"at","to":"a"}],
+  "placement": [{"from":"b","kind":"at","to":"a"},{"from":"fan","kind":"at","to":"a"},{"from":"nest","kind":"at","to":"a"},{"from":"nest","kind":"at","to":"b"}],
   "shapes": [
     {
       "allow": [],

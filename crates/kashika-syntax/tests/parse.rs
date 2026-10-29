@@ -946,50 +946,94 @@ fn parenthesized_points_mean_the_bare_point() {
         let strip = |p: &Point| match p {
             Point::Lit { x, y, .. } => format!("{x:?} {y:?}"),
             Point::Ref { r, offset, .. } => format!("{r:?} {offset:?}"),
-            Point::Group { .. } => panic!("still grouped"),
+            Point::Group { .. } | Point::Shifted { .. } => panic!("still grouped"),
         };
         assert_eq!(strip(g.ungrouped()), strip(&b), "{grouped}");
     }
 }
 
 #[test]
-fn a_point_takes_one_set_of_parentheses() {
+fn parentheses_nest() {
     let Point::Group { inner, span } = box_at("box b at (a.center) size (1,1)\n") else {
         panic!("expected group")
     };
     assert_eq!((span.col, span.end_col), (10, 20));
     assert!(matches!(*inner, Point::Ref { .. }));
-    for (src, help) in [
-        ("((a.center))", "remove the extra parentheses: `(a.center)`"),
-        (
-            "(((a.center)))",
-            "remove the extra parentheses: `(a.center)`",
-        ),
-        (
-            "((a.center+(0,4)))",
-            "remove the extra parentheses: `(a.center+(0,4))`",
-        ),
-        ("((10,20))", "remove the extra parentheses: `(10,20)`"),
-        ("(( 10,20 ))", "remove the extra parentheses: `( 10,20 )`"),
-        (
-            "((a.left.x, b.y))",
-            "remove the extra parentheses: `(a.left.x, b.y)`",
-        ),
-        (
-            "((a.center)+(0,4))",
-            "keep one set of parentheses around the point, e.g. `(db.center+(0,40))`",
-        ),
-        (
-            "((a.center)",
-            "keep one set of parentheses around the point, e.g. `(db.center+(0,40))`",
-        ),
+    for src in [
+        "((a.center))",
+        "(((a.center)))",
+        "((a.center+(0,4)))",
+        "((10,20))",
+        "(( 10,20 ))",
+        "((a.left.x, b.y))",
+        "((a.left.x, b.y)+(0,4))",
+        "((a.center)+(0,4))",
     ] {
-        let (_, d) = parse(&format!("box b at {src} size (1,1)\n"));
-        assert_eq!(d.len(), 1, "{src}: {d:#?}");
-        assert_eq!(d[0].code, "parse");
-        assert_eq!(d[0].message, "a point takes at most one set of parentheses");
-        assert_eq!(d[0].help, [help], "{src}");
+        let p = box_at(&format!("box b at {src} size (1,1)\n"));
+        assert!(matches!(p, Point::Group { .. }), "{src}");
     }
+    let Point::Group { inner, .. } = box_at("box b at ((a.left.x, b.y)+(0,4)) size (1,1)\n") else {
+        panic!("expected group")
+    };
+    let Point::Shifted { base, offsets, .. } = *inner else {
+        panic!("expected offsets")
+    };
+    assert!(matches!(*base, Point::Lit { .. }));
+    assert_eq!((offsets[0].dx, offsets[0].dy), (0.0, 4.0));
+}
+
+#[test]
+fn offsets_follow_any_point() {
+    for (src, base, n) in [
+        ("(10,20)+(5,0)", "lit", 1),
+        ("(a.left.x, b.y)+(0,26)", "lit", 1),
+        ("(a.center)+(0,4)", "group", 1),
+        ("a.center+(1,2)+(3,4)", "ref", 1),
+        ("(a.center+(0,4))+(2,0)", "group", 1),
+        ("(a.center)-(1,2)+(3,4)", "group", 2),
+    ] {
+        let Point::Shifted {
+            base: b, offsets, ..
+        } = box_at(&format!("box b at {src} size (1,1)\n"))
+        else {
+            panic!("{src}: expected offsets")
+        };
+        let kind = match *b {
+            Point::Lit { .. } => "lit",
+            Point::Ref { .. } => "ref",
+            Point::Group { .. } => "group",
+            Point::Shifted { .. } => "shifted",
+        };
+        assert_eq!((kind, offsets.len()), (base, n), "{src}");
+    }
+    let f = parse_ok("line l (a.center)-(0,4) -> (10,20)+(5,0) -> b.top+(1,1)-(2,2)\n");
+    let l = line_stmt(&f);
+    let Point::Shifted { offsets, .. } = &l.start else {
+        panic!("expected offsets")
+    };
+    assert!(offsets[0].neg);
+    assert_eq!(l.segs.len(), 2);
+}
+
+#[test]
+fn parentheses_nest_at_most_16_deep() {
+    let at = |n: usize| {
+        format!(
+            "box b at {}a.center{} size (1,1)\n",
+            "(".repeat(n),
+            ")".repeat(n)
+        )
+    };
+    parse_ok(&at(16));
+    parse_ok("box b at ((((((((((((((((10,20)))))))))))))))) size (1,1)\n");
+    let (_, d) = parse(&at(17));
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].message, "a point nests at most 16 sets of parentheses");
+    assert_eq!((d[0].span.col, d[0].span.end_col), (26, 36));
+    assert_eq!(
+        d[0].help,
+        ["parentheses around a point change nothing; remove the extra ones"]
+    );
 }
 
 #[test]
@@ -1003,7 +1047,7 @@ fn deeply_nested_point_parentheses_are_one_error() {
         );
         let (f, d) = parse(&src);
         assert_eq!(d.len(), 1, "{d:#?}");
-        assert_eq!(d[0].message, "a point takes at most one set of parentheses");
+        assert_eq!(d[0].message, "a point nests at most 16 sets of parentheses");
         assert_eq!(f.stmts.len(), 1);
     }
 }
@@ -1074,19 +1118,5 @@ fn unclosed_point_paren_is_an_error_with_help() {
     assert_eq!(
         d[0].help,
         ["`.x`/`.y` take one axis of a mixed point, which needs both: `(a.left.x, other.y)`"]
-    );
-}
-
-#[test]
-fn offset_after_a_group_is_an_error_with_help() {
-    let (_, d) = parse("box b at (a.center)+(0,4) size (1,1)\n");
-    assert_eq!(d.len(), 1);
-    assert_eq!(
-        d[0].message,
-        "an offset cannot follow a parenthesized point"
-    );
-    assert_eq!(
-        d[0].help,
-        ["put the offset inside the parentheses: `(a.center+(0,4))`"]
     );
 }

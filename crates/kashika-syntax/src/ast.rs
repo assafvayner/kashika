@@ -214,6 +214,13 @@ pub enum Point {
         inner: Box<Point>,
         span: Span,
     },
+    /// A point followed by offsets, which add up. A reference's first offset stays on the
+    /// `Ref`, so this holds the rest.
+    Shifted {
+        base: Box<Point>,
+        offsets: Vec<Offset>,
+        span: Span,
+    },
 }
 
 /// `+(dx,dy)` or `-(dx,dy)`; `neg` records which sign was written.
@@ -238,7 +245,20 @@ impl Offset {
 impl Point {
     pub fn span(&self) -> Span {
         match self {
-            Point::Lit { span, .. } | Point::Ref { span, .. } | Point::Group { span, .. } => *span,
+            Point::Lit { span, .. }
+            | Point::Ref { span, .. }
+            | Point::Group { span, .. }
+            | Point::Shifted { span, .. } => *span,
+        }
+    }
+
+    /// The point without its grouping parentheses and the offsets that follow them: the
+    /// reference, or the literal or mixed point, that the point is relative to.
+    pub fn base(&self) -> &Point {
+        match self {
+            Point::Group { inner, .. } => inner.base(),
+            Point::Shifted { base, .. } => base.base(),
+            p => p,
         }
     }
 

@@ -1,14 +1,10 @@
 error[parse] 5:27-5:31: expected `)` to close the `(` around the point, found `size`
   = help: close it: `(a.center+(0,80))`
-error[parse] 6:20-6:26: an offset cannot follow a parenthesized point
-  = help: put the offset inside the parentheses: `(a.center+(0,4))`
-error[parse] 7:17-7:18: expected `)` to close the `(` around the point, found `.`
+error[parse] 6:17-6:18: expected `)` to close the `(` around the point, found `.`
   = help: `.x`/`.y` take one axis of a mixed point, which needs both: `(a.left.x, other.y)`
-error[parse] 8:18-8:20: expected `)` to close the `(` around the point, found `->`
+error[parse] 7:18-7:20: expected `)` to close the `(` around the point, found `->`
   = help: close it: `(a.bottom)`
-error[parse] 9:10-9:22: a point takes at most one set of parentheses
-  = help: remove the extra parentheses: `(a.center)`
-error[parse] 10:15-10:36: a point takes at most one set of parentheses
-  = help: remove the extra parentheses: `(a.left.x, a.top.y)`
-error[parse] 11:13-11:24: a point takes at most one set of parentheses
-  = help: remove the extra parentheses: `( 10,20 )`
+error[parse] 8:26-8:36: a point nests at most 16 sets of parentheses
+  = help: parentheses around a point change nothing; remove the extra ones
+error[parse] 9:31-9:58: a point nests at most 16 sets of parentheses
+  = help: parentheses around a point change nothing; remove the extra ones

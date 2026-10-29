@@ -219,6 +219,18 @@ impl<'a> Resolver<'a> {
                 self.finite(&[p.x, p.y], *span).then_some(p)
             }
             Point::Group { inner, .. } => self.eval_point(inner, origin),
+            Point::Shifted {
+                base,
+                offsets,
+                span,
+            } => {
+                let mut p = self.eval_point(base, origin)?;
+                for o in offsets {
+                    let (dx, dy) = o.delta();
+                    p = p + Pt::new(dx, dy);
+                }
+                self.finite(&[p.x, p.y], *span).then_some(p)
+            }
         }
     }
 

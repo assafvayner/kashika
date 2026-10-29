@@ -1,0 +1,14 @@
+// spec: 1, 4
+// dump: scene
+// Offsets follow any point and add up, and parentheses nest up to 16 deep.
+diagram "offsets" size (400,300)
+box a at (40,20) size (80,40)
+box b at (a.left.x, a.bottom.y)+(0,26) size (40,40)
+box c at ((a.right.x, b.top.y)+(20,0))-(0,1) size (40,40)
+group g at (200,150) size (150,100) {
+  junction lit at (10,20)+(5,0)-(1,1)
+  junction grouped at (g.tl)+(10,40)-(0,4)
+}
+junction chain at a.center+(1,2)+(3,4)
+junction deep at ((((((((((((((((a.br+(0,4))))))))))))))))+(2,0))
+line l (c.bottom)+(0,10) -> vh ((10,20)+(5,0))+(0,250)

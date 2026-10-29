@@ -71,6 +71,11 @@ impl Endpoint {
     /// The endpoint a point of a `line` statement resolves to: `text` is how it is written and
     /// `at` where it lands.
     pub(crate) fn of(p: &ast::Point, text: String, at: Pt) -> Self {
+        Endpoint::shifted(p, text, at, Pt::new(0.0, 0.0))
+    }
+
+    /// As [`Endpoint::of`], for a point written with offsets that add up to `shift` after it.
+    fn shifted(p: &ast::Point, text: String, at: Pt, shift: Pt) -> Self {
         match p {
             ast::Point::Ref { r, offset, .. } => {
                 let (dx, dy) = offset.map_or((0.0, 0.0), |o| o.delta());
@@ -79,7 +84,7 @@ impl Endpoint {
                     at,
                     owner: Some(r.id.name.clone()),
                     side: r.anchor.as_ref().and_then(|a| Side::of(&a.name.name)),
-                    anchor: Some((ref_text(r), Pt::new(dx, dy))),
+                    anchor: Some((ref_text(r), shift + Pt::new(dx, dy))),
                 }
             }
             ast::Point::Lit { x, y, .. } => {
@@ -89,7 +94,14 @@ impl Endpoint {
                     ..Endpoint::literal(at)
                 }
             }
-            ast::Point::Group { inner, .. } => Endpoint::of(inner, text, at),
+            ast::Point::Group { inner, .. } => Endpoint::shifted(inner, text, at, shift),
+            ast::Point::Shifted { base, offsets, .. } => {
+                let shift = offsets.iter().fold(shift, |s, o| {
+                    let (dx, dy) = o.delta();
+                    s + Pt::new(dx, dy)
+                });
+                Endpoint::shifted(base, text, at, shift)
+            }
         }
     }
 }

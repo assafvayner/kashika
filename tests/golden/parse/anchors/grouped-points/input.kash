@@ -1,9 +1,10 @@
 // spec: 4, 5
 // dump: ast, scene
-// Parentheses around a point change nothing: `b` lands at a.center+(0,80) = (80,120).
+// Parentheses around a point change nothing: `b` lands at a.center+(0,80) = (80,120). They nest, and offsets may follow them.
 diagram "grouped" size (400,300)
 box a at (40,20) size (80,40)
 box b at (a.center+(0,80)) size (40,40)
 junction fan at (a.right+(60,0))
 line down (a.bottom+(20,0)) -> (b.top) end=arrow
 line elbow (fan) -> y (fan+(0,120)) -> x (b.right) -> curve via (b.right+(20,20)) (b.bottom+(20,20)) (b.bottom)
+junction nest at ((a.left.x, b.top.y)+(0,4))-(1,0)

@@ -17,6 +17,7 @@ pub const RESERVED_IDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve", "ar
 /// The reserved ids that are segment keywords.
 pub const SEGMENT_KEYWORDS: &[&str] = &["h", "v", "x", "y", "hv", "vh", "curve"];
 const MAX_GROUP_DEPTH: usize = 64;
+const MAX_POINT_PARENS: usize = 16;
 
 pub fn parse(src: &str) -> (File, Vec<Diagnostic>) {
     parse_stripped(src.strip_prefix('\u{feff}').unwrap_or(src))
@@ -30,6 +31,7 @@ pub(crate) fn parse_stripped(src: &str) -> (File, Vec<Diagnostic>) {
         toks,
         pos: 0,
         depth: 0,
+        point_parens: 0,
         diags: Vec::new(),
         src,
         lines: OnceCell::new(),
@@ -106,6 +108,8 @@ struct Parser<'a> {
     toks: Vec<Token>,
     pos: usize,
     depth: usize,
+    /// The parentheses enclosing the point being parsed.
+    point_parens: usize,
     diags: Vec<Diagnostic>,
     src: &'a str,
     lines: OnceCell<Vec<Vec<char>>>,
@@ -955,54 +959,77 @@ impl Parser<'_> {
         }
     }
 
+    /// A point: a literal, mixed, reference or grouped point, then any number of offsets.
     fn point(&mut self) -> PResult<Point> {
-        if *self.tok() == Tok::LParen && self.paren_is_group() {
-            return self.group();
-        }
-        self.bare_point()
-    }
-
-    /// A literal, mixed or reference point, without grouping parentheses.
-    fn bare_point(&mut self) -> PResult<Point> {
         let start = self.span();
-        if *self.tok() == Tok::LParen {
-            self.bump();
-            let x = self.coord()?;
-            self.expect(Tok::Comma)?;
-            let y = self.coord()?;
-            self.expect(Tok::RParen)?;
-            return Ok(Point::Lit {
-                x,
-                y,
-                span: start.to(self.prev_span()),
-            });
-        }
-        let r = self.reference()?;
-        let offset = if matches!(self.tok(), Tok::Plus | Tok::Minus) {
-            let neg = *self.tok() == Tok::Minus;
-            self.bump();
-            let (dx, dy) = self.pair()?;
-            Some(Offset { neg, dx, dy })
+        let base = if *self.tok() == Tok::LParen {
+            if self.point_parens == MAX_POINT_PARENS {
+                return self.too_many_parens();
+            }
+            self.point_parens += 1;
+            let p = if self.paren_is_group() {
+                self.group()
+            } else {
+                self.literal()
+            };
+            self.point_parens -= 1;
+            p?
         } else {
-            None
+            let r = self.reference()?;
+            let offset = self.offset()?;
+            Point::Ref {
+                r,
+                offset,
+                span: start.to(self.prev_span()),
+            }
         };
-        Ok(Point::Ref {
-            r,
-            offset,
+        let mut offsets = Vec::new();
+        while let Some(o) = self.offset()? {
+            offsets.push(o);
+        }
+        if offsets.is_empty() {
+            return Ok(base);
+        }
+        Ok(Point::Shifted {
+            base: Box::new(base),
+            offsets,
             span: start.to(self.prev_span()),
         })
     }
 
-    /// Whether the `(` here opens a grouped point rather than `(x,y)`: it is followed by `(`,
-    /// or by a reference with no `,` before its closing `)`.
+    fn offset(&mut self) -> PResult<Option<Offset>> {
+        if !matches!(self.tok(), Tok::Plus | Tok::Minus) {
+            return Ok(None);
+        }
+        let neg = *self.tok() == Tok::Minus;
+        self.bump();
+        let (dx, dy) = self.pair()?;
+        Ok(Some(Offset { neg, dx, dy }))
+    }
+
+    /// `(x,y)`, where each coordinate is a number or one axis of a reference.
+    fn literal(&mut self) -> PResult<Point> {
+        let start = self.bump();
+        let x = self.coord()?;
+        self.expect(Tok::Comma)?;
+        let y = self.coord()?;
+        self.expect(Tok::RParen)?;
+        Ok(Point::Lit {
+            x,
+            y,
+            span: start.to(self.prev_span()),
+        })
+    }
+
+    /// Whether the `(` here opens a grouped point rather than `(x,y)`: it is followed by `(`
+    /// or a reference, and no `,` sits directly inside it before its closing `)`. The scan
+    /// stops at the end of the line, and the nesting limit bounds how often a token is rescanned.
     fn paren_is_group(&self) -> bool {
-        match self.tok_at(1) {
-            Tok::LParen => return true,
-            Tok::Ident(_) => {}
-            _ => return false,
+        if !matches!(self.tok_at(1), Tok::LParen | Tok::Ident(_)) {
+            return false;
         }
         let mut depth = 0usize;
-        let mut n = 2;
+        let mut n = 1;
         loop {
             match self.tok_at(n) {
                 Tok::LParen => depth += 1,
@@ -1017,11 +1044,8 @@ impl Parser<'_> {
     }
 
     fn group(&mut self) -> PResult<Point> {
-        if *self.tok_at(1) == Tok::LParen {
-            return self.nested_group();
-        }
         let open = self.bump();
-        let inner = self.bare_point()?;
+        let inner = self.point()?;
         if *self.tok() != Tok::RParen {
             let found = self.tok().describe();
             let written = self.source(open, inner.span());
@@ -1045,52 +1069,24 @@ impl Parser<'_> {
             return Err(());
         }
         self.bump();
-        let span = open.to(self.prev_span());
-        if matches!(self.tok(), Tok::Plus | Tok::Minus) && *self.tok_at(1) == Tok::LParen {
-            let sign = self.bump();
-            self.pair()?;
-            let offset = sign.to(self.prev_span());
-            let help = match inner.ungrouped() {
-                p @ Point::Ref { offset: None, .. } => format!(
-                    "put the offset inside the parentheses: `({}{})`",
-                    self.source(p.span(), p.span()),
-                    self.source(offset, offset)
-                ),
-                _ => "put the offset inside the parentheses, e.g. `(db.center+(0,40))`".into(),
-            };
-            self.diags.push(
-                Diagnostic::error(
-                    "parse",
-                    offset,
-                    "an offset cannot follow a parenthesized point",
-                )
-                .with_help(help),
-            );
-            return Err(());
-        }
         Ok(Point::Group {
             inner: Box::new(inner),
-            span,
+            span: open.to(self.prev_span()),
         })
     }
 
-    /// Reports a point in more than one set of parentheses in one pass, without recursing.
-    /// The help peels each leading `(` whose `)` sits right inside the enclosing one's.
-    fn nested_group(&mut self) -> PResult<Point> {
-        let start = self.pos;
-        let rest = &self.toks[start..];
-        let leading = rest.iter().take_while(|t| t.tok == Tok::LParen).count();
-        let mut close = vec![None; leading];
+    /// Reports a `(` nested deeper than the limit, spanning it to its `)` on the same line.
+    fn too_many_parens<T>(&mut self) -> PResult<T> {
+        let start = self.span();
         let mut depth = 0usize;
-        for (i, t) in rest.iter().enumerate() {
+        let mut end = start;
+        for t in &self.toks[self.pos..] {
             match t.tok {
                 Tok::LParen => depth += 1,
                 Tok::RParen => {
                     depth -= 1;
-                    if let Some(c @ None) = close.get_mut(depth) {
-                        *c = Some(start + i);
-                    }
                     if depth == 0 {
+                        end = t.span;
                         break;
                     }
                 }
@@ -1098,30 +1094,13 @@ impl Parser<'_> {
                 _ => {}
             }
         }
-        let mut k = 0;
-        while k + 1 < leading
-            && matches!((close[k], close[k + 1]), (Some(a), Some(b)) if b + 1 == a)
-        {
-            k += 1;
-        }
-        let help = match close[k] {
-            Some(end) if k > 0 && self.toks[start + k + 1].tok != Tok::LParen => format!(
-                "remove the extra parentheses: `{}`",
-                self.source(self.toks[start + k].span, self.toks[end].span)
-            ),
-            _ => "keep one set of parentheses around the point, e.g. `(db.center+(0,40))`".into(),
-        };
-        let span = match close[0] {
-            Some(end) => self.span().to(self.toks[end].span),
-            None => self.span(),
-        };
         self.diags.push(
             Diagnostic::error(
                 "parse",
-                span,
-                "a point takes at most one set of parentheses",
+                start.to(end),
+                format!("a point nests at most {MAX_POINT_PARENS} sets of parentheses"),
             )
-            .with_help(help),
+            .with_help("parentheses around a point change nothing; remove the extra ones"),
         );
         Err(())
     }

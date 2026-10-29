@@ -225,6 +225,51 @@ File {
                 span: 9:1-9:112,
             },
         ),
+        Junction(
+            Junction {
+                id: Ident { name: "nest", span: 10:10-10:14 },
+                at: Shifted {
+                    base: Group {
+                        inner: Shifted {
+                            base: Lit {
+                                x: Axis {
+                                    r: Ref {
+                                        id: Ident { name: "a", span: 10:20-10:21 },
+                                        anchor: Some(
+                                            Anchor {
+                                                name: Ident { name: "left", span: 10:22-10:26 },
+                                                t: None,
+                                            },
+                                        ),
+                                    },
+                                    axis: X,
+                                },
+                                y: Axis {
+                                    r: Ref {
+                                        id: Ident { name: "b", span: 10:30-10:31 },
+                                        anchor: Some(
+                                            Anchor {
+                                                name: Ident { name: "top", span: 10:32-10:35 },
+                                                t: None,
+                                            },
+                                        ),
+                                    },
+                                    axis: Y,
+                                },
+                                span: 10:19-10:38,
+                            },
+                            offsets: [Offset { neg: false, dx: 0.0, dy: 4.0 }],
+                            span: 10:19-10:44,
+                        },
+                        span: 10:18-10:45,
+                    },
+                    offsets: [Offset { neg: true, dx: 1.0, dy: 0.0 }],
+                    span: 10:18-10:51,
+                },
+                attrs: [],
+                span: 10:1-10:51,
+            },
+        ),
     ],
     first_stmt: Some(4:1-4:8),
     failed_ids: [],

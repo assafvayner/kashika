@@ -63,6 +63,18 @@ impl Resolver<'_> {
             }
             Point::Ref { offset: None, .. } => {}
             Point::Group { inner, .. } => self.record_point(owner, inner),
+            Point::Shifted {
+                base,
+                offsets,
+                span,
+            } => {
+                self.record_point(owner, base);
+                for o in offsets {
+                    let (dx, dy) = o.delta();
+                    self.literal(owner, "dx", dx, *span);
+                    self.literal(owner, "dy", dy, *span);
+                }
+            }
         }
     }
 
@@ -112,9 +124,8 @@ impl Resolver<'_> {
 
 /// The ids a point references: its base, or the refs in its `x`/`y` coordinates.
 pub(super) fn point_refs(p: &Point) -> Vec<&ast::Ref> {
-    match p {
+    match p.base() {
         Point::Ref { r, .. } => vec![r],
-        Point::Group { inner, .. } => point_refs(inner),
         Point::Lit { x, y, .. } => [x, y]
             .into_iter()
             .filter_map(|c| match c {
@@ -122,6 +133,7 @@ pub(super) fn point_refs(p: &Point) -> Vec<&ast::Ref> {
                 Coord::Num(_) => None,
             })
             .collect(),
+        Point::Group { .. } | Point::Shifted { .. } => Vec::new(),
     }
 }
 
@@ -140,7 +152,7 @@ pub(super) fn segment_kind(k: &SegKind) -> SegmentKind {
 }
 
 pub(super) fn is_literal(p: &Point) -> bool {
-    !matches!(p.ungrouped(), Point::Ref { .. })
+    !matches!(p.base(), Point::Ref { .. })
 }
 
 pub(super) fn end_is_literal(segs: &[ast::Seg]) -> bool {

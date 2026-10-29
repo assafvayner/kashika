@@ -156,9 +156,11 @@ Library files may contain only `shape`, `style` and `import`; any other statemen
 ## 4. Points and anchors
 
 ```
-point  := "(" coord "," coord ")"
-        | ref [("+" | "-") "(" dx "," dy ")"]
-        | "(" ref [("+" | "-") "(" dx "," dy ")"] ")"   // grouped: (db.center+(0,40)) is db.center+(0,40)
+point  := base offset*                     // offsets add up: db.center+(0,40)-(10,0)
+base   := "(" coord "," coord ")"
+        | ref
+        | "(" point ")"                      // grouped: (db.center+(0,40)) is db.center+(0,40)
+offset := ("+" | "-") "(" dx "," dy ")"
 ref    := <id> "." <anchor> | <junction-id>
 coord  := number                             // literal, in the current frame
         | ref ".x" | ref ".y"                // mixed: (db.left.x, lane1.y)
@@ -169,7 +171,8 @@ anchor := top | bottom | left | right | center
 
 - **Mixed points** take each axis from a different reference, so lanes can be expressed as relationships: `(app1.bottom.x, lane1.y)`. A `junction` without `dot` that no line ends at works as a named guide point.
 - `@t` and offsets compose: `db.left@0.25+(0,4)`, `db.left@0.25-(0,4)`.
-- **Parentheses** around a point group it and change nothing; they must be closed, and there is at most one set: `(db.center+(0,40))` and `(fan)`. After `(`, a number starts a literal point, a reference followed by `,` a mixed point, and anything else a grouped point. A grouped point holds a reference with an optional offset, so a second set of parentheses, as in `((fan))`, `((10,20))` or `((a.left.x, b.y))`, is a `parse` error. An offset goes inside the parentheses; `(db.center)+(0,40)` is a `parse` error.
+- **Parentheses** around a point group it and change nothing; they must be closed: `(db.center+(0,40))` and `(fan)`. Any point may be grouped, including a grouped one, and parentheses nest at most 16 deep: `((a.left.x, b.y)+(0,4))` is valid, and a 17th set is a `parse` error ("a point nests at most 16 sets of parentheses"). After `(`, a number starts a literal point; otherwise, a `,` directly inside the parentheses makes a literal or mixed point, and its absence a grouped point.
+- **Offsets** may follow any point, including a literal, mixed or grouped one, and several may follow one another; they add up: `(10,20)+(5,0)` is `(15,20)`, `(a.left.x, b.y)+(0,26)`, `(db.center)+(0,40)` and `db.center+(1,2)+(3,4)`, which is `db.center+(4,6)`. An offset is a delta, so a literal point's offset is the same in every frame.
 - **Groups have anchors** just like boxes, e.g. `k8s.top`.
 
 - `top@t`/`bottom@t` run left→right; `left@t`/`right@t` run top→bottom. `top` is the same as `top@0.5`.
@@ -281,7 +284,7 @@ These block output unless `--force` is given:
 
 | code | trigger |
 |---|---|
-| `parse` | Includes expected tokens and a suggestion. Also: unknown string escapes, reserved ids (§2), groups nested more than 64 deep, the old `line <id>:` and `curve left:<N>` forms, `from … to` lines (§5) and a `kashika=` statement (§8), each with the rewrite in its help |
+| `parse` | Includes expected tokens and a suggestion. Also: unknown string escapes, reserved ids (§2), groups nested more than 64 deep, points in more than 16 sets of parentheses, the old `line <id>:` and `curve left:<N>` forms, `from … to` lines (§5) and a `kashika=` statement (§8), each with the rewrite in its help |
 | `unknown-id` / `unknown-anchor` | Includes did-you-mean. `unknown-anchor` also covers a bad `@t`: out of 0..1, or on a corner or `center`. A reference to an id whose statement failed to parse after its id is not reported: the `parse` error explains it |
 | `duplicate-id` | Two statements use the same id. A statement that failed to parse does not count |
 | `duplicate-style` | Two `style` statements, or two `shape` definitions, define the same name, or a `shape` reuses a built-in shape name. Style and shape names are separate from element ids. When the first definition was imported, the message names its library file and the main file's `import` that brought it in |

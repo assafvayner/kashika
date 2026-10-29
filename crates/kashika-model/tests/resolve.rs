@@ -103,6 +103,22 @@ fn parenthesized_points_resolve_like_bare_ones() {
 }
 
 #[test]
+fn offsets_add_up_after_any_point() {
+    let s = ok("box a at (40,20) size (80,40)\n\
+         group g at (100,100) size (200,200) {\n  junction j at (10,20)+(5,0)-(1,1)\n}\n\
+         junction k at (a.left.x, a.bottom.y)+(0,26)\n\
+         junction m at ((a.center+(0,4))+(2,0))-(0,1)\n\
+         junction n at a.center+(1,2)+(3,4)\n\
+         junction o at ((((((((((((((((a.tl))))))))))))))))\n");
+    let at = |id: &str| s.junctions.iter().find(|j| j.id == id).unwrap().at;
+    assert_eq!(at("j"), Pt::new(114.0, 119.0));
+    assert_eq!(at("k"), Pt::new(40.0, 86.0));
+    assert_eq!(at("m"), Pt::new(82.0, 43.0));
+    assert_eq!(at("n"), Pt::new(84.0, 46.0));
+    assert_eq!(at("o"), Pt::new(40.0, 20.0));
+}
+
+#[test]
 fn groups_default_to_the_boundary_style() {
     let s = ok("group g at (0,0) size (10,10) {\n}\n");
     assert_eq!(s.shapes[0].style.stroke_style, StrokeStyle::Dashed);

@@ -67,6 +67,21 @@ fn endpoints_parse_like_points_in_a_line() {
     assert_eq!(a.expr.as_deref(), Some("(b.left.x, 30)"));
     assert_eq!((a.owner, a.side), (None, None));
     assert_eq!(a.at, Pt::new(320.0, 30.0));
+
+    let (a, b) = ends(
+        &src,
+        "(a.right+(0,4))+(0,2)",
+        "((b.left.x, b.top.y)+(0,20))",
+    );
+    assert_eq!(a.expr.as_deref(), Some("(a.right+(0,4))+(0,2)"));
+    assert_eq!(a.anchor, Some(("a.right".into(), Pt::new(0.0, 6.0))));
+    assert_eq!(a.at, Pt::new(120.0, 126.0));
+    assert_eq!(b.expr.as_deref(), Some("((b.left.x, b.top.y)+(0,20))"));
+    assert_eq!(b.at, Pt::new(320.0, 120.0));
+
+    let (a, _) = ends(&src, "(10,20)+(5,0)", "b.top");
+    assert_eq!((a.expr, a.owner), (None, None));
+    assert_eq!(a.at, Pt::new(15.0, 20.0));
 }
 
 #[test]

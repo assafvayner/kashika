@@ -57,6 +57,14 @@ fn keeps_point_parentheses() {
         fmt("line l (a.bottom) -> x ( c.left ) -> curve via (fan) ( b.top-(0,4) ) (d.left)\n"),
         "line l (a.bottom) -> x (c.left) -> curve via (fan) (b.top-(0,4)) (d.left)\n"
     );
+    assert_eq!(
+        fmt("box b at ( ( a.left.x ,b.y ) + ( 0 , 4 ) ) - (1, 1) size (1,1)\n"),
+        "box b at ((a.left.x, b.y)+(0,4))-(1,1) size (1,1)\n"
+    );
+    assert_eq!(
+        fmt("line l (10,20) + (5,0) -> a.c + (1,2) + (3,4) -> (a.c)-(1,1)\n"),
+        "line l (10,20)+(5,0) -> a.c+(1,2)+(3,4) -> (a.c)-(1,1)\n"
+    );
 }
 
 #[test]
