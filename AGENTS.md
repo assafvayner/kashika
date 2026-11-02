@@ -14,6 +14,7 @@ In dependency order (`crates/`):
 - `kashika-check`: warning lints (one file each under `src/lints/`), suppression, metrics, free intervals and ports, built on a shared `Ctx` of shape polygons and flattened line pieces. `Ctx::boxes()` is boxes and images: the opaque shapes lines must avoid.
 - `kashika-route`: `kashika route` path suggestions. Each candidate is compiled as a real `line` and scored with `kashika_check::check`, so it ranks by the `cross` plus `group-transit` findings (each counted alike, listed apart), then the `near`/`shared-segment` findings `check` reports (`through` drops it), then segments and length.
 - `kashika-render`: `Scene` to SVG, PNG, JPEG and WebP (resvg, jpeg-encoder, image-webp), with images and icons embedded as `data:` URIs, and the `render --force`/`--debug` overlay.
+- `kashika-wasm`: WebAssembly bindings (`render`, `version`) that check and render a source string to SVG with no file system, for editors and Markdown previews. Not published to crates.io; build the npm package with `wasm-pack build crates/kashika-wasm --target nodejs`.
 - `kashika-cli`: the `kashika` package and binary (`check`, `render`, `inspect`, `route`, `measure`, `fmt`, `icons`, `ref`), text and JSON reports. `ref` pages are Markdown in `crates/kashika-cli/ref/`.
 
 ## Commands
@@ -32,6 +33,7 @@ cargo run -p kashika -- icons --search server
 cargo run -p kashika -- fmt --check examples/upload/upload.kash
 cargo run -p kashika -- route examples/upload/upload.kash --line api1_queue arc
 cargo run -p kashika -- ref
+cargo build -p kashika-wasm --target wasm32-unknown-unknown
 ```
 
 
@@ -84,7 +86,7 @@ Each kind has one registry. The `ref` pages print their name lists from it throu
 - Embedded SVG is always the usvg re-serialization, never the input bytes.
 - Text is measured and drawn only with the fonts in `crates/kashika-text/fonts/` (Inter, JetBrains Mono and the Twemoji emoji font), each character by the same fallback face in both. SVG text is glyph outlines (`<path aria-label=…>`; a line with emoji is a `<g aria-label=…>` of the text path and one path per COLR color layer), never `<text>`, so checks and every viewer agree.
 - Nothing paints the canvas unless `background=` is set. Line labels hide their own line with a per-line SVG `<mask>` of their rects, never with a painted rect, so the fill beneath shows through.
-- Every crate builds from its own directory, since each is published to crates.io (see [`RELEASING.md`](RELEASING.md)): nothing in `src/` or `build.rs` reads a path outside the crate. `crates/*/LICENSE` and `crates/kashika-cli/ref/upload.kash` are copies of `LICENSE` and `examples/upload/upload.kash`, kept identical by tests.
+- Every crate builds from its own directory, since each but `kashika-wasm` is published to crates.io (see [`RELEASING.md`](RELEASING.md)): nothing in `src/` or `build.rs` reads a path outside the crate. `crates/*/LICENSE` and `crates/kashika-cli/ref/upload.kash` are copies of `LICENSE` and `examples/upload/upload.kash`, kept identical by tests.
 
 ## Conventions
 

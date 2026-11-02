@@ -1,0 +1,25 @@
+[package]
+name = "kashika-wasm"
+version.workspace = true
+edition.workspace = true
+description = "WebAssembly bindings that check and render Kashika diagrams to SVG"
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories = ["visualization", "wasm"]
+include = ["src/**/*", "LICENSE"]
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+kashika-check.workspace = true
+kashika-diag.workspace = true
+kashika-model.workspace = true
+kashika-render.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+wasm-bindgen = "0.2.121"
