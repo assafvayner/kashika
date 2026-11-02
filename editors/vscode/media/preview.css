@@ -1,0 +1,20 @@
+.kashika-diagram img {
+  max-width: 100%;
+}
+
+.kashika-diagnostics {
+  margin: 0.5em 0 1em;
+  padding: 0.5em 1em;
+  border-left: 3px solid var(--vscode-editorError-foreground, #e51400);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 0.9em;
+  white-space: pre-wrap;
+}
+
+.kashika-diagnostics .kashika-warn {
+  color: var(--vscode-editorWarning-foreground, #bf8803);
+}
+
+.kashika-diagnostics .kashika-error {
+  color: var(--vscode-editorError-foreground, #e51400);
+}

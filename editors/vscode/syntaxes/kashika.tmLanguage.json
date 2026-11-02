@@ -1,0 +1,65 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Kashika",
+  "scopeName": "source.kashika",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#statement" },
+    { "include": "#keywords" },
+    { "include": "#attribute" },
+    { "include": "#color" },
+    { "include": "#number" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        { "name": "comment.line.double-slash.kashika", "match": "//.*$" },
+        { "include": "#block-comment" }
+      ]
+    },
+    "block-comment": {
+      "name": "comment.block.kashika",
+      "begin": "/\\*",
+      "end": "\\*/",
+      "patterns": [{ "include": "#block-comment" }]
+    },
+    "strings": {
+      "name": "string.quoted.double.kashika",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [{ "name": "constant.character.escape.kashika", "match": "\\\\." }]
+    },
+    "statement": {
+      "match": "^\\s*(diagram|style|box|group|junction|text|line|arrow|import|shape|image)\\b(?:\\s+([A-Za-z_][\\w-]*))?",
+      "captures": {
+        "1": { "name": "keyword.other.statement.kashika" },
+        "2": { "name": "entity.name.kashika" }
+      }
+    },
+    "keywords": {
+      "name": "keyword.other.kashika",
+      "match": "\\b(at|size|from|to|via|as|path|ortho|curve|hvh|vhv|hv|vh|h|v|x|y)\\b(?![=.\\w-])"
+    },
+    "attribute": {
+      "match": "\\b([A-Za-z_][\\w-]*)\\s*(=)",
+      "captures": {
+        "1": { "name": "variable.parameter.kashika" },
+        "2": { "name": "keyword.operator.assignment.kashika" }
+      }
+    },
+    "color": {
+      "name": "constant.other.color.kashika",
+      "match": "#[0-9A-Fa-f]{3,8}\\b"
+    },
+    "number": {
+      "name": "constant.numeric.kashika",
+      "match": "(?<![\\w.])-?\\d+(\\.\\d+)?"
+    },
+    "operators": {
+      "name": "keyword.operator.kashika",
+      "match": "->|\\+|-|@|:"
+    }
+  }
+}

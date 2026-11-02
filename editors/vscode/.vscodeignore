@@ -1,0 +1,10 @@
+**
+!out/src/**/*.js
+!wasm/kashika_wasm.js
+!wasm/kashika_wasm_bg.wasm
+!syntaxes/**
+!media/**
+!language-configuration.json
+!package.json
+!README.md
+!LICENSE

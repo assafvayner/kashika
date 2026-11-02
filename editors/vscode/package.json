@@ -1,0 +1,81 @@
+{
+  "name": "kashika",
+  "displayName": "Kashika",
+  "description": "Kashika diagrams in the Markdown preview, and syntax highlighting for .kash files",
+  "version": "0.1.0-dev0",
+  "publisher": "assafvayner",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/assafvayner/kashika",
+    "directory": "editors/vscode"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Visualization"
+  ],
+  "keywords": [
+    "kashika",
+    "diagram",
+    "markdown",
+    "svg"
+  ],
+  "main": "./out/src/extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "markdown.markdownItPlugins": true,
+    "markdown.previewStyles": [
+      "./media/preview.css"
+    ],
+    "languages": [
+      {
+        "id": "kashika",
+        "aliases": [
+          "Kashika",
+          "kash"
+        ],
+        "extensions": [
+          ".kash"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "kashika",
+        "scopeName": "source.kashika",
+        "path": "./syntaxes/kashika.tmLanguage.json"
+      },
+      {
+        "scopeName": "markdown.kashika.codeblock",
+        "path": "./syntaxes/kashika.markdown.tmLanguage.json",
+        "injectTo": [
+          "text.html.markdown"
+        ],
+        "embeddedLanguages": {
+          "meta.embedded.block.kashika": "kashika"
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "build:wasm": "wasm-pack build ../../crates/kashika-wasm --target nodejs --release --no-pack --out-dir ../../editors/vscode/wasm",
+    "compile": "tsc -p .",
+    "build": "npm run build:wasm && npm run compile",
+    "test": "npm run compile && node --test out/test/*.test.js",
+    "package": "npm run build && vsce package --no-dependencies",
+    "test:vscode": "npm run compile && node out/test/integration/run.js"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^20.0.0",
+    "@types/vscode": "~1.90.0",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^3.0.0",
+    "markdown-it": "^14.1.0",
+    "typescript": "^5.6.0"
+  }
+}

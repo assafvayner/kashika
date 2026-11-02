@@ -17,6 +17,8 @@ In dependency order (`crates/`):
 - `kashika-wasm`: WebAssembly bindings (`render`, `version`) that check and render a source string to SVG with no file system, for editors and Markdown previews. Not published to crates.io; build the npm package with `wasm-pack build crates/kashika-wasm --target nodejs`.
 - `kashika-cli`: the `kashika` package and binary (`check`, `render`, `inspect`, `route`, `measure`, `fmt`, `icons`, `ref`), text and JSON reports. `ref` pages are Markdown in `crates/kashika-cli/ref/`.
 
+`editors/vscode/` is the VS Code extension: it renders ```` ```kashika ```` Markdown fences through `kashika-wasm` and highlights `.kash` files. Its README has the npm commands.
+
 ## Commands
 
 ```sh
