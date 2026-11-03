@@ -235,3 +235,19 @@ fn icons_shrink_the_text_area_without_warnings() {
     assert!(kashika_check::check(&s).is_empty());
     assert!(s.shapes[0].text_area.x >= 100.0 + 24.0);
 }
+
+#[test]
+fn ports_name_the_side_the_line_leaves_from() {
+    let scene = scene_src(
+        "diagram \"p\" size (400,300)\nbox s at (100,100) size (120,80) shape=diamond\nline l s.left@0.3 -> (0,124)\nline m s.top@0.2 -> (124,0)\n",
+    );
+    let ctx = kashika_check::ctx::Ctx::new(&scene);
+    let ports: Vec<(String, &str, f64)> = kashika_check::ports::ports(&ctx)
+        .into_iter()
+        .map(|p| (p.line, p.side, (p.t * 100.0).round() / 100.0))
+        .collect();
+    assert_eq!(
+        ports,
+        vec![("l".into(), "left", 0.3), ("m".into(), "top", 0.2)]
+    );
+}
