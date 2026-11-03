@@ -1,0 +1,7 @@
+error[parse] 5:12-5:13: expected a number or a reference like `db.left.x`, found `.`
+error[parse] 6:13-6:14: expected `,`, found `.`
+error[parse] 7:13-7:14: expected `,`, found `e`
+error[parse] 8:12-8:18: exponent notation is not supported
+  = help: write the number out in full, e.g. `100000` instead of `1e5`
+error[parse] 9:12-9:13: expected a number or a reference like `db.left.x`, found `-`
+error[parse] 13:13-13:17: expected `,`, found `_000`

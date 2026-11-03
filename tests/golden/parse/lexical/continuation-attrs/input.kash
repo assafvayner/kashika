@@ -1,5 +1,5 @@
 // spec: 2
-// dump: ast
+// dump: ast, tokens
 // Attribute lines continue a box; the next keyword starts a new statement.
 diagram "attrs" size (300,200)
 box a at (20,20) size (100,60)

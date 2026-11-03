@@ -1,5 +1,5 @@
 // spec: 2
-// dump: ast
+// dump: ast, tokens
 // Ids may use letters, digits, `_` and `-`, and start with a letter or `_`.
 diagram "ids" size (300,100)
 box _private at (10,10) size (40,30)

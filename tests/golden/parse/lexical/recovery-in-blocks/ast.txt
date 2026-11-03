@@ -1,0 +1,169 @@
+File {
+    stmts: [
+        Diagram(
+            Diagram {
+                title: "blocks",
+                size: Some(Size { w: Some(400.0), h: Some(400.0) }),
+                attrs: [],
+                span: 4:1-4:32,
+            },
+        ),
+        Group(
+            Group {
+                node: Node {
+                    id: Ident { name: "g1", span: 5:7-5:9 },
+                    label: None,
+                    at: Lit { x: Num(10.0), y: Num(10.0), span: 5:13-5:20 },
+                    size: Some(Size { w: Some(180.0), h: Some(80.0) }),
+                    attrs: [],
+                    block: None,
+                    span: 5:1-5:34,
+                },
+                children: [
+                    Box(
+                        Node {
+                            id: Ident { name: "a", span: 6:7-6:8 },
+                            label: None,
+                            at: Lit { x: Num(10.0), y: Num(10.0), span: 6:12-6:19 },
+                            size: Some(Size { w: Some(40.0), h: Some(30.0) }),
+                            attrs: [],
+                            block: None,
+                            span: 6:3-6:32,
+                        },
+                    ),
+                ],
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "after1", span: 7:5-7:11 },
+                label: None,
+                at: Lit { x: Num(10.0), y: Num(100.0), span: 7:15-7:23 },
+                size: Some(Size { w: Some(40.0), h: Some(30.0) }),
+                attrs: [],
+                block: None,
+                span: 7:1-7:36,
+            },
+        ),
+        Group(
+            Group {
+                node: Node {
+                    id: Ident { name: "g2", span: 8:7-8:9 },
+                    label: None,
+                    at: Lit { x: Num(200.0), y: Num(10.0), span: 8:13-8:21 },
+                    size: Some(Size { w: Some(180.0), h: Some(80.0) }),
+                    attrs: [],
+                    block: None,
+                    span: 8:1-8:35,
+                },
+                children: [
+                    Box(
+                        Node {
+                            id: Ident { name: "b", span: 9:7-9:8 },
+                            label: None,
+                            at: Lit { x: Num(10.0), y: Num(10.0), span: 9:12-9:19 },
+                            size: Some(Size { w: Some(40.0), h: Some(30.0) }),
+                            attrs: [],
+                            block: None,
+                            span: 9:3-9:32,
+                        },
+                    ),
+                ],
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "c", span: 10:7-10:8 },
+                label: None,
+                at: Lit { x: Num(60.0), y: Num(100.0), span: 10:12-10:20 },
+                size: Some(Size { w: Some(40.0), h: Some(30.0) }),
+                attrs: [],
+                block: None,
+                span: 10:3-10:33,
+            },
+        ),
+        Group(
+            Group {
+                node: Node {
+                    id: Ident { name: "g3", span: 11:7-11:9 },
+                    label: None,
+                    at: Lit { x: Num(10.0), y: Num(150.0), span: 11:13-11:21 },
+                    size: Some(Size { w: Some(180.0), h: Some(80.0) }),
+                    attrs: [],
+                    block: None,
+                    span: 11:1-11:35,
+                },
+                children: [
+                    Box(
+                        Node {
+                            id: Ident { name: "e", span: 13:7-13:8 },
+                            label: None,
+                            at: Lit { x: Num(60.0), y: Num(10.0), span: 13:12-13:19 },
+                            size: Some(Size { w: Some(40.0), h: Some(30.0) }),
+                            attrs: [],
+                            block: None,
+                            span: 13:3-13:32,
+                        },
+                    ),
+                ],
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "after3", span: 15:5-15:11 },
+                label: None,
+                at: Lit { x: Num(200.0), y: Num(150.0), span: 15:15-15:24 },
+                size: Some(Size { w: Some(40.0), h: Some(30.0) }),
+                attrs: [],
+                block: None,
+                span: 15:1-15:37,
+            },
+        ),
+        Group(
+            Group {
+                node: Node {
+                    id: Ident { name: "g4", span: 16:7-16:9 },
+                    label: None,
+                    at: Lit { x: Num(0.0), y: Num(0.0), span: 16:13-16:18 },
+                    size: Some(Size { w: Some(10.0), h: Some(10.0) }),
+                    attrs: [],
+                    block: None,
+                    span: 16:1-16:31,
+                },
+                children: [],
+            },
+        ),
+        Style(
+            StyleDef {
+                name: "s",
+                attrs: [
+                    Attr {
+                        key: Ident { name: "stroke", span: 20:1-20:7 },
+                        at_t: None,
+                        value: Color("#000"),
+                        span: 20:1-20:12,
+                    },
+                ],
+                span: 19:1-20:14,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "last", span: 22:5-22:9 },
+                label: None,
+                at: Lit { x: Num(300.0), y: Num(300.0), span: 22:13-22:22 },
+                size: Some(Size { w: Some(40.0), h: Some(30.0) }),
+                attrs: [],
+                block: None,
+                span: 22:1-22:35,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+    failed_ids: [
+        Ident { name: "d", span: 12:7-12:8 },
+        Ident { name: "f", span: 17:7-17:8 },
+        Ident { name: "l", span: 21:6-21:7 },
+    ],
+    failed_diagram: false,
+}

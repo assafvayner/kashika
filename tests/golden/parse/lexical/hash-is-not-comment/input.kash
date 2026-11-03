@@ -1,5 +1,5 @@
 // spec: 2
-// dump: ast
+// dump: ast, tokens
 // `#` starts a color, never a comment: a `#` comment is one error and its line is skipped.
 diagram "hash" size (200,100)
 # not a comment

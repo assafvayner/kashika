@@ -1,0 +1,5 @@
+error[parse] 5:6-5:11: expected `at`, found color `#note`
+error[parse] 5:6-5:11: invalid color `#note`
+  = help: colors are `#rgb`, `#rrggbb` or `#rrggbbaa`; comments start with `//`
+error[parse] 6:1-6:2: `#` does not start a comment
+  = help: comments start with `//`; `#` only starts a color like `#rrggbb`

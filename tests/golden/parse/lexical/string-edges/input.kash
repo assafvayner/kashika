@@ -1,0 +1,9 @@
+// spec: 2
+// dump: tokens, ast
+// An empty string, a raw tab in a string, an unknown escape, a backslash before end of line and one before end of file.
+diagram "" size (300,200)
+box a "a	b" at (10,10) size (80,40)
+box b "x\q" at (10,60) size (80,40)
+box c "end\
+box d at (10,110) size (80,40)
+box e "eof\

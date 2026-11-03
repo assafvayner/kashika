@@ -1,0 +1,48 @@
+1:11-1:12  Newline
+2:21-2:22  Newline
+3:79-3:80  Newline
+4:1-4:8  Ident "diagram"
+4:9-4:16  Str "spans"
+4:17-4:21  Ident "size"
+4:22-4:23  LParen
+4:23-4:26  Num 200
+4:26-4:27  Comma
+4:27-4:30  Num 100
+4:30-4:31  RParen
+4:31-4:32  Newline
+5:1-5:4  Ident "box"
+5:5-5:6  Ident "a"
+5:7-5:9  Ident "at"
+5:10-5:11  LParen
+5:11-5:13  Num 10
+5:13-5:14  Comma
+5:14-5:16  Num 10
+5:16-5:17  RParen
+5:18-5:22  Ident "size"
+5:23-5:24  LParen
+5:24-5:26  Num 40
+5:26-5:27  Comma
+5:27-5:29  Num 30
+5:29-5:30  RParen
+5:31-5:33  Newline
+6:18-6:21  Ident "box"
+6:22-6:23  Ident "b"
+6:24-6:26  Ident "at"
+6:27-6:28  LParen
+6:28-6:31  Num 100
+6:31-6:32  Comma
+6:32-6:34  Num 10
+6:34-6:35  RParen
+6:36-6:40  Ident "size"
+6:41-6:42  LParen
+6:42-6:44  Num 40
+6:44-6:45  Comma
+6:45-6:47  Num 30
+6:47-6:48  RParen
+6:48-6:49  Newline
+7:1-7:1  Eof
+comments:
+1:1-1:11  "// spec: 2"
+2:1-2:21  "// dump: ast, tokens"
+3:1-3:79  "// A block comment spanning lines is one line break, so it ends the statement."
+5:31-6:17  "/* starts here\nand ends here */"

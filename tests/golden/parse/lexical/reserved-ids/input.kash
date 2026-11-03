@@ -1,5 +1,5 @@
 // spec: 2
-// dump: ast
+// dump: ast, tokens
 // The segment keywords and the `arrow` statement keyword can't be ids, whatever the statement.
 diagram "reserved" size (400,200)
 box h at (10,10) size (20,20)

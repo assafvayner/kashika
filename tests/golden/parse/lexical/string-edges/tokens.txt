@@ -1,0 +1,71 @@
+1:11-1:12  Newline
+2:21-2:22  Newline
+3:121-3:122  Newline
+4:1-4:8  Ident "diagram"
+4:9-4:11  Str ""
+4:12-4:16  Ident "size"
+4:17-4:18  LParen
+4:18-4:21  Num 300
+4:21-4:22  Comma
+4:22-4:25  Num 200
+4:25-4:26  RParen
+4:26-4:27  Newline
+5:1-5:4  Ident "box"
+5:5-5:6  Ident "a"
+5:7-5:12  Str "a\tb"
+5:13-5:15  Ident "at"
+5:16-5:17  LParen
+5:17-5:19  Num 10
+5:19-5:20  Comma
+5:20-5:22  Num 10
+5:22-5:23  RParen
+5:24-5:28  Ident "size"
+5:29-5:30  LParen
+5:30-5:32  Num 80
+5:32-5:33  Comma
+5:33-5:35  Num 40
+5:35-5:36  RParen
+5:36-5:37  Newline
+6:1-6:4  Ident "box"
+6:5-6:6  Ident "b"
+6:7-6:12  Str "xq"
+6:13-6:15  Ident "at"
+6:16-6:17  LParen
+6:17-6:19  Num 10
+6:19-6:20  Comma
+6:20-6:22  Num 60
+6:22-6:23  RParen
+6:24-6:28  Ident "size"
+6:29-6:30  LParen
+6:30-6:32  Num 80
+6:32-6:33  Comma
+6:33-6:35  Num 40
+6:35-6:36  RParen
+6:36-6:37  Newline
+7:1-7:4  Ident "box"
+7:5-7:6  Ident "c"
+7:7-7:12  Str "end"
+7:12-7:13  Newline
+8:1-8:4  Ident "box"
+8:5-8:6  Ident "d"
+8:7-8:9  Ident "at"
+8:10-8:11  LParen
+8:11-8:13  Num 10
+8:13-8:14  Comma
+8:14-8:17  Num 110
+8:17-8:18  RParen
+8:19-8:23  Ident "size"
+8:24-8:25  LParen
+8:25-8:27  Num 80
+8:27-8:28  Comma
+8:28-8:30  Num 40
+8:30-8:31  RParen
+8:31-8:32  Newline
+9:1-9:4  Ident "box"
+9:5-9:6  Ident "e"
+9:7-9:12  Str "eof"
+9:12-9:12  Eof
+comments:
+1:1-1:11  "// spec: 2"
+2:1-2:21  "// dump: tokens, ast"
+3:1-3:121  "// An empty string, a raw tab in a string, an unknown escape, a backslash before end of line and one before end of file."

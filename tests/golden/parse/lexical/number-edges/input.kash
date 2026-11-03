@@ -1,0 +1,13 @@
+// spec: 2
+// dump: tokens
+// Number edge cases, one per line: leading and trailing dots, a bare and a capital exponent, a split minus, negative zero, leading zeros and an underscore.
+diagram "numbers" size (300,200)
+box n1 at (.5,10) size (10,10)
+box n2 at (5.,30) size (10,10)
+box n3 at (1e,50) size (10,10)
+box n4 at (1.5E-3,70) size (10,10)
+box n5 at (- 5,90) size (10,10)
+box n6 at (-0,110) size (10,10)
+box n7 at (-0.0,130) size (10,10)
+box n8 at (007,150) size (10,10)
+box n9 at (1_000,170) size (10,10)

@@ -1,0 +1,8 @@
+// spec: 2
+// dump: tokens, ast
+// Columns count Unicode scalar values (an astral emoji, an accented letter and a tab are one column each); a stray `$` is dropped, so the statement around it still parses.
+diagram "spans" size (300,200)
+text "😀é" at (40,10) $
+	box a at (10,40) size (40,30) @
+	$ box b at (60,40) size (40,30)
+box c at (110,40) size (40,30)

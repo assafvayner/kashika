@@ -1,4 +1,5 @@
 // spec: 2, 7
+// dump: tokens
 // A statement whose id is reserved is dropped, so it gets no follow-on lints.
 diagram "dropped" size (300,200)
 box a at (100,50) size (100,60)
