@@ -38,6 +38,8 @@ serde_json.workspace = true
 libtest-mimic.workspace = true
 similar.workspace = true
 base64.workspace = true
+roxmltree.workspace = true
+usvg.workspace = true
 
 [[test]]
 name = "golden"

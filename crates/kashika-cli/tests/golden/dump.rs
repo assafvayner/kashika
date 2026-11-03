@@ -223,3 +223,45 @@ pub fn diagnostics(diags: &[Value]) -> String {
         "this is kashika <tool>",
     )
 }
+
+/// One line per token, `L:C-L:C  Kind`, then a `comments:` section with each comment's span
+/// and source text. Backslashes, newlines, CRs and tabs in text are escaped.
+pub fn tokens(src: &str) -> String {
+    use kashika_syntax::Tok;
+    let (toks, comments, _) = kashika_syntax::lex_with_comments(src);
+    let mut out = String::new();
+    for t in &toks {
+        let s = &t.span;
+        let kind = match &t.tok {
+            Tok::Ident(v) => format!("Ident {}", escape(v)),
+            Tok::Num(n) => format!("Num {n}"),
+            Tok::Str(v) => format!("Str {}", escape(v)),
+            Tok::Color(c) => format!("Color {}", escape(c)),
+            other => format!("{other:?}"),
+        };
+        out.push_str(&format!(
+            "{}:{}-{}:{}  {kind}\n",
+            s.line, s.col, s.end_line, s.end_col
+        ));
+    }
+    out.push_str("comments:\n");
+    for c in &comments {
+        let s = &c.span;
+        out.push_str(&format!(
+            "{}:{}-{}:{}  {}\n",
+            s.line,
+            s.col,
+            s.end_line,
+            s.end_col,
+            escape(&c.text)
+        ));
+    }
+    out
+}
+
+fn escape(s: &str) -> String {
+    s.replace('\\', "\\\\")
+        .replace('\n', "\\n")
+        .replace('\r', "\\r")
+        .replace('\t', "\\t")
+}

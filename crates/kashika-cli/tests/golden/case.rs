@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 /// Every file name the harness writes into a case directory.
 pub const OUTPUTS: &[&str] = &[
     "ast.txt",
+    "tokens.txt",
     "scene.json",
     "diagnostics.txt",
     "out.svg",
@@ -29,6 +30,7 @@ pub struct Case {
     pub spec: Vec<String>,
     pub dump_ast: bool,
     pub dump_scene: bool,
+    pub dump_tokens: bool,
     pub force: bool,
     pub debug: bool,
     pub allow_path: bool,
@@ -91,6 +93,7 @@ impl Case {
             spec: Vec::new(),
             dump_ast: false,
             dump_scene: false,
+            dump_tokens: false,
             force: false,
             debug: false,
             allow_path: false,
@@ -132,6 +135,7 @@ impl Case {
                         match v.as_str() {
                             "ast" => self.dump_ast = true,
                             "scene" => self.dump_scene = true,
+                            "tokens" => self.dump_tokens = true,
                             _ => return Err(format!("{}: unknown dump `{v}`", self.name)),
                         }
                     }

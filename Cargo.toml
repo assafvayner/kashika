@@ -39,3 +39,4 @@ jpeg-encoder = { version = "=0.7.1", default-features = false, features = ["std"
 image-webp = { version = "=0.2.4", default-features = false }
 imagesize = "=0.13.0"
 base64 = "=0.22.1"
+roxmltree = "=0.20.0"

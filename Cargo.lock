@@ -491,11 +491,13 @@ dependencies = [
  "kashika-text",
  "libtest-mimic",
  "predicates",
+ "roxmltree",
  "serde",
  "serde_json",
  "sha2",
  "similar",
  "tempfile",
+ "usvg",
 ]
 
 [[package]]

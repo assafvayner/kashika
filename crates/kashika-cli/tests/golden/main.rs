@@ -2,6 +2,7 @@ mod case;
 mod coverage;
 mod dump;
 mod review;
+mod svg_invariants;
 
 use std::path::Path;
 use std::process::Command;
@@ -62,15 +63,18 @@ fn run_case(case: &Case) -> Result<(), Failed> {
     check_outputs(case, &outputs)
 }
 
-fn run_parse(case: &Case) -> Result<Vec<Output>, String> {
-    let input = case.dir.join("input.kash");
-    let (file, _) = kashika_syntax::parse(&case.src);
-    let opts = kashika_model::Options {
-        path: Some(input),
+fn options(case: &Case) -> kashika_model::Options {
+    kashika_model::Options {
+        path: Some(case.dir.join("input.kash")),
         allow_path: case.allow_path,
         icon_path: case.icon_path.iter().map(|p| case.dir.join(p)).collect(),
         include: case.include.iter().map(|p| case.dir.join(p)).collect(),
-    };
+    }
+}
+
+fn run_parse(case: &Case) -> Result<Vec<Output>, String> {
+    let (file, _) = kashika_syntax::parse(&case.src);
+    let opts = options(case);
     let (scene, diags) = match kashika_model::compile_library_with(&case.src, &opts) {
         Some(diags) => (None, diags),
         None => {
@@ -99,6 +103,9 @@ fn run_parse(case: &Case) -> Result<Vec<Output>, String> {
     let mut out = vec![Output::text("diagnostics.txt", dump::diagnostics(&diags))];
     if case.dump_ast {
         out.push(Output::text("ast.txt", dump::ast(&file)));
+    }
+    if case.dump_tokens {
+        out.push(Output::text("tokens.txt", dump::tokens(&case.src)));
     }
     if case.dump_scene {
         let scene = scene.ok_or_else(|| format!("{}: a library has no scene", case.name))?;
@@ -162,6 +169,17 @@ fn run_render(case: &Case) -> Result<Vec<Output>, String> {
             out.push(Output::text("diagnostics.txt", dump::diagnostics(&diags)));
         }
         let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+        if ext == "svg" {
+            let (scene, _) = kashika_model::compile_with(&case.src, &options(case));
+            let problems = svg_invariants::check(&String::from_utf8_lossy(&bytes), &scene);
+            if !problems.is_empty() {
+                return Err(format!(
+                    "{}: svg invariants:\n  {}",
+                    case.name,
+                    problems.join("\n  ")
+                ));
+            }
+        }
         out.push(Output {
             name: format!("out.{ext}"),
             bytes,
