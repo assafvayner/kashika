@@ -20,23 +20,23 @@ pub fn run(file: &str, check: bool, stdin_name: Option<&str>) -> ExitCode {
                 deferred: None,
                 omitted: &[],
             };
-            print!(
+            crate::out!(
                 "{}",
                 crate::report::text(file, &src, &mut diags, &opts, None)
             );
             ExitCode::from(2)
         }
         Ok(out) if stdin && !check => {
-            print!("{out}");
+            crate::out!("{out}");
             ExitCode::SUCCESS
         }
         Ok(out) if out == src => ExitCode::SUCCESS,
         Ok(_) if check => {
             let file = crate::term::line(file);
             if stdin {
-                println!("{file}: not formatted");
+                crate::outln!("{file}: not formatted");
             } else {
-                println!("{file}: not formatted; run `kashika fmt {file}`");
+                crate::outln!("{file}: not formatted; run `kashika fmt {file}`");
             }
             ExitCode::from(1)
         }

@@ -932,3 +932,26 @@ fn library_validates_and_applies_focus() {
     assert_eq!(code, 3, "{err}");
     assert!(err.contains("unknown id `nosuch`"), "{err}");
 }
+
+#[test]
+fn closed_stdout_does_not_panic() {
+    use std::io::Read;
+    use std::process::{Command, Stdio};
+    let mut child = Command::new(env!("CARGO_BIN_EXE_kashika"))
+        .arg("ref")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    drop(child.stdout.take());
+    let status = child.wait().unwrap();
+    let mut err = String::new();
+    child
+        .stderr
+        .take()
+        .unwrap()
+        .read_to_string(&mut err)
+        .unwrap();
+    assert!(!err.contains("panicked"), "stderr: {err}");
+    assert_ne!(status.code(), Some(101));
+}

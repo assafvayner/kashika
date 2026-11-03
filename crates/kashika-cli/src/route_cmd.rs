@@ -89,7 +89,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
         Err(Error::Usage(msg)) => crate::tool_error(a.format, SCHEMA, &msg),
         Err(Error::Diagnostics(mut diags)) => {
             match a.format {
-                Format::Json => println!(
+                Format::Json => crate::outln!(
                     "{}",
                     serde_json::json!({
                         "schema": SCHEMA,
@@ -107,14 +107,14 @@ pub fn run(a: &RouteArgs) -> ExitCode {
                         deferred: None,
                         omitted: &[],
                     };
-                    print!("{}", report::text(&name, &src, &mut diags, &opts, None));
+                    crate::out!("{}", report::text(&name, &src, &mut diags, &opts, None));
                 }
                 Format::Text => {
                     let name = term::line(&name);
                     for d in &diags {
-                        println!("{name}: error[{}]: {}", d.code, term::line(&d.message));
+                        crate::outln!("{name}: error[{}]: {}", d.code, term::line(&d.message));
                         for h in &d.help {
-                            println!("      = help: {}", term::line(h));
+                            crate::outln!("      = help: {}", term::line(h));
                         }
                     }
                 }
@@ -123,7 +123,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
         }
         Ok(s) => {
             match a.format {
-                Format::Json => println!(
+                Format::Json => crate::outln!(
                     "{}",
                     serde_json::json!({
                         "schema": SCHEMA,
@@ -136,7 +136,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
                         "existing_lines": s.existing_lines,
                     })
                 ),
-                Format::Text => print!("{}", term::text(&text(&s))),
+                Format::Text => crate::out!("{}", term::text(&text(&s))),
             }
             ExitCode::from(u8::from(s.candidates.is_empty()))
         }

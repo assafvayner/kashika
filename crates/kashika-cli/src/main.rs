@@ -219,7 +219,7 @@ fn main() -> ExitCode {
             if args.first().is_some_and(|c| c == "route")
                 && args.iter().any(|a| a.ends_with("->") && a.starts_with('-'))
             {
-                eprintln!("help: {}", route_cmd::NO_ARROW);
+                crate::errln!("help: {}", route_cmd::NO_ARROW);
             }
             return ExitCode::from(code);
         }
@@ -334,7 +334,7 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
         Format::Text => report::text(&name, &src, &mut diags, &opts, output.as_ref()),
         Format::Json => report::json(&name, &src, &mut diags, &opts, output.as_ref()),
     };
-    print!("{report}");
+    crate::out!("{report}");
     ExitCode::from(exit_code(c.fail_on, errors, warns))
 }
 
@@ -371,7 +371,7 @@ fn report_library(
         Format::Text => report::text(name, src, &mut diags, &opts, None),
         Format::Json => report::json(name, src, &mut diags, &opts, None),
     };
-    print!("{report}");
+    crate::out!("{report}");
     let report::Counts { errors, warns, .. } = report::counts(&diags, &[]);
     ExitCode::from(exit_code(c.fail_on, errors, warns))
 }
@@ -404,9 +404,9 @@ fn run_inspect(a: &InspectArgs) -> ExitCode {
     };
     let data = inspect::build(&name, &src, &scene, &diags, lints, &req);
     match a.format {
-        Format::Text => print!("{}", term::text(&inspect::text(&data))),
+        Format::Text => crate::out!("{}", term::text(&inspect::text(&data))),
         Format::Json => match serde_json::to_string(&data) {
-            Ok(json) => println!("{json}"),
+            Ok(json) => crate::outln!("{json}"),
             Err(e) => return fail(&format!("cannot serialize inspect output: {e}")),
         },
     }
@@ -541,8 +541,8 @@ fn exit_code(fail_on: FailOn, errors: usize, warns: usize) -> u8 {
 
 pub(crate) fn tool_error(format: Format, schema: &str, msg: &str) -> ExitCode {
     match format {
-        Format::Text => eprintln!("kashika: {}", term::text(msg)),
-        Format::Json => println!(
+        Format::Text => crate::errln!("kashika: {}", term::text(msg)),
+        Format::Json => crate::outln!(
             "{}",
             serde_json::json!({ "schema": schema, "tool": env!("CARGO_PKG_VERSION"), "tool_error": msg })
         ),
