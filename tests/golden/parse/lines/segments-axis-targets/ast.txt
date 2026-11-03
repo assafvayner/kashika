@@ -1,0 +1,79 @@
+File {
+    stmts: [
+        Diagram(
+            Diagram {
+                title: "axis",
+                size: Some(Size { w: Some(300.0), h: Some(200.0) }),
+                attrs: [],
+                span: 4:1-4:30,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "a", span: 5:5-5:6 },
+                label: None,
+                at: Lit { x: Num(200.0), y: Num(120.0), span: 5:10-5:19 },
+                size: Some(Size { w: Some(60.0), h: Some(40.0) }),
+                attrs: [],
+                block: None,
+                span: 5:1-5:32,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "l", span: 6:6-6:7 }),
+                arrow: false,
+                start: Lit { x: Num(20.0), y: Num(20.0), span: 6:8-6:15 },
+                segs: [
+                    Seg { kind: X(Num(100.0)), span: 6:19-6:24 },
+                    Seg { kind: Y(Num(60.0)), span: 6:28-6:32 },
+                    Seg {
+                        kind: X(
+                            Point(
+                                Ref {
+                                    r: Ref {
+                                        id: Ident { name: "a", span: 6:38-6:39 },
+                                        anchor: Some(
+                                            Anchor {
+                                                name: Ident { name: "left", span: 6:40-6:44 },
+                                                t: None,
+                                            },
+                                        ),
+                                    },
+                                    offset: None,
+                                    span: 6:38-6:44,
+                                },
+                            ),
+                        ),
+                        span: 6:36-6:44,
+                    },
+                    Seg {
+                        kind: Y(
+                            Point(
+                                Ref {
+                                    r: Ref {
+                                        id: Ident { name: "a", span: 6:50-6:51 },
+                                        anchor: Some(
+                                            Anchor {
+                                                name: Ident { name: "top", span: 6:52-6:55 },
+                                                t: None,
+                                            },
+                                        ),
+                                    },
+                                    offset: None,
+                                    span: 6:50-6:55,
+                                },
+                            ),
+                        ),
+                        span: 6:48-6:55,
+                    },
+                ],
+                attrs: [],
+                span: 6:1-6:55,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+    failed_ids: [],
+    failed_diagram: false,
+}

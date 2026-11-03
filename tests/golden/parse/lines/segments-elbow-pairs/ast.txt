@@ -1,0 +1,187 @@
+File {
+    stmts: [
+        Diagram(
+            Diagram {
+                title: "elbow pairs",
+                size: Some(Size { w: Some(400.0), h: Some(300.0) }),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "allow", span: 4:38-4:43 },
+                        at_t: None,
+                        value: Word("cross"),
+                        span: 4:38-4:49,
+                    },
+                ],
+                span: 4:1-4:49,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "a", span: 5:5-5:6 },
+                label: None,
+                at: Lit { x: Num(20.0), y: Num(20.0), span: 5:10-5:17 },
+                size: Some(Size { w: Some(60.0), h: Some(40.0) }),
+                attrs: [],
+                block: None,
+                span: 5:1-5:30,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "b", span: 6:5-6:6 },
+                label: None,
+                at: Lit { x: Num(200.0), y: Num(140.0), span: 6:10-6:19 },
+                size: Some(Size { w: Some(60.0), h: Some(40.0) }),
+                attrs: [],
+                block: None,
+                span: 6:1-6:32,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "c", span: 7:5-7:6 },
+                label: None,
+                at: Lit { x: Num(300.0), y: Num(20.0), span: 7:10-7:18 },
+                size: Some(Size { w: Some(60.0), h: Some(40.0) }),
+                attrs: [],
+                block: None,
+                span: 7:1-7:31,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "l1", span: 8:6-8:8 }),
+                arrow: false,
+                start: Ref {
+                    r: Ref {
+                        id: Ident { name: "a", span: 8:9-8:10 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "bottom", span: 8:11-8:17 }, t: None },
+                        ),
+                    },
+                    offset: None,
+                    span: 8:9-8:17,
+                },
+                segs: [
+                    Seg {
+                        kind: Vhv {
+                            t: None,
+                            to: Ref {
+                                r: Ref {
+                                    id: Ident { name: "b", span: 8:25-8:26 },
+                                    anchor: Some(
+                                        Anchor {
+                                            name: Ident { name: "top", span: 8:27-8:30 },
+                                            t: None,
+                                        },
+                                    ),
+                                },
+                                offset: None,
+                                span: 8:25-8:30,
+                            },
+                        },
+                        span: 8:21-8:30,
+                    },
+                ],
+                attrs: [],
+                span: 8:1-8:30,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "l2", span: 9:6-9:8 }),
+                arrow: false,
+                start: Ref {
+                    r: Ref {
+                        id: Ident { name: "a", span: 9:9-9:10 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "right", span: 9:11-9:16 }, t: None },
+                        ),
+                    },
+                    offset: None,
+                    span: 9:9-9:16,
+                },
+                segs: [
+                    Seg {
+                        kind: Hvh {
+                            t: Some(0.25),
+                            to: Ref {
+                                r: Ref {
+                                    id: Ident { name: "b", span: 9:29-9:30 },
+                                    anchor: Some(
+                                        Anchor {
+                                            name: Ident { name: "left", span: 9:31-9:35 },
+                                            t: None,
+                                        },
+                                    ),
+                                },
+                                offset: None,
+                                span: 9:29-9:35,
+                            },
+                        },
+                        span: 9:20-9:35,
+                    },
+                ],
+                attrs: [],
+                span: 9:1-9:35,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "l3", span: 10:6-10:8 }),
+                arrow: false,
+                start: Ref {
+                    r: Ref {
+                        id: Ident { name: "c", span: 10:9-10:10 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "bottom", span: 10:11-10:17 }, t: None },
+                        ),
+                    },
+                    offset: None,
+                    span: 10:9-10:17,
+                },
+                segs: [
+                    Seg {
+                        kind: Vhv {
+                            t: None,
+                            to: Lit { x: Num(330.0), y: Num(120.0), span: 10:25-10:34 },
+                        },
+                        span: 10:21-10:34,
+                    },
+                ],
+                attrs: [],
+                span: 10:1-10:34,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "l4", span: 11:6-11:8 }),
+                arrow: false,
+                start: Ref {
+                    r: Ref {
+                        id: Ident { name: "b", span: 11:9-11:10 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "right", span: 11:11-11:16 }, t: None },
+                        ),
+                    },
+                    offset: None,
+                    span: 11:9-11:16,
+                },
+                segs: [
+                    Seg {
+                        kind: Hvh {
+                            t: None,
+                            to: Lit { x: Num(380.0), y: Num(160.0), span: 11:24-11:33 },
+                        },
+                        span: 11:20-11:33,
+                    },
+                ],
+                attrs: [],
+                span: 11:1-11:33,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+    failed_ids: [],
+    failed_diagram: false,
+}

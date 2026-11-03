@@ -1,0 +1,8 @@
+// spec: 3
+// dump: ast
+// Every attribute value form: flag, number, string, color, word, pair, size, anchor@t, list, and `key@t=`.
+diagram "values" size (300,200) allow=overlap,near
+style chip { size=(10,10) }
+box a at (20,20) size (80,60) fill=#abc font-size=12 shape=diamond padding=(3,7) pin=top@0.25 reason="s"
+box c at (200,100) style=chip
+line l a.right -> hv c.top ortho label@0.5="mid"
