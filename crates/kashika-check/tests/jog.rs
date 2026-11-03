@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn short_step_between_vertical_runs_suggests_the_level_anchors() {
@@ -23,6 +24,7 @@ fn short_step_between_vertical_runs_suggests_the_level_anchors() {
     );
     assert_eq!(d[0].elements[0].segment, Some(2));
     assert_eq!(d[0].facts["step"], 4.0);
+    assert_eq!(d[0].span, Span::new(4, 28, 4, 41));
 }
 
 #[test]

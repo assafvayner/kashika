@@ -1,6 +1,8 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
+use kashika_model::Marker;
 
 #[test]
 fn endpoints_closer_than_8px_on_one_shape() {
@@ -86,4 +88,40 @@ fn exactly_8px_apart_is_not_crowded() {
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "b2 and b1 meet 'b' 7.9px apart (minimum 8px)");
+}
+
+#[test]
+fn minimum_gap_per_marker_follows_its_half_width() {
+    for (end, min) in [
+        ("none", 8),
+        ("arrow", 16),
+        ("open", 16),
+        ("triangle", 24),
+        ("diamond", 16),
+        ("hollow-diamond", 16),
+        ("dot", 12),
+        ("circle", 16),
+        ("one", 24),
+        ("many", 24),
+        ("one-many", 24),
+        ("zero-one", 24),
+        ("zero-many", 24),
+    ] {
+        let m = Marker::from_name(end).unwrap();
+        assert_eq!(f64::from(min), 8f64.max(2.0 * m.half_width(3.0)), "{end}");
+        let d = lint(
+            "port-crowding",
+            &format!(
+                "box a at (100,100) size (400,60)\nline l1 a.top@0.5 -> v -50 start={end} stroke-width=3\nline l2 a.top@0.5125 -> v -50 start={end} stroke-width=3\n"
+            ),
+        );
+        assert_eq!(d.len(), 1, "{end}: {d:#?}");
+        assert_eq!(
+            d[0].message,
+            format!("l2 and l1 meet 'a' 5px apart (minimum {min}px)"),
+            "{end}"
+        );
+        let end_col = 52 + u32::try_from(end.len()).unwrap();
+        assert_eq!(d[0].span, Span::new(4, 1, 4, end_col), "{end}");
+    }
 }

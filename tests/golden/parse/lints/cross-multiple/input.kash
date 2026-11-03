@@ -1,0 +1,5 @@
+// spec: 7
+// A line crossing another twice yields one `cross` per crossing; ties on one line sort by message, so (150,100) comes before (50,100).
+diagram "cross multiple" size (400,200)
+line a (0,100) -> h 300
+line b (50,50) -> v 100 -> h 100 -> v -100

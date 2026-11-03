@@ -1,0 +1,8 @@
+// spec: 7
+// One line through two sibling groups is one `group-transit` per group.
+diagram "transit two" size (500,200)
+group g1 at (100,40) size (100,120) {
+}
+group g2 at (300,40) size (100,120) {
+}
+line l (20,100) -> h 460

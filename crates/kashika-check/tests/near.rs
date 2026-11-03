@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn line_passing_close_to_a_box() {
@@ -11,6 +12,7 @@ fn line_passing_close_to_a_box() {
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "l runs 4px from box 'a' (clearance 6)");
     assert_eq!(d[0].facts["distance"], serde_json::json!(4.0));
+    assert_eq!(d[0].span, Span::new(3, 1, 3, 24));
 }
 
 #[test]
@@ -95,13 +97,14 @@ fn clearance_comes_from_the_diagram() {
     let s = scene_src(
         "diagram \"t\" size (800,600) clearance=12\nline a (0,100) -> h 300\nline b (0,110) -> h 300\n",
     );
-    assert_eq!(
-        kashika_check::check(&s)
-            .iter()
-            .filter(|d| d.code == "near")
-            .count(),
-        1
-    );
+    let d: Vec<_> = kashika_check::check(&s)
+        .into_iter()
+        .filter(|d| d.code == "near")
+        .collect();
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].message, "b runs 10px from a for 300px (clearance 12)");
+    assert_eq!(d[0].facts["distance"], serde_json::json!(10.0));
+    assert_eq!(d[0].facts["clearance"], serde_json::json!(12.0));
 }
 
 #[test]

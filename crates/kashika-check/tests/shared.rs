@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn collinear_overlap_is_reported_with_the_nearest_free_lane() {
@@ -15,6 +16,7 @@ fn collinear_overlap_is_reported_with_the_nearest_free_lane() {
     );
     assert_eq!(d[0].elements[0].id, "b");
     assert_eq!(d[0].elements[1].id, "a");
+    assert_eq!(d[0].span, Span::new(4, 1, 4, 33));
     assert_eq!(
         d[0].help,
         vec![

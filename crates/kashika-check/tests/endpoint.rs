@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn literal_endpoint_near_an_outline() {
@@ -13,6 +14,7 @@ fn literal_endpoint_near_an_outline() {
         d[0].message,
         "l ends at (97,115), 3px from the outline of 'a'"
     );
+    assert_eq!(d[0].span, Span::new(3, 19, 3, 27));
     assert_eq!(
         d[0].help,
         vec!["snap it to the outline with an anchor: `a.left@0.25`".to_string()]

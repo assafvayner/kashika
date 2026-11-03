@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn off_grid_checks_authored_literals_only() {
@@ -19,5 +20,11 @@ fn off_grid_checks_authored_literals_only() {
             "dx=33 on 'b' is not a multiple of grid 10",
         ]
     );
+    let spans: Vec<Span> = kashika_check::check(&s)
+        .into_iter()
+        .filter(|d| d.code == "off-grid")
+        .map(|d| d.span)
+        .collect();
+    assert_eq!(spans, [Span::new(2, 10, 2, 17), Span::new(3, 10, 3, 24)]);
     assert!(lint("off-grid", "box a at (40,45) size (120,60)\n").is_empty());
 }

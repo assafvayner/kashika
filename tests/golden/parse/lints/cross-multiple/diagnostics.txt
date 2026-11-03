@@ -1,0 +1,10 @@
+warn[cross] 5:1-5:43: b crosses a at (150,100)
+  = help: segment 3 runs at x=150; free x-intervals across y 50..150: 306..400
+  = help: if intentional: allow=cross:a on b
+  elements: [{"from":[150,150],"id":"b","kind":"line","segment":3,"span":{"col":1,"end_col":43,"end_line":5,"line":5},"to":[150,50]},{"from":[0,100],"id":"a","kind":"line","segment":1,"span":{"col":1,"end_col":24,"end_line":4,"line":4},"to":[300,100]}]
+  facts: {"at":[150,100],"free":{"axis":"x","band":[50,150],"intervals":[[306,400]]}}
+warn[cross] 5:1-5:43: b crosses a at (50,100)
+  = help: segment 1 runs at x=50; free x-intervals across y 50..150: 306..400
+  = help: if intentional: allow=cross:a on b
+  elements: [{"from":[50,50],"id":"b","kind":"line","segment":1,"span":{"col":1,"end_col":43,"end_line":5,"line":5},"to":[50,150]},{"from":[0,100],"id":"a","kind":"line","segment":1,"span":{"col":1,"end_col":24,"end_line":4,"line":4},"to":[300,100]}]
+  facts: {"at":[50,100],"free":{"axis":"x","band":[50,150],"intervals":[[306,400]]}}

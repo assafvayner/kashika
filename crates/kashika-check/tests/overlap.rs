@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn overlapping_boxes() {
@@ -14,6 +15,7 @@ fn overlapping_boxes() {
         d[0].facts["intersection"],
         serde_json::json!([[50.0, 50.0], [100.0, 100.0]])
     );
+    assert_eq!(d[0].span, Span::new(3, 1, 3, 32));
     assert!(
         lint(
             "overlap",

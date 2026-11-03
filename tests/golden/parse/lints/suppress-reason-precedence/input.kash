@@ -1,0 +1,9 @@
+// spec: 7
+// The reason comes from the first line, then the first shape, in file order, also when the diagram allows the code too.
+diagram "reason precedence" size (500,400) allow=through
+box m at (40,40) size (80,40) allow=near reason="box m"
+line skim (20,84) -> h 160 allow=near reason="skim"
+box n at (300,40) size (80,40) allow=through reason="box n"
+line pierce (260,60) -> h 160 allow=through reason="pierce"
+line h1 (20,250) -> h 200 allow=cross reason="h1"
+line v1 (120,180) -> v 140 allow=cross reason="v1"

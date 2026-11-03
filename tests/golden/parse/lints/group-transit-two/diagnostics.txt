@@ -1,0 +1,8 @@
+warn[group-transit] 8:1-8:25: l passes through group 'g1' without connecting to anything inside it
+  = help: route around the group, for example along its outside margin
+  elements: [{"from":[20,100],"id":"l","kind":"line","segment":1,"span":{"col":1,"end_col":25,"end_line":8,"line":8},"to":[480,100]},{"bbox":[[100,40],[200,160]],"id":"g1","kind":"group","span":{"col":1,"end_col":36,"end_line":4,"line":4}}]
+  facts: {"entry":[100,100]}
+warn[group-transit] 8:1-8:25: l passes through group 'g2' without connecting to anything inside it
+  = help: route around the group, for example along its outside margin
+  elements: [{"from":[20,100],"id":"l","kind":"line","segment":1,"span":{"col":1,"end_col":25,"end_line":8,"line":8},"to":[480,100]},{"bbox":[[300,40],[400,160]],"id":"g2","kind":"group","span":{"col":1,"end_col":36,"end_line":6,"line":6}}]
+  facts: {"entry":[300,100]}

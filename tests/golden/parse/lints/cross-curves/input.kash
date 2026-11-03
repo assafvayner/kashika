@@ -1,0 +1,5 @@
+// spec: 5, 7
+// Two curves crossing each other twice report both points.
+diagram "cross curves" size (300,200)
+line a (0,100) -> curve left 50 (300,100)
+line b (0,80) -> curve right 50 (300,80)

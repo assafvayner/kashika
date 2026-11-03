@@ -1,0 +1,4 @@
+// spec: 6, 7
+// A line label with characters outside the bundled fonts is a `missing-glyph`.
+diagram "glyph label" size (300,200)
+line l (20,100) -> h 260 label="日本"

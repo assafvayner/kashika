@@ -1,0 +1,5 @@
+// spec: 7
+// A line ending on another line's interior (a T) is a `cross` at the touch point.
+diagram "cross touch" size (300,200)
+line a (0,100) -> h 200
+line b (100,0) -> v 100

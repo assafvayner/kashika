@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn line_through_a_box_reports_entry_exit_and_free_lanes() {
@@ -10,6 +11,7 @@ fn line_through_a_box_reports_entry_exit_and_free_lanes() {
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "l passes through box 'cache'");
+    assert_eq!(d[0].span, Span::new(5, 1, 5, 25));
     assert_eq!(d[0].facts["entry"], serde_json::json!([300.0, 140.0]));
     assert_eq!(d[0].facts["exit"], serde_json::json!([380.0, 140.0]));
     assert_eq!(

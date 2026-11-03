@@ -212,7 +212,7 @@ box c at (100,76) size (40,40)\n";
         .iter()
         .find(|c| c.statement.contains("a.bottom -> y a.bl+(0,12) -> hv"))
         .expect("a lane just below a and b");
-    assert!(close.near >= 1, "lane at y=72 runs 4px above c: {close:?}");
+    assert_eq!(close.near, 1, "lane at y=72 runs 4px above c: {close:?}");
 }
 
 #[test]

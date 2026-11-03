@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn slight_slant_suggests_the_level_anchor() {
@@ -21,6 +22,7 @@ fn slight_slant_suggests_the_level_anchor() {
             "or move one end 5px in y so both ends share it, or use `hv`/`vh` (or an `x`/`y` target) for a deliberate elbow".to_string(),
         ]
     );
+    assert_eq!(d[0].span, Span::new(4, 23, 4, 31));
 }
 
 #[test]

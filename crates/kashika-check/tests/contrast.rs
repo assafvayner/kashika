@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn light_text_on_a_light_fill() {
@@ -13,6 +14,7 @@ fn light_text_on_a_light_fill() {
         d[0].message,
         "label \"API\" of 'a' has contrast 1.4:1 against its background (minimum 3:1)"
     );
+    assert_eq!(d[0].span, Span::new(2, 1, 2, 62));
     assert_eq!(d[0].facts["background"], "#ffffff");
     assert!(
         lint(
