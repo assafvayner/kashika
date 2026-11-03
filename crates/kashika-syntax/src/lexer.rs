@@ -491,6 +491,19 @@ mod tests {
     }
 
     #[test]
+    fn leading_bom_is_stripped_before_lexing() {
+        let (toks, diags) = lex("\u{feff}box a");
+        assert!(diags.is_empty(), "{diags:#?}");
+        assert_eq!(toks, lex("box a").0);
+        let (toks, comments, diags) = lex_with_comments("\u{feff}box a // c");
+        assert!(diags.is_empty(), "{diags:#?}");
+        assert_eq!((toks, comments), {
+            let (t, c, _) = lex_with_comments("box a // c");
+            (t, c)
+        });
+    }
+
+    #[test]
     fn minus_before_paren_ends_an_identifier() {
         assert_eq!(
             toks("a-b.top-(-1,2)"),
