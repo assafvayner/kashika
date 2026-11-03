@@ -404,7 +404,7 @@ Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`
 
 ### Exit codes
 
-`0` clean, `1` warnings (when `--fail-on warn`), `2` errors, `3` usage or I/O failure.
+`0` clean, `1` warnings (when `--fail-on warn`), `2` errors, `3` usage or I/O failure. A closed stdout or stderr (`kashika check f.kash | head -1`) ends the command quietly with the exit code it would have had.
 
 ### Text output
 
@@ -455,7 +455,7 @@ The fields:
 
 Prints the resolved geometry: every shape's bounding box and anchors in both canvas and local frames, every line's vertices, segment kinds and arc length, every label's bounding box, and the placement dependency graph.
 
-- `--ports` lists, for each shape side, which anchors are already used and by which lines.
+- `--ports` lists, for each shape side, which anchors are already used and by which lines. Where two sides' anchors meet at one outline point (on a `diamond`, `left@0.3` and `top@0.2` project onto the same edge), an endpoint there is listed on the side its line leaves toward; `port-crowding` help names the same side.
 - `--corridors` lists the free horizontal and vertical intervals within a rectangle, clear of the same things as the `free` fact.
 - The text output starts with the canvas size (`canvas 640x320`) when it lists everything.
 - `--format json` writes one object with schema `kashika.inspect/1`: `canvas` (`[w, h]`, after any `auto` axis is fitted), `shapes` (with `bbox`, `local_bbox`, `anchors`, `local_anchors`, and `image` with `path`, `natural`, `aspect` and `fit` for images and SVG-file shapes), `junctions`, `texts`, `lines` (with `vertices`, `segments`, `length`, `labels`), `placement`, and `ports`/`corridors` when requested. Positional ids limit the output to those elements. An unknown id is a usage error.
