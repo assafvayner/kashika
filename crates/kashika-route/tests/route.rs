@@ -1,5 +1,52 @@
-use kashika_geom::Pt;
-use kashika_route::{Axis, Corridor, Error, Request, Style, Suggestion, suggest};
+use kashika_check::ctx::Ctx;
+use kashika_check::free::free_intervals;
+use kashika_diag::{Severity, fact};
+use kashika_geom::{PathSeg, Pt, TOLERANCE};
+use kashika_route::{Axis, Candidate, Corridor, Error, Request, Style, Suggestion};
+
+/// `kashika_route::suggest`, also checking that every suggestion is ranked.
+fn suggest(r: &Request) -> Result<Suggestion, Error> {
+    let s = kashika_route::suggest(r);
+    if let Ok(s) = &s {
+        assert_ranked(s);
+    }
+    s
+}
+
+/// Consecutive candidates never decrease in `(crossings + transits, near, segments, length)`.
+fn assert_ranked(s: &Suggestion) {
+    let key = |c: &Candidate| (c.crossings + c.transits, c.near, c.segments);
+    for w in s.candidates.windows(2) {
+        let (a, b) = (&w[0], &w[1]);
+        assert!(
+            key(a) < key(b) || key(a) == key(b) && a.length <= b.length,
+            "{} ranks before {}: {:?} {} > {:?} {}",
+            a.statement,
+            b.statement,
+            key(a),
+            a.length,
+            key(b),
+            b.length
+        );
+    }
+}
+
+/// One row per candidate: `crossings+transits near segments length statement`.
+fn rows(s: &Suggestion) -> Vec<String> {
+    s.candidates
+        .iter()
+        .map(|c| {
+            format!(
+                "{} {} {} {} {}",
+                c.crossings + c.transits,
+                c.near,
+                c.segments,
+                c.length,
+                c.statement
+            )
+        })
+        .collect()
+}
 
 const WALL: &str = "diagram \"w\" size (460,240)\n\
 box a \"A\" at (20,100) size (100,40)\n\
@@ -67,14 +114,26 @@ fn detours_around_a_wall_between_facing_sides() {
     let mut r = req(WALL, "a.right", "b.left", Style::Corner);
     r.max = 20;
     let s = suggest(&r).unwrap();
-    let c = &s.candidates[0];
-    assert_eq!((c.crossings, c.near, c.segments), (0, 0, 5), "{c:?}");
-    assert!(
-        c.statement.starts_with("line a_b a.right -> x ") && c.statement.contains(" -> vh b.left"),
-        "{}",
-        c.statement
+    assert_eq!(
+        rows(&s),
+        [
+            "0 0 5 384 line a_b a.right -> x a.tr+(12,0) -> y wall.tl+(0,-12) -> x b.tl+(-12,0) -> vh b.left end=arrow",
+            "0 0 5 384 line a_b a.right -> x a.tr+(12,0) -> y wall.bl+(0,12) -> x b.tl+(-12,0) -> vh b.left end=arrow",
+            "0 0 5 384 line a_b a.right -> x a.tr+(12,0) -> y wall.tl+(0,-12) -> x wall.tr+(12,0) -> vh b.left end=arrow",
+            "0 0 5 384 line a_b a.right -> x a.tr+(12,0) -> y wall.bl+(0,12) -> x wall.tr+(12,0) -> vh b.left end=arrow",
+            "0 0 5 384 line a_b a.right -> x wall.tl+(-12,0) -> y wall.tl+(0,-12) -> x b.tl+(-12,0) -> vh b.left end=arrow",
+            "0 0 5 384 line a_b a.right -> x wall.tl+(-12,0) -> y wall.bl+(0,12) -> x b.tl+(-12,0) -> vh b.left end=arrow",
+            "0 0 5 384 line a_b a.right -> x wall.tl+(-12,0) -> y wall.tl+(0,-12) -> x wall.tr+(12,0) -> vh b.left end=arrow",
+            "0 0 5 384 line a_b a.right -> x wall.tl+(-12,0) -> y wall.bl+(0,12) -> x wall.tr+(12,0) -> vh b.left end=arrow",
+        ]
     );
-    assert!(c.corridor.is_some(), "{c:?}");
+    assert_eq!(
+        s.candidates[0].corridor,
+        Some(Corridor {
+            axis: Axis::Y,
+            band: [0.0, 34.0]
+        })
+    );
     agrees_with_check(WALL, &s);
 }
 
@@ -129,22 +188,17 @@ fn simple_paths_outrank_clean_detours() {
     let mut r = req(WALL, "a.top", "b.top", Style::Corner);
     r.max = 50;
     let s = suggest(&r).unwrap();
-    assert_eq!(s.candidates[0].segments, 3);
-    for c in s.candidates.iter().filter(|c| c.segments > 3) {
-        assert!(
-            s.candidates.iter().all(|d| d.segments > 3
-                || d.crossings > c.crossings
-                || d.near > c.near
-                || d.length > c.length),
-            "a simpler path is as good as {c:?}"
-        );
-    }
+    assert_eq!(
+        rows(&s),
+        ["0 0 3 444 line a_b a.top -> y wall.tl+(0,-12) -> hv b.top end=arrow"],
+        "every clear detour is at least as long as the clear 3-segment path"
+    );
     let mut r = req(QUEUE, "orders.bottom", "db.left", Style::Corner);
     r.max = 50;
     let s = suggest(&r).unwrap();
     assert_eq!(
-        s.candidates[0].statement,
-        "line orders_db orders.bottom -> vh db.left end=arrow"
+        rows(&s),
+        ["0 0 2 365 line orders_db orders.bottom -> vh db.left end=arrow"]
     );
 }
 
@@ -207,12 +261,17 @@ box c at (100,76) size (40,40)\n";
     let mut r = req(src, "a.bottom", "b.bottom", Style::Corner);
     r.max = 50;
     let s = suggest(&r).unwrap();
-    let close = s
-        .candidates
-        .iter()
-        .find(|c| c.statement.contains("a.bottom -> y a.bl+(0,12) -> hv"))
-        .expect("a lane just below a and b");
-    assert_eq!(close.near, 1, "lane at y=72 runs 4px above c: {close:?}");
+    assert_eq!(
+        rows(&s),
+        [
+            "0 0 3 216 line a_b a.bottom -> y 68 -> hv b.bottom end=arrow",
+            "0 0 3 336 line a_b a.bottom -> y c.bl+(0,12) -> hv b.bottom end=arrow",
+            "0 1 3 224 line a_b a.bottom -> y a.bl+(0,12) -> hv b.bottom end=arrow",
+            "0 2 3 208 line a_b a.bottom -> y c.tl+(0,-12) -> hv b.bottom end=arrow",
+        ],
+        "y=72 runs 4px above c, and y=64 4px below a and b"
+    );
+    agrees_with_check(src, &s);
 }
 
 #[test]
@@ -375,6 +434,26 @@ fn arc_adds_radius_and_counts_corners() {
         c.statement
     );
     assert_eq!(c.segments, 3);
+    for (from, to) in [("a.top", "b.top"), ("a.right", "b.left")] {
+        let mut r = req(WALL, from, to, Style::Arc);
+        r.radius = 0.0;
+        r.max = 50;
+        let sharp = suggest(&r).unwrap();
+        r.style = Style::Corner;
+        let corner = suggest(&r).unwrap();
+        let counts = |s: &Suggestion| {
+            s.candidates
+                .iter()
+                .map(|c| (c.segments, c.length))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(
+            counts(&sharp),
+            counts(&corner),
+            "`radius=0` corners are sharp and still count"
+        );
+        agrees_with_check(WALL, &sharp);
+    }
 }
 
 #[test]
@@ -555,10 +634,26 @@ group g \"G\" at (100,100) size (280,180) {\n\
 /// Every candidate's numbers are what `kashika check` reports once the statement is pasted.
 fn agrees_with_check(src: &str, s: &Suggestion) {
     assert!(!s.candidates.is_empty(), "no candidates for\n{src}");
+    agrees_with_check_in(src, &OPTS, s);
+}
+
+/// Each candidate's counts, crossing and transit points, length and segment count are what
+/// `kashika check` and the scene report once its statement is appended to `src`, and its
+/// corridor lies inside a free interval for its lane.
+fn agrees_with_check_in(src: &str, opts: &kashika_model::Options, s: &Suggestion) {
+    let errors = |d: &[kashika_diag::Diagnostic]| {
+        d.iter()
+            .filter(|d| d.severity == Severity::Error)
+            .map(|d| d.code)
+            .collect::<Vec<_>>()
+    };
+    let (base, diags) = kashika_model::compile_with(src, opts);
+    assert!(errors(&diags).is_empty(), "{diags:#?}");
+    let ctx = Ctx::new(&base);
     for c in &s.candidates {
-        let id = c.statement["line ".len()..].split(' ').next().unwrap();
-        let (scene, diags) = kashika_model::compile(&format!("{src}{}\n", c.statement));
-        assert!(diags.is_empty(), "{}: {diags:#?}", c.statement);
+        let id = c.statement.split(' ').nth(1).unwrap();
+        let (scene, diags) = kashika_model::compile_with(&format!("{src}{}\n", c.statement), opts);
+        assert!(errors(&diags).is_empty(), "{}: {diags:#?}", c.statement);
         let mine: Vec<_> = kashika_check::check(&scene)
             .into_iter()
             .filter(|d| d.elements.iter().any(|e| e.id == id))
@@ -578,7 +673,99 @@ fn agrees_with_check(src: &str, s: &Suggestion) {
             "{}: {mine:#?}",
             c.statement
         );
+        let facts = |code: &str, key: &str| {
+            let mut v: Vec<(String, [f64; 2])> = mine
+                .iter()
+                .filter(|d| d.code == code)
+                .map(|d| {
+                    let other = d.elements.iter().find(|e| e.id != id).unwrap();
+                    (other.id.clone(), d.point(key).unwrap())
+                })
+                .collect();
+            v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            v
+        };
+        let sorted = |v: Vec<(String, Pt)>| {
+            let mut v: Vec<(String, [f64; 2])> =
+                v.into_iter().map(|(id, p)| (id, [p.x, p.y])).collect();
+            v.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            v
+        };
+        assert_eq!(
+            sorted(c.crossed.iter().map(|x| (x.line.clone(), x.at)).collect()),
+            facts("cross", fact::AT),
+            "{}",
+            c.statement
+        );
+        assert_eq!(
+            sorted(
+                c.transited
+                    .iter()
+                    .map(|t| (t.group.clone(), t.at))
+                    .collect()
+            ),
+            facts("group-transit", fact::ENTRY),
+            "{}",
+            c.statement
+        );
+        let line = scene.lines.iter().find(|l| l.id == id).unwrap();
+        assert_eq!(
+            c.length,
+            kashika_geom::length(&line.path).round(),
+            "{}",
+            c.statement
+        );
+        let segments = match s.style {
+            Style::Corner | Style::Arc => {
+                let same = |a: Pt, b: Pt| a.x * b.x + a.y * b.y > 0.999;
+                let rounded = line
+                    .path
+                    .iter()
+                    .filter(|p| !same(p.start_dir(), p.end_dir()))
+                    .count();
+                let sharp = line
+                    .path
+                    .windows(2)
+                    .filter(|w| !same(w[0].end_dir(), w[1].start_dir()))
+                    .count();
+                1 + rounded + sharp
+            }
+            Style::Bezier => line.path.len(),
+        };
+        assert_eq!(c.segments, segments, "{}", c.statement);
+        if let Some(k) = &c.corridor {
+            assert!(
+                in_free_interval(&ctx, k, &line.path),
+                "{}: {k:?}",
+                c.statement
+            );
+        }
     }
+}
+
+/// Some straight piece of `path` runs along `k`'s axis inside its band, and the band lies
+/// inside a free interval for a run across that piece.
+fn in_free_interval(ctx: &Ctx, k: &Corridor, path: &[PathSeg]) -> bool {
+    let [lo, hi] = k.band;
+    let within = match k.axis {
+        Axis::X => (0.0, ctx.scene.size.0),
+        Axis::Y => (0.0, ctx.scene.size.1),
+    };
+    path.iter().any(|p| {
+        let PathSeg::Line { from, to } = *p else {
+            return false;
+        };
+        let (along, span) = match k.axis {
+            Axis::Y if (from.y - to.y).abs() < TOLERANCE => (from.y, (from.x, to.x)),
+            Axis::X if (from.x - to.x).abs() < TOLERANCE => (from.x, (from.y, to.y)),
+            _ => return false,
+        };
+        lo - TOLERANCE <= along
+            && along <= hi + TOLERANCE
+            && free_intervals(ctx, k.axis, span, within, &[])
+                .iter()
+                .any(|&(a, b)| a - TOLERANCE <= lo && hi <= b + TOLERANCE)
+    })
 }
 
 const DIAMOND: &str = "diagram \"d\" size (320,240)\n\
@@ -836,20 +1023,144 @@ box c at (380,60) size (100,60)\n";
     let mut r = req(src, "a.right", "c.left", Style::Corner);
     r.max = 10;
     let s = suggest(&r).unwrap();
-    let on_b = |c: &kashika_route::Candidate| c.statement.contains(" b.");
-    let score = |c: &kashika_route::Candidate| (c.crossings, c.near, c.segments, c.length);
-    assert!(
-        s.candidates.iter().any(on_b),
-        "a lane on b ties with lanes on a and c"
+    assert_eq!(
+        rows(&s),
+        [
+            "0 0 5 344 line a_c a.right -> x a.tr+(12,0) -> y a.tl+(0,-12) -> x c.tl+(-12,0) -> vh c.left end=arrow",
+            "0 0 5 344 line a_c a.right -> x a.tr+(12,0) -> y a.bl+(0,12) -> x c.tl+(-12,0) -> vh c.left end=arrow",
+            "0 0 5 344 line a_c a.right -> x a.tr+(12,0) -> y a.tl+(0,-12) -> x b.tr+(12,0) -> vh c.left end=arrow",
+            "0 0 5 344 line a_c a.right -> x a.tr+(12,0) -> y a.bl+(0,12) -> x b.tr+(12,0) -> vh c.left end=arrow",
+            "0 0 5 344 line a_c a.right -> x b.tl+(-12,0) -> y a.tl+(0,-12) -> x c.tl+(-12,0) -> vh c.left end=arrow",
+            "0 0 5 344 line a_c a.right -> x b.tl+(-12,0) -> y a.bl+(0,12) -> x c.tl+(-12,0) -> vh c.left end=arrow",
+            "0 0 5 344 line a_c a.right -> x b.tl+(-12,0) -> y a.tl+(0,-12) -> x b.tr+(12,0) -> vh c.left end=arrow",
+            "0 0 5 344 line a_c a.right -> x b.tl+(-12,0) -> y a.bl+(0,12) -> x b.tr+(12,0) -> vh c.left end=arrow",
+        ],
+        "equal scores, ordered by how many lanes sit on `b` rather than on the endpoint boxes"
     );
-    for (i, early) in s.candidates.iter().enumerate() {
-        for late in &s.candidates[i + 1..] {
-            assert!(
-                !(score(early) == score(late) && on_b(early) && !on_b(late)),
-                "{} ranks before the equally scored {}",
-                early.statement,
-                late.statement
+}
+
+const GAP: &str = "diagram \"g\" size (460,260)\n\
+box a at (20,100) size (100,40)\n\
+box top at (200,20) size (40,96)\n\
+box low at (200,127) size (40,113)\n\
+box b at (320,103) size (100,40)\n";
+
+#[test]
+fn a_clear_detour_outranks_a_shorter_simple_path_with_a_near_miss() {
+    let mut r = req(GAP, "a.right", "b.left", Style::Corner);
+    r.max = 50;
+    let s = suggest(&r).unwrap();
+    assert_eq!(
+        rows(&s),
+        [
+            "0 0 5 427 line a_b a.right -> x a.tr+(12,0) -> y top.tl+(0,-12) -> x b.tl+(-12,0) -> vh b.left end=arrow",
+            "0 0 5 427 line a_b a.right -> x a.tr+(12,0) -> y top.tl+(0,-12) -> x top.tr+(12,0) -> vh b.left end=arrow",
+            "0 0 5 427 line a_b a.right -> x top.tl+(-12,0) -> y top.tl+(0,-12) -> x b.tl+(-12,0) -> vh b.left end=arrow",
+            "0 0 5 427 line a_b a.right -> x top.tl+(-12,0) -> y top.tl+(0,-12) -> x top.tr+(12,0) -> vh b.left end=arrow",
+            "0 0 5 461 line a_b a.right -> x a.tr+(12,0) -> y low.bl+(0,12) -> x b.tl+(-12,0) -> vh b.left end=arrow",
+            "0 0 5 461 line a_b a.right -> x a.tr+(12,0) -> y low.bl+(0,12) -> x top.tr+(12,0) -> vh b.left end=arrow",
+            "0 0 5 461 line a_b a.right -> x top.tl+(-12,0) -> y low.bl+(0,12) -> x b.tl+(-12,0) -> vh b.left end=arrow",
+            "0 0 5 461 line a_b a.right -> x top.tl+(-12,0) -> y low.bl+(0,12) -> x top.tr+(12,0) -> vh b.left end=arrow",
+            "0 1 3 203 line a_b a.right -> x a.tr+(12,0) -> vh b.left end=arrow",
+            "0 1 3 203 line a_b a.right -> x b.tl+(-12,0) -> vh b.left end=arrow",
+            "0 1 3 203 line a_b a.right -> x top.tl+(-12,0) -> vh b.left end=arrow",
+            "0 1 3 203 line a_b a.right -> x top.tr+(12,0) -> vh b.left end=arrow",
+            "0 2 3 203 line a_b a.right -> hvh b.left end=arrow",
+        ],
+        "the 11px gap between `top` and `low` has no clear lane, so the clear paths go around \
+         both and outrank the shorter simple paths through it"
+    );
+    agrees_with_check(GAP, &s);
+}
+
+#[test]
+fn suggestions_are_deterministic_and_max_takes_a_prefix() {
+    let blocked = format!("{WALL}line blocker (160,10) -> (160,230)\n");
+    for (src, from, to, style) in [
+        (WALL, "a.top", "b.top", Style::Corner),
+        (WALL, "a.right", "b.left", Style::Arc),
+        (&blocked, "a.top", "b.top", Style::Corner),
+        (QUEUE, "orders.right", "db.top", Style::Corner),
+        (DIAG, "a.right", "b.left", Style::Bezier),
+        (GAP, "a.right", "b.left", Style::Corner),
+    ] {
+        let mut r = req(src, from, to, style);
+        r.max = 50;
+        let all = suggest(&r).unwrap();
+        assert_eq!(
+            format!("{all:?}"),
+            format!("{:?}", suggest(&r).unwrap()),
+            "{from} {to}"
+        );
+        for k in 1..=all.candidates.len() {
+            r.max = k;
+            let some = suggest(&r).unwrap();
+            assert_eq!(
+                format!("{:?}", some.candidates),
+                format!("{:?}", &all.candidates[..k]),
+                "{from} {to} --max {k}"
             );
         }
     }
+}
+
+/// Every golden input with two named boxes, routed from the first one's right side to the
+/// second one's left side. Inputs with errors, libraries among them, are skipped.
+#[test]
+fn golden_inputs_route_consistently_with_check() {
+    let mut inputs = Vec::new();
+    let mut dirs = vec![std::path::PathBuf::from(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../tests/golden"
+    ))];
+    while let Some(d) = dirs.pop() {
+        for e in std::fs::read_dir(&d).unwrap() {
+            let p = e.unwrap().path();
+            if p.is_dir() {
+                dirs.push(p);
+            } else if p.file_name().is_some_and(|n| n == "input.kash") {
+                inputs.push(p);
+            }
+        }
+    }
+    inputs.sort();
+    let mut routed = 0;
+    for path in inputs {
+        let src = std::fs::read_to_string(&path).unwrap();
+        let opts = kashika_model::Options {
+            path: Some(path.clone()),
+            ..kashika_model::Options::default()
+        };
+        let (scene, diags) = kashika_model::compile_with(&src, &opts);
+        if diags.iter().any(|d| d.severity == Severity::Error) {
+            continue;
+        }
+        let boxes: Vec<&str> = scene
+            .shapes
+            .iter()
+            .filter(|s| matches!(s.kind, kashika_model::ShapeKind::Box) && !s.id.contains('@'))
+            .map(|s| s.id.as_str())
+            .take(2)
+            .collect();
+        let [a, b] = boxes[..] else { continue };
+        let (from, to) = (format!("{a}.right"), format!("{b}.left"));
+        let r = Request {
+            src: &src,
+            from: Some(&from),
+            to: Some(&to),
+            style: Style::Corner,
+            line: None,
+            radius: 8.0,
+            max: 50,
+            opts: &opts,
+        };
+        let s = match suggest(&r) {
+            Ok(s) => s,
+            Err(Error::Usage(_)) => continue,
+            Err(e) => panic!("{}: {e:?}", path.display()),
+        };
+        agrees_with_check_in(&src, &opts, &s);
+        routed += 1;
+    }
+    assert!(routed >= 100, "only {routed} golden inputs routed");
 }

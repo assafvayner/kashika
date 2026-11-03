@@ -429,13 +429,19 @@ fn directions_ok(line: &Line, from: &Endpoint, to: &Endpoint, style: Style) -> b
 /// Cosine of the largest angle, about 2.5°, between a path's end and a side's normal.
 pub(crate) const SQUARE: f64 = 0.999;
 
+/// Straight runs: one more than the corners, rounded (`Quad`) or, at `radius=0`, sharp.
 fn segments(path: &[PathSeg], style: Style) -> usize {
     match style {
         Style::Arc => {
-            1 + path
+            let rounded = path
                 .iter()
                 .filter(|s| matches!(s, PathSeg::Quad { .. }))
-                .count()
+                .count();
+            let sharp = path
+                .windows(2)
+                .filter(|w| matches!(w, [PathSeg::Line { .. }, PathSeg::Line { .. }]))
+                .count();
+            1 + rounded + sharp
         }
         Style::Corner | Style::Bezier => path.len(),
     }

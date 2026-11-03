@@ -1,0 +1,4 @@
+diagram "n" size (300,200)
+box a at (20,20) size (40,40)
+box b at (220,20) size (40,40)
+box c at (100,76) size (40,40)
