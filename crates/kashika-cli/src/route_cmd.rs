@@ -99,14 +99,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
             ExitCode::from(2)
         }
         Err(Error::Input(mut diags)) => {
-            let opts = report::Opts {
-                max: 50,
-                show_suppressed: false,
-                summary: false,
-                metrics: None,
-                deferred: None,
-                omitted: &[],
-            };
+            let opts = report::Opts::bare();
             crate::out!("{}", report::text(&name, &src, &mut diags, &opts, None));
             ExitCode::from(2)
         }

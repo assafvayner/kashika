@@ -12,18 +12,8 @@ pub fn run(file: &str, check: bool, stdin_name: Option<&str>) -> ExitCode {
     let file = file.as_str();
     match kashika_syntax::format(&src) {
         Err(mut diags) => {
-            let opts = crate::report::Opts {
-                max: 50,
-                show_suppressed: false,
-                summary: false,
-                metrics: None,
-                deferred: None,
-                omitted: &[],
-            };
-            crate::out!(
-                "{}",
-                crate::report::text(file, &src, &mut diags, &opts, None)
-            );
+            let opts = report::Opts::bare();
+            crate::out!("{}", report::text(file, &src, &mut diags, &opts, None));
             ExitCode::from(2)
         }
         Ok(out) if stdin && !check => {
