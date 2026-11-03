@@ -45,3 +45,8 @@ usvg.workspace = true
 name = "golden"
 path = "tests/golden/main.rs"
 harness = false
+
+[[test]]
+name = "snapshots"
+path = "tests/snapshots.rs"
+harness = false

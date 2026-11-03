@@ -1,0 +1,6 @@
+route
+-
+a.right
+b.left
+--stdin-name
+diagrams/pair.kash

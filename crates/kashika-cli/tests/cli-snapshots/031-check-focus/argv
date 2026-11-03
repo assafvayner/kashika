@@ -1,0 +1,4 @@
+check
+$FIXTURES/mistakes.kash
+--focus
+a,l2

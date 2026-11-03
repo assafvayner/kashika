@@ -1,0 +1,4 @@
+check
+$FIXTURES/basic.kash
+--format
+json

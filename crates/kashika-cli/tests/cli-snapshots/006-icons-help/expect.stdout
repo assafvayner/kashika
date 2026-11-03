@@ -1,0 +1,11 @@
+List bundled icons and the importable icons and shapes in directories
+
+Usage: kashika icons [OPTIONS] [DIRS]...
+
+Arguments:
+  [DIRS]...  Directories to scan (default: the KASHIKA_ICON_PATH entries)
+
+Options:
+      --search <SEARCH>  Only list entries whose name, path or keyword contains this term; exits 1 when nothing matches
+      --format <FORMAT>  [default: text] [possible values: text, json]
+  -h, --help             Print help

@@ -1,0 +1,4 @@
+diagram "Walled" size (300,200)
+box a at (20,80) size (100,40)
+box c at (122,20) size (40,160)
+box b at (220,80) size (60,40)

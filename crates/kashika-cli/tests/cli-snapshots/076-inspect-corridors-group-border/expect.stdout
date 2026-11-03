@@ -1,0 +1,4 @@
+corridors (0,0)-(100,100)
+  horizontal, free y: 0..100
+  vertical, free x: 0..100
+0 errors, 0 warnings

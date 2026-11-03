@@ -1,0 +1,5 @@
+route
+$FIXTURES/route.kash
+a.right
+->
+b.left

@@ -1,0 +1,5 @@
+shape cyl {
+  path "M 0 0 L 1 0 L 1 1 Z"
+}
+style svc { fill=#eef stroke=nope }
+style svc { fill=#000 }

@@ -1,0 +1,12 @@
+Print the exact width and height of a label, with markup applied
+
+Usage: kashika measure [OPTIONS] <TEXT>...
+
+Arguments:
+  <TEXT>...  Texts to measure, with markup and `\n` escapes as in a .kash string; one result per text
+
+Options:
+      --size <SIZE>      Font size in px [default: 14]
+      --weight <WEIGHT>  [default: normal] [possible values: normal, bold]
+      --format <FORMAT>  [default: text] [possible values: text, json]
+  -h, --help             Print help

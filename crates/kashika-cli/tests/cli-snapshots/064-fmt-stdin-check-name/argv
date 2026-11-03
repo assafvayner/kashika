@@ -1,0 +1,5 @@
+fmt
+-
+--check
+--stdin-name
+diagrams/small.kash

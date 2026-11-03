@@ -65,6 +65,22 @@ KASHIKA_BLESS=1 cargo test -p kashika --test golden -- coverage/map
 
 Review the new files (open `out.svg` in a browser) and commit them with `tests/golden/COVERAGE.md`. After an intended behavior change, bless the affected cases with a path filter and review `git diff tests/golden`. A mismatch prints a unified diff and saves the actual file under the cargo target directory's `tmp/golden-actual/`. When a render case mismatches or is blessed with a new `out.svg`, the run also writes `tmp/golden-review.html` there, showing each such case's expected and actual SVG side by side; open it to review. The `coverage/*` tests fail when a diagnostic code, spec section, built-in shape, bundled icon, attribute key (per statement), line end, `label-side` value or segment kind has no case, and when a code in `NOT_REPORTED` (`coverage.rs`) starts being reported.
 
+## Adding a CLI snapshot
+
+`crates/kashika-cli/tests/cli-snapshots/` pins the exact stdout, stderr and exit code of the `kashika` binary: help texts, text and JSON reports, footers and every error path. `cargo test -p kashika --test snapshots` (harness in `crates/kashika-cli/tests/snapshots.rs`) runs each `<NNN-name>/` directory as one case, with the case directory as the working directory and `KASHIKA_ICON_PATH` unset:
+
+- `argv`: one argument per line (an empty line is an empty argument). `$FIXTURES` expands to `crates/kashika-cli/tests/fixtures`, `$TMP` to a fresh temporary directory and `$CASE` to the case directory.
+- `stdin` (optional): fed to the process; without it stdin is empty.
+- `setup` (optional): `copy <from> <to>`, `mkdir <path>` or `chmod <octal> <path>` lines, run first, with the same variables. A case with `chmod` runs on Unix only.
+- Inputs such as `input.kash` sit next to `argv`; write outputs under `$TMP`, never into the case.
+- `expect.stdout`, `expect.stderr`, `expect.code`: written by bless. Before comparison, the version in `kashika <version>` and the JSON `"tool"` field becomes `<tool>`, the temporary, fixtures and case paths become `$TMP`, `$FIXTURES` and `$CASE`, and `(os error N)` becomes `(os error)`.
+
+```sh
+KASHIKA_BLESS=1 cargo test -p kashika --test snapshots -- 042-check-unreadable
+```
+
+Read every blessed `expect.*` file before committing it. A mismatch prints a unified diff per file.
+
 ## Adding a built-in asset
 
 Each kind has one registry. The `ref` pages print their name lists from it through placeholders in `crates/kashika-cli/src/ref_cmd.rs` (`{shapes}`, `{icons}`, `{styles}`, `{markers}`, and the `{builtins}` table of unit paths), so the pages need no edit. `spec_and_ref_name_every_builtin_asset` (`crates/kashika-cli/tests/ref.rs`) fails until `docs/spec/language.md` and the `ref` pages name the new asset in code (`` `name` ``).

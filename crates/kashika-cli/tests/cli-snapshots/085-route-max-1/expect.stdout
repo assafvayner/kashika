@@ -1,0 +1,2 @@
+#1  crossings=0 transits=0 near=0 segments=5 length=384px  via corridor y 0..34
+    line a_b a.right -> x a.tr+(12,0) -> y wall.tl+(0,-12) -> x b.tl+(-12,0) -> vh b.left end=arrow

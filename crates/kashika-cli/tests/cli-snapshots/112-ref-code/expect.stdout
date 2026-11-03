@@ -1,0 +1,5 @@
+# cross (warn)
+
+Trigger: two lines intersect away from a shared endpoint.
+
+Fix: reroute via a free interval.

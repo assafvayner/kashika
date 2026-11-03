@@ -1,0 +1,3 @@
+diagram "Pair" size (300,200)
+box a "A" at (20,20) size (60,40)
+box b "B" at (200,20) size (60,40)

@@ -1,0 +1,6 @@
+check
+$FIXTURES/crossing.kash
+--format
+json
+--summary
+--show-suppressed

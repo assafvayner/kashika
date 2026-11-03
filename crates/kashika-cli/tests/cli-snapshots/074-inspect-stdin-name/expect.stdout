@@ -1,0 +1,5 @@
+canvas 200x100
+box a "A" (line 2)
+  bbox (20,20)-(80,60)
+  anchors top (50,20) bottom (50,60) left (20,40) right (80,40) center (50,40) tl (20,20) tr (80,20) bl (20,60) br (80,60)
+0 errors, 0 warnings

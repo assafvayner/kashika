@@ -1,0 +1,5 @@
+render
+$FIXTURES/typo.kash
+-o
+$TMP/out.svg
+--force

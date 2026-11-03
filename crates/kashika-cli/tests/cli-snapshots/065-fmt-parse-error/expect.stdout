@@ -1,0 +1,6 @@
+$TMP/bad.kash:2:7: error[parse]: unterminated string
+    2 | box a "A at (20,20) size (60,40)
+      = help: close the string with `"` before the end of the line
+$TMP/bad.kash:2:33: error[parse]: expected `at`, found end of line
+    2 | box a "A at (20,20) size (60,40)
+2 errors, 0 warnings

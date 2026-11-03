@@ -1,0 +1,8 @@
+error: unexpected argument '->' found
+
+  tip: to pass '->' as a value, use '-- ->'
+
+Usage: kashika route [OPTIONS] <FILE> [REST]...
+
+For more information, try '--help'.
+help: `route` takes the two points as separate arguments, with no `->`: `kashika route <file> a.right b.left`
