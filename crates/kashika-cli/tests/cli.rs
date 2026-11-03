@@ -937,13 +937,14 @@ fn library_validates_and_applies_focus() {
 fn closed_stdout_does_not_panic() {
     use std::io::Read;
     use std::process::{Command, Stdio};
+    let (reader, writer) = std::io::pipe().unwrap();
+    drop(reader);
     let mut child = Command::new(env!("CARGO_BIN_EXE_kashika"))
         .arg("ref")
-        .stdout(Stdio::piped())
+        .stdout(writer)
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    drop(child.stdout.take());
     let status = child.wait().unwrap();
     let mut err = String::new();
     child
