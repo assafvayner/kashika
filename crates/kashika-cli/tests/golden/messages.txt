@@ -7,6 +7,7 @@
 `#` does not start a comment
 unexpected character `
 unexpected non-ASCII text `
+unexpected non-ASCII whitespace `
 exponent notation is not supported
 unterminated string
 unknown escape `

@@ -190,6 +190,7 @@ impl Lexer {
                     };
                     self.push(tok, line, col);
                 }
+                c if is_unicode_space(c) => self.unicode_space(line, col),
                 other if !other.is_ascii() => self.non_ascii(line, col),
                 other => {
                     self.bump();
@@ -218,6 +219,7 @@ impl Lexer {
         while let Some(c) = self
             .peek(0)
             .filter(|c| !c.is_ascii() || c.is_ascii_alphanumeric() || matches!(c, '_' | '-'))
+            .filter(|c| !is_unicode_space(*c))
         {
             if c == '-' && matches!(self.peek(1), Some('>' | '(')) {
                 break;
@@ -237,6 +239,22 @@ impl Lexer {
                 format!("unexpected non-ASCII text `{run}`"),
             )
             .with_help(help),
+        );
+    }
+
+    fn unicode_space(&mut self, line: u32, col: u32) {
+        let mut points = Vec::new();
+        while let Some(c) = self.peek(0).filter(|c| is_unicode_space(*c)) {
+            points.push(format!("U+{:04X}", c as u32));
+            self.bump();
+        }
+        self.diags.push(
+            Diagnostic::error(
+                "parse",
+                Span::new(line, col, self.line, self.col),
+                format!("unexpected non-ASCII whitespace `{}`", points.join(" ")),
+            )
+            .with_help("replace it with a space"),
         );
     }
 
@@ -429,6 +447,10 @@ impl Lexer {
     }
 }
 
+fn is_unicode_space(c: char) -> bool {
+    !c.is_ascii() && (c.is_whitespace() || matches!(c, '\u{200b}' | '\u{feff}'))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -589,5 +611,18 @@ mod tests {
         let (_, d) = lex("box /* never closed");
         assert_eq!(d.len(), 1);
         assert_eq!(d[0].message, "unterminated block comment");
+    }
+
+    #[test]
+    fn unicode_whitespace_is_one_error_between_identifiers() {
+        let (t, d) = lex("box\u{a0}a");
+        assert_eq!(d.len(), 1, "{d:#?}");
+        assert_eq!(d[0].code, "parse");
+        assert_eq!(d[0].message, "unexpected non-ASCII whitespace `U+00A0`");
+        assert_eq!(d[0].help, vec!["replace it with a space".to_string()]);
+        let s = &d[0].span;
+        assert_eq!((s.line, s.col, s.end_line, s.end_col), (1, 4, 1, 5));
+        let kinds: Vec<_> = t.into_iter().map(|t| t.tok).collect();
+        assert_eq!(kinds, vec![id("box"), id("a"), Tok::Eof]);
     }
 }
