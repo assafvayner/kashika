@@ -35,9 +35,10 @@ pub enum Style {
 pub enum Error {
     /// Bad arguments; the CLI exits 3.
     Usage(String),
-    /// The input has errors (then with everything `check` reports), or `<from>` or `<to>`
-    /// doesn't resolve; the CLI exits 2.
-    Diagnostics(Vec<Diagnostic>),
+    /// The input has errors; everything `check` reports on it. The CLI exits 2.
+    Input(Vec<Diagnostic>),
+    /// `<from>` or `<to>` doesn't resolve; the errors on them. The CLI exits 2.
+    Endpoints(Vec<Diagnostic>),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -111,7 +112,7 @@ pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
     if diags.iter().any(|d| d.severity == Severity::Error) {
         diags.extend(kashika_check::check(&scene));
         kashika_diag::sort(&mut diags);
-        return Err(Error::Diagnostics(diags));
+        return Err(Error::Input(diags));
     }
     let src = Source::new(req.src);
     let target = req

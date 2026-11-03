@@ -1170,22 +1170,3 @@ fn icon_path_lists_directories_in_priority_order() {
     assert_eq!(render(&[&first, &second]), only_first);
     assert_eq!(render(&[&second, &first]), only_second);
 }
-
-#[test]
-fn route_reports_input_errors_like_check() {
-    let src = format!(
-        "{}/tests/cli-snapshots/083-route-errors/input.kash",
-        env!("CARGO_MANIFEST_DIR")
-    );
-    let run = |args: &[&str]| {
-        let out = kashika().args(args).output().unwrap();
-        assert_eq!(out.status.code(), Some(2));
-        String::from_utf8(out.stdout).unwrap()
-    };
-    let check = run(&["check", &src]);
-    let route = run(&["route", &src, "api.right", "db.left"]);
-    let (body, metrics) = check.trim_end().rsplit_once(" · ").unwrap();
-    assert!(metrics.starts_with("crossings="), "{metrics}");
-    assert!(body.ends_with("1 error, 1 warning"), "{body}");
-    assert_eq!(route, format!("{body}\n"));
-}

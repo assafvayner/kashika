@@ -88,7 +88,7 @@ fn endpoints_parse_like_points_in_a_line() {
 fn bad_points_report_diagnostics_or_usage() {
     let opts = Options::default();
     match resolve_endpoints(WALL, "a.tpo", "b.top", &opts) {
-        Err(Error::Diagnostics(d)) => assert_eq!(d[0].code, "unknown-anchor"),
+        Err(Error::Endpoints(d)) => assert_eq!(d[0].code, "unknown-anchor"),
         other => panic!("{other:?}"),
     }
     for (from, to) in [

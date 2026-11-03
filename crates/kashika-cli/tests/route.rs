@@ -319,7 +319,7 @@ fn input_with_errors_is_reported_like_check() {
     let f = dir.path().join("e.kash");
     std::fs::write(
         &f,
-        "diagram \"e\" size (200,100)\nbox a at (10,10) size (40,20)\nbox b at (100,10) size (40,20)\nline a.rigth -> b.left\n",
+        "diagram \"e\" size (200,100)\nbox a at (10,10) size (40,20)\nbox b at (100,10) size (40,20)\nline a.rigth -> b.left\nline (30,0) -> v 100\n",
     )
     .unwrap();
     let f = f.to_str().unwrap();
@@ -332,12 +332,11 @@ fn input_with_errors_is_reported_like_check() {
     assert_eq!(check.status.code(), Some(2));
     let route = String::from_utf8(route.stdout).unwrap();
     assert!(route.contains("error[unknown-anchor]"), "{route}");
-    assert_eq!(
-        route,
-        String::from_utf8(check.stdout)
-            .unwrap()
-            .replace(" · crossings=0 wire=0px", "")
-    );
+    let check = String::from_utf8(check.stdout).unwrap();
+    let (body, metrics) = check.trim_end().rsplit_once(" · ").unwrap();
+    assert!(metrics.starts_with("crossings="), "{metrics}");
+    assert!(body.ends_with("1 error, 1 warning"), "{body}");
+    assert_eq!(route, format!("{body}\n"));
 
     let out = kashika()
         .args(["route", f, "a.right", "b.left", "--format", "json"])
@@ -347,8 +346,9 @@ fn input_with_errors_is_reported_like_check() {
     let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
     assert_eq!(v["schema"], "kashika.route/1");
     assert_eq!(v["input"]["name"], f);
-    assert_eq!(v["diagnostics"].as_array().unwrap().len(), 1);
+    assert_eq!(v["diagnostics"].as_array().unwrap().len(), 2);
     assert_eq!(v["diagnostics"][0]["code"], "unknown-anchor");
+    assert_eq!(v["diagnostics"][1]["code"], "through");
     assert!(v.get("candidates").is_none());
 }
 

@@ -2,7 +2,6 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::Args;
-use kashika_diag::Diagnostic;
 use kashika_geom::fmt_num as num;
 use kashika_route::{Error, Request, Style, Suggestion};
 
@@ -87,36 +86,36 @@ pub fn run(a: &RouteArgs) -> ExitCode {
     };
     match kashika_route::suggest(&req) {
         Err(Error::Usage(msg)) => crate::tool_error(a.format, SCHEMA, &msg),
-        Err(Error::Diagnostics(mut diags)) => {
-            match a.format {
-                Format::Json => crate::outln!(
-                    "{}",
-                    serde_json::json!({
-                        "schema": SCHEMA,
-                        "tool": env!("CARGO_PKG_VERSION"),
-                        "input": { "name": name },
-                        "diagnostics": diags,
-                    })
-                ),
-                Format::Text if in_input(&src, &diags) => {
-                    let opts = report::Opts {
-                        max: 50,
-                        show_suppressed: false,
-                        summary: false,
-                        metrics: None,
-                        deferred: None,
-                        omitted: &[],
-                    };
-                    crate::out!("{}", report::text(&name, &src, &mut diags, &opts, None));
-                }
-                Format::Text => {
-                    let name = term::line(&name);
-                    for d in &diags {
-                        crate::outln!("{name}: error[{}]: {}", d.code, term::line(&d.message));
-                        for h in &d.help {
-                            crate::outln!("      = help: {}", term::line(h));
-                        }
-                    }
+        Err(Error::Input(diags) | Error::Endpoints(diags)) if a.format == Format::Json => {
+            crate::outln!(
+                "{}",
+                serde_json::json!({
+                    "schema": SCHEMA,
+                    "tool": env!("CARGO_PKG_VERSION"),
+                    "input": { "name": name },
+                    "diagnostics": diags,
+                })
+            );
+            ExitCode::from(2)
+        }
+        Err(Error::Input(mut diags)) => {
+            let opts = report::Opts {
+                max: 50,
+                show_suppressed: false,
+                summary: false,
+                metrics: None,
+                deferred: None,
+                omitted: &[],
+            };
+            crate::out!("{}", report::text(&name, &src, &mut diags, &opts, None));
+            ExitCode::from(2)
+        }
+        Err(Error::Endpoints(diags)) => {
+            let name = term::line(&name);
+            for d in &diags {
+                crate::outln!("{name}: error[{}]: {}", d.code, term::line(&d.message));
+                for h in &d.help {
+                    crate::outln!("      = help: {}", term::line(h));
                 }
             }
             ExitCode::from(2)
@@ -141,13 +140,6 @@ pub fn run(a: &RouteArgs) -> ExitCode {
             ExitCode::from(u8::from(s.candidates.is_empty()))
         }
     }
-}
-
-/// Whether the diagnostics are on the input's own lines, rather than on the `<from> <to>`
-/// points, which resolve as a statement past its end.
-fn in_input(src: &str, diags: &[Diagnostic]) -> bool {
-    let lines = src.lines().count();
-    diags.iter().all(|d| d.span.line as usize <= lines)
 }
 
 fn text(s: &Suggestion) -> String {

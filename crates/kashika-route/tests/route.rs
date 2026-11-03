@@ -550,7 +550,7 @@ line w (30,0) -> v 100\n";
     assert!(checked.iter().any(|d| d.code == "unknown-anchor"));
     assert!(checked.iter().any(|d| d.severity == Severity::Warn));
     let diags = |r: Result<Suggestion, Error>| match r {
-        Err(Error::Diagnostics(d)) => d,
+        Err(Error::Input(d)) => d,
         other => panic!("expected diagnostics, got {other:?}"),
     };
     assert_eq!(
