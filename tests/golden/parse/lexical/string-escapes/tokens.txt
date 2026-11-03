@@ -1,0 +1,33 @@
+1:14-1:15  Newline
+2:21-2:22  Newline
+3:41-3:42  Newline
+4:1-4:8  Ident "diagram"
+4:9-4:18  Str "escapes"
+4:19-4:23  Ident "size"
+4:24-4:25  LParen
+4:25-4:28  Num 300
+4:28-4:29  Comma
+4:29-4:32  Num 160
+4:32-4:33  RParen
+4:33-4:34  Newline
+5:1-5:4  Ident "box"
+5:5-5:6  Ident "a"
+5:7-5:39  Str "say \"hi\"\\\\ok\nline two \\* \\`"
+5:40-5:42  Ident "at"
+5:43-5:44  LParen
+5:44-5:46  Num 10
+5:46-5:47  Comma
+5:47-5:49  Num 10
+5:49-5:50  RParen
+5:51-5:55  Ident "size"
+5:56-5:57  LParen
+5:57-5:60  Num 280
+5:60-5:61  Comma
+5:61-5:63  Num 80
+5:63-5:64  RParen
+5:64-5:65  Newline
+6:1-6:1  Eof
+comments:
+1:1-1:14  "// spec: 2, 6"
+2:1-2:21  "// dump: ast, tokens"
+3:1-3:41  "// Every allowed escape: \\\" \\\\ \\n \\* \\`."

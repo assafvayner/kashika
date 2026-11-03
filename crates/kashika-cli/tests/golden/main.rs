@@ -170,8 +170,11 @@ fn run_render(case: &Case) -> Result<Vec<Output>, String> {
         }
         let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
         if ext == "svg" {
-            let (scene, _) = kashika_model::compile_with(&case.src, &options(case));
-            let problems = svg_invariants::check(&String::from_utf8_lossy(&bytes), &scene);
+            let problems = svg_invariants::check_source(
+                &String::from_utf8_lossy(&bytes),
+                &case.src,
+                &options(case),
+            );
             if !problems.is_empty() {
                 return Err(format!(
                     "{}: svg invariants:\n  {}",

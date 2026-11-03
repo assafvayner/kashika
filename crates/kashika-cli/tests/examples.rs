@@ -92,9 +92,11 @@ fn example_renders_are_committed_and_current() {
                     path: Some(src.clone()),
                     ..Default::default()
                 };
-                let (scene, _) =
-                    kashika_model::compile_with(&std::fs::read_to_string(&src).unwrap(), &opts);
-                let problems = svg_invariants::check(&String::from_utf8_lossy(&fresh), &scene);
+                let problems = svg_invariants::check_source(
+                    &String::from_utf8_lossy(&fresh),
+                    &std::fs::read_to_string(&src).unwrap(),
+                    &opts,
+                );
                 assert!(
                     problems.is_empty(),
                     "examples/{name}/{name}.svg breaks svg invariants:\n  {}",

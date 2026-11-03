@@ -1,9 +1,9 @@
 //! Checks every rendered SVG must pass, whatever the case draws.
 
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 use base64::Engine;
-use kashika_model::Scene;
+use kashika_model::{Options, Scene};
 use kashika_text::PlacedLine;
 use roxmltree::Document;
 
@@ -51,19 +51,29 @@ pub fn check(svg: &str, scene: &Scene) -> Vec<String> {
             problems.push(format!("<image> href is not a data URI: {href}"));
         }
     }
-    let labels: HashSet<&str> = doc
-        .descendants()
-        .filter_map(|n| n.attribute("aria-label"))
-        .collect();
+    let mut labels: HashMap<&str, usize> = HashMap::new();
+    for label in doc.descendants().filter_map(|n| n.attribute("aria-label")) {
+        *labels.entry(label).or_default() += 1;
+    }
     for line in scene_lines(scene) {
         let plain: String = line.runs.iter().map(|r| r.text.as_str()).collect();
-        if !plain.trim().is_empty() && !labels.contains(plain.as_str()) {
-            problems.push(format!(
+        if plain.trim().is_empty() {
+            continue;
+        }
+        match labels.get_mut(plain.as_str()) {
+            Some(n) if *n > 0 => *n -= 1,
+            _ => problems.push(format!(
                 "text line {plain:?} has no aria-label in the output"
-            ));
+            )),
         }
     }
     problems
+}
+
+/// Compiles `src` with `opts` and checks `svg`, its render.
+pub fn check_source(svg: &str, src: &str, opts: &Options) -> Vec<String> {
+    let (scene, _) = kashika_model::compile_with(src, opts);
+    check(svg, &scene)
 }
 
 fn scene_lines(scene: &Scene) -> impl Iterator<Item = &PlacedLine> {
