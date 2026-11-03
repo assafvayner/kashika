@@ -8,7 +8,7 @@
 - `route` on a file with errors reports them, and its warnings, like `check` and exits 2 instead of suggesting paths; `--line` on a broken line now shows the real diagnostics.
 - A closed stdout or stderr (`kashika check f.kash | head -1`) no longer panics; the exit code is unchanged.
 - `inspect --ports` and the `port-crowding` help name the side a line leaves from when two sides' anchors land on the same outline point (such as on a `diamond`).
-- An imported library that is not valid UTF-8 is a `file` error saying it is not valid UTF-8.
+- An input file or imported library that is not valid UTF-8 is reported as `cannot read <file>: not valid UTF-8` (a `file` error for a library).
 - `route`: lanes beside a contained SVG-file shape follow its anchor frame, and `arc --radius 0` counts its sharp corners as segments when ranking.
 
 ## 0.1.0-dev0

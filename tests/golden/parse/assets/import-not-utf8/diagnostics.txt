@@ -1,1 +1,1 @@
-error[file] 4:8-4:22: `lib/bad.kash` is not valid UTF-8
+error[file] 4:8-4:22: cannot read `lib/bad.kash`: not valid UTF-8

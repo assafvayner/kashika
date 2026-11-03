@@ -476,11 +476,19 @@ pub(crate) fn read_input(file: &str, stdin_name: Option<&str>) -> Result<(String
         let mut s = String::new();
         std::io::stdin()
             .read_to_string(&mut s)
-            .map_err(|e| format!("cannot read stdin: {e}"))?;
+            .map_err(|e| cannot_read("stdin", &e))?;
         Ok((stdin_name.unwrap_or("<stdin>").to_string(), s))
     } else {
-        let s = std::fs::read_to_string(file).map_err(|e| format!("cannot read {file}: {e}"))?;
+        let s = std::fs::read_to_string(file).map_err(|e| cannot_read(file, &e))?;
         Ok((file.to_string(), s))
+    }
+}
+
+fn cannot_read(what: &str, e: &std::io::Error) -> String {
+    if e.kind() == std::io::ErrorKind::InvalidData {
+        format!("cannot read {what}: not valid UTF-8")
+    } else {
+        format!("cannot read {what}: {e}")
     }
 }
 
