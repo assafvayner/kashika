@@ -115,3 +115,23 @@ fn pieces_flatten_curves_and_keep_indices() {
     assert!(ps.len() > 2 && ps[1..].iter().all(|x| x.2 == 1));
     assert_eq!(ps.last().unwrap().1, p(20.0, 10.0));
 }
+
+#[test]
+fn polygon_overlap_handles_a_non_convex_notch() {
+    let l = [
+        p(0.0, 0.0),
+        p(20.0, 0.0),
+        p(20.0, 10.0),
+        p(10.0, 10.0),
+        p(10.0, 20.0),
+        p(0.0, 20.0),
+    ];
+    let notch = rect_polygon(Rect::new(10.0, 10.0, 10.0, 10.0));
+    assert!(!polygons_overlap(&l, &notch));
+    assert!(!polygons_overlap(&notch, &l));
+    let inner = rect_polygon(Rect::new(12.0, 12.0, 5.0, 5.0));
+    assert!(!polygons_overlap(&l, &inner));
+    let poking = rect_polygon(Rect::new(8.0, 12.0, 5.0, 5.0));
+    assert!(polygons_overlap(&l, &poking));
+    assert!(polygons_overlap(&poking, &l));
+}

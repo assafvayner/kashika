@@ -13,3 +13,6 @@ include = ["src/**/*", "LICENSE"]
 
 [dependencies]
 serde.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true

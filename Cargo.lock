@@ -552,6 +552,7 @@ dependencies = [
 name = "kashika-geom"
 version = "0.1.0-dev0"
 dependencies = [
+ "proptest",
  "serde",
 ]
 
