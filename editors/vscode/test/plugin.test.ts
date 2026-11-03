@@ -61,3 +61,23 @@ test("cached renders each source once", () => {
   r(CLEAN);
   assert.equal(calls, 1);
 });
+
+test("cached keeps recently used sources", () => {
+  let calls = 0;
+  const r = cached((src) => {
+    calls++;
+    return render(src);
+  });
+  r(CLEAN);
+  for (let i = 0; i < 63; i++) r(`diagram "d${i}" size (10,10)\n`);
+  r(CLEAN);
+  r(`diagram "new" size (10,10)\n`);
+  r(CLEAN);
+  assert.equal(calls, 65);
+});
+
+test("explains a fence with nothing to render", () => {
+  const m = new MarkdownIt();
+  kashikaPlugin(m, () => ({ svg: null, errors: 0, warnings: 0, diagnostics: [] }));
+  assert.match(m.render("```kashika\nstyle s { fill=\"#fff\" }\n```\n"), /nothing to render/);
+});

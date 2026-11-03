@@ -40,7 +40,7 @@
     },
     "keywords": {
       "name": "keyword.other.kashika",
-      "match": "\\b(at|size|from|to|via|as|path|ortho|curve|hvh|vhv|hv|vh|h|v|x|y)\\b(?![=.\\w-])"
+      "match": "(?<![\\w-])\\b(at|size|from|to|via|as|path|ortho|curve|hvh|vhv|hv|vh|h|v|x|y)\\b(?![=.\\w-])"
     },
     "attribute": {
       "match": "\\b([A-Za-z_][\\w-]*)\\s*(=)",

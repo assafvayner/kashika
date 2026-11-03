@@ -2,7 +2,7 @@
   "name": "kashika",
   "displayName": "Kashika",
   "description": "Kashika diagrams in the Markdown preview, and syntax highlighting for .kash files",
-  "version": "0.1.0-dev0",
+  "version": "0.1.0",
   "publisher": "assafvayner",
   "license": "Apache-2.0",
   "repository": {

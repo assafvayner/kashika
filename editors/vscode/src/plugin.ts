@@ -36,8 +36,10 @@ export function cached(render: Render): Render {
       if (cache.size >= CACHE_LIMIT) {
         cache.delete(cache.keys().next().value!);
       }
-      cache.set(src, hit);
+    } else {
+      cache.delete(src);
     }
+    cache.set(src, hit);
     return hit;
   };
 }
@@ -72,7 +74,7 @@ function block(line: number, img: string, notes: string): string {
 function diagnostics(md: MarkdownIt, r: Rendered, fence: number): string {
   const shown = r.diagnostics.filter((d) => !d.suppressed);
   if (shown.length === 0) {
-    return "";
+    return r.svg === null ? failure(md, "kashika: nothing to render (no diagram statement)") : "";
   }
   const items = shown.map((d) => {
     const line = fence + 1 + d.span.line;
