@@ -45,6 +45,8 @@ fn main() {
             run_case(&case)
         }));
     }
+    let prefix_root = root.clone();
+    trials.push(Trial::test("fmt/prefixes", move || prefixes(&prefix_root)));
     let cases = libtest_mimic::run(&args, trials);
     let coverage = libtest_mimic::run(&args, coverage::trials());
     if let Some(page) = review::write() {
@@ -56,11 +58,65 @@ fn main() {
 }
 
 fn run_case(case: &Case) -> Result<(), Failed> {
+    check_fmt(case)?;
     let outputs = match case.suite {
         Suite::Parse => run_parse(case)?,
         Suite::Render => run_render(case)?,
     };
     check_outputs(case, &outputs)
+}
+
+/// When fmt accepts the input, its output formats to itself, keeps every token's and
+/// comment's text, and parses to the same AST up to spans.
+fn check_fmt(case: &Case) -> Result<(), String> {
+    let Ok(once) = kashika_syntax::format(&case.src) else {
+        return Ok(());
+    };
+    let twice = kashika_syntax::format(&once)
+        .map_err(|_| format!("{}: fmt output no longer parses", case.name))?;
+    if once != twice {
+        return Err(format!(
+            "{}: fmt is not idempotent on this input",
+            case.name
+        ));
+    }
+    if dump::token_texts(&case.src) != dump::token_texts(&once) {
+        return Err(format!("{}: fmt changed token or comment text", case.name));
+    }
+    let (before, _) = kashika_syntax::parse(&case.src);
+    let (after, _) = kashika_syntax::parse(&once);
+    if dump::ast(&before, true) != dump::ast(&after, true) {
+        return Err(format!("{}: fmt changed the AST (spans aside)", case.name));
+    }
+    Ok(())
+}
+
+/// Every third prefix of every golden input formats (which parses it first) without a
+/// panic or the formatter's token guard firing. Every prefix takes about 35 s in a debug
+/// build, so the stride is 3.
+fn prefixes(root: &Path) -> Result<(), Failed> {
+    for dir in case::discover(root) {
+        let src = std::fs::read_to_string(dir.join("input.kash")).map_err(|e| e.to_string())?;
+        let ends = src
+            .char_indices()
+            .map(|(i, _)| i)
+            .step_by(3)
+            .chain([src.len()]);
+        for end in ends {
+            let errors = kashika_syntax::format(&src[..end])
+                .err()
+                .unwrap_or_default();
+            if let Some(d) = errors
+                .iter()
+                .find(|d| d.message.starts_with("internal error"))
+            {
+                return Err(
+                    format!("{}: prefix of {end} bytes: {}", dir.display(), d.message).into(),
+                );
+            }
+        }
+    }
+    Ok(())
 }
 
 fn options(case: &Case) -> kashika_model::Options {
@@ -89,20 +145,9 @@ fn run_parse(case: &Case) -> Result<Vec<Output>, String> {
         .map(|d| serde_json::to_value(d).expect("diagnostics serialize"))
         .collect();
 
-    if let Ok(once) = kashika_syntax::format(&case.src) {
-        let twice = kashika_syntax::format(&once)
-            .map_err(|_| format!("{}: fmt output no longer parses", case.name))?;
-        if once != twice {
-            return Err(format!(
-                "{}: fmt is not idempotent on this input",
-                case.name
-            ));
-        }
-    }
-
     let mut out = vec![Output::text("diagnostics.txt", dump::diagnostics(&diags))];
     if case.dump_ast {
-        out.push(Output::text("ast.txt", dump::ast(&file)));
+        out.push(Output::text("ast.txt", dump::ast(&file, false)));
     }
     if case.dump_tokens {
         out.push(Output::text("tokens.txt", dump::tokens(&case.src)));

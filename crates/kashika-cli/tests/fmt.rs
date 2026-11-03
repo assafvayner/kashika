@@ -154,12 +154,81 @@ fn corpus_round_trips() {
             "{}",
             f.display()
         );
-        let codes = |d: &[kashika_diag::Diagnostic]| {
-            d.iter()
-                .map(|d| (d.code, d.message.clone()))
-                .collect::<Vec<_>>()
-        };
         assert_eq!(codes(&da), codes(&db), "{}", f.display());
+    }
+    for f in walk_kash(&root().join("tests/golden"), "input.kash") {
+        let src = std::fs::read_to_string(&f).unwrap();
+        let Ok(once) = kashika_syntax::format(&src) else {
+            continue;
+        };
+        let opts = kashika_model::Options {
+            path: Some(f.clone()),
+            ..Default::default()
+        };
+        let checked = |src: &str| {
+            let (scene, mut diags) = kashika_model::compile_with(src, &opts);
+            diags.extend(kashika_check::check(&scene));
+            kashika_diag::sort(&mut diags);
+            codes(&diags)
+        };
+        assert_eq!(checked(&src), checked(&once), "{}", f.display());
+    }
+}
+
+fn codes(d: &[kashika_diag::Diagnostic]) -> Vec<(&'static str, String)> {
+    d.iter().map(|d| (d.code, d.message.clone())).collect()
+}
+
+/// Every file under `dir`, recursively, named `name` or, for `*.kash`, with that extension.
+fn walk_kash(dir: &std::path::Path, name: &str) -> Vec<PathBuf> {
+    let mut out = Vec::new();
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(d) = stack.pop() {
+        for e in std::fs::read_dir(&d).unwrap() {
+            let p = e.unwrap().path();
+            if p.is_dir() {
+                stack.push(p);
+            } else if p.file_name().is_some_and(|n| n == name)
+                || (name == "*.kash" && p.extension().is_some_and(|x| x == "kash"))
+            {
+                out.push(p);
+            }
+        }
+    }
+    out.sort();
+    assert!(!out.is_empty(), "no {name} under {}", dir.display());
+    out
+}
+
+/// The source text of every token and comment in order, without carriage returns.
+fn token_texts(src: &str) -> Vec<String> {
+    use kashika_syntax::Tok;
+    let (toks, comments, _) = kashika_syntax::lex_with_comments(src);
+    let text = kashika_syntax::SourceText::new(src);
+    let mut items: Vec<(u32, u32, String)> = toks
+        .iter()
+        .filter(|t| !matches!(t.tok, Tok::Newline | Tok::Eof))
+        .map(|t| (t.span.line, t.span.col, text.span(t.span)))
+        .chain(
+            comments
+                .into_iter()
+                .map(|c| (c.span.line, c.span.col, c.text)),
+        )
+        .collect();
+    items.sort_by_key(|(line, col, _)| (*line, *col));
+    items
+        .into_iter()
+        .map(|(_, _, s)| s.replace('\r', ""))
+        .collect()
+}
+
+#[test]
+fn fmt_keeps_token_and_comment_text_of_examples() {
+    for f in walk_kash(&root().join("examples"), "*.kash") {
+        let src = std::fs::read_to_string(&f).unwrap();
+        let once =
+            kashika_syntax::format(&src).unwrap_or_else(|d| panic!("{}: {d:#?}", f.display()));
+        assert_eq!(token_texts(&src), token_texts(&once), "{}", f.display());
     }
 }
 

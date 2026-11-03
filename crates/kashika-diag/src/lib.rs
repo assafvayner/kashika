@@ -429,4 +429,18 @@ mod tests {
         assert!(e.get("suppressed").is_none());
         assert!(e.get("reason").is_none());
     }
+
+    #[test]
+    fn errors_serialize_to_a_fixed_shape() {
+        let bare = Diagnostic::error("parse", Span::new(1, 2, 1, 5), "unexpected `x`");
+        assert_eq!(
+            serde_json::to_string(&bare).unwrap(),
+            r#"{"severity":"error","code":"parse","message":"unexpected `x`","span":{"line":1,"col":2,"end_line":1,"end_col":5},"suggestions":[]}"#
+        );
+        let helped = bare.with_help("write `y`");
+        assert_eq!(
+            serde_json::to_string(&helped).unwrap(),
+            r#"{"severity":"error","code":"parse","message":"unexpected `x`","span":{"line":1,"col":2,"end_line":1,"end_col":5},"help":["write `y`"],"suggestions":[]}"#
+        );
+    }
 }

@@ -291,3 +291,129 @@ fn lone_cr_is_whitespace() {
     let src = "diagram \"t\" size (10,10)\rbox a at (1,1) size (2,2)\n";
     assert!(format(src).is_err(), "a lone CR does not end a statement");
 }
+
+#[test]
+fn block_comment_inside_parentheses_is_spaced_once() {
+    assert_eq!(
+        fmt("box a at (  /*z*/0 ,0) size (1, 1)\n"),
+        "box a at ( /*z*/ 0, 0) size (1, 1)\n"
+    );
+}
+
+/// Pinned as is: the comment drops to the statement's indent while the continuations
+/// around it keep theirs.
+#[test]
+fn line_comment_between_continuations() {
+    assert_eq!(
+        fmt("line l a.right\n    -> h 10\n   // note\n -> v 10\n"),
+        "line l a.right\n  -> h 10\n// note\n  -> v 10\n"
+    );
+}
+
+#[test]
+fn blank_line_between_continuations_is_kept() {
+    assert_eq!(
+        fmt("line l a.right\n  -> h 10\n\n\n -> v 10\n"),
+        "line l a.right\n  -> h 10\n\n  -> v 10\n"
+    );
+}
+
+#[test]
+fn multi_line_block_comment_in_a_style_block() {
+    assert_eq!(
+        fmt("style s {\nfill=#fff\n      /* one\n     two */\nstroke=#000\n}\n"),
+        "style s {\n  fill=#fff\n  /* one\n     two */\n  stroke=#000\n}\n"
+    );
+}
+
+#[test]
+fn line_comment_after_an_opening_brace() {
+    assert_eq!(
+        fmt("group g at (0, 0) size (9, 9) {    // c\nbox a at (0, 0) size (1, 1)\n}\n"),
+        "group g at (0, 0) size (9, 9) {  // c\n  box a at (0, 0) size (1, 1)\n}\n"
+    );
+}
+
+#[test]
+fn two_closing_braces_on_one_line() {
+    assert_eq!(
+        fmt("group g at (0, 0) size (9, 9) {\ngroup inner at (0, 0) size (1, 1) {\n} }\n"),
+        "group g at (0, 0) size (9, 9) {\n  group inner at (0, 0) size (1, 1) {\n  } }\n"
+    );
+}
+
+#[test]
+fn comment_inside_a_text_block() {
+    assert_eq!(
+        fmt("box a at (0, 0) size (9, 9) {\ntext \"x\"\n    // inside\n  text \"y\"\n}\n"),
+        "box a at (0, 0) size (9, 9) {\n  text \"x\"\n  // inside\n  text \"y\"\n}\n"
+    );
+}
+
+#[test]
+fn tabs_separate_tokens() {
+    assert_eq!(
+        fmt("box\ta\tat\t(0,\t0)\tsize (1, 1)\n"),
+        "box a at (0, 0) size (1, 1)\n"
+    );
+}
+
+#[test]
+fn tab_inside_a_line_comment_is_kept() {
+    assert_eq!(
+        fmt("box a at (0, 0) size (1, 1)\t//\ttab\there\t\n"),
+        "box a at (0, 0) size (1, 1)  //\ttab\there\n"
+    );
+}
+
+#[test]
+fn missing_final_newline_is_added() {
+    assert_eq!(
+        fmt("box a at (0, 0) size (1, 1)"),
+        "box a at (0, 0) size (1, 1)\n"
+    );
+}
+
+#[test]
+fn comment_only_file() {
+    assert_eq!(
+        fmt("\n  // only\n\n\n/* a comment */  \n"),
+        "// only\n\n/* a comment */\n"
+    );
+}
+
+#[test]
+fn whitespace_only_file_becomes_empty() {
+    assert_eq!(fmt("  \n\t\n   "), "");
+}
+
+#[test]
+fn bom_and_crlf() {
+    assert_eq!(
+        fmt("\u{feff}diagram \"t\" size (10,10)\r\nbox  a at (1,1) size (2,2)\r\n"),
+        "diagram \"t\" size (10, 10)\r\nbox a at (1, 1) size (2, 2)\r\n"
+    );
+}
+
+/// Not `#[ignore]`d: it takes about 0.2 s in a debug build, well inside CI time, and the
+/// 5 s bound catches a quadratic parser or formatter.
+#[test]
+fn long_lines_parse_and_format_in_linear_time() {
+    let mut src = String::from("line l (0, 0)\n");
+    for _ in 0..20_000 {
+        src.push_str("  -> h 1\n");
+    }
+    for _ in 0..20_000 {
+        src.push_str("  stroke-width=1\n");
+    }
+    let start = std::time::Instant::now();
+    let (f, d) = kashika_syntax::parse(&src);
+    assert!(d.is_empty(), "{:#?}", &d[..d.len().min(3)]);
+    let kashika_syntax::ast::Stmt::Line(l) = &f.stmts[0] else {
+        panic!("expected a line")
+    };
+    assert_eq!((l.segs.len(), l.attrs.len()), (20_000, 20_000));
+    assert_eq!(format(&src).unwrap(), src);
+    let took = start.elapsed();
+    assert!(took.as_secs_f64() < 5.0, "took {took:?}");
+}

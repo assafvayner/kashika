@@ -3,10 +3,13 @@ use serde_json::Value;
 
 const FOLD_WIDTH: usize = 100;
 
-/// The parser's AST as `{:#?}`, with spans written `line:col-end_line:end_col` and
-/// short leaf-only groups folded onto one line.
-pub fn ast(file: &kashika_syntax::ast::File) -> String {
+/// The parser's AST as `{:#?}`, with spans written `line:col-end_line:end_col` (or left
+/// out with `strip_spans`) and short leaf-only groups folded onto one line.
+pub fn ast(file: &kashika_syntax::ast::File, strip_spans: bool) -> String {
     let mut lines: Vec<String> = format!("{file:#?}").lines().map(str::to_string).collect();
+    if strip_spans {
+        lines = without_spans(&lines);
+    }
     loop {
         let folded = fold_once(&lines);
         if folded == lines {
@@ -21,6 +24,26 @@ pub fn ast(file: &kashika_syntax::ast::File) -> String {
 
 fn indent(s: &str) -> usize {
     s.len() - s.trim_start().len()
+}
+
+/// Drops every multi-line `Span { .. }` block of a `{:#?}` dump.
+fn without_spans(lines: &[String]) -> Vec<String> {
+    let mut out = Vec::with_capacity(lines.len());
+    let mut skip_to: Option<usize> = None;
+    for l in lines {
+        if let Some(ind) = skip_to {
+            if indent(l) == ind && l.trim_start().starts_with('}') {
+                skip_to = None;
+            }
+            continue;
+        }
+        if l.ends_with("Span {") {
+            skip_to = Some(indent(l));
+            continue;
+        }
+        out.push(l.clone());
+    }
+    out
 }
 
 fn opener(s: &str) -> Option<char> {
@@ -255,4 +278,27 @@ pub fn tokens(src: &str) -> String {
         ));
     }
     out
+}
+
+/// The source text of every token and comment in order, without carriage returns, which
+/// are whitespace.
+pub fn token_texts(src: &str) -> Vec<String> {
+    use kashika_syntax::Tok;
+    let (toks, comments, _) = kashika_syntax::lex_with_comments(src);
+    let text = kashika_syntax::SourceText::new(src);
+    let mut items: Vec<(u32, u32, String)> = toks
+        .iter()
+        .filter(|t| !matches!(t.tok, Tok::Newline | Tok::Eof))
+        .map(|t| (t.span.line, t.span.col, text.span(t.span)))
+        .chain(
+            comments
+                .into_iter()
+                .map(|c| (c.span.line, c.span.col, c.text)),
+        )
+        .collect();
+    items.sort_by_key(|(line, col, _)| (*line, *col));
+    items
+        .into_iter()
+        .map(|(_, _, s)| s.replace('\r', ""))
+        .collect()
 }

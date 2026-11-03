@@ -13,3 +13,6 @@ include = ["src/**/*", "LICENSE"]
 
 [dependencies]
 kashika-diag.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true

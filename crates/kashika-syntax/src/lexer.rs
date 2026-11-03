@@ -553,12 +553,23 @@ mod tests {
         let (_, d) = lex("fill=# fff\n");
         assert_eq!(d.len(), 1);
         assert_eq!(d[0].message, "invalid color `#`");
+        assert_eq!(d[0].span, Span::new(1, 6, 1, 7));
+        assert_eq!(
+            d[0].help,
+            ["colors are `#rgb`, `#rrggbb` or `#rrggbbaa`; comments start with `//`"]
+        );
     }
 
     #[test]
     fn unterminated_string() {
         let (_, d) = lex("\"abc\nbox");
+        assert_eq!(d.len(), 1);
         assert_eq!(d[0].message, "unterminated string");
+        assert_eq!(d[0].span, Span::new(1, 1, 1, 5));
+        assert_eq!(
+            d[0].help,
+            ["close the string with `\"` before the end of the line"]
+        );
     }
 
     fn id(s: &str) -> Tok {
