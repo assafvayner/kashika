@@ -39,14 +39,16 @@ fn main() {
             .strip_prefix(&root)
             .map(|p| p.to_string_lossy().replace('\\', "/"))
             .unwrap_or_default();
+        let input = dir.join("input.kash");
+        trials.push(Trial::test(format!("{name}/prefixes"), move || {
+            prefixes(&input)
+        }));
         let root = root.clone();
         trials.push(Trial::test(name, move || {
             let case = Case::load(&root, &dir)?;
             run_case(&case)
         }));
     }
-    let prefix_root = root.clone();
-    trials.push(Trial::test("fmt/prefixes", move || prefixes(&prefix_root)));
     let cases = libtest_mimic::run(&args, trials);
     let coverage = libtest_mimic::run(&args, coverage::trials());
     if let Some(page) = review::write() {
@@ -91,29 +93,25 @@ fn check_fmt(case: &Case) -> Result<(), String> {
     Ok(())
 }
 
-/// Every third prefix of every golden input formats (which parses it first) without a
-/// panic or the formatter's token guard firing. Every prefix takes about 35 s in a debug
-/// build, so the stride is 3.
-fn prefixes(root: &Path) -> Result<(), Failed> {
-    for dir in case::discover(root) {
-        let src = std::fs::read_to_string(dir.join("input.kash")).map_err(|e| e.to_string())?;
-        let ends = src
-            .char_indices()
-            .map(|(i, _)| i)
-            .step_by(3)
-            .chain([src.len()]);
-        for end in ends {
-            let errors = kashika_syntax::format(&src[..end])
-                .err()
-                .unwrap_or_default();
-            if let Some(d) = errors
-                .iter()
-                .find(|d| d.message.starts_with("internal error"))
-            {
-                return Err(
-                    format!("{}: prefix of {end} bytes: {}", dir.display(), d.message).into(),
-                );
-            }
+/// Every third prefix of a golden input formats (which parses it first) without a panic or
+/// the formatter's token guard firing. Every prefix of every input takes about 35 s in a
+/// debug build, so the stride is 3.
+fn prefixes(input: &Path) -> Result<(), Failed> {
+    let src = std::fs::read_to_string(input).map_err(|e| e.to_string())?;
+    let ends = src
+        .char_indices()
+        .map(|(i, _)| i)
+        .step_by(3)
+        .chain([src.len()]);
+    for end in ends {
+        let errors = kashika_syntax::format(&src[..end])
+            .err()
+            .unwrap_or_default();
+        if let Some(d) = errors
+            .iter()
+            .find(|d| d.message.starts_with("internal error"))
+        {
+            return Err(format!("prefix of {end} bytes: {}", d.message).into());
         }
     }
     Ok(())
