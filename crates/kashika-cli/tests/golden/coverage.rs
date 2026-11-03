@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use kashika_diag::{ERROR_CODES, LINT_CODES};
 use kashika_syntax::SEGMENT_KEYWORDS;
-use kashika_syntax::ast::{Attr, SegKind, ShapeBody, Side, Stmt, Target, Value};
+use kashika_syntax::ast::{Attr, File, SegKind, ShapeBody, Side, Stmt, Target, Value};
 use libtest_mimic::{Failed, Trial};
 
 use crate::case::{self, Case, Suite};
@@ -99,6 +99,8 @@ pub fn trials() -> Vec<Trial> {
             builtin_shapes_and_icons,
         ),
         Trial::test("coverage/attributes-and-values", attributes_and_values),
+        Trial::test("coverage/parse-messages", parse_messages),
+        Trial::test("coverage/ast-forms", ast_forms),
         Trial::test("coverage/map", coverage_map),
     ]
 }
@@ -384,6 +386,175 @@ fn attributes_and_values() -> Result<(), Failed> {
             problems.push(format!("no golden input draws a `{kind}` segment"));
         }
     }
+    done(problems)
+}
+
+fn parse_messages() -> Result<(), Failed> {
+    let corpus = load()?;
+    let diags: Vec<String> = corpus
+        .cases
+        .iter()
+        .filter_map(|c| std::fs::read_to_string(c.dir.join("diagnostics.txt")).ok())
+        .collect();
+    let mut problems = Vec::new();
+    for message in include_str!("messages.txt")
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+    {
+        if !diags.iter().any(|d| d.lines().any(|l| l.contains(message))) {
+            problems.push(format!(
+                "no golden diagnostics.txt has a line containing `{message}`"
+            ));
+        }
+    }
+    done(problems)
+}
+
+/// AST forms as `seg_form`, `value_form` and `Forms` name them; the exhaustive matches keep
+/// them in step with `kashika_syntax::ast`.
+const AST_FORMS: &[&str] = &[
+    "SegKind::To",
+    "SegKind::H",
+    "SegKind::V",
+    "SegKind::X(Num)",
+    "SegKind::X(Point)",
+    "SegKind::Y(Num)",
+    "SegKind::Y(Point)",
+    "SegKind::Hv",
+    "SegKind::Vh",
+    "SegKind::Vhv",
+    "SegKind::Hvh",
+    "SegKind::Curve(Left)",
+    "SegKind::Curve(Right)",
+    "SegKind::CurveVia",
+    "Value::Flag",
+    "Value::Num",
+    "Value::Str",
+    "Value::Color",
+    "Value::Word",
+    "Value::Pair",
+    "Value::Size",
+    "Value::AnchorAt",
+    "ShapeBody::Paths",
+    "ShapeBody::From",
+    "Attr.at_t: Some",
+    "Import.ns: Some",
+    "File.failed_diagram: true",
+    "File.first_stmt: None",
+];
+
+fn seg_form(k: &SegKind) -> &'static str {
+    match k {
+        SegKind::To(_) => "SegKind::To",
+        SegKind::H(_) => "SegKind::H",
+        SegKind::V(_) => "SegKind::V",
+        SegKind::X(Target::Num(_)) => "SegKind::X(Num)",
+        SegKind::X(Target::Point(_)) => "SegKind::X(Point)",
+        SegKind::Y(Target::Num(_)) => "SegKind::Y(Num)",
+        SegKind::Y(Target::Point(_)) => "SegKind::Y(Point)",
+        SegKind::Hv(_) => "SegKind::Hv",
+        SegKind::Vh(_) => "SegKind::Vh",
+        SegKind::Vhv { .. } => "SegKind::Vhv",
+        SegKind::Hvh { .. } => "SegKind::Hvh",
+        SegKind::Curve {
+            side: Side::Left, ..
+        } => "SegKind::Curve(Left)",
+        SegKind::Curve {
+            side: Side::Right, ..
+        } => "SegKind::Curve(Right)",
+        SegKind::CurveVia { .. } => "SegKind::CurveVia",
+    }
+}
+
+fn value_form(v: &Value) -> &'static str {
+    match v {
+        Value::Flag => "Value::Flag",
+        Value::Num(_) => "Value::Num",
+        Value::Str(_) => "Value::Str",
+        Value::Color(_) => "Value::Color",
+        Value::Word(_) => "Value::Word",
+        Value::Pair(..) => "Value::Pair",
+        Value::Size(_) => "Value::Size",
+        Value::AnchorAt(..) => "Value::AnchorAt",
+    }
+}
+
+#[derive(Default)]
+struct Forms(BTreeSet<&'static str>);
+
+impl Forms {
+    fn attrs(&mut self, attrs: &[Attr]) {
+        for a in attrs {
+            self.0.insert(value_form(&a.value));
+            if a.at_t.is_some() {
+                self.0.insert("Attr.at_t: Some");
+            }
+        }
+    }
+
+    fn file(&mut self, file: &File) {
+        if file.failed_diagram {
+            self.0.insert("File.failed_diagram: true");
+        }
+        if file.first_stmt.is_none() {
+            self.0.insert("File.first_stmt: None");
+        }
+        self.stmts(&file.stmts);
+    }
+
+    fn stmts(&mut self, stmts: &[Stmt]) {
+        for stmt in stmts {
+            match stmt {
+                Stmt::Diagram(d) => self.attrs(&d.attrs),
+                Stmt::Style(s) => self.attrs(&s.attrs),
+                Stmt::Box(n) => {
+                    self.attrs(&n.attrs);
+                    for item in n.block.iter().flatten() {
+                        self.attrs(&item.attrs);
+                    }
+                }
+                Stmt::Group(g) => {
+                    self.attrs(&g.node.attrs);
+                    self.stmts(&g.children);
+                }
+                Stmt::Junction(j) => self.attrs(&j.attrs),
+                Stmt::Text(t) => self.attrs(&t.attrs),
+                Stmt::Image(i) => self.attrs(&i.attrs),
+                Stmt::Shape(s) => match &s.body {
+                    ShapeBody::Paths { .. } => {
+                        self.0.insert("ShapeBody::Paths");
+                    }
+                    ShapeBody::From { attrs, .. } => {
+                        self.0.insert("ShapeBody::From");
+                        self.attrs(attrs);
+                    }
+                },
+                Stmt::Line(l) => {
+                    self.attrs(&l.attrs);
+                    self.0.extend(l.segs.iter().map(|s| seg_form(&s.kind)));
+                }
+                Stmt::Import(i) => {
+                    if i.ns.is_some() {
+                        self.0.insert("Import.ns: Some");
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn ast_forms() -> Result<(), Failed> {
+    let corpus = load()?;
+    let mut forms = Forms::default();
+    for c in corpus.cases.iter().filter(|c| c.dump_ast) {
+        forms.file(&kashika_syntax::parse(&c.src).0);
+    }
+    let problems = AST_FORMS
+        .iter()
+        .filter(|f| !forms.0.contains(*f))
+        .map(|f| format!("no `// dump: ast` case parses to `{f}`"))
+        .collect();
     done(problems)
 }
 
