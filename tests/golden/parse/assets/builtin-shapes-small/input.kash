@@ -1,0 +1,41 @@
+// spec: 3a
+// dump: scene
+// Small and tall boxes take the small-box branch of each pixel cap; cloud bumps follow width.
+diagram "shapes small" size (1200,700)
+box rect_small at (20,20) size (30,24) shape=rect
+box rounded_small at (70,20) size (30,24) shape=rounded
+box cylinder_small at (120,20) size (30,24) shape=cylinder
+box diamond_small at (170,20) size (30,24) shape=diamond
+box ellipse_small at (220,20) size (30,24) shape=ellipse
+box hexagon_small at (270,20) size (30,24) shape=hexagon
+box doc_small at (320,20) size (30,24) shape=doc
+box cloud_small at (370,20) size (30,24) shape=cloud
+box person_small at (420,20) size (30,24) shape=person
+box parallelogram_small at (470,20) size (30,24) shape=parallelogram
+box pp_small at (520,20) size (30,24) shape=predefined-process
+box stadium_small at (570,20) size (30,24) shape=stadium
+box triangle_small at (620,20) size (30,24) shape=triangle
+box octagon_small at (670,20) size (30,24) shape=octagon
+box note_small at (720,20) size (30,24) shape=note
+box package_small at (770,20) size (30,24) shape=package
+box queue_small at (820,20) size (30,24) shape=queue
+box rect_tall at (20,80) size (60,200) shape=rect
+box rounded_tall at (120,80) size (60,200) shape=rounded
+box cylinder_tall at (220,80) size (60,200) shape=cylinder
+box diamond_tall at (320,80) size (60,200) shape=diamond
+box ellipse_tall at (420,80) size (60,200) shape=ellipse
+box hexagon_tall at (520,80) size (60,200) shape=hexagon
+box doc_tall at (620,80) size (60,200) shape=doc
+box cloud_tall at (720,80) size (60,200) shape=cloud
+box person_tall at (820,80) size (60,200) shape=person
+box parallelogram_tall at (20,320) size (60,200) shape=parallelogram
+box pp_tall at (120,320) size (60,200) shape=predefined-process
+box stadium_tall at (220,320) size (60,200) shape=stadium
+box triangle_tall at (320,320) size (60,200) shape=triangle
+box octagon_tall at (420,320) size (60,200) shape=octagon
+box note_tall at (520,320) size (60,200) shape=note
+box package_tall at (620,320) size (60,200) shape=package
+box queue_tall at (720,320) size (60,200) shape=queue
+box cloud_150 at (20,560) size (150,80) shape=cloud
+box cloud_300 at (210,560) size (300,80) shape=cloud
+box cloud_600 at (550,560) size (600,80) shape=cloud

@@ -1,0 +1,166 @@
+// spec: 3a, 4
+// dump: scene
+// Edge anchors on every path shape project onto the outline: ends, quarters, midpoints and pins.
+diagram "projection all" size (1000,900)
+box rounded at (40,40) size (120,80) shape=rounded
+box cylinder at (280,40) size (120,80) shape=cylinder
+box diamond at (520,40) size (120,80) shape=diamond
+box ellipse at (760,40) size (120,80) shape=ellipse
+box hexagon at (40,240) size (120,80) shape=hexagon
+box doc at (280,240) size (120,80) shape=doc
+box cloud at (520,240) size (120,80) shape=cloud
+box person at (760,240) size (120,80) shape=person
+box parallelogram at (40,440) size (120,80) shape=parallelogram
+box pp at (280,440) size (120,80) shape=predefined-process
+box stadium at (520,440) size (120,80) shape=stadium
+box triangle at (760,440) size (120,80) shape=triangle
+box octagon at (40,640) size (120,80) shape=octagon
+box note at (280,640) size (120,80) shape=note
+box package at (520,640) size (120,80) shape=package
+box queue at (760,640) size (120,80) shape=queue
+box pt at (900,800) size (60,40) shape=triangle pin=top@0
+box pc at (900,850) size (60,40) shape=cloud pin=right
+junction rounded_t0 at rounded.top@0
+junction rounded_t25 at rounded.top@0.25
+junction rounded_t at rounded.top
+junction rounded_t1 at rounded.top@1
+junction rounded_l0 at rounded.left@0
+junction rounded_l5 at rounded.left@0.5
+junction rounded_r9 at rounded.right@0.9
+junction rounded_b1 at rounded.bottom@0.1
+junction rounded_b at rounded.bottom
+junction cylinder_t0 at cylinder.top@0
+junction cylinder_t25 at cylinder.top@0.25
+junction cylinder_t at cylinder.top
+junction cylinder_t1 at cylinder.top@1
+junction cylinder_l0 at cylinder.left@0
+junction cylinder_l5 at cylinder.left@0.5
+junction cylinder_r9 at cylinder.right@0.9
+junction cylinder_b1 at cylinder.bottom@0.1
+junction cylinder_b at cylinder.bottom
+junction diamond_t0 at diamond.top@0
+junction diamond_t25 at diamond.top@0.25
+junction diamond_t at diamond.top
+junction diamond_t1 at diamond.top@1
+junction diamond_l0 at diamond.left@0
+junction diamond_l5 at diamond.left@0.5
+junction diamond_r9 at diamond.right@0.9
+junction diamond_b1 at diamond.bottom@0.1
+junction diamond_b at diamond.bottom
+junction ellipse_t0 at ellipse.top@0
+junction ellipse_t25 at ellipse.top@0.25
+junction ellipse_t at ellipse.top
+junction ellipse_t1 at ellipse.top@1
+junction ellipse_l0 at ellipse.left@0
+junction ellipse_l5 at ellipse.left@0.5
+junction ellipse_r9 at ellipse.right@0.9
+junction ellipse_b1 at ellipse.bottom@0.1
+junction ellipse_b at ellipse.bottom
+junction hexagon_t0 at hexagon.top@0
+junction hexagon_t25 at hexagon.top@0.25
+junction hexagon_t at hexagon.top
+junction hexagon_t1 at hexagon.top@1
+junction hexagon_l0 at hexagon.left@0
+junction hexagon_l5 at hexagon.left@0.5
+junction hexagon_r9 at hexagon.right@0.9
+junction hexagon_b1 at hexagon.bottom@0.1
+junction hexagon_b at hexagon.bottom
+junction doc_t0 at doc.top@0
+junction doc_t25 at doc.top@0.25
+junction doc_t at doc.top
+junction doc_t1 at doc.top@1
+junction doc_l0 at doc.left@0
+junction doc_l5 at doc.left@0.5
+junction doc_r9 at doc.right@0.9
+junction doc_b1 at doc.bottom@0.1
+junction doc_b at doc.bottom
+junction cloud_t0 at cloud.top@0
+junction cloud_t25 at cloud.top@0.25
+junction cloud_t at cloud.top
+junction cloud_t1 at cloud.top@1
+junction cloud_l0 at cloud.left@0
+junction cloud_l5 at cloud.left@0.5
+junction cloud_r9 at cloud.right@0.9
+junction cloud_b1 at cloud.bottom@0.1
+junction cloud_b at cloud.bottom
+junction person_t0 at person.top@0
+junction person_t25 at person.top@0.25
+junction person_t at person.top
+junction person_t1 at person.top@1
+junction person_l0 at person.left@0
+junction person_l5 at person.left@0.5
+junction person_r9 at person.right@0.9
+junction person_b1 at person.bottom@0.1
+junction person_b at person.bottom
+junction parallelogram_t0 at parallelogram.top@0
+junction parallelogram_t25 at parallelogram.top@0.25
+junction parallelogram_t at parallelogram.top
+junction parallelogram_t1 at parallelogram.top@1
+junction parallelogram_l0 at parallelogram.left@0
+junction parallelogram_l5 at parallelogram.left@0.5
+junction parallelogram_r9 at parallelogram.right@0.9
+junction parallelogram_b1 at parallelogram.bottom@0.1
+junction parallelogram_b at parallelogram.bottom
+junction pp_t0 at pp.top@0
+junction pp_t25 at pp.top@0.25
+junction pp_t at pp.top
+junction pp_t1 at pp.top@1
+junction pp_l0 at pp.left@0
+junction pp_l5 at pp.left@0.5
+junction pp_r9 at pp.right@0.9
+junction pp_b1 at pp.bottom@0.1
+junction pp_b at pp.bottom
+junction stadium_t0 at stadium.top@0
+junction stadium_t25 at stadium.top@0.25
+junction stadium_t at stadium.top
+junction stadium_t1 at stadium.top@1
+junction stadium_l0 at stadium.left@0
+junction stadium_l5 at stadium.left@0.5
+junction stadium_r9 at stadium.right@0.9
+junction stadium_b1 at stadium.bottom@0.1
+junction stadium_b at stadium.bottom
+junction triangle_t0 at triangle.top@0
+junction triangle_t25 at triangle.top@0.25
+junction triangle_t at triangle.top
+junction triangle_t1 at triangle.top@1
+junction triangle_l0 at triangle.left@0
+junction triangle_l5 at triangle.left@0.5
+junction triangle_r9 at triangle.right@0.9
+junction triangle_b1 at triangle.bottom@0.1
+junction triangle_b at triangle.bottom
+junction octagon_t0 at octagon.top@0
+junction octagon_t25 at octagon.top@0.25
+junction octagon_t at octagon.top
+junction octagon_t1 at octagon.top@1
+junction octagon_l0 at octagon.left@0
+junction octagon_l5 at octagon.left@0.5
+junction octagon_r9 at octagon.right@0.9
+junction octagon_b1 at octagon.bottom@0.1
+junction octagon_b at octagon.bottom
+junction note_t0 at note.top@0
+junction note_t25 at note.top@0.25
+junction note_t at note.top
+junction note_t1 at note.top@1
+junction note_l0 at note.left@0
+junction note_l5 at note.left@0.5
+junction note_r9 at note.right@0.9
+junction note_b1 at note.bottom@0.1
+junction note_b at note.bottom
+junction package_t0 at package.top@0
+junction package_t25 at package.top@0.25
+junction package_t at package.top
+junction package_t1 at package.top@1
+junction package_l0 at package.left@0
+junction package_l5 at package.left@0.5
+junction package_r9 at package.right@0.9
+junction package_b1 at package.bottom@0.1
+junction package_b at package.bottom
+junction queue_t0 at queue.top@0
+junction queue_t25 at queue.top@0.25
+junction queue_t at queue.top
+junction queue_t1 at queue.top@1
+junction queue_l0 at queue.left@0
+junction queue_l5 at queue.left@0.5
+junction queue_r9 at queue.right@0.9
+junction queue_b1 at queue.bottom@0.1
+junction queue_b at queue.bottom
