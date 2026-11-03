@@ -467,7 +467,7 @@ Prints the resolved geometry: every shape's bounding box and anchors in both can
 kashika route <file|-> <from> <to> [corner|arc|bezier] [--line <id>] [--radius N] [--max N]
 ```
 
-Suggests up to `--max` (default 3) candidate paths from `<from>` to `<to>`. Both are points, e.g. `app1.bottom` or `pg.left@0.25`, parsed and resolved exactly as in a `line` statement (anchors, `@t`, offsets, junctions and mixed points); each must be a single point, or it is a usage error. References and mixed points are written into the suggestions as given. It **never edits the file**; the author chooses which suggestion, if any, to paste.
+Suggests up to `--max` (default 3) candidate paths from `<from>` to `<to>`. Both are points, e.g. `app1.bottom` or `pg.left@0.25`, parsed and resolved exactly as in a `line` statement (anchors, `@t`, offsets, junctions and mixed points); each must be a single point, or it is a usage error. References and mixed points are written into the suggestions as given. It **never edits the file**; the author chooses which suggestion, if any, to paste. Input with errors is reported like `check` (text with source lines, or JSON `diagnostics`), with no suggestions, and `route` exits 2; warnings are ignored. A `<from>` or `<to>` that doesn't resolve is also an error (exit 2).
 
 - **The third parameter sets the style** of the suggestions (default `corner`):
 

@@ -35,7 +35,7 @@ pub enum Style {
 pub enum Error {
     /// Bad arguments; the CLI exits 3.
     Usage(String),
-    /// `<from>` or `<to>` doesn't resolve; the CLI exits 2.
+    /// The input has errors, or `<from>` or `<to>` doesn't resolve; the CLI exits 2.
     Diagnostics(Vec<Diagnostic>),
 }
 
@@ -104,8 +104,14 @@ pub struct Request<'a> {
 }
 
 pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
-    let (file, _) = kashika_syntax::parse(req.src);
-    let (scene, _) = kashika_model::resolve_with(&file, req.opts);
+    let (file, mut diags) = kashika_syntax::parse(req.src);
+    let (scene, more) = kashika_model::resolve_with(&file, req.opts);
+    diags.extend(more);
+    diags.retain(|d| d.severity == Severity::Error);
+    if !diags.is_empty() {
+        kashika_diag::sort(&mut diags);
+        return Err(Error::Diagnostics(diags));
+    }
     let src = Source::new(req.src);
     let target = req
         .line

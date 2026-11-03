@@ -2,10 +2,11 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::Args;
+use kashika_diag::Diagnostic;
 use kashika_geom::fmt_num as num;
 use kashika_route::{Error, Request, Style, Suggestion};
 
-use crate::{Format, term};
+use crate::{Format, report, term};
 
 pub const SCHEMA: &str = "kashika.route/1";
 
@@ -86,7 +87,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
     };
     match kashika_route::suggest(&req) {
         Err(Error::Usage(msg)) => crate::tool_error(a.format, SCHEMA, &msg),
-        Err(Error::Diagnostics(diags)) => {
+        Err(Error::Diagnostics(mut diags)) => {
             match a.format {
                 Format::Json => println!(
                     "{}",
@@ -97,6 +98,17 @@ pub fn run(a: &RouteArgs) -> ExitCode {
                         "diagnostics": diags,
                     })
                 ),
+                Format::Text if in_input(&src, &diags) => {
+                    let opts = report::Opts {
+                        max: 50,
+                        show_suppressed: false,
+                        summary: false,
+                        metrics: None,
+                        deferred: None,
+                        omitted: &[],
+                    };
+                    print!("{}", report::text(&name, &src, &mut diags, &opts, None));
+                }
                 Format::Text => {
                     let name = term::line(&name);
                     for d in &diags {
@@ -129,6 +141,13 @@ pub fn run(a: &RouteArgs) -> ExitCode {
             ExitCode::from(u8::from(s.candidates.is_empty()))
         }
     }
+}
+
+/// Whether the diagnostics are on the input's own lines, rather than on the `<from> <to>`
+/// points, which resolve as a statement past its end.
+fn in_input(src: &str, diags: &[Diagnostic]) -> bool {
+    let lines = src.lines().count();
+    diags.iter().all(|d| d.span.line as usize <= lines)
 }
 
 fn text(s: &Suggestion) -> String {

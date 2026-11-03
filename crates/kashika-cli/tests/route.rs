@@ -142,6 +142,45 @@ fn unknown_anchor_exits_two() {
 }
 
 #[test]
+fn input_with_errors_is_reported_like_check() {
+    let dir = tempfile::tempdir().unwrap();
+    let f = dir.path().join("e.kash");
+    std::fs::write(
+        &f,
+        "diagram \"e\" size (200,100)\nbox a at (10,10) size (40,20)\nbox b at (100,10) size (40,20)\nline a.rigth -> b.left\n",
+    )
+    .unwrap();
+    let f = f.to_str().unwrap();
+    let route = kashika()
+        .args(["route", f, "a.right", "b.left"])
+        .output()
+        .unwrap();
+    assert_eq!(route.status.code(), Some(2));
+    let check = kashika().args(["check", f]).output().unwrap();
+    assert_eq!(check.status.code(), Some(2));
+    let route = String::from_utf8(route.stdout).unwrap();
+    assert!(route.contains("error[unknown-anchor]"), "{route}");
+    assert_eq!(
+        route,
+        String::from_utf8(check.stdout)
+            .unwrap()
+            .replace(" · crossings=0 wire=0px", "")
+    );
+
+    let out = kashika()
+        .args(["route", f, "a.right", "b.left", "--format", "json"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(v["schema"], "kashika.route/1");
+    assert_eq!(v["input"]["name"], f);
+    assert_eq!(v["diagnostics"].as_array().unwrap().len(), 1);
+    assert_eq!(v["diagnostics"][0]["code"], "unknown-anchor");
+    assert!(v.get("candidates").is_none());
+}
+
+#[test]
 fn one_point_is_a_usage_error() {
     kashika()
         .args(["route", &fixture("route.kash"), "a.top"])

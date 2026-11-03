@@ -219,7 +219,7 @@ box c at (100,76) size (40,40)\n";
 fn avoids_a_lane_on_a_group_border() {
     let src = "diagram \"g\" size (440,240)\n\
 box a at (20,20) size (100,40)\n\
-group vpc \"VPC\" at (200,110) size (220,120) style=dashed {\n}\n\
+group vpc \"VPC\" at (200,110) size (220,120) stroke-style=dashed {\n}\n\
 box b at (300,160) size (100,40)\n";
     let mut r = req(src, "a.bottom", "b.top", Style::Corner);
     r.max = 10;
@@ -457,6 +457,23 @@ group g \"G\" at (100,100) size (280,180) {\n\
   box b \"B\" at (180,40) size (60,40)\n\
   line ab a.right -> (180,60) end=open label=\"x\" radius=4\n\
 }\n";
+
+#[test]
+fn input_with_errors_is_refused() {
+    let src = "diagram \"e\" size (200,100)\n\
+box a at (10,10) size (40,20)\n\
+box b at (100,10) size (40,20)\n\
+line ab a.rigth -> b.left\n";
+    let codes = |r: Result<Suggestion, Error>| match r {
+        Err(Error::Diagnostics(d)) => d.into_iter().map(|d| d.code).collect::<Vec<_>>(),
+        other => panic!("expected diagnostics, got {other:?}"),
+    };
+    assert_eq!(
+        codes(suggest(&req(src, "a.right", "b.left", Style::Corner))),
+        ["unknown-anchor"]
+    );
+    assert_eq!(codes(reroute(src, "ab", Style::Corner)), ["unknown-anchor"]);
+}
 
 fn reroute_req<'a>(src: &'a str, id: &'a str) -> Request<'a> {
     Request {
