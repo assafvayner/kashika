@@ -1,0 +1,31 @@
+1:11-1:12  Newline
+2:16-2:17  Newline
+3:92-3:93  Newline
+4:1-4:8  Ident "diagram"
+4:9-4:12  Str "t"
+4:13-4:17  Ident "size"
+4:18-4:19  LParen
+4:19-4:22  Num 200
+4:22-4:23  Comma
+4:23-4:26  Num 100
+4:26-4:27  RParen
+4:28-4:31  Ident "box"
+4:32-4:33  Ident "a"
+4:34-4:36  Ident "at"
+4:37-4:38  LParen
+4:38-4:40  Num 10
+4:40-4:41  Comma
+4:41-4:43  Num 10
+4:43-4:44  RParen
+4:45-4:49  Ident "size"
+4:50-4:51  LParen
+4:51-4:53  Num 40
+4:53-4:54  Comma
+4:54-4:56  Num 20
+4:56-4:57  RParen
+4:57-4:58  Newline
+5:1-5:1  Eof
+comments:
+1:1-1:11  "// spec: 2"
+2:1-2:16  "// dump: tokens"
+3:1-3:92  "// A CR not followed by LF is whitespace, not a line break, so two statements share a line."

@@ -169,9 +169,9 @@ fn keeps_at_size_and_attribute_order() {
 }
 
 #[test]
-fn crlf_is_normalized_inside_block_comments() {
+fn first_line_ending_decides_mixed_endings() {
     let out =
-        format("box a at (1, 1) size (1, 1)\r\n/* x\r\n y */\r\nbox b at (5, 5) size (1, 1)\r\n")
+        format("box a at (1, 1) size (1, 1)\n/* x\r\n y */\r\nbox b at (5, 5) size (1, 1)\r\n")
             .unwrap();
     assert!(!out.contains('\r'), "{out:?}");
     assert_eq!(format(&out).unwrap(), out);
@@ -262,4 +262,32 @@ fn spaces_every_comma_inside_parentheses_once() {
         fmt("line l (0,0) -> h 5 allow=cross:m,near\n"),
         "line l (0, 0) -> h 5 allow=cross:m,near\n"
     );
+}
+
+#[test]
+fn crlf_input_keeps_crlf() {
+    let src = "diagram \"t\" size (10,10)\r\nbox  a at (1,1) size (2,2)\r\n";
+    let out = format(src).unwrap();
+    assert_eq!(
+        out,
+        "diagram \"t\" size (10, 10)\r\nbox a at (1, 1) size (2, 2)\r\n"
+    );
+    assert_eq!(format(&out).unwrap(), out);
+}
+
+#[test]
+fn crlf_block_comment_keeps_crlf() {
+    let src = "diagram \"t\" size (10,10)\r\n/* a\r\n b */\r\nbox a at (1,1) size (2,2)\r\n";
+    let out = format(src).unwrap();
+    assert!(out.contains("\r\n/* a\r\n b */\r\n"), "{out:?}");
+    assert!(
+        !out.replace("\r\n", "").contains('\n'),
+        "no bare LF: {out:?}"
+    );
+}
+
+#[test]
+fn lone_cr_is_whitespace() {
+    let src = "diagram \"t\" size (10,10)\rbox a at (1,1) size (2,2)\n";
+    assert!(format(src).is_err(), "a lone CR does not end a statement");
 }

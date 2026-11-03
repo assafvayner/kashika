@@ -61,6 +61,26 @@ fn format_is_an_alias_of_fmt() {
 }
 
 #[test]
+fn keeps_crlf_line_endings() {
+    let dir = tempfile::tempdir().unwrap();
+    let f = dir.path().join("d.kash");
+    let clean = CLEAN.replace('\n', "\r\n");
+    std::fs::write(&f, &clean).unwrap();
+    kashika()
+        .args(["fmt", f.to_str().unwrap(), "--check"])
+        .assert()
+        .code(0);
+    std::fs::write(&f, MESSY.replace('\n', "\r\n")).unwrap();
+    kashika()
+        .args(["fmt", f.to_str().unwrap()])
+        .assert()
+        .code(0);
+    let out = std::fs::read_to_string(&f).unwrap();
+    assert_eq!(out, clean);
+    assert!(!out.replace("\r\n", "").contains('\n'), "{out:?}");
+}
+
+#[test]
 fn parse_errors_exit_two_and_leave_the_file() {
     let dir = tempfile::tempdir().unwrap();
     let f = dir.path().join("bad.kash");

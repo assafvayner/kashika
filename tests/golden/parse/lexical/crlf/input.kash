@@ -1,0 +1,11 @@
+// spec: 2
+// dump: tokens, ast
+// CRLF line endings: the CR before each LF is whitespace, so columns, comments and continuations read as with LF.
+diagram "crlf" size (300,200)
+box a at (10,10) size (60,40) // a box
+/* a block
+   comment */
+box b at (150,10) size (60,40)
+line l a.right
+  -> b.left
+box c at (10,100) size (60,40) $

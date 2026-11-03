@@ -1,0 +1,4 @@
+// spec: 2
+// dump: tokens
+// A CR not followed by LF is whitespace, not a line break, so two statements share a line.
+diagram "t" size (200,100)box a at (10,10) size (40,20)
