@@ -542,16 +542,22 @@ fn input_with_errors_is_refused() {
     let src = "diagram \"e\" size (200,100)\n\
 box a at (10,10) size (40,20)\n\
 box b at (100,10) size (40,20)\n\
-line ab a.rigth -> b.left\n";
-    let codes = |r: Result<Suggestion, Error>| match r {
-        Err(Error::Diagnostics(d)) => d.into_iter().map(|d| d.code).collect::<Vec<_>>(),
+line ab a.rigth -> b.left\n\
+line w (30,0) -> v 100\n";
+    let (scene, mut checked) = kashika_model::compile_with(src, &OPTS);
+    checked.extend(kashika_check::check(&scene));
+    kashika_diag::sort(&mut checked);
+    assert!(checked.iter().any(|d| d.code == "unknown-anchor"));
+    assert!(checked.iter().any(|d| d.severity == Severity::Warn));
+    let diags = |r: Result<Suggestion, Error>| match r {
+        Err(Error::Diagnostics(d)) => d,
         other => panic!("expected diagnostics, got {other:?}"),
     };
     assert_eq!(
-        codes(suggest(&req(src, "a.right", "b.left", Style::Corner))),
-        ["unknown-anchor"]
+        diags(suggest(&req(src, "a.right", "b.left", Style::Corner))),
+        checked
     );
-    assert_eq!(codes(reroute(src, "ab", Style::Corner)), ["unknown-anchor"]);
+    assert_eq!(diags(reroute(src, "ab", Style::Corner)), checked);
 }
 
 fn reroute_req<'a>(src: &'a str, id: &'a str) -> Request<'a> {

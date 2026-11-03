@@ -1,4 +1,4 @@
 route
-$FIXTURES/typo.kash
+input.kash
 api.right
 db.left

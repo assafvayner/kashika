@@ -5,7 +5,7 @@
 - Non-ASCII whitespace (NBSP, zero-width space, …) is a `parse` error, `unexpected non-ASCII whitespace`, instead of joining the identifiers around it.
 - A second statement on the same line (`box a … box b …`) is a `parse` error, `expected end of statement`, with the help `each statement starts on its own line`; the second statement still parses.
 - `fmt` keeps the file's line endings: CRLF when the first line ends in CRLF, else LF. A lone CR is whitespace.
-- `route` on a file with errors reports them like `check` and exits 2 instead of suggesting paths; `--line` on a broken line now shows the real diagnostics.
+- `route` on a file with errors reports them, and its warnings, like `check` and exits 2 instead of suggesting paths; `--line` on a broken line now shows the real diagnostics.
 - A closed stdout or stderr (`kashika check f.kash | head -1`) no longer panics; the exit code is unchanged.
 - `inspect --ports` and the `port-crowding` help name the side a line leaves from when two sides' anchors land on the same outline point (such as on a `diamond`).
 - An imported library that is not valid UTF-8 is a `file` error saying it is not valid UTF-8.
