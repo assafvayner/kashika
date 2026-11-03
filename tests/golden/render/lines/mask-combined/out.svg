@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="200" viewBox="0 0 360 200">
+<rect width="100%" height="100%" fill="#7c3aed"/>
+<mask id="kashika-2089a3aa-mask-0" maskUnits="userSpaceOnUse" x="0" y="0" width="360" height="200"><rect width="360" height="200" fill="#fff"/><polygon points="30,50 36,46 42,50 36,54" fill="#000" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><rect x="176.72" y="42.5" width="6.55" height="15" fill="#000"/><circle cx="310" cy="50" r="3.25" fill="#000"/></mask>
+<g mask="url(#kashika-2089a3aa-mask-0)">
+<path d="M 42 50 L 330 50" fill="none" stroke-linejoin="round" stroke="#ffffff" stroke-width="1.5"/>
+<path d="M 318 50 L 330 56 M 318 50 L 330 50 M 318 50 L 330 44" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="310" cy="50" r="4" fill="none" stroke="#ffffff" stroke-width="1.5"/>
+<polygon points="30,50 36,46 42,50 36,54" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"/>
+</g>
+<mask id="kashika-2089a3aa-mask-1" maskUnits="userSpaceOnUse" x="0" y="0" width="360" height="200"><rect width="360" height="200" fill="#fff"/><polygon points="30,170 32.19,163.13 39.37,162.5 37.18,169.38" fill="#000" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><rect x="176.72" y="102.5" width="6.55" height="15" fill="#000"/><circle cx="314" cy="157.88" r="3.25" fill="#000"/></mask>
+<g mask="url(#kashika-2089a3aa-mask-1)">
+<path d="M 39.6 162.57 Q 184.8 53.84 330 170" fill="none" stroke-linejoin="round" stroke="#ffffff" stroke-width="1.5"/>
+<path d="M 320.4 162.57 L 326.25 174.69 M 320.4 162.57 L 330 170 M 320.4 162.57 L 333.75 165.31" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+<circle cx="314" cy="157.88" r="4" fill="none" stroke="#ffffff" stroke-width="1.5"/>
+<polygon points="30,170 32.19,163.13 39.37,162.5 37.18,169.38" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"/>
+</g>
+<path aria-label="x" d="M177.11 54.37L179.41 51L177.24 47.81L178.47 47.81L179.29 49.09Q179.51 49.44 179.69 49.75Q179.87 50.06 180.04 50.36Q180.19 50.06 180.36 49.75Q180.52 49.44 180.75 49.09L181.58 47.81L182.79 47.81L180.6 51.06L182.89 54.37L181.67 54.37L180.71 52.89Q180.49 52.56 180.32 52.26Q180.15 51.96 179.99 51.68Q179.84 51.96 179.68 52.26Q179.52 52.56 179.3 52.89L178.32 54.37L177.11 54.37Z" fill="#ffffff"/>
+<path aria-label="x" d="M177.11 114.37L179.41 111L177.24 107.81L178.47 107.81L179.29 109.09Q179.51 109.44 179.69 109.75Q179.87 110.06 180.04 110.36Q180.19 110.06 180.36 109.75Q180.52 109.44 180.75 109.09L181.58 107.81L182.79 107.81L180.6 111.06L182.89 114.37L181.67 114.37L180.71 112.89Q180.49 112.56 180.32 112.26Q180.15 111.96 179.99 111.68Q179.84 111.96 179.68 112.26Q179.52 112.56 179.3 112.89L178.32 114.37L177.11 114.37Z" fill="#ffffff"/>
+</svg>

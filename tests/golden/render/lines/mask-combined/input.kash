@@ -1,0 +1,7 @@
+// spec: 5
+// raster: png
+// Label and hollow-end masks combine on one line: the saturated canvas shows through the label gap, the hollow diamond and the zero-many circle, straight or curved.
+diagram "mask combined" size (360,200) background=#7c3aed
+style light { stroke=#ffffff color=#ffffff }
+line straight (30,50) -> h 300 start=hollow-diamond end=zero-many label="x" label-side=on style=light
+line curved (30,170) -> curve left 60 (330,170) start=hollow-diamond end=zero-many label="x" label-side=on style=light

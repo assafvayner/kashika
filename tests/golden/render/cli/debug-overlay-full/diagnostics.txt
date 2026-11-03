@@ -1,0 +1,12 @@
+error[attr] 4:53-4:58: unknown attribute `bogus` on diagram
+error[attr] 4:61-4:69: `margin` applies only to a canvas that fits its content
+  = help: remove `margin`, or leave out `size` (or write `size (w, auto)`) to fit the canvas
+warn[cross] 11:1-11:27: drop crosses a_b at (165,75)
+  = help: segment 1 runs at x=165; free x-intervals across y 35..105: 0..14, 316..330
+  = help: if intentional: allow=cross:a_b on drop
+  elements: [{"from":[165,35],"id":"drop","kind":"line","segment":1,"span":{"col":1,"end_col":27,"end_line":11,"line":11},"to":[165,105]},{"from":[90,75],"id":"a_b","kind":"line","segment":1,"span":{"col":1,"end_col":37,"end_line":10,"line":10},"to":[240,75]}]
+  facts: {"at":[165,75],"free":{"axis":"x","band":[35,105],"intervals":[[0,14],[316,330]]}}
+warn[near] 13:1-13:28: rail2 runs 5px from rail1 for 60px (clearance 6)
+  = help: segment 1 runs at y=145; free y-intervals across x 20..80: 0..44, 131..134, 146..170
+  elements: [{"from":[20,145],"id":"rail2","kind":"line","segment":1,"span":{"col":1,"end_col":28,"end_line":13,"line":13},"to":[80,145]},{"from":[20,140],"id":"rail1","kind":"line","segment":1,"span":{"col":1,"end_col":28,"end_line":12,"line":12},"to":[80,140]}]
+  facts: {"clearance":6,"distance":5,"free":{"axis":"y","band":[20,80],"intervals":[[0,44],[131,134],[146,170]]},"length":60}

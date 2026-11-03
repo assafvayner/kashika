@@ -1,0 +1,101 @@
+// spec: 5
+// raster: png
+// Every line end at both ends of diagonal lines at 30°, 45° and 120°, stroke widths 1.5 and 4.
+diagram "markers diagonal" size (974,2030) background=#fde68a
+text "30° · 1.5" at (176,25) size=11
+text "45° · 1.5" at (283,25) size=11
+text "120° · 1.5" at (379,25) size=11
+text "30° · 4" at (524,25) size=11
+text "45° · 4" at (714,25) size=11
+text "120° · 4" at (879,25) size=11
+text "none" at (110,135) align=right
+line (150,145) -> (202,115) start=none end=none stroke-width=1.5
+line (262,145) -> (304,103) start=none end=none stroke-width=1.5
+line (394,145) -> (364,93) start=none end=none stroke-width=1.5
+line (464,185) -> (585,115) start=none end=none stroke-width=4
+line (665,185) -> (764,86) start=none end=none stroke-width=4
+line (914,185) -> (844,64) start=none end=none stroke-width=4
+text "arrow" at (110,285) align=right
+line (150,295) -> (202,265) start=arrow end=arrow stroke-width=1.5
+line (262,295) -> (304,253) start=arrow end=arrow stroke-width=1.5
+line (394,295) -> (364,243) start=arrow end=arrow stroke-width=1.5
+line (464,335) -> (585,265) start=arrow end=arrow stroke-width=4
+line (665,335) -> (764,236) start=arrow end=arrow stroke-width=4
+line (914,335) -> (844,214) start=arrow end=arrow stroke-width=4
+text "open" at (110,435) align=right
+line (150,445) -> (202,415) start=open end=open stroke-width=1.5
+line (262,445) -> (304,403) start=open end=open stroke-width=1.5
+line (394,445) -> (364,393) start=open end=open stroke-width=1.5
+line (464,485) -> (585,415) start=open end=open stroke-width=4
+line (665,485) -> (764,386) start=open end=open stroke-width=4
+line (914,485) -> (844,364) start=open end=open stroke-width=4
+text "triangle" at (110,585) align=right
+line (150,595) -> (202,565) start=triangle end=triangle stroke-width=1.5
+line (262,595) -> (304,553) start=triangle end=triangle stroke-width=1.5
+line (394,595) -> (364,543) start=triangle end=triangle stroke-width=1.5
+line (464,635) -> (585,565) start=triangle end=triangle stroke-width=4
+line (665,635) -> (764,536) start=triangle end=triangle stroke-width=4
+line (914,635) -> (844,514) start=triangle end=triangle stroke-width=4
+text "diamond" at (110,735) align=right
+line (150,745) -> (202,715) start=diamond end=diamond stroke-width=1.5
+line (262,745) -> (304,703) start=diamond end=diamond stroke-width=1.5
+line (394,745) -> (364,693) start=diamond end=diamond stroke-width=1.5
+line (464,785) -> (585,715) start=diamond end=diamond stroke-width=4
+line (665,785) -> (764,686) start=diamond end=diamond stroke-width=4
+line (914,785) -> (844,664) start=diamond end=diamond stroke-width=4
+text "hollow-diamond" at (110,885) align=right
+line (150,895) -> (202,865) start=hollow-diamond end=hollow-diamond stroke-width=1.5
+line (262,895) -> (304,853) start=hollow-diamond end=hollow-diamond stroke-width=1.5
+line (394,895) -> (364,843) start=hollow-diamond end=hollow-diamond stroke-width=1.5
+line (464,935) -> (585,865) start=hollow-diamond end=hollow-diamond stroke-width=4
+line (665,935) -> (764,836) start=hollow-diamond end=hollow-diamond stroke-width=4
+line (914,935) -> (844,814) start=hollow-diamond end=hollow-diamond stroke-width=4
+text "dot" at (110,1035) align=right
+line (150,1045) -> (202,1015) start=dot end=dot stroke-width=1.5
+line (262,1045) -> (304,1003) start=dot end=dot stroke-width=1.5
+line (394,1045) -> (364,993) start=dot end=dot stroke-width=1.5
+line (464,1085) -> (585,1015) start=dot end=dot stroke-width=4
+line (665,1085) -> (764,986) start=dot end=dot stroke-width=4
+line (914,1085) -> (844,964) start=dot end=dot stroke-width=4
+text "circle" at (110,1185) align=right
+line (150,1195) -> (202,1165) start=circle end=circle stroke-width=1.5
+line (262,1195) -> (304,1153) start=circle end=circle stroke-width=1.5
+line (394,1195) -> (364,1143) start=circle end=circle stroke-width=1.5
+line (464,1235) -> (585,1165) start=circle end=circle stroke-width=4
+line (665,1235) -> (764,1136) start=circle end=circle stroke-width=4
+line (914,1235) -> (844,1114) start=circle end=circle stroke-width=4
+text "one" at (110,1335) align=right
+line (150,1345) -> (202,1315) start=one end=one stroke-width=1.5
+line (262,1345) -> (304,1303) start=one end=one stroke-width=1.5
+line (394,1345) -> (364,1293) start=one end=one stroke-width=1.5
+line (464,1385) -> (585,1315) start=one end=one stroke-width=4
+line (665,1385) -> (764,1286) start=one end=one stroke-width=4
+line (914,1385) -> (844,1264) start=one end=one stroke-width=4
+text "many" at (110,1485) align=right
+line (150,1495) -> (202,1465) start=many end=many stroke-width=1.5
+line (262,1495) -> (304,1453) start=many end=many stroke-width=1.5
+line (394,1495) -> (364,1443) start=many end=many stroke-width=1.5
+line (464,1535) -> (585,1465) start=many end=many stroke-width=4
+line (665,1535) -> (764,1436) start=many end=many stroke-width=4
+line (914,1535) -> (844,1414) start=many end=many stroke-width=4
+text "one-many" at (110,1635) align=right
+line (150,1645) -> (202,1615) start=one-many end=one-many stroke-width=1.5
+line (262,1645) -> (304,1603) start=one-many end=one-many stroke-width=1.5
+line (394,1645) -> (364,1593) start=one-many end=one-many stroke-width=1.5
+line (464,1685) -> (585,1615) start=one-many end=one-many stroke-width=4
+line (665,1685) -> (764,1586) start=one-many end=one-many stroke-width=4
+line (914,1685) -> (844,1564) start=one-many end=one-many stroke-width=4
+text "zero-one" at (110,1785) align=right
+line (150,1795) -> (202,1765) start=zero-one end=zero-one stroke-width=1.5
+line (262,1795) -> (304,1753) start=zero-one end=zero-one stroke-width=1.5
+line (394,1795) -> (364,1743) start=zero-one end=zero-one stroke-width=1.5
+line (464,1835) -> (585,1765) start=zero-one end=zero-one stroke-width=4
+line (665,1835) -> (764,1736) start=zero-one end=zero-one stroke-width=4
+line (914,1835) -> (844,1714) start=zero-one end=zero-one stroke-width=4
+text "zero-many" at (110,1935) align=right
+line (150,1945) -> (202,1915) start=zero-many end=zero-many stroke-width=1.5
+line (262,1945) -> (304,1903) start=zero-many end=zero-many stroke-width=1.5
+line (394,1945) -> (364,1893) start=zero-many end=zero-many stroke-width=1.5
+line (464,1985) -> (585,1915) start=zero-many end=zero-many stroke-width=4
+line (665,1985) -> (764,1886) start=zero-many end=zero-many stroke-width=4
+line (914,1985) -> (844,1864) start=zero-many end=zero-many stroke-width=4
