@@ -262,6 +262,35 @@ fn statements_end_at_a_newline() {
 }
 
 #[test]
+fn a_statement_keyword_after_a_statement_starts_a_new_one() {
+    let (f, d) = parse("box a at (0,0) size (1,1) box b at (0,0) size (1,1)\n");
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "parse");
+    assert_eq!(d[0].span, kashika_diag::Span::new(1, 27, 1, 30));
+    assert_eq!(d[0].message, "expected end of statement, found `box`");
+    assert_eq!(d[0].help, ["each statement starts on its own line"]);
+    let ids: Vec<_> = f
+        .stmts
+        .iter()
+        .map(|s| match s {
+            Stmt::Box(n) => n.id.name.as_str(),
+            _ => panic!("expected a box, got {s:#?}"),
+        })
+        .collect();
+    assert_eq!(ids, ["a", "b"]);
+}
+
+#[test]
+fn statement_keywords_with_eq_are_attributes() {
+    let f = parse_ok("box a at (0,0) size (1,1) shape=cylinder style=s\n");
+    let Stmt::Box(n) = &f.stmts[0] else {
+        panic!("expected box")
+    };
+    let keys: Vec<_> = n.attrs.iter().map(|a| a.key.name.as_str()).collect();
+    assert_eq!(keys, ["shape", "style"]);
+}
+
+#[test]
 fn arrow_continuation_skips_blank_and_comment_lines() {
     let f = parse_ok(
         "line a.top\n\n  // first hop\n  -> y 40\n  /* second\n     hop */\n  -> h 10 // trailing\n\n  end=arrow\nbox c at (0,0) size (1,1)\n",

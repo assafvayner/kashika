@@ -38,6 +38,7 @@ The CLI renders `.kash` files to SVG, PNG, JPEG or WebP and runs geometric check
       ortho
     ```
   - when the next non-blank line starts with an attribute (`key=` or `key@t=`) or, on a `line` or `arrow`, with a line flag (`ortho`). Neither can begin a new statement, because no statement keyword is followed by `=` or `@` and no statement keyword is also a flag.
+- A second statement on the same line (`box a at (0,0) box b at (0,50)`) is a `parse` error at its keyword. The first statement ends there and the second still parses. A statement keyword followed by `=` or `@` is an attribute (`shape=`, `style=`).
 - Attributes are `key=value` pairs in any order. Unknown or duplicate attributes are errors.
 - After a statement's id and label, `at <point>`, `size (w,h)` and attributes come in any order: `box a "A" style=service size (120,60) at (20,20)` is the same box as the form in §3. A missing `at`, a missing `size` on a statement that requires one (§3), or a repeated `at` or `size`, is a `parse` error that drops the statement.
 - `auto` is a size axis, not a word: it is recognized only inside `size (…)` (`size (120, auto)`), so it remains a valid id.
