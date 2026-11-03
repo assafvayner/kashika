@@ -172,20 +172,34 @@ fn metrics_are_generated_from_the_bundled_fonts() {
     assert_eq!(cells[3], 17.5);
 }
 
+fn fence(l: &str) -> Option<(char, usize, &str)> {
+    let c = l.chars().next().filter(|c| matches!(c, '`' | '~'))?;
+    let n = l.len() - l.trim_start_matches(c).len();
+    (n >= 3).then(|| (c, n, &l[n..]))
+}
+
 fn kash_blocks(md: &str) -> Vec<String> {
     let mut out = Vec::new();
-    let mut cur: Option<String> = None;
+    let mut open: Option<(char, usize, Option<String>)> = None;
     for l in md.lines() {
-        match (&mut cur, l) {
-            (None, "```kash") => cur = Some(String::new()),
-            (Some(_), "```") => out.extend(cur.take()),
-            (Some(b), l) => {
+        match (&mut open, fence(l)) {
+            (None, Some((c, n, info))) => {
+                let kash = info == "kash" || info.starts_with("kash ");
+                open = Some((c, n, kash.then(String::new)));
+            }
+            (Some((c, n, _)), Some((fc, fnn, rest)))
+                if fc == *c && fnn >= *n && rest.trim().is_empty() =>
+            {
+                out.extend(open.take().and_then(|(_, _, b)| b));
+            }
+            (Some((_, _, Some(b))), _) => {
                 b.push_str(l);
                 b.push('\n');
             }
             _ => {}
         }
     }
+    assert!(open.is_none(), "unterminated code fence");
     out
 }
 
@@ -322,4 +336,56 @@ fn spec_and_ref_name_every_builtin_asset() {
             );
         }
     }
+}
+
+fn skill_text() -> String {
+    std::fs::read_to_string(format!(
+        "{}/../../skills/kashika/SKILL.md",
+        env!("CARGO_MANIFEST_DIR")
+    ))
+    .unwrap()
+}
+
+#[test]
+fn kash_blocks_extracts_fences() {
+    let md = "````kash\na\n```\nb\n````\n~~~kash\nc\n~~~\n```kash title\nd\n```\n```sh\n```kash\n```\n```kashx\ne\n```\n";
+    assert_eq!(kash_blocks(md), ["a\n```\nb\n", "c\n", "d\n"]);
+}
+
+#[test]
+#[should_panic(expected = "unterminated")]
+fn kash_blocks_rejects_an_unterminated_fence() {
+    kash_blocks("```kash\nbox a at (0,0) size (10,10)\n``\n~~~\n");
+}
+
+#[test]
+fn kash_block_counts_per_page() {
+    let counts: std::collections::BTreeMap<&str, usize> = std::iter::once("")
+        .chain(TOPICS.iter().copied())
+        .map(|t| {
+            let args: &[&str] = if t.is_empty() { &[] } else { &[t] };
+            (t, kash_blocks(&page(args)).len())
+        })
+        .collect();
+    let expected: std::collections::BTreeMap<&str, usize> = [
+        ("", 2),
+        ("anchors", 0),
+        ("cli", 0),
+        ("examples", 1),
+        ("limits", 0),
+        ("lints", 0),
+        ("metrics", 0),
+        ("paths", 1),
+        ("recipes", 10),
+        ("rules", 0),
+        ("shapes", 2),
+        ("sizing", 0),
+        ("styles", 1),
+        ("syntax", 1),
+        ("text", 1),
+    ]
+    .into_iter()
+    .collect();
+    assert_eq!(counts, expected);
+    assert_eq!(kash_blocks(&skill_text()).len(), 1);
 }
