@@ -281,6 +281,161 @@ mod tests {
         (tmp, l)
     }
 
+    fn outside(written: &str) -> FileError {
+        FileError {
+            message: format!("`{written}` is outside the project root"),
+            help: Some(
+                "move it under the diagram's directory, pass `--include <file>` for this file, add its directory to KASHIKA_ICON_PATH, or pass --allow-path"
+                    .into(),
+            ),
+        }
+    }
+
+    fn not_found(written: &str) -> FileError {
+        FileError {
+            message: format!("file `{written}` not found"),
+            help: None,
+        }
+    }
+
+    /// A project at `<tmp>/proj` with `same.svg` in `proj/`, `proj/icons/`, `<tmp>/env/` and
+    /// `<tmp>/env2/`, and a file named `server` in `<tmp>/env/` and `<tmp>/env2/`.
+    fn layered() -> (tempfile::TempDir, PathBuf) {
+        let tmp = tempfile::tempdir().unwrap();
+        let proj = tmp.path().join("proj");
+        for d in ["proj/icons", "env", "env2"] {
+            std::fs::create_dir_all(tmp.path().join(d)).unwrap();
+        }
+        for f in [
+            "proj/same.svg",
+            "proj/icons/same.svg",
+            "env/same.svg",
+            "env2/same.svg",
+            "env/server",
+            "env2/server",
+        ] {
+            std::fs::write(tmp.path().join(f), "<svg/>").unwrap();
+        }
+        (tmp, proj)
+    }
+
+    fn loader(proj: &Path, icon_path: Vec<PathBuf>) -> Loader {
+        Loader::new(&Options {
+            path: Some(proj.join("main.kash")),
+            icon_path,
+            ..Options::default()
+        })
+    }
+
+    fn file(p: PathBuf) -> Result<Found, FileError> {
+        Ok(Found::File(p.canonicalize().unwrap()))
+    }
+
+    #[test]
+    fn referencing_dir_beats_icons_dir() {
+        let (_t, proj) = layered();
+        let mut l = loader(&proj, Vec::new());
+        l.add_icons_dir("icons").unwrap();
+        assert_eq!(l.find(l.root(), "same.svg"), file(proj.join("same.svg")));
+    }
+
+    #[test]
+    fn icons_dir_beats_env_path() {
+        let (t, proj) = layered();
+        std::fs::remove_file(proj.join("same.svg")).unwrap();
+        let mut l = loader(&proj, vec![t.path().join("env")]);
+        l.add_icons_dir("icons").unwrap();
+        assert_eq!(
+            l.find(l.root(), "same.svg"),
+            file(proj.join("icons/same.svg"))
+        );
+    }
+
+    #[test]
+    fn env_path_beats_bundled_icons() {
+        let (t, proj) = layered();
+        let l = loader(&proj, vec![t.path().join("env")]);
+        assert_eq!(
+            l.find(l.root(), "server"),
+            file(t.path().join("env/server"))
+        );
+        let l = loader(&proj, Vec::new());
+        assert_eq!(l.find(l.root(), "server"), Ok(Found::Bundled("server")));
+    }
+
+    #[test]
+    fn referencing_dir_beats_every_search_dir_and_bundled_icons() {
+        let (t, proj) = layered();
+        std::fs::write(proj.join("server"), "<svg/>").unwrap();
+        std::fs::write(proj.join("icons/server"), "<svg/>").unwrap();
+        let mut l = loader(&proj, vec![t.path().join("env")]);
+        l.add_icons_dir("icons").unwrap();
+        assert_eq!(l.find(l.root(), "server"), file(proj.join("server")));
+    }
+
+    #[test]
+    fn env_path_entries_are_searched_in_order() {
+        let (t, proj) = layered();
+        std::fs::remove_file(proj.join("same.svg")).unwrap();
+        let (env, env2) = (t.path().join("env"), t.path().join("env2"));
+        let l = loader(&proj, vec![env.clone(), env2.clone()]);
+        assert_eq!(l.find(l.root(), "same.svg"), file(env.join("same.svg")));
+        let l = loader(&proj, vec![env2.clone(), env]);
+        assert_eq!(l.find(l.root(), "same.svg"), file(env2.join("same.svg")));
+    }
+
+    #[test]
+    fn absolute_paths_are_outside_the_root() {
+        let (t, l) = setup(false);
+        let abs = t.path().join("secret.svg");
+        let written = abs.to_str().unwrap();
+        assert_eq!(l.find(l.root(), written), Err(outside(written)));
+    }
+
+    #[test]
+    fn dot_dot_resolves_through_the_file_system() {
+        let (_t, l) = setup(false);
+        assert_eq!(
+            l.find(l.root(), "sub/../icons/s3.svg"),
+            Err(not_found("sub/../icons/s3.svg"))
+        );
+        std::fs::create_dir(l.root().join("sub")).unwrap();
+        assert!(matches!(
+            l.find(l.root(), "sub/../icons/s3.svg"),
+            Ok(Found::File(_))
+        ));
+    }
+
+    #[test]
+    fn directories_outside_the_root_are_not_found() {
+        let (t, l) = setup(false);
+        std::fs::create_dir(t.path().join("outdir")).unwrap();
+        assert_eq!(l.find(l.root(), "../outdir"), Err(not_found("../outdir")));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_first_hit_decides_even_when_it_escapes() {
+        let (t, proj) = layered();
+        std::fs::create_dir_all(t.path().join("out")).unwrap();
+        std::fs::write(t.path().join("out/x.svg"), "<svg/>").unwrap();
+        std::os::unix::fs::symlink(t.path().join("out"), proj.join("esc")).unwrap();
+        std::fs::create_dir_all(t.path().join("env/esc")).unwrap();
+        std::fs::write(t.path().join("env/esc/x.svg"), "<svg/>").unwrap();
+        let l = loader(&proj, vec![t.path().join("env")]);
+        assert_eq!(l.find(l.root(), "esc/x.svg"), Err(outside("esc/x.svg")));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_symlinked_icons_dir_outside_the_root_is_rejected() {
+        let (t, proj) = layered();
+        std::os::unix::fs::symlink(t.path().join("env"), proj.join("link")).unwrap();
+        let mut l = loader(&proj, Vec::new());
+        assert_eq!(l.add_icons_dir("link"), Err(outside("link")));
+        assert_eq!(l.find(l.root(), "server"), Ok(Found::Bundled("server")));
+    }
+
     #[test]
     fn finds_relative_files() {
         let (_t, l) = setup(false);
@@ -331,11 +486,7 @@ mod tests {
     fn escaping_the_root_needs_allow_path() {
         let (_t, l) = setup(false);
         let e = l.find(l.root(), "../secret.svg").unwrap_err();
-        assert!(
-            e.message.contains("outside the project root"),
-            "{}",
-            e.message
-        );
+        assert_eq!(e, outside("../secret.svg"));
         let (_t, l) = setup(true);
         assert!(l.find(l.root(), "../secret.svg").is_ok());
     }
@@ -351,11 +502,7 @@ mod tests {
             ..Options::default()
         });
         let e = l.find(l.root(), "link.svg").unwrap_err();
-        assert!(
-            e.message.contains("outside the project root"),
-            "{}",
-            e.message
-        );
+        assert_eq!(e, outside("link.svg"));
         let e = l.find(l.root(), "lnk.svg").unwrap_err();
         assert!(!e.help.unwrap_or_default().contains("link"));
     }
@@ -374,8 +521,22 @@ mod tests {
     #[test]
     fn urls_are_rejected() {
         let (_t, l) = setup(false);
-        let e = l.find(l.root(), "https://example.com/x.svg").unwrap_err();
-        assert!(e.message.contains("not a local file"), "{}", e.message);
+        for name in [
+            "https://example.com/x.svg",
+            "file:///etc/hosts",
+            "data:image/png;base64,AAAA",
+        ] {
+            let e = l.find(l.root(), name).unwrap_err();
+            assert_eq!(
+                e,
+                FileError {
+                    message: format!(
+                        "`{name}` is not a local file; only local files are supported"
+                    ),
+                    help: Some("download it and refer to it by a relative path".into()),
+                },
+            );
+        }
     }
 
     #[test]
@@ -410,12 +571,7 @@ mod tests {
         });
         assert!(l.find(l.root(), "../secret.svg").is_ok());
         let e = l.find(l.root(), "../other.svg").unwrap_err();
-        assert!(
-            e.message.contains("outside the project root"),
-            "{}",
-            e.message
-        );
-        assert!(e.help.unwrap_or_default().contains("--include"));
+        assert_eq!(e, outside("../other.svg"));
         let e = l.find(l.root(), "../secrt.svg").unwrap_err();
         assert_eq!(e.help.as_deref(), Some("did you mean `../secret.svg`?"));
     }

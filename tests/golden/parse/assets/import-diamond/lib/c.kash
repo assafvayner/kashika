@@ -1,0 +1,2 @@
+import "d.kash"
+style c_style { fill=#fce8e6 }

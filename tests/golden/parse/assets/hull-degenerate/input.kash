@@ -1,0 +1,7 @@
+// spec: 3a
+// dump: scene
+// An SVG whose paths give fewer than three hull points uses its bounding box as the hull outline.
+diagram "degenerate hull" size (300,120)
+shape dot from "dot.svg" outline=hull
+box a "dot" at (20,20) size (80,40) shape=dot
+junction j at a.top@0.25

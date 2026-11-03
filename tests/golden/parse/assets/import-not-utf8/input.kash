@@ -1,0 +1,4 @@
+// spec: 3a, 7
+// An imported library that is not valid UTF-8 is a `file` error.
+diagram "not utf-8" size (300,120)
+import "lib/bad.kash"

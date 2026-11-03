@@ -476,11 +476,8 @@ pub(crate) fn twice(kind: &str, name: &str, first: Option<&Origin>) -> String {
 
 fn read_module(path: &Path, written: &str, loader: &Loader) -> Result<Module, FileError> {
     let bytes = loader.read(&Found::File(path.to_path_buf()), written, MAX_IMPORT_BYTES)?;
-    let src = String::from_utf8(bytes).map_err(|_| {
-        FileError::new(format!(
-            "cannot read `{written}`: stream did not contain valid UTF-8"
-        ))
-    })?;
+    let src = String::from_utf8(bytes)
+        .map_err(|_| FileError::new(format!("`{written}` is not valid UTF-8")))?;
     let (file, parse_diags) = kashika_syntax::parse(&src);
     let dir = path.parent().unwrap_or(path).to_path_buf();
     let mut styles = HashMap::new();

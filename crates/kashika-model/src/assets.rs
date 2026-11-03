@@ -636,4 +636,97 @@ mod tests {
     fn probe_reports_natural_size() {
         assert_eq!(probe(&png(3, 7), false), Ok((3.0, 7.0)));
     }
+
+    fn jpeg(w: u16, h: u16) -> Vec<u8> {
+        let mut b = vec![0xFF, 0xD8, 0xFF, 0xE0, 0, 16];
+        b.extend(b"JFIF\0\x01\x01\0\0\x01\0\x01\0\0");
+        b.extend([0xFF, 0xC0, 0, 17, 8]);
+        b.extend(h.to_be_bytes());
+        b.extend(w.to_be_bytes());
+        b.extend([3, 1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1, 0xFF, 0xD9]);
+        b
+    }
+
+    fn project(files: &[(&str, &[u8])]) -> (tempfile::TempDir, Loader) {
+        let tmp = tempfile::tempdir().unwrap();
+        for (name, bytes) in files {
+            std::fs::write(tmp.path().join(name), bytes).unwrap();
+        }
+        let l = Loader::new(&crate::loader::Options {
+            path: Some(tmp.path().join("main.kash")),
+            ..Default::default()
+        });
+        (tmp, l)
+    }
+
+    fn load_one(name: &str, bytes: &[u8]) -> Result<Asset, FileError> {
+        let (_t, l) = project(&[(name, bytes)]);
+        let mut s = Store::default();
+        let i = s.load(&l, l.root(), name)?;
+        Ok(s.into_vec().swap_remove(i))
+    }
+
+    #[test]
+    fn raster_type_is_sniffed_from_the_content_not_the_extension() {
+        let a = load_one("photo.png", &jpeg(30, 20)).unwrap();
+        assert_eq!((a.mime, a.natural), ("image/jpeg", (30.0, 20.0)));
+        let a = load_one("pic.jpg", &png(5, 6)).unwrap();
+        assert_eq!((a.mime, a.natural), ("image/png", (5.0, 6.0)));
+    }
+
+    #[test]
+    fn gif_images_are_rejected() {
+        let e = load_one("x.gif", b"GIF89a\x01\x00\x01\x00\x00\x00\x00;").unwrap_err();
+        assert_eq!(
+            e,
+            FileError::new("cannot use `x.gif`: only SVG, PNG and JPEG images are supported")
+        );
+    }
+
+    #[test]
+    fn an_svg_file_holding_png_bytes_is_an_svg_parse_error() {
+        let e = load_one("x.svg", &png(4, 4)).unwrap_err();
+        assert_eq!(
+            e,
+            FileError::new(
+                "cannot use `x.svg`: not a valid SVG: provided data has not an UTF-8 encoding"
+            )
+        );
+    }
+
+    #[test]
+    fn a_truncated_png_is_accepted_with_its_header_size() {
+        let mut bytes = png(12, 34);
+        bytes.extend(b"\0\0\0\x04IDAT");
+        let a = load_one("t.png", &bytes).unwrap();
+        assert_eq!((a.mime, a.natural), ("image/png", (12.0, 34.0)));
+    }
+
+    #[test]
+    fn raster_bytes_are_embedded_verbatim() {
+        for (name, bytes) in [("a.png", png(7, 9)), ("b.jpg", jpeg(7, 9))] {
+            assert_eq!(load_one(name, &bytes).unwrap().bytes, bytes, "{name}");
+        }
+    }
+
+    #[test]
+    fn assets_are_deduplicated_by_path_and_color() {
+        let cc = br#"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="currentColor"/></svg>"#;
+        let fixed = br##"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="#123456"/></svg>"##;
+        let (_t, l) = project(&[("cc.svg", cc), ("fixed.svg", fixed), ("p.png", &png(2, 2))]);
+        let mut s = Store::default();
+        let r = l.root();
+        let red = s.load_icon(&l, r, "cc.svg", "#ff0000").unwrap();
+        assert_eq!(s.load_icon(&l, r, "cc.svg", "#ff0000").unwrap(), red);
+        let blue = s.load_icon(&l, r, "cc.svg", "#0000ff").unwrap();
+        assert_ne!(blue, red);
+        let f = s.load_icon(&l, r, "fixed.svg", "#ff0000").unwrap();
+        assert_eq!(s.load_icon(&l, r, "fixed.svg", "#0000ff").unwrap(), f);
+        assert_eq!(s.load(&l, r, "fixed.svg").unwrap(), f);
+        let p = s.load(&l, r, "p.png").unwrap();
+        assert_eq!(s.load(&l, r, "./p.png").unwrap(), p);
+        let server = s.load_icon(&l, r, "server", "#ff0000").unwrap();
+        assert_eq!(s.load_icon(&l, r, "server", "#ff0000").unwrap(), server);
+        assert_eq!(s.into_vec().len(), 5);
+    }
 }
