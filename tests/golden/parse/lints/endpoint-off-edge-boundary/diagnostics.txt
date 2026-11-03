@@ -1,0 +1,8 @@
+warn[endpoint-off-edge] 5:26-5:34: end_flag ends at (92,110), 8px from the outline of 'a'
+  = help: snap it to the outline with an anchor: `a.left@0.13`
+  elements: [{"from":[0,110],"id":"end_flag","kind":"line","segment":1,"span":{"col":1,"end_col":34,"end_line":5,"line":5},"to":[92,110]},{"bbox":[[100,100],[200,180]],"id":"a","kind":"box","span":{"col":1,"end_col":33,"end_line":4,"line":4}}]
+  facts: {"nearest":[100,110]}
+warn[endpoint-off-edge] 7:1-7:36: start_flag starts at (92,140), 8px from the outline of 'a'
+  = help: snap it to the outline with an anchor: `a.left`
+  elements: [{"from":[92,140],"id":"start_flag","kind":"line","segment":1,"span":{"col":1,"end_col":36,"end_line":7,"line":7},"to":[0,140]},{"bbox":[[100,100],[200,180]],"id":"a","kind":"box","span":{"col":1,"end_col":33,"end_line":4,"line":4}}]
+  facts: {"nearest":[100,140]}

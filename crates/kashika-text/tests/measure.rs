@@ -35,12 +35,87 @@ fn unclosed_markup_fails_measurement() {
 
 #[test]
 fn outline_is_deterministic_path_data() {
-    let runs = parse_markup("Hi", false).unwrap().remove(0);
+    let runs = parse_markup("Hi **b** `c`", false).unwrap().remove(0);
     let d = outline(&runs, 14.0, 10.0, 20.0);
-    assert!(d.starts_with('M'), "{d}");
-    assert!(d.contains('Z'));
-    assert_eq!(d, outline(&runs, 14.0, 10.0, 20.0));
+    let path = format!("{}/tests/fixtures/outline.txt", env!("CARGO_MANIFEST_DIR"));
+    if std::env::var_os("KASHIKA_BLESS").is_some_and(|v| v == "1") {
+        std::fs::create_dir_all(std::path::Path::new(&path).parent().unwrap()).unwrap();
+        std::fs::write(&path, format!("{d}\n")).unwrap();
+    }
+    let expected = std::fs::read_to_string(&path)
+        .unwrap_or_else(|e| panic!("{path}: {e}; bless with KASHIKA_BLESS=1"));
+    assert_eq!(
+        format!("{d}\n"),
+        expected,
+        "bless with KASHIKA_BLESS=1 if intended"
+    );
     assert!(outline(&parse_markup(" ", false).unwrap()[0], 14.0, 0.0, 0.0).is_empty());
+}
+
+const TABLE: &[&str] = &[
+    "",
+    " ",
+    "AV",
+    "To",
+    "Wa",
+    "iiii",
+    "MMMM",
+    "a\tb",
+    "**b** `c`",
+    "🚀",
+    "👩\u{200D}💻",
+    "🇺🇸🇺",
+    "1\u{FE0F}\u{20E3}",
+    "⚠",
+    "⚠\u{FE0F}",
+    "┌─┐",
+    "日本",
+    "مرحبا",
+    "café",
+    "a\nb\nc",
+];
+
+/// The x of every point (on-curve and control) in SVG path data.
+fn xs(d: &str) -> Vec<f64> {
+    let nums: Vec<f64> = d
+        .split(|c: char| c.is_ascii_alphabetic() || c == ' ')
+        .filter(|s| !s.is_empty())
+        .map(|s| s.parse().unwrap())
+        .collect();
+    nums.chunks(2).map(|p| p[0]).collect()
+}
+
+#[test]
+fn ink_stays_inside_the_measured_box() {
+    let (x, size) = (10.0, 14.0);
+    let mut strings: Vec<String> = TABLE.iter().map(|s| s.to_string()).collect();
+    strings.push("x".repeat(500));
+    for s in &strings {
+        for bold in [false, true] {
+            let b = measure(s, size, bold).unwrap();
+            for l in b.lines() {
+                for ink in xs(&outline(&l.runs, size, x, 20.0)) {
+                    assert!(
+                        (x - 0.5..=x + l.width + 0.5).contains(&ink),
+                        "{s:?} bold={bold}: ink at {ink} outside [{x}, {}]",
+                        x + l.width
+                    );
+                }
+                let layers = kashika_text::color_layers(&l.runs, size, x, 20.0);
+                for layer in &layers {
+                    let lx = xs(&layer.d);
+                    let lo = lx.iter().copied().fold(f64::INFINITY, f64::min);
+                    let hi = lx.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+                    let pen = x + (((lo + hi) / 2.0 - x) / size).floor() * size;
+                    assert!(
+                        lo >= pen - 0.5 && hi <= pen + size + 0.5,
+                        "{s:?}: emoji layer [{lo}, {hi}] outside [{pen}, {}]",
+                        pen + size
+                    );
+                }
+            }
+        }
+    }
 }
 
 #[test]

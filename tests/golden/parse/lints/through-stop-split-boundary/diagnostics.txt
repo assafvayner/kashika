@@ -1,0 +1,9 @@
+warn[through] 6:1-6:29: split passes through box 'm'
+  = help: segment 1 runs at y=115; free y-intervals across x 20..260: 0..94, 166..600
+  = help: if 'm' is a stop on this path, split the line at it: one line ending at 'm'.left, another starting at 'm'.right
+  elements: [{"from":[20,115],"id":"split","kind":"line","segment":1,"span":{"col":1,"end_col":29,"end_line":6,"line":6},"to":[260,115]},{"bbox":[[100,100],[180,160]],"id":"m","kind":"box","span":{"col":1,"end_col":32,"end_line":4,"line":4}}]
+  facts: {"entry":[100,115],"exit":[180,115],"free":{"axis":"y","band":[20,260],"intervals":[[0,94],[166,600]]}}
+warn[through] 7:1-7:35: no_split passes through box 'n'
+  = help: segment 1 runs at y=114.9; free y-intervals across x 420..660: 0..94, 166..600
+  elements: [{"from":[420,114.9],"id":"no_split","kind":"line","segment":1,"span":{"col":1,"end_col":35,"end_line":7,"line":7},"to":[660,114.9]},{"bbox":[[500,100],[580,160]],"id":"n","kind":"box","span":{"col":1,"end_col":32,"end_line":5,"line":5}}]
+  facts: {"entry":[500,114.9],"exit":[580,114.9],"free":{"axis":"y","band":[420,660],"intervals":[[0,94],[166,600]]}}

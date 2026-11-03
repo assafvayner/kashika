@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn slight_slant_suggests_the_level_anchor() {
@@ -21,6 +22,7 @@ fn slight_slant_suggests_the_level_anchor() {
             "or move one end 5px in y so both ends share it, or use `hv`/`vh` (or an `x`/`y` target) for a deliberate elbow".to_string(),
         ]
     );
+    assert_eq!(d[0].span, Span::new(4, 23, 4, 31));
 }
 
 #[test]
@@ -68,4 +70,21 @@ fn offset_anchor_when_t_does_not_land_exactly() {
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].help[0], "end at `b.left+(0,-5)` to keep y=400");
+}
+
+#[test]
+fn slant_boundaries_at_five_degrees_and_tolerance() {
+    let d = lint(
+        "near-axis",
+        "line steep_clean (20,40) -> (320,66.3)\nline steep_flag (420,40) -> (720,66.2)\nline slight_clean (20,300) -> (320,300.5)\nline slight_flag (420,300) -> (720,300.6)\n",
+    );
+    assert_eq!(d.len(), 2, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "segment 1 of steep_flag is 26.2px (4.99°) off horizontal, from (420,40) to (720,66.2)"
+    );
+    assert_eq!(
+        d[1].message,
+        "segment 1 of slight_flag is 0.6px (0.11°) off horizontal, from (420,300) to (720,300.6)"
+    );
 }

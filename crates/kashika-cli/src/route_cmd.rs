@@ -5,7 +5,7 @@ use clap::Args;
 use kashika_geom::fmt_num as num;
 use kashika_route::{Error, Request, Style, Suggestion};
 
-use crate::{Format, term};
+use crate::{Format, report, term};
 
 pub const SCHEMA: &str = "kashika.route/1";
 
@@ -86,32 +86,36 @@ pub fn run(a: &RouteArgs) -> ExitCode {
     };
     match kashika_route::suggest(&req) {
         Err(Error::Usage(msg)) => crate::tool_error(a.format, SCHEMA, &msg),
-        Err(Error::Diagnostics(diags)) => {
-            match a.format {
-                Format::Json => println!(
-                    "{}",
-                    serde_json::json!({
-                        "schema": SCHEMA,
-                        "tool": env!("CARGO_PKG_VERSION"),
-                        "input": { "name": name },
-                        "diagnostics": diags,
-                    })
-                ),
-                Format::Text => {
-                    let name = term::line(&name);
-                    for d in &diags {
-                        println!("{name}: error[{}]: {}", d.code, term::line(&d.message));
-                        for h in &d.help {
-                            println!("      = help: {}", term::line(h));
-                        }
-                    }
+        Err(Error::Input(diags) | Error::Endpoints(diags)) if a.format == Format::Json => {
+            crate::outln!(
+                "{}",
+                serde_json::json!({
+                    "schema": SCHEMA,
+                    "tool": env!("CARGO_PKG_VERSION"),
+                    "input": { "name": name },
+                    "diagnostics": diags,
+                })
+            );
+            ExitCode::from(2)
+        }
+        Err(Error::Input(mut diags)) => {
+            let opts = report::Opts::bare();
+            crate::out!("{}", report::text(&name, &src, &mut diags, &opts, None));
+            ExitCode::from(2)
+        }
+        Err(Error::Endpoints(diags)) => {
+            let name = term::line(&name);
+            for d in &diags {
+                crate::outln!("{name}: error[{}]: {}", d.code, term::line(&d.message));
+                for h in &d.help {
+                    crate::outln!("      = help: {}", term::line(h));
                 }
             }
             ExitCode::from(2)
         }
         Ok(s) => {
             match a.format {
-                Format::Json => println!(
+                Format::Json => crate::outln!(
                     "{}",
                     serde_json::json!({
                         "schema": SCHEMA,
@@ -124,7 +128,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
                         "existing_lines": s.existing_lines,
                     })
                 ),
-                Format::Text => print!("{}", term::text(&text(&s))),
+                Format::Text => crate::out!("{}", term::text(&text(&s))),
             }
             ExitCode::from(u8::from(s.candidates.is_empty()))
         }

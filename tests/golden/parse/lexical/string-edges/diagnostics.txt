@@ -1,0 +1,8 @@
+error[parse] 6:9-6:11: unknown escape `\q`
+  = help: strings support `\"`, `\\`, `\n`, `\*` and `\``; write `\\` for a backslash
+error[parse] 7:7-7:12: unterminated string
+  = help: close the string with `"` before the end of the line
+error[parse] 7:12-7:13: expected `at`, found end of line
+error[parse] 9:7-9:12: unterminated string
+  = help: close the string with `"` before the end of the line
+error[parse] 9:12-9:12: expected `at`, found end of file

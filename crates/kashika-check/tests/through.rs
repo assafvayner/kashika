@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn line_through_a_box_reports_entry_exit_and_free_lanes() {
@@ -10,6 +11,7 @@ fn line_through_a_box_reports_entry_exit_and_free_lanes() {
     );
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "l passes through box 'cache'");
+    assert_eq!(d[0].span, Span::new(5, 1, 5, 25));
     assert_eq!(d[0].facts["entry"], serde_json::json!([300.0, 140.0]));
     assert_eq!(d[0].facts["exit"], serde_json::json!([380.0, 140.0]));
     assert_eq!(
@@ -139,4 +141,27 @@ fn normal_attachments_to_own_boxes_are_not_flagged() {
         let d = lint("through", src);
         assert!(d.is_empty(), "{src}: {d:#?}");
     }
+}
+
+#[test]
+fn split_help_stops_past_a_quarter_of_the_height_off_center() {
+    let d = lint(
+        "through",
+        "box m at (100,100) size (80,60)\nbox n at (500,100) size (80,60)\nline split (20,115) -> h 240\nline no_split (420,114.9) -> h 240\n",
+    );
+    assert_eq!(d.len(), 2, "{d:#?}");
+    assert_eq!(d[0].message, "split passes through box 'm'");
+    assert_eq!(
+        d[0].help[1],
+        "if 'm' is a stop on this path, split the line at it: one line ending at 'm'.left, another starting at 'm'.right"
+    );
+    assert_eq!(d[1].message, "no_split passes through box 'n'");
+    assert!(
+        !d[1]
+            .help
+            .iter()
+            .any(|h| h.contains("is a stop on this path")),
+        "{:#?}",
+        d[1].help
+    );
 }

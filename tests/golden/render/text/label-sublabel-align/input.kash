@@ -1,4 +1,5 @@
 // spec: 6
+// raster: png
 // Labels and sublabels in every alignment.
 diagram "align" size (420,300)
 box tl "Top left" at (10,10) size (130,80) sublabel="sub" text-align=left text-valign=top

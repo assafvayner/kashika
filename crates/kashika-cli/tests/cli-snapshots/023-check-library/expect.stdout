@@ -1,0 +1,5 @@
+input.kash:4:23: error[attr]: `stroke` expects a color like `#1a73e8`, a CSS color name or `none`
+    4 | style svc { fill=#eef stroke=nope }
+input.kash:5:1: error[duplicate-style]: style `svc` is defined twice
+    5 | style svc { fill=#000 }
+2 errors, 0 warnings

@@ -1,0 +1,11 @@
+Rewrite a .kash file in canonical layout (whitespace only)
+
+Usage: kashika fmt [OPTIONS] <FILE>
+
+Arguments:
+  <FILE>  The .kash file to format, or `-` to format stdin to stdout
+
+Options:
+      --check                    Exit 1 if the file is not formatted, without rewriting it
+      --stdin-name <STDIN_NAME>  File name to report for stdin input
+  -h, --help                     Print help

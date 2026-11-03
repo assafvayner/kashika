@@ -1,5 +1,5 @@
 // spec: 2
-// dump: ast
+// dump: ast, tokens
 // A string must close on its own line.
 diagram "unterminated" size (300,100)
 box a "never closed at (10,10) size (120,40)

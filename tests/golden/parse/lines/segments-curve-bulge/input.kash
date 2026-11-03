@@ -1,5 +1,5 @@
 // spec: 5
-// dump: scene
+// dump: ast, scene
 // `curve left N`/`right N` bulge as seen walking along the line: rightward + left bulges up.
 diagram "curves" size (300,200)
 line up (20,60) -> curve left 30 (220,60)

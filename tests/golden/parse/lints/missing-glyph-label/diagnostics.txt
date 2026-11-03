@@ -1,0 +1,4 @@
+warn[missing-glyph] 4:26-4:36: label of l uses characters the bundled fonts cannot draw: '日', '本'
+  = help: they draw as an empty box; use characters from Latin, Greek, Cyrillic, box drawing or emoji, or an `icon=`/`image`
+  elements: [{"id":"l","kind":"line","span":{"col":1,"end_col":36,"end_line":4,"line":4}}]
+  facts: {"codepoints":["U+65E5","U+672C"]}

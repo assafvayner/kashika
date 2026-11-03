@@ -1,0 +1,11 @@
+// spec: 7
+// `near` at clearance 6: a line exactly 6px from a box or a run of exactly 20px is clean, 5.9px or 21px is flagged.
+diagram "near boundary" size (800,600)
+box a at (100,100) size (100,60)
+box b at (500,100) size (100,60)
+line box_clean (20,166) -> h 260
+line box_flag (420,165.9) -> h 260
+line run_base (20,300) -> h 300
+line run_clean (20,304) -> h 20
+line run_base2 (20,450) -> h 300
+line run_flag (20,454) -> h 21

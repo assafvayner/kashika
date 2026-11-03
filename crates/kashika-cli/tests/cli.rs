@@ -932,3 +932,242 @@ fn library_validates_and_applies_focus() {
     assert_eq!(code, 3, "{err}");
     assert!(err.contains("unknown id `nosuch`"), "{err}");
 }
+
+#[test]
+fn closed_stdout_does_not_panic() {
+    use std::io::Read;
+    use std::process::{Command, Stdio};
+    let (reader, writer) = std::io::pipe().unwrap();
+    drop(reader);
+    let mut child = Command::new(env!("CARGO_BIN_EXE_kashika"))
+        .arg("ref")
+        .stdout(writer)
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let status = child.wait().unwrap();
+    let mut err = String::new();
+    child
+        .stderr
+        .take()
+        .unwrap()
+        .read_to_string(&mut err)
+        .unwrap();
+    assert!(!err.contains("panicked"), "stderr: {err}");
+    assert_ne!(status.code(), Some(101));
+}
+
+fn shape(v: &serde_json::Value) -> serde_json::Value {
+    use serde_json::{Value, json};
+    match v {
+        Value::String(_) => json!("string"),
+        Value::Number(_) => json!("number"),
+        Value::Bool(_) => json!("bool"),
+        Value::Null => json!("null"),
+        Value::Array(a) => Value::Array(a.first().map(shape).into_iter().collect()),
+        Value::Object(o) => Value::Object(o.iter().map(|(k, v)| (k.clone(), shape(v))).collect()),
+    }
+}
+
+fn json_stdout(args: &[&str]) -> (String, serde_json::Value) {
+    let (_, out, _) = run_ok(args, "");
+    let v = serde_json::from_str(&out).unwrap();
+    (out, v)
+}
+
+#[test]
+fn json_shapes() {
+    use serde_json::json;
+    let basic = fixture("basic.kash");
+    let crossing = fixture("crossing.kash");
+    let route = fixture("route.kash");
+    let input = json!({"name": "string", "sha256": "string"});
+    let span =
+        json!({"col": "number", "end_col": "number", "end_line": "number", "line": "number"});
+
+    let (raw, v) = json_stdout(&["check", &basic, "--format", "json"]);
+    assert_eq!(
+        shape(&v),
+        json!({
+            "by_code": {},
+            "counts": {"error": "number", "suppressed": "number", "warn": "number"},
+            "diagnostics": [],
+            "input": input,
+            "metrics": {"crossings": "number", "wire_px": "number"},
+            "output": "null",
+            "schema": "string",
+            "tool": "string",
+            "truncated": "bool",
+        })
+    );
+    assert!(raw.contains("\"wire_px\":160}"), "{raw}");
+    assert!(raw.contains("\"crossings\":0,"), "{raw}");
+
+    let (_, v) = json_stdout(&["check", &crossing, "--format", "json"]);
+    assert_eq!(
+        shape(&v["by_code"]),
+        json!({"cross": {"active": "number", "suppressed": "number"}})
+    );
+    assert_eq!(
+        shape(&v["diagnostics"]),
+        json!([{
+            "code": "string",
+            "elements": [{
+                "from": ["number"],
+                "id": "string",
+                "kind": "string",
+                "segment": "number",
+                "span": span,
+                "to": ["number"],
+            }],
+            "facts": {
+                "at": ["number"],
+                "free": {"axis": "string", "band": ["number"], "intervals": [["number"]]},
+            },
+            "help": ["string"],
+            "message": "string",
+            "severity": "string",
+            "span": span,
+            "suggestions": [],
+        }])
+    );
+
+    let (_, v) = json_stdout(&["inspect", &basic, "--format", "json"]);
+    let anchors = json!({
+        "bl": ["number"], "bottom": ["number"], "br": ["number"], "center": ["number"],
+        "left": ["number"], "right": ["number"], "tl": ["number"], "top": ["number"],
+        "tr": ["number"],
+    });
+    let bbox = json!([["number"]]);
+    assert_eq!(
+        shape(&v),
+        json!({
+            "schema": "string",
+            "tool": "string",
+            "input": input,
+            "counts": {"error": "number", "warn": "number"},
+            "canvas": ["number"],
+            "shapes": [{
+                "id": "string", "kind": "string", "label": "string", "parent": "null",
+                "line": "number", "bbox": bbox, "local_bbox": bbox,
+                "anchors": anchors, "local_anchors": anchors,
+            }],
+            "junctions": [],
+            "texts": [],
+            "lines": [{
+                "id": "string", "parent": "null", "line": "number", "length": "number",
+                "vertices": [["number"]], "local_vertices": [["number"]],
+                "segments": [{
+                    "index": "number", "kind": "string", "line": "number", "col": "number",
+                    "from": ["number"], "to": ["number"],
+                }],
+                "labels": [{"t": "number", "text": "string", "at": ["number"], "bbox": bbox}],
+            }],
+            "placement": [{"from": "string", "to": "string", "kind": "string"}],
+        })
+    );
+
+    let (_, v) = json_stdout(&["route", &route, "a.right", "b.left", "--format", "json"]);
+    let end = json!({"at": {"x": "number", "y": "number"}, "expr": "string", "owner": "string", "side": "string"});
+    assert_eq!(
+        shape(&v),
+        json!({
+            "candidates": [{
+                "corridor": {"axis": "string", "band": ["number"]},
+                "crossed": [], "crossings": "number", "length": "number", "near": "number",
+                "segments": "number", "statement": "string", "transited": [], "transits": "number",
+            }],
+            "existing_lines": [],
+            "from": end,
+            "input": {"name": "string"},
+            "schema": "string",
+            "style": "string",
+            "to": end,
+            "tool": "string",
+        })
+    );
+
+    let (_, v) = json_stdout(&["measure", "API", "**Worker**", "--format", "json"]);
+    assert_eq!(
+        shape(&v),
+        json!({
+            "results": [{"height": "number", "lines": "number", "text": "string", "width": "number"}],
+            "schema": "string",
+            "size": "number",
+            "tool": "string",
+            "weight": "string",
+        })
+    );
+
+    let (_, v) = json_stdout(&["icons", "--search", "db", "--format", "json"]);
+    assert_eq!(
+        shape(&v),
+        json!({
+            "icons": [{
+                "library": "string", "matched_keyword": "string", "name": "string",
+                "path": "string", "size": ["number"],
+            }],
+            "schema": "string",
+        })
+    );
+
+    let (_, v) = json_stdout(&["ref", "limits", "--json"]);
+    assert_eq!(
+        shape(&v),
+        json!({
+            "markdown": "string", "schema": "string", "tool": "string", "topic": "string",
+            "topics": ["string"],
+        })
+    );
+
+    let (code, out, _) = run_ok(&["check", "/nonexistent.kash", "--format", "json"], "");
+    assert_eq!(code, 3);
+    assert_eq!(
+        shape(&serde_json::from_str(&out).unwrap()),
+        json!({"schema": "string", "tool": "string", "tool_error": "string"})
+    );
+}
+
+#[test]
+fn icon_path_lists_directories_in_priority_order() {
+    let tmp = tempfile::tempdir().unwrap();
+    let icon = |dir: &str, body: &str| {
+        let d = tmp.path().join(dir);
+        std::fs::create_dir_all(&d).unwrap();
+        std::fs::write(
+            d.join("x.svg"),
+            format!(r#"<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">{body}</svg>"#),
+        )
+        .unwrap();
+        d
+    };
+    let first = icon(
+        "first",
+        r##"<rect width="24" height="24" fill="#ff0000"/>"##,
+    );
+    let second = icon(
+        "second",
+        r##"<circle cx="12" cy="12" r="10" fill="#0000ff"/>"##,
+    );
+    let src = tmp.path().join("a.kash");
+    std::fs::write(
+        &src,
+        "diagram \"a\" size (100,100)\nbox a at (10,10) size (60,60) icon=\"x.svg\"\n",
+    )
+    .unwrap();
+    let render = |dirs: &[&std::path::Path]| {
+        let out = tmp.path().join("out.svg");
+        let _ = std::fs::remove_file(&out);
+        kashika()
+            .env("KASHIKA_ICON_PATH", std::env::join_paths(dirs).unwrap())
+            .args(["render", src.to_str().unwrap(), "-o", out.to_str().unwrap()])
+            .assert()
+            .code(0);
+        std::fs::read_to_string(out).unwrap()
+    };
+    let only_first = render(&[&first]);
+    let only_second = render(&[&second]);
+    assert_ne!(only_first, only_second);
+    assert_eq!(render(&[&first, &second]), only_first);
+    assert_eq!(render(&[&second, &first]), only_second);
+}

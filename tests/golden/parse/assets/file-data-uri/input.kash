@@ -1,0 +1,5 @@
+// spec: 3a, 7
+// `data:` URIs and `file://` URLs are not local files.
+diagram "data uri" size (300,200)
+image i "data:image/png;base64,iVBORw0KGgo=" at (20,20) size (40,40)
+box a "A" at (100,20) size (80,40) icon="file:///tmp/x.svg"

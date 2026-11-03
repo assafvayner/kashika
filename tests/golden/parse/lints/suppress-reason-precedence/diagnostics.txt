@@ -1,0 +1,17 @@
+warn[near] 5:1-5:52: skim runs 4px from box 'm' (clearance 6)
+  = help: segment 1 runs at y=84; free y-intervals across x 20..180: 0..34, 86..174, 326..400
+  = suppressed: skim
+  elements: [{"from":[20,84],"id":"skim","kind":"line","segment":1,"span":{"col":1,"end_col":52,"end_line":5,"line":5},"to":[180,84]},{"bbox":[[40,40],[120,80]],"id":"m","kind":"box","span":{"col":1,"end_col":56,"end_line":4,"line":4}}]
+  facts: {"clearance":6,"distance":4,"free":{"axis":"y","band":[20,180],"intervals":[[0,34],[86,174],[326,400]]}}
+warn[through] 7:1-7:60: pierce passes through box 'n'
+  = help: segment 1 runs at y=60; free y-intervals across x 260..420: 0..34, 86..400
+  = help: if 'n' is a stop on this path, split the line at it: one line ending at 'n'.left, another starting at 'n'.right
+  = suppressed: pierce
+  elements: [{"from":[260,60],"id":"pierce","kind":"line","segment":1,"span":{"col":1,"end_col":60,"end_line":7,"line":7},"to":[420,60]},{"bbox":[[300,40],[380,80]],"id":"n","kind":"box","span":{"col":1,"end_col":60,"end_line":6,"line":6}}]
+  facts: {"entry":[300,60],"exit":[380,60],"free":{"axis":"y","band":[260,420],"intervals":[[0,34],[86,400]]}}
+warn[cross] 9:1-9:51: v1 crosses h1 at (120,250)
+  = help: segment 1 runs at x=120; free x-intervals across y 180..320: 0..14, 226..500
+  = help: if intentional: allow=cross:h1 on v1
+  = suppressed: h1
+  elements: [{"from":[120,180],"id":"v1","kind":"line","segment":1,"span":{"col":1,"end_col":51,"end_line":9,"line":9},"to":[120,320]},{"from":[20,250],"id":"h1","kind":"line","segment":1,"span":{"col":1,"end_col":50,"end_line":8,"line":8},"to":[220,250]}]
+  facts: {"at":[120,250],"free":{"axis":"x","band":[180,320],"intervals":[[0,14],[226,500]]}}

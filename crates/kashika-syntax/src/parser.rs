@@ -187,6 +187,12 @@ impl Parser<'_> {
         matches!(self.tok(), Tok::Ident(s) if s == kw)
     }
 
+    /// A statement keyword that is not an attribute key, so it starts a new statement.
+    fn at_stmt_keyword(&self) -> bool {
+        matches!(self.tok(), Tok::Ident(s) if STATEMENTS.contains(&s.as_str()))
+            && !matches!(self.tok_at(1), Tok::Eq | Tok::At)
+    }
+
     fn skip_newlines(&mut self) {
         while *self.tok() == Tok::Newline {
             self.bump();
@@ -393,6 +399,18 @@ impl Parser<'_> {
                 Ok(())
             }
             Tok::Eof | Tok::RBrace => Ok(()),
+            _ if self.at_stmt_keyword() => {
+                let found = self.tok().describe();
+                self.diags.push(
+                    Diagnostic::error(
+                        "parse",
+                        self.span(),
+                        format!("expected end of statement, found {found}"),
+                    )
+                    .with_help("each statement starts on its own line"),
+                );
+                Ok(())
+            }
             _ => self.error("end of statement"),
         }
     }
@@ -839,7 +857,7 @@ impl Parser<'_> {
                 let size = self.size()?;
                 let span = kw.to(self.prev_span());
                 self.once(&mut tail.size, (size, span), "size", kw)?;
-            } else if matches!(self.tok(), Tok::Ident(_)) {
+            } else if matches!(self.tok(), Tok::Ident(_)) && !self.at_stmt_keyword() {
                 tail.attrs.push(self.attr()?);
             } else {
                 return Ok(tail);
@@ -873,7 +891,7 @@ impl Parser<'_> {
         let mut out = Vec::new();
         loop {
             self.continuation(false, flags);
-            if !matches!(self.tok(), Tok::Ident(_)) {
+            if !matches!(self.tok(), Tok::Ident(_)) || self.at_stmt_keyword() {
                 return Ok(out);
             }
             out.push(self.attr()?);

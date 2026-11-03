@@ -1,0 +1,4 @@
+error[parse] 4:1-4:3: expected a statement (diagram, style, box, group, junction, text, line, arrow, import, shape, image), found `bx`
+  = help: did you mean `box`?
+error[parse] 6:3-6:7: expected a statement (diagram, style, box, group, junction, text, line, arrow, import, shape, image), found `lien`
+  = help: did you mean `line`?

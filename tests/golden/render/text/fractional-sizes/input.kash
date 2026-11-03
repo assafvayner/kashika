@@ -1,0 +1,13 @@
+// spec: 6, 3
+// Fractional font sizes on texts and line labels (through a style's `font-size`), and a box with `padding=(3,7)`.
+diagram "fractional sizes" size (420,220)
+style f9 { font-size=9 }
+style f115 { font-size=11.5 }
+style f1725 { font-size=17.25 }
+text "nine" at (20,30) align=left font-size=9
+text "eleven and a half" at (20,60) align=left font-size=11.5
+text "seventeen and a quarter" at (20,95) align=left font-size=17.25
+line l9 (240,30) -> h 160 label="nine" style=f9
+line l115 (240,60) -> h 160 label="eleven.5" style=f115
+line l1725 (240,95) -> h 160 label="17.25" style=f1725
+box pad "padded" at (20,130) size (auto,auto) padding=(3,7) font-size=11.5

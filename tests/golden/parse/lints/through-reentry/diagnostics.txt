@@ -1,0 +1,4 @@
+warn[through] 5:1-5:42: l passes through box 'm'
+  = help: segment 1 runs at x=120; free x-intervals across y 0..300: 0..94, 186..300
+  elements: [{"from":[120,0],"id":"l","kind":"line","segment":1,"span":{"col":1,"end_col":42,"end_line":5,"line":5},"to":[120,300]},{"bbox":[[100,100],[180,160]],"id":"m","kind":"box","span":{"col":1,"end_col":32,"end_line":4,"line":4}}]
+  facts: {"entry":[120,100],"exit":[160,100],"free":{"axis":"x","band":[0,300],"intervals":[[0,94],[186,300]]}}

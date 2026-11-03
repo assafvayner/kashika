@@ -1,4 +1,5 @@
 // spec: 6
+// raster: png
 // Stacked, absolute and mixed text blocks.
 diagram "blocks" size (520,200)
 box api at (10,10) size (240,150) style=service text-align=left gap=4 {

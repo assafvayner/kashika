@@ -1,0 +1,3 @@
+diagram "Curves" size (300,300)
+line l (0,0) -> h 100 -> v 100 radius=20
+line k (0,200) -> curve left 50 (200,200)

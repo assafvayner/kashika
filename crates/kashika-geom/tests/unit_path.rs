@@ -136,16 +136,15 @@ fn hull_drops_interior_and_duplicate_points() {
         Pt::new(0.5, 0.5),
         Pt::new(1.0, 1.0),
     ];
-    let h = convex_hull(&pts);
-    assert_eq!(h.len(), 4);
-    for p in [
-        Pt::new(0.0, 0.0),
-        Pt::new(1.0, 0.0),
-        Pt::new(1.0, 1.0),
-        Pt::new(0.0, 1.0),
-    ] {
-        assert!(h.contains(&p), "{p:?} missing from {h:?}");
-    }
+    assert_eq!(
+        convex_hull(&pts),
+        vec![
+            Pt::new(0.0, 0.0),
+            Pt::new(1.0, 0.0),
+            Pt::new(1.0, 1.0),
+            Pt::new(0.0, 1.0),
+        ]
+    );
 }
 
 #[test]
@@ -169,4 +168,55 @@ fn axis_hits_on_a_diamond() {
     xs.sort_by(f64::total_cmp);
     assert_eq!(xs, vec![30.0, 90.0]);
     assert!(vertical_hits(&d, 130.0).is_empty());
+}
+
+#[test]
+fn hull_order_starts_at_the_lowest_leftmost_point() {
+    let pts = [
+        Pt::new(3.0, 2.0),
+        Pt::new(1.0, 0.0),
+        Pt::new(4.0, 1.0),
+        Pt::new(1.0, 2.0),
+        Pt::new(0.0, 1.0),
+        Pt::new(3.0, 0.0),
+    ];
+    assert_eq!(
+        convex_hull(&pts),
+        vec![
+            Pt::new(0.0, 1.0),
+            Pt::new(1.0, 0.0),
+            Pt::new(3.0, 0.0),
+            Pt::new(4.0, 1.0),
+            Pt::new(3.0, 2.0),
+            Pt::new(1.0, 2.0),
+        ]
+    );
+}
+
+#[test]
+fn axis_hits_through_a_vertex_report_it_once() {
+    let d = [
+        Pt::new(60.0, 0.0),
+        Pt::new(120.0, 40.0),
+        Pt::new(60.0, 80.0),
+        Pt::new(0.0, 40.0),
+    ];
+    assert_eq!(vertical_hits(&d, 60.0), vec![0.0, 80.0]);
+    assert_eq!(horizontal_hits(&d, 40.0), vec![0.0, 120.0]);
+    assert_eq!(vertical_hits(&d, 120.0), vec![40.0]);
+    assert_eq!(horizontal_hits(&d, 0.0), vec![60.0]);
+}
+
+#[test]
+fn axis_hits_along_a_collinear_edge_report_its_ends() {
+    let sq = [
+        Pt::new(0.0, 0.0),
+        Pt::new(10.0, 0.0),
+        Pt::new(10.0, 10.0),
+        Pt::new(0.0, 10.0),
+    ];
+    assert_eq!(vertical_hits(&sq, 10.0), vec![0.0, 10.0]);
+    assert_eq!(vertical_hits(&sq, 0.0), vec![0.0, 10.0]);
+    assert_eq!(horizontal_hits(&sq, 0.0), vec![0.0, 10.0]);
+    assert_eq!(horizontal_hits(&sq, 10.0), vec![0.0, 10.0]);
 }

@@ -1,0 +1,10 @@
+warn[shared-segment] 5:1-5:34: shared_b runs along shared_a for 300px, from (20,100) to (320,100)
+  = help: nearest free lane: y=94
+  = help: free y-intervals across x 20..320: 0..94, 106..294, 306.6..600
+  = help: both lines leave or reach the same point: spread them along the side with `side@t` (`a.right@0.3`, `a.right@0.7`), or fan out from a `junction`
+  elements: [{"from":[20,100.5],"id":"shared_b","kind":"line","segment":1,"span":{"col":1,"end_col":34,"end_line":5,"line":5},"to":[320,100.5]},{"from":[20,100],"id":"shared_a","kind":"line","segment":1,"span":{"col":1,"end_col":32,"end_line":4,"line":4},"to":[320,100]}]
+  facts: {"free":{"axis":"y","band":[20,320],"intervals":[[0,94],[106,294],[306.6,600]]},"from":[20,100],"lane":{"at":94,"axis":"y"},"length":300,"to":[320,100]}
+warn[near] 7:1-7:32: near_b runs 0.6px from near_a for 300px (clearance 6)
+  = help: segment 1 runs at y=300.6; free y-intervals across x 20..320: 0..94, 106.5..294, 306..600
+  elements: [{"from":[20,300.6],"id":"near_b","kind":"line","segment":1,"span":{"col":1,"end_col":32,"end_line":7,"line":7},"to":[320,300.6]},{"from":[20,300],"id":"near_a","kind":"line","segment":1,"span":{"col":1,"end_col":30,"end_line":6,"line":6},"to":[320,300]}]
+  facts: {"clearance":6,"distance":0.6,"free":{"axis":"y","band":[20,320],"intervals":[[0,94],[106.5,294],[306,600]]},"length":300}

@@ -1,5 +1,5 @@
 // spec: 2, 3, 6
-// dump: ast
+// dump: ast, tokens
 // `at`, `size` and attributes mix in any order on every statement that takes them.
 diagram "any order" grid=10 size (400,420) clearance=4
 box a size (100,60) at (20,20) style=service

@@ -237,7 +237,7 @@ pub fn run(topic: Option<&str>, json: bool) -> ExitCode {
     match page(topic) {
         Err(msg) => crate::tool_error(format, SCHEMA, &msg),
         Ok(md) if json => {
-            println!(
+            crate::outln!(
                 "{}",
                 serde_json::json!({
                     "schema": SCHEMA,
@@ -250,7 +250,7 @@ pub fn run(topic: Option<&str>, json: bool) -> ExitCode {
             ExitCode::SUCCESS
         }
         Ok(md) => {
-            print!("{md}");
+            crate::out!("{md}");
             ExitCode::SUCCESS
         }
     }

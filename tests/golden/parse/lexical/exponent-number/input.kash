@@ -1,4 +1,5 @@
 // spec: 1, 7
+// dump: tokens
 // Exponent notation is not supported; the literal is one error.
 diagram "exponent" size (200,100)
 box a at (1e5,10) size (40,30)

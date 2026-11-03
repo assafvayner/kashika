@@ -1,0 +1,77 @@
+1:12-1:13  Newline
+2:22-2:23  Newline
+3:116-3:117  Newline
+4:1-4:8  Ident "diagram"
+4:9-4:15  Str "crlf"
+4:16-4:20  Ident "size"
+4:21-4:22  LParen
+4:22-4:25  Num 300
+4:25-4:26  Comma
+4:26-4:29  Num 200
+4:29-4:30  RParen
+4:31-4:32  Newline
+5:1-5:4  Ident "box"
+5:5-5:6  Ident "a"
+5:7-5:9  Ident "at"
+5:10-5:11  LParen
+5:11-5:13  Num 10
+5:13-5:14  Comma
+5:14-5:16  Num 10
+5:16-5:17  RParen
+5:18-5:22  Ident "size"
+5:23-5:24  LParen
+5:24-5:26  Num 60
+5:26-5:27  Comma
+5:27-5:29  Num 40
+5:29-5:30  RParen
+5:40-5:41  Newline
+6:1-6:3  Newline
+7:15-7:16  Newline
+8:1-8:4  Ident "box"
+8:5-8:6  Ident "b"
+8:7-8:9  Ident "at"
+8:10-8:11  LParen
+8:11-8:14  Num 150
+8:14-8:15  Comma
+8:15-8:17  Num 10
+8:17-8:18  RParen
+8:19-8:23  Ident "size"
+8:24-8:25  LParen
+8:25-8:27  Num 60
+8:27-8:28  Comma
+8:28-8:30  Num 40
+8:30-8:31  RParen
+8:32-8:33  Newline
+9:1-9:5  Ident "line"
+9:6-9:7  Ident "l"
+9:8-9:9  Ident "a"
+9:9-9:10  Dot
+9:10-9:15  Ident "right"
+9:16-9:17  Newline
+10:3-10:5  Arrow
+10:6-10:7  Ident "b"
+10:7-10:8  Dot
+10:8-10:12  Ident "left"
+10:13-10:14  Newline
+11:1-11:4  Ident "box"
+11:5-11:6  Ident "c"
+11:7-11:9  Ident "at"
+11:10-11:11  LParen
+11:11-11:13  Num 10
+11:13-11:14  Comma
+11:14-11:17  Num 100
+11:17-11:18  RParen
+11:19-11:23  Ident "size"
+11:24-11:25  LParen
+11:25-11:27  Num 60
+11:27-11:28  Comma
+11:28-11:30  Num 40
+11:30-11:31  RParen
+11:34-11:35  Newline
+12:1-12:1  Eof
+comments:
+1:1-1:12  "// spec: 2"
+2:1-2:22  "// dump: tokens, ast"
+3:1-3:116  "// CRLF line endings: the CR before each LF is whitespace, so columns, comments and continuations read as with LF."
+5:31-5:40  "// a box"
+6:1-7:14  "/* a block\r\n   comment */"

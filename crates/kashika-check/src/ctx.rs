@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use kashika_diag::Element;
 use kashika_geom::{
-    PathSeg, Pt, Rect, TOLERANCE, boundary_nearest, fmt_num, pieces, point_in_polygon, round2,
+    PathSeg, Pt, Rect, TOLERANCE, boundary_nearest, dot, fmt_num, pieces, point_in_polygon, round2,
 };
 use kashika_model::{Junction, Layer, Line, Scene, Shape, ShapeKind};
 
@@ -381,21 +381,30 @@ pub fn side_anchor(s: &Shape, p: Pt) -> (&'static str, f64) {
 /// with a form, edge anchors project onto the outline, so the nearest side whose anchor
 /// lands back on `p` wins.
 pub fn outline_anchor(s: &Shape, p: Pt) -> (&'static str, f64) {
+    outline_anchor_toward(s, p, None)
+}
+
+/// Like [`outline_anchor`], but when several sides' anchors land on `p`, the side whose
+/// outward normal best matches `dir` (the way a line leaves the shape) wins.
+pub fn outline_anchor_toward(s: &Shape, p: Pt, dir: Option<Pt>) -> (&'static str, f64) {
     let nearest = side_anchor(s, p);
     if s.form.is_none() {
         return nearest;
     }
     let r = s.anchor_frame();
     let mut sides = [
-        ("top", (p.y - r.y).abs()),
-        ("bottom", (p.y - r.bottom()).abs()),
-        ("left", (p.x - r.x).abs()),
-        ("right", (p.x - r.right()).abs()),
+        ("top", (p.y - r.y).abs(), Pt::new(0.0, -1.0)),
+        ("bottom", (p.y - r.bottom()).abs(), Pt::new(0.0, 1.0)),
+        ("left", (p.x - r.x).abs(), Pt::new(-1.0, 0.0)),
+        ("right", (p.x - r.right()).abs(), Pt::new(1.0, 0.0)),
     ];
     sides.sort_by(|a, b| a.1.total_cmp(&b.1));
+    if let Some(d) = dir {
+        sides.sort_by(|a, b| dot(d, b.2).total_cmp(&dot(d, a.2)));
+    }
     sides
         .iter()
-        .find_map(|&(side, _)| {
+        .find_map(|&(side, _, _)| {
             let t = match side {
                 "top" | "bottom" => (p.x - r.x) / r.w,
                 _ => (p.y - r.y) / r.h,

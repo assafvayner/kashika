@@ -1,0 +1,2 @@
+style d_style { fill=#fff3e0 stroke=#e37400 }
+shape d_shape { path "M 0 0 L 1 0 L 0.8 1 L 0.2 1 Z" }

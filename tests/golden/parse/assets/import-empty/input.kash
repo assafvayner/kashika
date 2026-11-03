@@ -1,0 +1,5 @@
+// spec: 3a
+// An empty library imports cleanly.
+diagram "import empty" size (300,120)
+import "lib/empty.kash"
+box a "x" at (20,20) size (80,60)

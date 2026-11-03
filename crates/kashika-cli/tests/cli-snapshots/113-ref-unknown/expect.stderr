@@ -1,0 +1,15 @@
+kashika: unknown ref topic `nonsense`; pass a diagnostic code or one of these topics:
+  rules     the rules people get wrong
+  syntax    every statement and its clauses, groups, junctions and layers
+  anchors   anchors, `@t`, offsets and mixed points
+  paths     segments, line ends, labels and `ortho`
+  sizing    fitted boxes, and how big each shape must be for its text
+  text      markup, sublabels, alignment and text blocks
+  shapes    built-in and custom shapes, SVG shapes, images, icons and imports
+  styles    style keys, colors and the built-in styles
+  recipes   routing patterns, fan-out, self-loops, sequence diagrams, ER tables, guides and graphs
+  examples  a complete worked diagram
+  lints     every diagnostic code with its trigger and fix, and how to suppress one
+  metrics   font metrics and average character widths
+  cli       every command and flag: check, render, inspect, route, measure, fmt, icons and ref
+  limits    raster and file limits, and what is not supported

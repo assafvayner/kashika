@@ -43,8 +43,8 @@ cargo build -p kashika-wasm --target wasm32-unknown-unknown
 
 `tests/golden/` holds data-driven cases, run by `cargo test -p kashika --test golden` (harness in `crates/kashika-cli/tests/golden/`). Every directory with an `input.kash` is one test, named by its path:
 
-- `parse/<area>/<case>/` compiles and checks the input like `kashika check` and keeps `diagnostics.txt`, plus `ast.txt` and/or `scene.json` when the header says `// dump: ast, scene`. Use `ast` when the parse tree is under test, `scene` when resolution is, and neither for diagnostic-only cases.
-- `render/<area>/<case>/` runs `kashika render` in the case directory and keeps `out.svg` and `diagnostics.txt`, plus `out.png`/`out.jpg`/`out.webp` for `// raster: png jpg webp`.
+- `parse/<area>/<case>/` compiles and checks the input like `kashika check` and keeps `diagnostics.txt`, plus `ast.txt`, `scene.json` and/or `tokens.txt` when the header says `// dump: ast, scene, tokens`. Use `tokens` when the lexer is under test (every token with its span, values quoted and numbers as written, then every comment), `ast` when the parse tree is, `scene` when resolution is, and none for diagnostic-only cases.
+- `render/<area>/<case>/` runs `kashika render` in the case directory and keeps `out.svg` and `diagnostics.txt`, plus `out.png`/`out.jpg`/`out.webp` for `// raster: png jpg webp`. Raster goldens are blessed on macOS arm64 and verified on Linux x86_64 and macOS arm64 in CI. Every `out.svg`, and every example render, must also pass the invariants in `crates/kashika-cli/tests/golden/svg_invariants.rs` (well-formed and usvg-parseable, no `<text>`, a canvas rect only for `background=`, images as `data:` URIs with clean embedded SVG, an `aria-label` for every text line).
 
 `input.kash` starts with directive comments, then a one-line description:
 
@@ -64,6 +64,22 @@ KASHIKA_BLESS=1 cargo test -p kashika --test golden -- coverage/map
 ```
 
 Review the new files (open `out.svg` in a browser) and commit them with `tests/golden/COVERAGE.md`. After an intended behavior change, bless the affected cases with a path filter and review `git diff tests/golden`. A mismatch prints a unified diff and saves the actual file under the cargo target directory's `tmp/golden-actual/`. When a render case mismatches or is blessed with a new `out.svg`, the run also writes `tmp/golden-review.html` there, showing each such case's expected and actual SVG side by side; open it to review. The `coverage/*` tests fail when a diagnostic code, spec section, built-in shape, bundled icon, attribute key (per statement), line end, `label-side` value or segment kind has no case, and when a code in `NOT_REPORTED` (`coverage.rs`) starts being reported.
+
+## Adding a CLI snapshot
+
+`crates/kashika-cli/tests/cli-snapshots/` pins the exact stdout, stderr and exit code of the `kashika` binary: help texts, text and JSON reports, footers and every error path. `cargo test -p kashika --test snapshots` (harness in `crates/kashika-cli/tests/snapshots.rs`) runs each `<NNN-name>/` directory as one case, with the case directory as the working directory and `KASHIKA_ICON_PATH` unset:
+
+- `argv`: one argument per line (an empty line is an empty argument). `$FIXTURES` expands to `crates/kashika-cli/tests/fixtures`, `$TMP` to a fresh temporary directory and `$CASE` to the case directory.
+- `stdin` (optional): fed to the process; without it stdin is empty.
+- `setup` (optional): `copy <from> <to>`, `mkdir <path>` or `chmod <octal> <path>` lines, run first, with the same variables. A case with `chmod` runs on Unix only.
+- Inputs such as `input.kash` sit next to `argv`; write outputs under `$TMP`, never into the case.
+- `expect.stdout`, `expect.stderr`, `expect.code`: written by bless. Before comparison, the version in `kashika <version>` and the JSON `"tool"` field becomes `<tool>`, the temporary, fixtures and case paths become `$TMP`, `$FIXTURES` and `$CASE`, and `(os error N)` becomes `(os error)`.
+
+```sh
+KASHIKA_BLESS=1 cargo test -p kashika --test snapshots -- 042-check-unreadable
+```
+
+Read every blessed `expect.*` file before committing it. A mismatch prints a unified diff per file.
 
 ## Adding a built-in asset
 

@@ -1,0 +1,5 @@
+warn[cross] 5:1-5:24: b crosses a at (100,100)
+  = help: segment 1 runs at x=100; free x-intervals across y 0..100: 206..300
+  = help: if intentional: allow=cross:a on b
+  elements: [{"from":[100,0],"id":"b","kind":"line","segment":1,"span":{"col":1,"end_col":24,"end_line":5,"line":5},"to":[100,100]},{"from":[0,100],"id":"a","kind":"line","segment":1,"span":{"col":1,"end_col":24,"end_line":4,"line":4},"to":[200,100]}]
+  facts: {"at":[100,100],"free":{"axis":"x","band":[0,100],"intervals":[[206,300]]}}

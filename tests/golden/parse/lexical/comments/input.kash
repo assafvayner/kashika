@@ -1,5 +1,5 @@
 // spec: 2
-// dump: ast
+// dump: ast, tokens
 // Line and block comments between and after statements.
 diagram "comments" size (200,100)  // trailing comment
 /* a block comment on its own line */

@@ -26,6 +26,26 @@ fn render_writes_png() {
     assert_eq!(&std::fs::read(&out).unwrap()[..8], b"\x89PNG\r\n\x1a\n");
 }
 
+/// Compares `actual` with the committed raster `tests/fixtures/<name>`, byte for byte,
+/// or writes it with `KASHIKA_BLESS=1`.
+fn raster_fixture(name: &str, actual: &[u8]) {
+    let path = fixture(name);
+    if std::env::var_os("KASHIKA_BLESS").is_some_and(|v| v == "1") {
+        std::fs::write(&path, actual).unwrap();
+        return;
+    }
+    let expected =
+        std::fs::read(&path).unwrap_or_else(|e| panic!("{path}: {e}; bless with KASHIKA_BLESS=1"));
+    if expected != actual {
+        let saved = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join(name);
+        std::fs::write(&saved, actual).unwrap();
+        panic!(
+            "{name} changed (actual saved to {}); bless with KASHIKA_BLESS=1 if intended",
+            saved.display()
+        );
+    }
+}
+
 #[test]
 fn force_draws_red_markers_at_errors() {
     let dir = tempfile::tempdir().unwrap();
@@ -162,6 +182,15 @@ fn jpeg_and_webp_are_deterministic() {
     for ext in ["jpg", "webp"] {
         assert_eq!(render_to(ext, &[]), render_to(ext, &[]));
     }
+}
+
+#[test]
+fn rasters_match_the_committed_fixtures() {
+    raster_fixture("basic.png", &render_to("png", &[]));
+    raster_fixture("basic.jpg", &render_to("jpg", &[]));
+    assert_eq!(render_to("jpeg", &[]), render_to("jpg", &[]));
+    raster_fixture("basic.webp", &render_to("webp", &[]));
+    raster_fixture("basic-debug.png", &render_to("png", &["--debug"]));
 }
 
 #[test]

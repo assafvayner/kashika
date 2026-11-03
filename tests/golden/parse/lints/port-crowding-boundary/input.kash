@@ -1,0 +1,9 @@
+// spec: 7
+// `port-crowding` wants endpoints 8px apart: exactly 8px is clean, 7.9px is flagged.
+diagram "crowding boundary" size (800,600)
+box a at (100,200) size (100,60)
+box b at (500,200) size (100,60)
+line a1 a.top@0.5 -> v -100
+line a2 a.top@0.58 -> v -100
+line b1 b.top@0.5 -> v -100
+line b2 b.top@0.579 -> v -100

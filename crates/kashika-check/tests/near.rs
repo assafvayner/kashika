@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn line_passing_close_to_a_box() {
@@ -11,6 +12,7 @@ fn line_passing_close_to_a_box() {
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "l runs 4px from box 'a' (clearance 6)");
     assert_eq!(d[0].facts["distance"], serde_json::json!(4.0));
+    assert_eq!(d[0].span, Span::new(3, 1, 3, 24));
 }
 
 #[test]
@@ -95,13 +97,14 @@ fn clearance_comes_from_the_diagram() {
     let s = scene_src(
         "diagram \"t\" size (800,600) clearance=12\nline a (0,100) -> h 300\nline b (0,110) -> h 300\n",
     );
-    assert_eq!(
-        kashika_check::check(&s)
-            .iter()
-            .filter(|d| d.code == "near")
-            .count(),
-        1
-    );
+    let d: Vec<_> = kashika_check::check(&s)
+        .into_iter()
+        .filter(|d| d.code == "near")
+        .collect();
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].message, "b runs 10px from a for 300px (clearance 12)");
+    assert_eq!(d[0].facts["distance"], serde_json::json!(10.0));
+    assert_eq!(d[0].facts["clearance"], serde_json::json!(12.0));
 }
 
 #[test]
@@ -131,4 +134,43 @@ fn crossing_a_group_border_is_not_near_it() {
     let g = "group vpc \"VPC\" at (200,20) size (300,300) {\n}\n";
     assert!(lint("near", &format!("{g}line l (100,200) -> h 200 -> v 50\n")).is_empty());
     assert!(lint("near", &format!("{g}line l (180,100) -> v 100\n")).is_empty());
+}
+
+#[test]
+fn box_clearance_and_parallel_run_boundaries() {
+    let d = lint(
+        "near",
+        "box a at (100,100) size (100,60)\nbox b at (500,100) size (100,60)\nline box_clean (20,166) -> h 260\nline box_flag (420,165.9) -> h 260\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "box_flag runs 5.9px from box 'b' (clearance 6)"
+    );
+    let d = lint(
+        "near",
+        "line base (20,300) -> h 300\nline clean (20,304) -> h 20\nline base2 (20,450) -> h 300\nline flag (20,454) -> h 21\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "flag runs 4px from base2 for 21px (clearance 6)"
+    );
+}
+
+#[test]
+fn parallel_gap_past_tolerance_is_near_not_shared() {
+    let body = "line shared_a (20,100) -> h 300\nline shared_b (20,100.5) -> h 300\nline near_a (20,300) -> h 300\nline near_b (20,300.6) -> h 300\n";
+    let d = lint("near", body);
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "near_b runs 0.6px from near_a for 300px (clearance 6)"
+    );
+    let d = lint("shared-segment", body);
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "shared_b runs along shared_a for 300px, from (20,100) to (320,100)"
+    );
 }

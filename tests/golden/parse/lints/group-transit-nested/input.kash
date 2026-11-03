@@ -1,0 +1,8 @@
+// spec: 7
+// A line with both endpoints in an outer group transits only the inner group it crosses.
+diagram "transit nested" size (400,300)
+group o at (20,20) size (360,260) {
+  group i at (140,60) size (80,120) {
+  }
+}
+line l (60,140) -> h 280

@@ -1,0 +1,2 @@
+#1  crossings=0 transits=0 near=0 segments=1 length=120px
+    line a_b a.right -> b.left end=arrow

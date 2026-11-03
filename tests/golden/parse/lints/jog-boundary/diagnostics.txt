@@ -1,0 +1,4 @@
+warn[jog] 5:32-5:37: segment 2 of flag jogs 5.9px in y between two horizontal runs, from (120,300) to (120,305.9)
+  = help: move the run after the step to y=300 or the run before it to y=305.9, so both horizontal runs share y
+  elements: [{"from":[120,300],"id":"flag","kind":"line","segment":2,"span":{"col":1,"end_col":46,"end_line":5,"line":5},"to":[120,305.9]}]
+  facts: {"clearance":6,"step":5.9}

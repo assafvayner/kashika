@@ -1,0 +1,5 @@
+// spec: 5
+// Markers on dotted and dashed lines draw solid: the stroke style applies to the line only.
+diagram "stroke markers" size (360,140)
+line dotted (30,40) -> h 300 stroke-style=dotted start=circle end=arrow
+line dashed (30,100) -> h 300 stroke-style=dashed start=hollow-diamond end=hollow-diamond stroke-width=3

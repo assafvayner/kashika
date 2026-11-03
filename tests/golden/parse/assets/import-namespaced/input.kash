@@ -1,5 +1,5 @@
 // spec: 3a
-// dump: scene
+// dump: ast, scene
 // `import ... as ns` namespaces shape and style names.
 diagram "namespaced" size (300,120)
 import "lib/aws.kash" as aws

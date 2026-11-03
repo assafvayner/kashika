@@ -1,0 +1,4 @@
+diagrams/overlap.kash:3:1: warn[overlap]: box 'b' overlaps box 'a'
+    3 | box b "B" at (60,30) size (60,40)
+    2 | box a "A" at (20,20) size (60,40)
+0 errors, 1 warning · crossings=0 wire=0px

@@ -1,0 +1,20 @@
+canvas 400x300
+box a "A" (line 2)
+  bbox (20,120)-(100,180)
+  anchors top (60,120) bottom (60,180) left (20,150) right (100,150) center (60,150) tl (20,120) tr (100,120) bl (20,180) br (100,180)
+box b "B" (line 3)
+  bbox (300,120)-(380,180)
+  anchors top (340,120) bottom (340,180) left (300,150) right (380,150) center (340,150) tl (300,120) tr (380,120) bl (300,180) br (380,180)
+line ab (line 4) length 200px
+  vertices (100,150) (300,150)
+  segment 1 to (4:20) (100,150) -> (300,150)
+line v1 (line 5) length 260px
+  vertices (200,20) (200,280)
+  segment 1 v (5:21) (200,20) -> (200,280)
+line v2 (line 6) length 260px
+  vertices (240,20) (240,280)
+  segment 1 v (6:21) (240,20) -> (240,280)
+ports
+  a.right (100,150): ab start
+  b.left (300,150): ab end
+0 errors, 1 warning

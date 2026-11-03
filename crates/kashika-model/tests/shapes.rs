@@ -29,6 +29,10 @@ fn close(a: Pt, b: Pt) -> bool {
     a.dist(b) <= 0.3
 }
 
+fn near(a: Pt, b: Pt) -> bool {
+    a.dist(b) <= 0.01
+}
+
 #[allow(dead_code)]
 fn first_seg(s: &Scene, id: &str) -> PathSeg {
     s.lines.iter().find(|l| l.id == id).unwrap().path[0]
@@ -61,7 +65,19 @@ fn rounded_outline_polygon_follows_the_corners() {
     assert_eq!(r.outline, Outline::Rounded);
     assert_eq!(r.shape, "rounded");
     let poly = r.outline_polygon();
-    assert!(poly.len() > 8);
+    // Each 90° corner is one cubic flattened in 4 steps: 4 × (line end + 4 arc points), less
+    // the repeated start.
+    assert_eq!(poly.len(), 20);
+    let k = 4.0 / 3.0 * (std::f64::consts::PI / 8.0).tan() * 8.0;
+    // Bernstein weights at t = 1/4 of the first corner cubic, (92,0) (92+k,0) (100,8-k) (100,8).
+    let (a, b, c) = (0.421875, 0.140625, 0.015625);
+    let third = Pt::new(
+        a * 92.0 + a * (92.0 + k) + b * 100.0 + c * 100.0,
+        b * (8.0 - k) + c * 8.0,
+    );
+    assert_eq!(poly[0], Pt::new(8.0, 0.0));
+    assert_eq!(poly[1], Pt::new(92.0, 0.0));
+    assert!(poly[2].dist(third) < 1e-9, "{:?} vs {third:?}", poly[2]);
     assert!(!poly.contains(&Pt::new(0.0, 0.0)), "corner is cut");
     for p in &poly {
         assert!(p.x >= -1e-9 && p.x <= 100.0 + 1e-9 && p.y >= -1e-9 && p.y <= 60.0 + 1e-9);
@@ -149,12 +165,13 @@ fn diamond_anchors_are_axis_projected() {
 fn cylinder_top_follows_the_cap() {
     let s = ok("box c at (0,0) size (120,80) shape=cylinder\n\
                 line a c.top -> v -20\nline b c.top@0.25 -> v -20\nline e c.bottom -> v 20\n");
-    assert!(close(start(&s, "a"), Pt::new(60.0, 0.0)));
-    assert!(close(
-        start(&s, "b"),
-        Pt::new(30.0, 20.0 - 20.0 * 0.75f64.sqrt())
-    ));
-    assert!(close(start(&s, "e"), Pt::new(60.0, 80.0)));
+    assert!(near(start(&s, "a"), Pt::new(60.0, 0.0)));
+    let b = start(&s, "b");
+    assert!(
+        near(b, Pt::new(30.0, 20.0 - 20.0 * 0.75f64.sqrt())),
+        "{b:?}"
+    );
+    assert!(near(start(&s, "e"), Pt::new(60.0, 80.0)));
     assert_eq!(
         start(&s, "b").x,
         30.0,
@@ -167,10 +184,14 @@ fn person_anchors_reach_the_head_and_body() {
     let s = ok("box p at (0,0) size (120,120) shape=person\n\
                 line a p.top -> v -20\nline b p.left@0.9 -> h -20\n\
                 line c p.right@0.9 -> h 20\nline e p.bottom -> v 20\n");
-    assert!(close(start(&s, "a"), Pt::new(60.0, 0.0)));
-    assert!(close(start(&s, "b"), Pt::new(0.0, 108.0)));
-    assert!(close(start(&s, "c"), Pt::new(120.0, 108.0)));
-    assert!(close(start(&s, "e"), Pt::new(60.0, 120.0)));
+    assert!(
+        near(start(&s, "a"), Pt::new(60.0, 0.0)),
+        "{:?}",
+        start(&s, "a")
+    );
+    assert!(near(start(&s, "b"), Pt::new(0.0, 108.0)));
+    assert!(near(start(&s, "c"), Pt::new(120.0, 108.0)));
+    assert!(near(start(&s, "e"), Pt::new(60.0, 120.0)));
 }
 
 #[test]
@@ -250,8 +271,9 @@ fn pixel_features_do_not_stretch() {
     let (l, r) = across
         .iter()
         .fold((f64::MAX, f64::MIN), |(l, r), x| (l.min(*x), r.max(*x)));
+    // The flattened outline is inscribed in the circle: each chord cuts about 0.015px inside.
     assert!(
-        (r - l - 36.0).abs() < 0.5,
+        r - l <= 36.0 + 1e-9 && r - l > 35.95,
         "the head is a circle of radius 18: {across:?}"
     );
     let head = |id: &str| {
@@ -267,7 +289,7 @@ fn pixel_features_do_not_stretch() {
     for (id, top) in [("p", 0.0), ("q", 300.0)] {
         let (w, h, y) = head(id);
         assert!(
-            (w - 36.0).abs() < 0.5 && (h - 36.0).abs() < 0.5 && (y - top).abs() < 1e-9,
+            (w - 36.0).abs() < 0.01 && (h - 36.0).abs() < 0.01 && (y - top).abs() < 1e-9,
             "{id}: the head stays a circle of radius 18 at the top: {w}x{h} at y={y}"
         );
     }
@@ -293,8 +315,8 @@ fn flowchart_and_uml_features_are_capped_in_pixels() {
         ));
         let t = shape(&s, "a").text_area;
         assert!(
-            close(Pt::new(t.x, t.y), Pt::new(want.x, want.y))
-                && close(Pt::new(t.w, t.h), Pt::new(want.w, want.h)),
+            near(Pt::new(t.x, t.y), Pt::new(want.x, want.y))
+                && near(Pt::new(t.w, t.h), Pt::new(want.w, want.h)),
             "{name}: {t:?}"
         );
     }
@@ -478,4 +500,266 @@ fn unknown_custom_shape_suggests_a_definition() {
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].code, "unknown-shape");
     assert_eq!(d[0].help[0], "did you mean `tri`?");
+}
+
+const SIDES: [&str; 4] = ["top", "bottom", "left", "right"];
+const SIZES: [(f64, f64); 3] = [(120.0, 80.0), (40.0, 40.0), (60.0, 200.0)];
+
+fn placed(name: &str, (w, h): (f64, f64)) -> Shape {
+    let radius = if name == "rounded" { " radius=8" } else { "" };
+    let s = ok(&format!(
+        "box a at (0,0) size ({w},{h}) shape={name}{radius}\n"
+    ));
+    s.shapes.into_iter().next().unwrap()
+}
+
+#[test]
+fn anchor_lies_on_the_outline() {
+    use kashika_geom::{boundary_nearest, horizontal_hits, vertical_hits};
+    for name in kashika_model::shape_names() {
+        let tol = if name == "rounded" { 0.25 } else { 0.5 };
+        for size in SIZES {
+            let a = placed(name, size);
+            let poly = a.outline_polygon();
+            for side in SIDES {
+                for i in 0..=10 {
+                    let t = f64::from(i) / 10.0;
+                    let p = a.anchor(side, Some(t)).unwrap();
+                    let (x, y) = (size.0 * t, size.1 * t);
+                    let misses = match side {
+                        "top" | "bottom" => vertical_hits(&poly, x).is_empty(),
+                        _ => horizontal_hits(&poly, y).is_empty(),
+                    };
+                    if misses && a.form.is_some() {
+                        let bbox = match side {
+                            "top" => Pt::new(x, 0.0),
+                            "bottom" => Pt::new(x, size.1),
+                            "left" => Pt::new(0.0, y),
+                            _ => Pt::new(size.0, y),
+                        };
+                        assert_eq!(p, bbox, "{name} {size:?} {side}@{t}: a miss keeps the bbox");
+                        continue;
+                    }
+                    let d = boundary_nearest(p, &poly).0;
+                    assert!(
+                        d < tol,
+                        "{name} {size:?} {side}@{t}: {p:?} is {d} off the outline"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn text_area_is_monotonic() {
+    for name in path_shapes() {
+        let px = |w: f64, h: f64| {
+            let u = kashika_model::builtin_source(name, w, h).unwrap().2;
+            (u.w * w, u.h * h)
+        };
+        for fixed in [20.0, 40.0, 80.0, 200.0, 400.0] {
+            let mut last = (f64::MIN, f64::MIN);
+            for i in 0..=38 {
+                let v = f64::from(20 + 10 * i);
+                let (w, _) = px(v, fixed);
+                let (_, h) = px(fixed, v);
+                assert!(
+                    w + 1e-9 >= last.0,
+                    "{name}: width {w} at w={v} h={fixed} < {}",
+                    last.0
+                );
+                assert!(
+                    h + 1e-9 >= last.1,
+                    "{name}: height {h} at h={v} w={fixed} < {}",
+                    last.1
+                );
+                last = (w, h);
+            }
+        }
+    }
+}
+
+#[test]
+fn fitted_size_is_monotonic_in_label() {
+    let labels = [
+        "a",
+        "ab",
+        "abc",
+        "abcd",
+        "abcde",
+        "abcdef",
+        "abcdefg",
+        "abcdefgh",
+        "abcdefghi",
+        "abcdefghij",
+    ];
+    for name in kashika_model::shape_names() {
+        let body: String = labels
+            .iter()
+            .enumerate()
+            .map(|(i, l)| format!("box b{i} \"{l}\" at ({},0) shape={name}\n", 300 * i))
+            .collect();
+        let (s, d) = compile(&format!("diagram \"t\" size (4000,400)\n{body}"));
+        assert!(d.is_empty(), "{name}: {d:#?}");
+        let sizes: Vec<(f64, f64)> = s.shapes.iter().map(|b| (b.rect.w, b.rect.h)).collect();
+        for (i, p) in sizes.windows(2).enumerate() {
+            assert!(
+                p[1].0 >= p[0].0 && p[1].1 >= p[0].1,
+                "{name}: {:?} for {:?} is smaller than {:?} for {:?}",
+                p[1],
+                labels[i + 1],
+                p[0],
+                labels[i]
+            );
+        }
+    }
+}
+
+#[test]
+fn pin_round_trips_on_every_shape() {
+    let names = [
+        "top",
+        "bottom",
+        "left",
+        "right",
+        "center",
+        "tl",
+        "tr",
+        "bl",
+        "br",
+        "top-left",
+        "top-right",
+        "bottom-left",
+        "bottom-right",
+    ];
+    let at = Pt::new(400.0, 300.0);
+    for shape in kashika_model::shape_names() {
+        for size in SIZES {
+            let mut pins: Vec<(String, &str, Option<f64>)> =
+                names.iter().map(|n| (n.to_string(), *n, None)).collect();
+            for side in SIDES {
+                for t in [0.1, 0.25, 0.9] {
+                    pins.push((format!("{side}@{t}"), side, Some(t)));
+                }
+            }
+            for (pin, name, t) in pins {
+                let s = ok(&format!(
+                    "box b at (400,300) size ({},{}) shape={shape} pin={pin}\n",
+                    size.0, size.1
+                ));
+                let p = s.shapes[0].anchor(name, t).unwrap();
+                assert!(
+                    p.dist(at) <= 0.01,
+                    "{shape} {size:?} pin={pin}: b.{pin} is {p:?}, not {at:?}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn outlines_are_simple_closed_polygons() {
+    use kashika_geom::seg_hit;
+    for name in kashika_model::shape_names() {
+        for size in SIZES {
+            let poly = placed(name, size).outline_polygon();
+            let n = poly.len();
+            assert!(n >= 3, "{name} {size:?}: {n} vertices");
+            assert!(
+                poly[0].dist(poly[n - 1]) > 1e-9,
+                "{name} {size:?}: the closing point is repeated"
+            );
+            let area: f64 = (0..n)
+                .map(|i| {
+                    let (a, b) = (poly[i], poly[(i + 1) % n]);
+                    a.x * b.y - b.x * a.y
+                })
+                .sum::<f64>()
+                / 2.0;
+            assert!(area.abs() > 1.0, "{name} {size:?}: area {area}");
+            for i in 0..n {
+                for j in i + 2..n {
+                    if i == 0 && j == n - 1 {
+                        continue;
+                    }
+                    let hit = seg_hit(poly[i], poly[(i + 1) % n], poly[j], poly[(j + 1) % n], 0.0);
+                    assert!(
+                        hit.is_none(),
+                        "{name} {size:?}: edges {i} and {j} meet at {hit:?}"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn translating_a_group_translates_descendants() {
+    let src = |x: f64, y: f64| {
+        format!(
+            "group outer \"Outer\" at ({x},{y}) size (460,380) {{\n\
+             \x20 box a \"A\" at (20,40) size (80,40) shape=rounded\n\
+             \x20 text t \"note\" at (40,340)\n\
+             \x20 group inner \"Inner\" at (160,40) size (260,260) {{\n\
+             \x20   box b \"B\" at (20,40) size (120,80) shape=diamond\n\
+             \x20   box c \"C\" at b.bottom+(0,40) size (100,70) shape=cloud pin=top\n\
+             \x20   junction j at (220,220)\n\
+             \x20   line m b.right -> h 40 -> j label=\"m\"\n\
+             \x20 }}\n\
+             \x20 line l a.right -> b.left end=arrow label=\"l\"\n\
+             \x20 line k a.bottom -> v 120 -> c.left\n\
+             }}\n"
+        )
+    };
+    let base = ok(&src(40.0, 30.0));
+    let moved = ok(&src(77.0, 83.0));
+    let d = Pt::new(37.0, 53.0);
+    let same = |a: Pt, b: Pt, what: &str| {
+        assert!(
+            (b.x - a.x - d.x).abs() < 1e-9 && (b.y - a.y - d.y).abs() < 1e-9,
+            "{what}: {a:?} -> {b:?}"
+        );
+    };
+    let rect = |a: Rect, b: Rect, what: &str| {
+        same(a.origin(), b.origin(), what);
+        assert!(
+            (a.w - b.w).abs() < 1e-9 && (a.h - b.h).abs() < 1e-9,
+            "{what}: {a:?} -> {b:?}"
+        );
+    };
+    assert_eq!(base.shapes.len(), 5);
+    for (a, b) in base.shapes.iter().zip(&moved.shapes) {
+        rect(a.rect, b.rect, &a.id);
+        rect(a.text_area, b.text_area, &a.id);
+        for (p, q) in a.outline_polygon().iter().zip(&b.outline_polygon()) {
+            same(*p, *q, &a.id);
+        }
+        for (p, q) in a.text.iter().zip(&b.text) {
+            rect(p.rect, q.rect, &a.id);
+        }
+    }
+    assert_eq!(base.junctions.len(), 1);
+    for (a, b) in base.junctions.iter().zip(&moved.junctions) {
+        same(a.at, b.at, &a.id);
+    }
+    assert_eq!(base.texts.len(), 1);
+    for (a, b) in base.texts.iter().zip(&moved.texts) {
+        same(a.at, b.at, "text");
+        rect(a.rect, b.rect, "text");
+    }
+    assert_eq!(base.lines.len(), 3);
+    for (a, b) in base.lines.iter().zip(&moved.lines) {
+        assert_eq!(a.path.len(), b.path.len(), "{}", a.id);
+        for (p, q) in a.path.iter().zip(&b.path) {
+            for i in 0..=4 {
+                let t = f64::from(i) / 4.0;
+                same(p.eval(t), q.eval(t), &a.id);
+            }
+        }
+        for (p, q) in a.labels.iter().zip(&b.labels) {
+            same(p.at, q.at, &a.id);
+            rect(p.rect, q.rect, &a.id);
+        }
+    }
 }

@@ -1,0 +1,140 @@
+1:11-1:12  Newline
+2:21-2:22  Newline
+3:96-3:97  Newline
+4:1-4:8  Ident "diagram"
+4:9-4:19  Str "reserved"
+4:20-4:24  Ident "size"
+4:25-4:26  LParen
+4:26-4:29  Num 400
+4:29-4:30  Comma
+4:30-4:33  Num 200
+4:33-4:34  RParen
+4:34-4:35  Newline
+5:1-5:4  Ident "box"
+5:5-5:6  Ident "h"
+5:7-5:9  Ident "at"
+5:10-5:11  LParen
+5:11-5:13  Num 10
+5:13-5:14  Comma
+5:14-5:16  Num 10
+5:16-5:17  RParen
+5:18-5:22  Ident "size"
+5:23-5:24  LParen
+5:24-5:26  Num 20
+5:26-5:27  Comma
+5:27-5:29  Num 20
+5:29-5:30  RParen
+5:30-5:31  Newline
+6:1-6:4  Ident "box"
+6:5-6:6  Ident "v"
+6:7-6:9  Ident "at"
+6:10-6:11  LParen
+6:11-6:13  Num 40
+6:13-6:14  Comma
+6:14-6:16  Num 10
+6:16-6:17  RParen
+6:18-6:22  Ident "size"
+6:23-6:24  LParen
+6:24-6:26  Num 20
+6:26-6:27  Comma
+6:27-6:29  Num 20
+6:29-6:30  RParen
+6:30-6:31  Newline
+7:1-7:9  Ident "junction"
+7:10-7:11  Ident "x"
+7:12-7:14  Ident "at"
+7:15-7:16  LParen
+7:16-7:18  Num 70
+7:18-7:19  Comma
+7:19-7:21  Num 10
+7:21-7:22  RParen
+7:22-7:23  Newline
+8:1-8:5  Ident "text"
+8:6-8:7  Ident "y"
+8:8-8:11  Str "y"
+8:12-8:14  Ident "at"
+8:15-8:16  LParen
+8:16-8:19  Num 100
+8:19-8:20  Comma
+8:20-8:22  Num 20
+8:22-8:23  RParen
+8:23-8:24  Newline
+9:1-9:6  Ident "group"
+9:7-9:9  Ident "hv"
+9:10-9:12  Ident "at"
+9:13-9:14  LParen
+9:14-9:17  Num 130
+9:17-9:18  Comma
+9:18-9:20  Num 10
+9:20-9:21  RParen
+9:22-9:26  Ident "size"
+9:27-9:28  LParen
+9:28-9:30  Num 40
+9:30-9:31  Comma
+9:31-9:33  Num 40
+9:33-9:34  RParen
+9:35-9:36  LBrace
+9:36-9:37  Newline
+10:1-10:2  RBrace
+10:2-10:3  Newline
+11:1-11:4  Ident "box"
+11:5-11:7  Ident "vh"
+11:8-11:10  Ident "at"
+11:11-11:12  LParen
+11:12-11:15  Num 180
+11:15-11:16  Comma
+11:16-11:18  Num 10
+11:18-11:19  RParen
+11:20-11:24  Ident "size"
+11:25-11:26  LParen
+11:26-11:28  Num 20
+11:28-11:29  Comma
+11:29-11:31  Num 20
+11:31-11:32  RParen
+11:32-11:33  Newline
+12:1-12:5  Ident "line"
+12:6-12:11  Ident "curve"
+12:12-12:13  LParen
+12:13-12:15  Num 10
+12:15-12:16  Comma
+12:16-12:19  Num 100
+12:19-12:20  RParen
+12:21-12:23  Arrow
+12:24-12:25  Ident "h"
+12:26-12:28  Num 50
+12:28-12:29  Newline
+13:1-13:4  Ident "box"
+13:5-13:10  Ident "arrow"
+13:11-13:13  Ident "at"
+13:14-13:15  LParen
+13:15-13:18  Num 210
+13:18-13:19  Comma
+13:19-13:21  Num 10
+13:21-13:22  RParen
+13:23-13:27  Ident "size"
+13:28-13:29  LParen
+13:29-13:31  Num 20
+13:31-13:32  Comma
+13:32-13:34  Num 20
+13:34-13:35  RParen
+13:35-13:36  Newline
+14:1-14:4  Ident "box"
+14:5-14:8  Ident "hvh"
+14:9-14:11  Ident "at"
+14:12-14:13  LParen
+14:13-14:16  Num 240
+14:16-14:17  Comma
+14:17-14:19  Num 10
+14:19-14:20  RParen
+14:21-14:25  Ident "size"
+14:26-14:27  LParen
+14:27-14:29  Num 20
+14:29-14:30  Comma
+14:30-14:32  Num 20
+14:32-14:33  RParen
+14:33-14:34  Newline
+15:1-15:1  Eof
+comments:
+1:1-1:11  "// spec: 2"
+2:1-2:21  "// dump: ast, tokens"
+3:1-3:96  "// The segment keywords and the `arrow` statement keyword can't be ids, whatever the statement."

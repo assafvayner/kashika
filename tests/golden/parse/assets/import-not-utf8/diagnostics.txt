@@ -1,0 +1,1 @@
+error[file] 4:8-4:22: cannot read `lib/bad.kash`: not valid UTF-8

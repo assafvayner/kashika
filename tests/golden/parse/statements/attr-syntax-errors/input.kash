@@ -1,0 +1,13 @@
+// spec: 3, 5
+// Malformed attributes: `key@t` without a value, `@` after a non-anchor `pin`, a dangling `:` and a bad style key.
+diagram "attr syntax" size (300,200)
+box a at (10,10) size (40,40)
+box b at (250,150) size (40,40)
+line a.right -> (150,30) label@0.5 "x"
+line a.bottom -> (30,150) label="y" pin=(1,2)@0.5
+box c at (120,80) size (40,20) allow=cross:
+style s {
+  =#fff
+  stroke=#333
+}
+box d at (190,10) size (40,20) style=s

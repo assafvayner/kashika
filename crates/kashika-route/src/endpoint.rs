@@ -153,7 +153,7 @@ pub(crate) fn resolve_endpoints(
         })
         .collect();
     if !errors.is_empty() {
-        return Err(Error::Diagnostics(errors));
+        return Err(Error::Endpoints(errors));
     }
     let unresolved = || Error::Usage(format!("cannot resolve `{from}` -> `{to}`"));
     let (file, _) = kashika_syntax::parse(&stmt);

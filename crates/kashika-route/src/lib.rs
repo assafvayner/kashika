@@ -35,8 +35,10 @@ pub enum Style {
 pub enum Error {
     /// Bad arguments; the CLI exits 3.
     Usage(String),
-    /// `<from>` or `<to>` doesn't resolve; the CLI exits 2.
-    Diagnostics(Vec<Diagnostic>),
+    /// The input has errors; everything `check` reports on it. The CLI exits 2.
+    Input(Vec<Diagnostic>),
+    /// `<from>` or `<to>` doesn't resolve; the errors on them. The CLI exits 2.
+    Endpoints(Vec<Diagnostic>),
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -104,8 +106,14 @@ pub struct Request<'a> {
 }
 
 pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
-    let (file, _) = kashika_syntax::parse(req.src);
-    let (scene, _) = kashika_model::resolve_with(&file, req.opts);
+    let (file, mut diags) = kashika_syntax::parse(req.src);
+    let (scene, more) = kashika_model::resolve_with(&file, req.opts);
+    diags.extend(more);
+    if diags.iter().any(|d| d.severity == Severity::Error) {
+        diags.extend(kashika_check::check(&scene));
+        kashika_diag::sort(&mut diags);
+        return Err(Error::Input(diags));
+    }
     let src = Source::new(req.src);
     let target = req
         .line
@@ -423,13 +431,19 @@ fn directions_ok(line: &Line, from: &Endpoint, to: &Endpoint, style: Style) -> b
 /// Cosine of the largest angle, about 2.5°, between a path's end and a side's normal.
 pub(crate) const SQUARE: f64 = 0.999;
 
+/// Straight runs: one more than the corners, rounded (`Quad`) or, at `radius=0`, sharp.
 fn segments(path: &[PathSeg], style: Style) -> usize {
     match style {
         Style::Arc => {
-            1 + path
+            let rounded = path
                 .iter()
                 .filter(|s| matches!(s, PathSeg::Quad { .. }))
-                .count()
+                .count();
+            let sharp = path
+                .windows(2)
+                .filter(|w| matches!(w, [PathSeg::Line { .. }, PathSeg::Line { .. }]))
+                .count();
+            1 + rounded + sharp
         }
         Style::Corner | Style::Bezier => path.len(),
     }

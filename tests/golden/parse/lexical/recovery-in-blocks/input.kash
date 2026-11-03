@@ -1,0 +1,22 @@
+// spec: 2
+// dump: ast, tokens
+// Errors inside and around `{ }` blocks resync without eating the statements that follow.
+diagram "blocks" size (400,400)
+group g1 at (10,10) size (180,80) {
+  box a at (10,10) size (40,30) }
+box after1 at (10,100) size (40,30)
+group g2 at (200,10) size (180,80) {
+  box b at (10,10) size (40,30)
+} box c at (60,100) size (40,30)
+group g3 at (10,150) size (180,80) {
+  box d at (10,10) size (40,30) @
+  box e at (60,10) size (40,30)
+}
+box after3 at (200,150) size (40,30)
+group g4 at (0,0) size (10,10) {
+  box f at (1,1) size
+}
+style s { fill==#fff
+stroke=#000 }
+line l (10,390) ->
+box last at (300,300) size (40,30)

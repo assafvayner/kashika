@@ -1,0 +1,7 @@
+// spec: 7
+// `shared-segment` needs more than 1px of collinear overlap: 1px is clean, 1.5px is flagged.
+diagram "shared boundary" size (800,600)
+line clean_a (20,100) -> h 100
+line clean_b (119,100) -> h 100
+line flag_a (20,300) -> h 100
+line flag_b (118.5,300) -> h 100

@@ -1,0 +1,56 @@
+$FIXTURES/mistakes.kash:3:3: warn[spill]: box 'inner' intrudes on the title band of group 'g'
+    3 |   box inner at (10,10) size (40,40)
+    2 | group g "G" at (10,10) size (180,120) {
+      = help: keep children below local y=25.5
+$FIXTURES/mistakes.kash:5:1: warn[low-contrast]: label "A" of 'a' has contrast 1.2:1 against its background (minimum 3:1)
+    5 | box a "A" at (220,20) size (80,40) color=#eeeeee
+      = help: darken the text `color` or lighten the `fill` behind it
+$FIXTURES/mistakes.kash:6:1: warn[overlap]: box 'b' overlaps box 'a'
+    6 | box b at (260,40) size (80,40)
+    5 | box a "A" at (220,20) size (80,40) color=#eeeeee
+$FIXTURES/mistakes.kash:7:1: warn[near]: l1's first segment runs along the left side of its own box 'b'
+    7 | line l1 a.bottom -> v 100 -> (215,205)
+    6 | box b at (260,40) size (80,40)
+      = help: leave a `left`/`right` side horizontally: start with `hv` (or an `x …` hop)
+$FIXTURES/mistakes.kash:7:30: warn[diagonal-tail]: the last segment of l1 runs diagonally from (260,160) to (215,205)
+    7 | line l1 a.bottom -> v 100 -> (215,205)
+      = help: finish with `hv`/`vh` or an `x`/`y` target so the last hop is horizontal or vertical
+$FIXTURES/mistakes.kash:7:30: warn[off-grid]: x=215 on 'l1' is not a multiple of grid 10
+    7 | line l1 a.bottom -> v 100 -> (215,205)
+      = help: use 210 or 220
+$FIXTURES/mistakes.kash:7:30: warn[off-grid]: y=205 on 'l1' is not a multiple of grid 10
+    7 | line l1 a.bottom -> v 100 -> (215,205)
+      = help: use 200 or 210
+$FIXTURES/mistakes.kash:8:1: warn[cross]: l2 crosses l1 at (260,130)
+    8 | line l2 (200,130) -> h 150 label="over"
+    7 | line l1 a.bottom -> v 100 -> (215,205)
+      = help: segment 1 runs at y=130; free y-intervals across x 200..350: 0..14, 211..244, 256..300
+      = help: if intentional: allow=cross:l1 on l2
+$FIXTURES/mistakes.kash:10:1: warn[near]: l4 runs 4px from l3 for 60px (clearance 6)
+   10 | line l4 (100,154) -> h 60
+    9 | line l3 (100,150) -> h 60
+      = help: segment 1 runs at y=154; free y-intervals across x 100..160: 0..4, 16..124, 136..144, 156..244, 256..300
+$FIXTURES/mistakes.kash:10:9: warn[off-grid]: y=154 on 'l4' is not a multiple of grid 10
+   10 | line l4 (100,154) -> h 60
+      = help: use 150 or 160
+$FIXTURES/mistakes.kash:12:1: warn[near]: l6 runs 2px from l5 for 30px (clearance 6)
+   12 | line l6 a.left@0.55 -> h -30
+   11 | line l5 a.left@0.5 -> h -30
+      = help: segment 1 runs at y=42; free y-intervals across x 190..220: 0..14, 66..74, 86..124, 136..154, 211..244, 256..300
+$FIXTURES/mistakes.kash:12:1: warn[port-crowding]: l6 and l5 meet 'a' 2px apart (minimum 8px)
+   12 | line l6 a.left@0.55 -> h -30
+   11 | line l5 a.left@0.5 -> h -30
+    5 | box a "A" at (220,20) size (80,40) color=#eeeeee
+      = help: spread the endpoints at least 8px apart, e.g. `a.left@0.3` and `a.left@0.7`, or meet at a `junction`
+$FIXTURES/mistakes.kash:12:1: warn[port-crowding]: l6 and l5 meet 'g' 2px apart (minimum 8px)
+   12 | line l6 a.left@0.55 -> h -30
+   11 | line l5 a.left@0.5 -> h -30
+    2 | group g "G" at (10,10) size (180,120) {
+      = help: spread the endpoints at least 8px apart, e.g. `g.right@0.3` and `g.right@0.7`, or meet at a `junction`
+$FIXTURES/mistakes.kash:13:9: warn[off-grid]: x=225 on 'l7' is not a multiple of grid 10
+   13 | line l7 (225,80) -> h 10
+      = help: use 220 or 230
+$FIXTURES/mistakes.kash:14:1: warn[out-of-canvas]: line l8 extends beyond the 400x300 canvas (right by 100px)
+   14 | line l8 (0,250) -> h 500
+      = help: move it inside (0,0)-(400,300) or enlarge `size` on the `diagram` line
+0 errors, 15 warnings · crossings=1 wire=1004px

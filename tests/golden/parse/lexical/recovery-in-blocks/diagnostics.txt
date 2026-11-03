@@ -1,0 +1,7 @@
+error[parse] 10:3-10:6: expected end of statement, found `box`
+  = help: each statement starts on its own line
+error[parse] 12:33-12:34: expected end of statement, found `@`
+error[parse] 17:22-17:23: expected `(`, found end of line
+error[parse] 19:16-19:17: expected an attribute value, found `=`
+error[parse] 21:17-21:19: `->` must be followed by a segment on the same line
+  = help: to continue a line, start the next physical line with `->`, e.g. `line a x.right` then `  -> y.left`

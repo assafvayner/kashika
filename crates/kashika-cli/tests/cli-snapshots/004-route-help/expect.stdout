@@ -1,0 +1,17 @@
+Suggest ready-to-paste paths between two points; never edits the file
+
+Usage: kashika route [OPTIONS] <FILE> [REST]...
+
+Arguments:
+  <FILE>     Input .kash file, or `-` for stdin
+  [REST]...  `<from> <to>` points (e.g. `app1.bottom pg.left@0.25`), then an optional style: corner (default), arc or bezier. With `--line`, the points may be omitted
+
+Options:
+      --line <LINE>              Reroute this existing line, keeping its id and attributes
+      --radius <RADIUS>          Corner radius for the `arc` style [default: 8]
+      --max <MAX>                Number of candidates to print [default: 3]
+      --format <FORMAT>          [default: text] [possible values: text, json]
+      --allow-path               Allow file references outside the input file's directory
+      --include <FILE>           Allow this one file outside the input file's directory (repeatable; relative to the current directory)
+      --stdin-name <STDIN_NAME>  File name to report for stdin input
+  -h, --help                     Print help

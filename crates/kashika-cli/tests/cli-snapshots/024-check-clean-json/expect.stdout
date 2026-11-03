@@ -1,0 +1,1 @@
+{"by_code":{},"counts":{"error":0,"suppressed":0,"warn":0},"diagnostics":[],"input":{"name":"$FIXTURES/basic.kash","sha256":"6b644d36422c2523c53de14d23bd817386e5e69afa3a3b81ab1169a3f46a25b2"},"metrics":{"crossings":0,"wire_px":160},"output":null,"schema":"kashika.check/1","tool":"<tool>","truncated":false}

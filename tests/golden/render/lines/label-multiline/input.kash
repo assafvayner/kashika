@@ -1,0 +1,6 @@
+// spec: 5, 6
+// A two-line label (`\n`) on a straight line, on and above it, and on a curve: the mask covers both lines of text.
+diagram "label multiline" size (360,260)
+line on (20,40) -> h 320 label="two\nlines" label-side=on end=arrow
+line above (20,120) -> h 320 label="two\nlines" label-side=above end=arrow
+line curved (20,240) -> curve left 50 (340,240) label="two\nlines" end=arrow

@@ -12,31 +12,21 @@ pub fn run(file: &str, check: bool, stdin_name: Option<&str>) -> ExitCode {
     let file = file.as_str();
     match kashika_syntax::format(&src) {
         Err(mut diags) => {
-            let opts = crate::report::Opts {
-                max: 50,
-                show_suppressed: false,
-                summary: false,
-                metrics: None,
-                deferred: None,
-                omitted: &[],
-            };
-            print!(
-                "{}",
-                crate::report::text(file, &src, &mut diags, &opts, None)
-            );
+            let opts = report::Opts::bare();
+            crate::out!("{}", report::text(file, &src, &mut diags, &opts, None));
             ExitCode::from(2)
         }
         Ok(out) if stdin && !check => {
-            print!("{out}");
+            crate::out!("{out}");
             ExitCode::SUCCESS
         }
         Ok(out) if out == src => ExitCode::SUCCESS,
         Ok(_) if check => {
             let file = crate::term::line(file);
             if stdin {
-                println!("{file}: not formatted");
+                crate::outln!("{file}: not formatted");
             } else {
-                println!("{file}: not formatted; run `kashika fmt {file}`");
+                crate::outln!("{file}: not formatted; run `kashika fmt {file}`");
             }
             ExitCode::from(1)
         }

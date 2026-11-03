@@ -1,0 +1,2 @@
+copy input.kash $TMP/locked.kash
+chmod 000 $TMP/locked.kash

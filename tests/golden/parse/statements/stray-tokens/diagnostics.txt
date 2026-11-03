@@ -1,0 +1,8 @@
+error[parse] 6:1-6:2: expected a statement, found `)`
+error[parse] 8:1-8:2: expected a statement, found `,`
+error[parse] 10:1-10:2: expected a statement, found `=`
+error[parse] 12:1-12:2: expected a statement, found `.`
+error[parse] 14:1-14:2: expected a statement, found `+`
+error[parse] 16:1-16:2: expected a statement, found `:`
+error[parse] 18:1-18:2: expected a statement, found `@`
+error[parse] 20:1-20:8: expected a statement, found a string

@@ -1,0 +1,2 @@
+error[parse] 4:21-4:22: expected a namespace name, found end of line
+error[parse] 5:22-5:23: expected a namespace name, found number `5`

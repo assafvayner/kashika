@@ -1,0 +1,4 @@
+tests/golden/** -text
+crates/kashika-cli/tests/cli-snapshots/** -text
+crates/kashika-cli/tests/fixtures/** -text
+crates/kashika-cli/tests/snapshots/** -text

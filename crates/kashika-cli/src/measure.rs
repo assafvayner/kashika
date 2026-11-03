@@ -75,13 +75,13 @@ pub fn run(a: &MeasureArgs) -> ExitCode {
         Format::Text => {
             for r in &results {
                 match r {
-                    Ok(b) => println!(
+                    Ok(b) => crate::outln!(
                         "width={} height={} lines={}",
                         round2(b.width()),
                         round2(b.height()),
                         b.lines().len()
                     ),
-                    Err(e) => println!("error[parse]: {}", crate::term::line(&e.to_string())),
+                    Err(e) => crate::outln!("error[parse]: {}", crate::term::line(&e.to_string())),
                 }
             }
         }
@@ -112,7 +112,7 @@ pub fn run(a: &MeasureArgs) -> ExitCode {
                     .collect();
                 fields.insert("results".into(), each.into());
             }
-            println!("{v}");
+            crate::outln!("{v}");
         }
     }
     ExitCode::from(if failed { 2 } else { 0 })

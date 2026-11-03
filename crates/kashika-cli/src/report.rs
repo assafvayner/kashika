@@ -24,6 +24,20 @@ pub struct Opts<'a> {
     pub omitted: &'a [Omitted],
 }
 
+impl Opts<'_> {
+    /// `check`'s defaults, without metrics, deferred help or omitted warnings.
+    pub fn bare() -> Self {
+        Opts {
+            max: 50,
+            show_suppressed: false,
+            summary: false,
+            metrics: None,
+            deferred: None,
+            omitted: &[],
+        }
+    }
+}
+
 /// The help `check` deferred for each diagnostic, in the same order, and the context it is
 /// worked out in.
 pub type Deferrals<'a> = (&'a Ctx<'a>, &'a [Vec<Deferred>]);

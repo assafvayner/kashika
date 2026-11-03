@@ -1,0 +1,6 @@
+route
+$FIXTURES/route.kash
+a.right
+b.left
+--max
+1

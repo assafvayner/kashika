@@ -1,0 +1,82 @@
+# Parser and lexer error messages (crates/kashika-syntax/src/), one invariant part per
+# error site; `coverage/parse-messages` wants each in some golden diagnostics.txt.
+# Help lines are listed where they tell sites with the same message apart. `ident` calls
+# that only run on an identifier (`a line id`, `an anchor`) cannot fail and are left out.
+
+# lexer.rs
+`#` does not start a comment
+unexpected character `
+unexpected non-ASCII text `
+unexpected non-ASCII whitespace `
+exponent notation is not supported
+unterminated string
+unknown escape `
+unterminated block comment
+invalid color `
+
+# parser.rs: statements
+expected a statement, found
+expected a statement (
+`kashika=` is not a statement
+groups are nested more than
+unexpected `}`
+expected end of statement, found
+expected `{`, found
+expected `}`, found
+is a reserved word and cannot be an id
+segment keywords (
+is a statement keyword; pick another name
+expected an id, found
+expected a style name, found
+text block items take no id
+expected `text` or `}` in a text block, found
+duplicate `at`
+duplicate `size`
+expected `at`, found
+a position starts with `at`
+expected `size`, found
+size can't be `auto`
+
+# parser.rs: values
+expected a number, found
+expected a string, found
+expected `(`, found
+write `size (
+expected `)`, found
+expected `,`, found
+expected `.`, found
+expected an attribute, found
+expected an anchor name before `@`, found
+expected `=`, found
+expected an identifier, found
+expected an attribute value, found
+
+# parser.rs: lines and points
+a line id takes no `:`
+a line is written with `->`, not `from … to`
+expected `->` followed by a segment, found
+  = help: write `->`
+`->` must be followed by a segment on the same line
+a line hop is `->`, not `-->`
+expected `)` to close the `(` around the point, found
+take one axis of a mixed point
+a point nests at most
+expected a number or a reference like `db.left.x`, found
+expected `x` or `y`, found
+expected a point: `(x,y)` or a reference like `db.left`, found
+a literal point is in parentheses
+`->` takes the point directly, with no `to`
+@t` needs t between 0 and 1 (exclusive)
+takes a point and uses its
+expected `left <N>`, `right <N>` or `via`, found
+`curve left` and `curve right` take no `:`
+
+# parser/defs.rs
+expected a namespace name, found
+expected a file path string, found
+expected a shape name, found
+needs a `path`
+expected `path`, `outline` or `text-area`, found
+in a shape body, found
+in shape body
+expected end of line, found

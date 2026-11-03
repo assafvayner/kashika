@@ -1,0 +1,9 @@
+input.kash:4:10: error[unknown-anchor]: unknown anchor `rigth` on `api`
+    4 | line api.rigth -> db.left end=arrow
+      = help: did you mean `right`?
+input.kash:5:1: warn[through]: line@L5 passes through box 'api'
+    5 | line (70,0) -> v 120
+    2 | box api "API" at (20,20) size (100,50)
+      = help: segment 1 runs at x=70; free x-intervals across y 0..120: 0..14, 126..174, 286..300
+      = help: if 'api' is a stop on this path, split the line at it: one line ending at 'api'.top, another starting at 'api'.bottom
+1 error, 1 warning

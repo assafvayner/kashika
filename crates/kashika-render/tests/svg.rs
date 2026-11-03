@@ -303,3 +303,177 @@ fn repeated_icons_are_embedded_once() {
     assert_eq!(s.matches("data:image/svg+xml;base64,").count(), 2, "{s}");
     assert_eq!(s.matches("<use href=\"#kashika-").count(), 3, "{s}");
 }
+
+/// U+115F is default-ignorable but the shaper keeps it, so after an emoji it shapes to the
+/// emoji face's `.notdef`, which has no COLR entry: the only colorless layer the bundled
+/// fonts produce.
+#[test]
+fn a_colorless_emoji_layer_takes_the_text_color() {
+    let s = svg(
+        "diagram \"n\" size (100,60)\nbox a \"🚀\u{115F}\" at (0,0) size (90,40) color=#123456\n",
+    );
+    let g = s
+        .find("<g aria-label=\"🚀\u{115F}\">")
+        .expect("labeled group");
+    let group = &s[g..g + s[g..].find("</g>").unwrap()];
+    assert_eq!(group.matches("fill=\"#123456\"/>").count(), 1, "{group}");
+    assert!(!group.contains("fill-opacity"), "{group}");
+}
+
+fn corpus() -> Vec<std::path::PathBuf> {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let mut files = Vec::new();
+    let mut dirs = vec![root.join("examples"), root.join("tests/golden/render")];
+    while let Some(dir) = dirs.pop() {
+        for e in std::fs::read_dir(&dir).unwrap() {
+            let p = e.unwrap().path();
+            if p.is_dir() {
+                dirs.push(p);
+            } else if p.extension().is_some_and(|x| x == "kash") {
+                files.push(p);
+            }
+        }
+    }
+    files.sort();
+    assert!(files.len() > 50, "{}", files.len());
+    files
+}
+
+fn compile_file(path: &std::path::Path) -> (kashika_model::Scene, Vec<kashika_diag::Diagnostic>) {
+    let src = std::fs::read_to_string(path).unwrap();
+    let opts = kashika_model::Options {
+        path: Some(path.to_path_buf()),
+        ..Default::default()
+    };
+    let (scene, mut diags) = kashika_model::compile_with(&src, &opts);
+    diags.extend(kashika_check::check(&scene));
+    (scene, diags)
+}
+
+#[test]
+fn overlay_is_the_plain_svg_plus_one_trailing_group() {
+    use kashika_render::{Overlay, render_svg_with};
+    const OPEN: &str = "<g id=\"kashika-overlay\">\n";
+    for path in corpus() {
+        let (scene, diags) = compile_file(&path);
+        let plain = render_svg(&scene);
+        for (error_markers, debug) in [(true, false), (false, true), (true, true)] {
+            let o = Overlay {
+                error_markers,
+                debug,
+            };
+            let s = render_svg_with(&scene, &diags, o);
+            assert_eq!(s.matches(OPEN).count(), 1, "{}", path.display());
+            let start = s.find(OPEN).unwrap();
+            assert!(s.ends_with("</g>\n</svg>\n"), "{}", path.display());
+            assert_eq!(
+                format!("{}</svg>\n", &s[..start]),
+                plain,
+                "{} {o:?}",
+                path.display()
+            );
+        }
+    }
+}
+
+/// The black `<rect>`s of each line's mask, by line index.
+fn mask_rects(svg: &str) -> std::collections::BTreeMap<usize, Vec<String>> {
+    let mut out = std::collections::BTreeMap::new();
+    for (at, _) in svg.match_indices("<mask id=\"") {
+        let mask = &svg[at..at + svg[at..].find("</mask>").unwrap()];
+        let id = &mask["<mask id=\"".len()..];
+        let id = &id[..id.find('"').unwrap()];
+        let i: usize = id.rsplit("-mask-").next().unwrap().parse().unwrap();
+        let rects: Vec<String> = mask
+            .split("<rect ")
+            .skip(1)
+            .map(|r| format!("<rect {}", &r[..r.find("/>").unwrap() + 2]))
+            .filter(|r| r.contains("fill=\"#000\""))
+            .collect();
+        assert!(out.insert(i, rects).is_none(), "{id} twice");
+    }
+    out
+}
+
+#[test]
+fn line_masks_cut_exactly_the_on_line_label_rects() {
+    use kashika_geom::fmt_num as n;
+    for path in corpus() {
+        let (scene, _) = compile_file(&path);
+        let masks = mask_rects(&render_svg(&scene));
+        for (i, l) in scene.lines.iter().enumerate() {
+            let want: Vec<String> = l
+                .labels
+                .iter()
+                .filter(|lab| lab.side.is_on())
+                .map(|lab| {
+                    format!(
+                        "<rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" fill=\"#000\"/>",
+                        n(lab.rect.x),
+                        n(lab.rect.y),
+                        n(lab.rect.w),
+                        n(lab.rect.h)
+                    )
+                })
+                .collect();
+            let got = masks.get(&i).cloned().unwrap_or_default();
+            assert_eq!(got, want, "{} line {i}", path.display());
+        }
+        assert!(masks.keys().all(|&i| i < scene.lines.len()));
+    }
+}
+
+#[test]
+fn every_non_blank_placed_line_has_one_aria_label() {
+    let blank = |l: &kashika_text::PlacedLine| {
+        !l.runs
+            .iter()
+            .flat_map(|r| r.text.chars())
+            .any(|c| !c.is_whitespace() && !kashika_text::is_default_ignorable(c))
+    };
+    let mut total = 0;
+    for path in corpus() {
+        let (scene, _) = compile_file(&path);
+        let lines = scene
+            .shapes
+            .iter()
+            .flat_map(|s| s.text.iter().flat_map(|t| &t.lines))
+            .chain(
+                scene
+                    .lines
+                    .iter()
+                    .flat_map(|l| l.labels.iter().flat_map(|lab| &lab.lines)),
+            )
+            .chain(scene.texts.iter().flat_map(|t| &t.lines));
+        let want = lines.filter(|l| !blank(l)).count();
+        let s = render_svg(&scene);
+        assert_eq!(
+            s.matches("aria-label=\"").count(),
+            want,
+            "{}",
+            path.display()
+        );
+        total += want;
+    }
+    assert!(total > 200, "{total}");
+}
+
+#[test]
+fn concurrent_renders_of_the_upload_example_are_identical() {
+    let src = include_str!("../../../examples/upload/upload.kash");
+    let barrier = std::sync::Barrier::new(8);
+    let outs: Vec<String> = std::thread::scope(|s| {
+        let handles: Vec<_> = (0..8)
+            .map(|_| {
+                s.spawn(|| {
+                    barrier.wait();
+                    let (scene, _) = compile(src);
+                    render_svg(&scene)
+                })
+            })
+            .collect();
+        handles.into_iter().map(|h| h.join().unwrap()).collect()
+    });
+    let want = include_str!("../../../examples/upload/upload.svg");
+    assert!(outs.iter().all(|o| o == want));
+}

@@ -500,6 +500,17 @@ fn group_honors_user_boundary_style() {
 }
 
 #[test]
+fn group_style_and_fill_do_not_flow_to_children() {
+    let s = ok(
+        "style s { stroke=#00ff00 color=#0000ff }\ngroup g at (0,0) size (200,200) style=s fill=#ff0000 {\n  box a at (10,10) size (40,40)\n}\nbox b at (300,0) size (40,40)\n",
+    );
+    let shape = |id: &str| s.shapes.iter().find(|x| x.id == id).unwrap();
+    assert_eq!(shape("g").style.fill, "#ff0000");
+    assert_eq!(shape("g").style.stroke, "#00ff00");
+    assert_eq!(shape("a").style, shape("b").style);
+}
+
+#[test]
 fn duplicate_ids_are_not_emitted_twice() {
     let (s, d) = compile(&format!(
         "{HEAD}box a at (0,0) size (1,1)\ngroup a at (5,5) size (10,10) {{\n  box c at (0,0) size (1,1)\n}}\n"

@@ -1,0 +1,72 @@
+// spec: 3, 4
+// dump: scene
+// Edge anchors on rounded boxes and groups follow the corner arc; radius is clamped to half the short side.
+diagram "rounded anchors" size (800,300)
+box r0 at (20,20) size (100,40) radius=0
+box r8 at (160,20) size (100,40) radius=8
+box r20 at (300,20) size (100,40) radius=20
+box r1000 at (440,20) size (100,40) radius=1000
+group g "G" at (20,120) size (200,120) radius=20 {
+}
+box r100 at (300,140) size (100,40) radius=100
+junction r0_t0 at r0.top@0
+junction r0_t05 at r0.top@0.05
+junction r0_t1 at r0.top@1
+junction r0_r0 at r0.right@0
+junction r0_r05 at r0.right@0.05
+junction r0_r1 at r0.right@1
+junction r0_b0 at r0.bottom@0
+junction r0_b05 at r0.bottom@0.05
+junction r0_b1 at r0.bottom@1
+junction r0_l0 at r0.left@0
+junction r0_l05 at r0.left@0.05
+junction r0_l1 at r0.left@1
+junction r8_t0 at r8.top@0
+junction r8_t05 at r8.top@0.05
+junction r8_t1 at r8.top@1
+junction r8_r0 at r8.right@0
+junction r8_r05 at r8.right@0.05
+junction r8_r1 at r8.right@1
+junction r8_b0 at r8.bottom@0
+junction r8_b05 at r8.bottom@0.05
+junction r8_b1 at r8.bottom@1
+junction r8_l0 at r8.left@0
+junction r8_l05 at r8.left@0.05
+junction r8_l1 at r8.left@1
+junction r20_t0 at r20.top@0
+junction r20_t05 at r20.top@0.05
+junction r20_t1 at r20.top@1
+junction r20_r0 at r20.right@0
+junction r20_r05 at r20.right@0.05
+junction r20_r1 at r20.right@1
+junction r20_b0 at r20.bottom@0
+junction r20_b05 at r20.bottom@0.05
+junction r20_b1 at r20.bottom@1
+junction r20_l0 at r20.left@0
+junction r20_l05 at r20.left@0.05
+junction r20_l1 at r20.left@1
+junction r1000_t0 at r1000.top@0
+junction r1000_t05 at r1000.top@0.05
+junction r1000_t1 at r1000.top@1
+junction r1000_r0 at r1000.right@0
+junction r1000_r05 at r1000.right@0.05
+junction r1000_r1 at r1000.right@1
+junction r1000_b0 at r1000.bottom@0
+junction r1000_b05 at r1000.bottom@0.05
+junction r1000_b1 at r1000.bottom@1
+junction r1000_l0 at r1000.left@0
+junction r1000_l05 at r1000.left@0.05
+junction r1000_l1 at r1000.left@1
+junction g_t0 at g.top@0
+junction g_t05 at g.top@0.05
+junction g_t1 at g.top@1
+junction g_r0 at g.right@0
+junction g_r05 at g.right@0.05
+junction g_r1 at g.right@1
+junction g_b0 at g.bottom@0
+junction g_b05 at g.bottom@0.05
+junction g_b1 at g.bottom@1
+junction g_l0 at g.left@0
+junction g_l05 at g.left@0.05
+junction g_l1 at g.left@1
+junction r100_t1 at r100.top@0.1

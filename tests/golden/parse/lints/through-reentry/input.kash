@@ -1,0 +1,5 @@
+// spec: 7
+// A line entering a box, leaving and entering it again is one `through` from the first entry to the last exit.
+diagram "through reentry" size (300,400)
+box m at (100,100) size (80,60)
+line l (120,0) -> v 300 -> h 40 -> v -300

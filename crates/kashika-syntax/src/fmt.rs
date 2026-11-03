@@ -4,7 +4,8 @@ use crate::lexer::{Tok, Token, lex, lex_raw};
 
 /// Rewrites `src` in canonical layout. Only whitespace changes: indentation, the spacing
 /// between tokens, blank lines and trailing whitespace. Line breaks, comments and the
-/// spelling of numbers, strings and colors are kept. Input with `parse` errors is refused.
+/// spelling of numbers, strings and colors are kept, and so is the line ending: CRLF when
+/// the first line ends in CRLF, else LF. Input with `parse` errors is refused.
 pub fn format(src: &str) -> Result<String, Vec<Diagnostic>> {
     let src = src.strip_prefix('\u{feff}').unwrap_or(src);
     let (_, diags) = crate::parser::parse_stripped(src);
@@ -12,6 +13,9 @@ pub fn format(src: &str) -> Result<String, Vec<Diagnostic>> {
     if !errors.is_empty() {
         return Err(errors);
     }
+    let crlf = src
+        .split_once('\n')
+        .is_some_and(|(first, _)| first.ends_with('\r'));
     let (toks, comments, _) = lex_raw(src);
     let lines: Vec<Vec<char>> = src.split('\n').map(|l| l.chars().collect()).collect();
     let mut items: Vec<Item> = toks
@@ -32,6 +36,7 @@ pub fn format(src: &str) -> Result<String, Vec<Diagnostic>> {
     }));
     items.sort_by_key(|i| (i.span.line, i.span.col));
     let out = print(&items);
+    let out = if crlf { out.replace('\n', "\r\n") } else { out };
     if shape(&lex(&out).0) != shape(&toks) {
         return Err(vec![Diagnostic::error(
             "parse",

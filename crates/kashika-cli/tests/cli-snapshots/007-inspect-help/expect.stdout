@@ -1,0 +1,16 @@
+Print the resolved geometry: shapes, anchors, lines, labels and the placement graph
+
+Usage: kashika inspect [OPTIONS] <FILE> [IDS]...
+
+Arguments:
+  <FILE>    Input .kash file, or `-` for stdin
+  [IDS]...  Only show these ids
+
+Options:
+      --format <FORMAT>          [default: text] [possible values: text, json]
+      --stdin-name <STDIN_NAME>  File name to report for stdin input
+      --allow-path               Allow file references outside the input file's directory
+      --include <FILE>           Allow this one file outside the input file's directory (repeatable; relative to the current directory)
+      --ports                    List the endpoints on each shape side and the lines that use them
+      --corridors <X1,Y1,X2,Y2>  Free horizontal and vertical intervals inside the rectangle x1,y1,x2,y2; without ids, prints only these
+  -h, --help                     Print help

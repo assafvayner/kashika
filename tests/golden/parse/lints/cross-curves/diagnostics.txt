@@ -1,0 +1,8 @@
+warn[cross] 5:1-5:41: b crosses a at (16.07,90)
+  = help: if intentional: allow=cross:a on b
+  elements: [{"from":[0,80],"id":"b","kind":"line","segment":1,"span":{"col":1,"end_col":41,"end_line":5,"line":5},"to":[300,80]},{"from":[0,100],"id":"a","kind":"line","segment":1,"span":{"col":1,"end_col":42,"end_line":4,"line":4},"to":[300,100]}]
+  facts: {"at":[16.07,90]}
+warn[cross] 5:1-5:41: b crosses a at (283.93,90)
+  = help: if intentional: allow=cross:a on b
+  elements: [{"from":[0,80],"id":"b","kind":"line","segment":1,"span":{"col":1,"end_col":41,"end_line":5,"line":5},"to":[300,80]},{"from":[0,100],"id":"a","kind":"line","segment":1,"span":{"col":1,"end_col":42,"end_line":4,"line":4},"to":[300,100]}]
+  facts: {"at":[283.93,90]}

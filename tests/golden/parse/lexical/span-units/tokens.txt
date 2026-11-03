@@ -1,0 +1,72 @@
+1:11-1:12  Newline
+2:21-2:22  Newline
+3:173-3:174  Newline
+4:1-4:8  Ident "diagram"
+4:9-4:16  Str "spans"
+4:17-4:21  Ident "size"
+4:22-4:23  LParen
+4:23-4:26  Num 300
+4:26-4:27  Comma
+4:27-4:30  Num 200
+4:30-4:31  RParen
+4:31-4:32  Newline
+5:1-5:5  Ident "text"
+5:6-5:10  Str "😀é"
+5:11-5:13  Ident "at"
+5:14-5:15  LParen
+5:15-5:17  Num 40
+5:17-5:18  Comma
+5:18-5:20  Num 10
+5:20-5:21  RParen
+5:23-5:24  Newline
+6:2-6:5  Ident "box"
+6:6-6:7  Ident "a"
+6:8-6:10  Ident "at"
+6:11-6:12  LParen
+6:12-6:14  Num 10
+6:14-6:15  Comma
+6:15-6:17  Num 40
+6:17-6:18  RParen
+6:19-6:23  Ident "size"
+6:24-6:25  LParen
+6:25-6:27  Num 40
+6:27-6:28  Comma
+6:28-6:30  Num 30
+6:30-6:31  RParen
+6:32-6:33  At
+6:33-6:34  Newline
+7:4-7:7  Ident "box"
+7:8-7:9  Ident "b"
+7:10-7:12  Ident "at"
+7:13-7:14  LParen
+7:14-7:16  Num 60
+7:16-7:17  Comma
+7:17-7:19  Num 40
+7:19-7:20  RParen
+7:21-7:25  Ident "size"
+7:26-7:27  LParen
+7:27-7:29  Num 40
+7:29-7:30  Comma
+7:30-7:32  Num 30
+7:32-7:33  RParen
+7:33-7:34  Newline
+8:1-8:4  Ident "box"
+8:5-8:6  Ident "c"
+8:7-8:9  Ident "at"
+8:10-8:11  LParen
+8:11-8:14  Num 110
+8:14-8:15  Comma
+8:15-8:17  Num 40
+8:17-8:18  RParen
+8:19-8:23  Ident "size"
+8:24-8:25  LParen
+8:25-8:27  Num 40
+8:27-8:28  Comma
+8:28-8:30  Num 30
+8:30-8:31  RParen
+8:31-8:32  Newline
+9:1-9:1  Eof
+comments:
+1:1-1:11  "// spec: 2"
+2:1-2:21  "// dump: tokens, ast"
+3:1-3:173  "// Columns count Unicode scalar values (an astral emoji, an accented letter and a tab are one column each); a stray `$` is dropped, so the statement around it still parses."

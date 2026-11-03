@@ -2,6 +2,7 @@ mod case;
 mod coverage;
 mod dump;
 mod review;
+mod svg_invariants;
 
 use std::path::Path;
 use std::process::Command;
@@ -38,6 +39,10 @@ fn main() {
             .strip_prefix(&root)
             .map(|p| p.to_string_lossy().replace('\\', "/"))
             .unwrap_or_default();
+        let input = dir.join("input.kash");
+        trials.push(Trial::test(format!("{name}/prefixes"), move || {
+            prefixes(&input)
+        }));
         let root = root.clone();
         trials.push(Trial::test(name, move || {
             let case = Case::load(&root, &dir)?;
@@ -55,6 +60,7 @@ fn main() {
 }
 
 fn run_case(case: &Case) -> Result<(), Failed> {
+    check_fmt(case)?;
     let outputs = match case.suite {
         Suite::Parse => run_parse(case)?,
         Suite::Render => run_render(case)?,
@@ -62,15 +68,67 @@ fn run_case(case: &Case) -> Result<(), Failed> {
     check_outputs(case, &outputs)
 }
 
-fn run_parse(case: &Case) -> Result<Vec<Output>, String> {
-    let input = case.dir.join("input.kash");
-    let (file, _) = kashika_syntax::parse(&case.src);
-    let opts = kashika_model::Options {
-        path: Some(input),
+/// When fmt accepts the input, its output formats to itself, keeps every token's and
+/// comment's text, and parses to the same AST up to spans.
+fn check_fmt(case: &Case) -> Result<(), String> {
+    let Ok(once) = kashika_syntax::format(&case.src) else {
+        return Ok(());
+    };
+    let twice = kashika_syntax::format(&once)
+        .map_err(|_| format!("{}: fmt output no longer parses", case.name))?;
+    if once != twice {
+        return Err(format!(
+            "{}: fmt is not idempotent on this input",
+            case.name
+        ));
+    }
+    if dump::token_texts(&case.src) != dump::token_texts(&once) {
+        return Err(format!("{}: fmt changed token or comment text", case.name));
+    }
+    let (before, _) = kashika_syntax::parse(&case.src);
+    let (after, _) = kashika_syntax::parse(&once);
+    if dump::ast(&before, true) != dump::ast(&after, true) {
+        return Err(format!("{}: fmt changed the AST (spans aside)", case.name));
+    }
+    Ok(())
+}
+
+/// Every third prefix of a golden input formats (which parses it first) without a panic or
+/// the formatter's token guard firing. Every prefix of every input takes about 35 s in a
+/// debug build, so the stride is 3.
+fn prefixes(input: &Path) -> Result<(), Failed> {
+    let src = std::fs::read_to_string(input).map_err(|e| e.to_string())?;
+    let ends = src
+        .char_indices()
+        .map(|(i, _)| i)
+        .step_by(3)
+        .chain([src.len()]);
+    for end in ends {
+        let errors = kashika_syntax::format(&src[..end])
+            .err()
+            .unwrap_or_default();
+        if let Some(d) = errors
+            .iter()
+            .find(|d| d.message.starts_with("internal error"))
+        {
+            return Err(format!("prefix of {end} bytes: {}", d.message).into());
+        }
+    }
+    Ok(())
+}
+
+fn options(case: &Case) -> kashika_model::Options {
+    kashika_model::Options {
+        path: Some(case.dir.join("input.kash")),
         allow_path: case.allow_path,
         icon_path: case.icon_path.iter().map(|p| case.dir.join(p)).collect(),
         include: case.include.iter().map(|p| case.dir.join(p)).collect(),
-    };
+    }
+}
+
+fn run_parse(case: &Case) -> Result<Vec<Output>, String> {
+    let (file, _) = kashika_syntax::parse(&case.src);
+    let opts = options(case);
     let (scene, diags) = match kashika_model::compile_library_with(&case.src, &opts) {
         Some(diags) => (None, diags),
         None => {
@@ -85,20 +143,12 @@ fn run_parse(case: &Case) -> Result<Vec<Output>, String> {
         .map(|d| serde_json::to_value(d).expect("diagnostics serialize"))
         .collect();
 
-    if let Ok(once) = kashika_syntax::format(&case.src) {
-        let twice = kashika_syntax::format(&once)
-            .map_err(|_| format!("{}: fmt output no longer parses", case.name))?;
-        if once != twice {
-            return Err(format!(
-                "{}: fmt is not idempotent on this input",
-                case.name
-            ));
-        }
-    }
-
     let mut out = vec![Output::text("diagnostics.txt", dump::diagnostics(&diags))];
     if case.dump_ast {
-        out.push(Output::text("ast.txt", dump::ast(&file)));
+        out.push(Output::text("ast.txt", dump::ast(&file, false)));
+    }
+    if case.dump_tokens {
+        out.push(Output::text("tokens.txt", dump::tokens(&case.src)));
     }
     if case.dump_scene {
         let scene = scene.ok_or_else(|| format!("{}: a library has no scene", case.name))?;
@@ -162,6 +212,20 @@ fn run_render(case: &Case) -> Result<Vec<Output>, String> {
             out.push(Output::text("diagnostics.txt", dump::diagnostics(&diags)));
         }
         let bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
+        if ext == "svg" {
+            let problems = svg_invariants::check_source(
+                &String::from_utf8_lossy(&bytes),
+                &case.src,
+                &options(case),
+            );
+            if !problems.is_empty() {
+                return Err(format!(
+                    "{}: svg invariants:\n  {}",
+                    case.name,
+                    problems.join("\n  ")
+                ));
+            }
+        }
         out.push(Output {
             name: format!("out.{ext}"),
             bytes,

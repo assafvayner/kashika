@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn diagonal_last_hop_after_orthogonal_ones() {
@@ -14,6 +15,7 @@ fn diagonal_last_hop_after_orthogonal_ones() {
         "the last segment of l runs diagonally from (100,50) to (150,100)"
     );
     assert_eq!(d[0].elements[0].segment, Some(3));
+    assert_eq!(d[0].span, Span::new(2, 34, 2, 43));
     assert!(lint("diagonal-tail", "line l (0,0) -> (150,100)\n").is_empty());
     assert!(lint("diagonal-tail", "line l (0,0) -> (50,20) -> (150,100)\n").is_empty());
     assert!(lint("diagonal-tail", "line l (0,0) -> h 100 -> v 50\n").is_empty());

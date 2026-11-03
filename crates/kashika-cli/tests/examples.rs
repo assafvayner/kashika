@@ -1,3 +1,6 @@
+#[path = "golden/svg_invariants.rs"]
+mod svg_invariants;
+
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
@@ -84,6 +87,22 @@ fn example_renders_are_committed_and_current() {
                 fresh == committed,
                 "examples/{name}/{name}.{ext} is stale; {regen}"
             );
+            if ext == "svg" {
+                let opts = kashika_model::Options {
+                    path: Some(src.clone()),
+                    ..Default::default()
+                };
+                let problems = svg_invariants::check_source(
+                    &String::from_utf8_lossy(&fresh),
+                    &std::fs::read_to_string(&src).unwrap(),
+                    &opts,
+                );
+                assert!(
+                    problems.is_empty(),
+                    "examples/{name}/{name}.svg breaks svg invariants:\n  {}",
+                    problems.join("\n  ")
+                );
+            }
         }
     }
 }

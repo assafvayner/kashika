@@ -1,0 +1,4 @@
+check
+$FIXTURES/typo.kash
+--format
+json

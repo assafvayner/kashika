@@ -1,0 +1,10 @@
+Print the language reference, or one topic of it
+
+Usage: kashika ref [OPTIONS] [TOPIC]
+
+Arguments:
+  [TOPIC]  A topic (rules, syntax, anchors, paths, sizing, text, shapes, styles, recipes, examples, lints, metrics, cli, limits) or a diagnostic code; without one, the core guide
+
+Options:
+      --json  Wrap the page in a JSON envelope
+  -h, --help  Print help

@@ -458,7 +458,8 @@ impl<'a> Field<'a> {
 
 /// Lane positions on one axis, inside the canvas: the midpoint between the endpoints, and
 /// `2 × clearance` outside each box or group edge, written relative to its corner so the lane
-/// follows it. Of lanes within 0.5px of each other only one is kept: one on a box the
+/// follows it. The edges are those of the anchor frame, so the corner anchor resolves to the
+/// lane even on a contained SVG-file shape. Of lanes within 0.5px of each other only one is kept: one on a box the
 /// path starts or ends at, otherwise the box nearest the endpoints, before the midpoint. They
 /// come in that order of preference.
 fn lanes(scene: &Scene, a: &Endpoint, b: &Endpoint, axis: Axis) -> Vec<Lane> {
@@ -478,7 +479,7 @@ fn lanes(scene: &Scene, a: &Endpoint, b: &Endpoint, axis: Axis) -> Vec<Lane> {
         },
     )];
     for s in scene.shapes.iter().filter(|s| s.layer.is_normal()) {
-        let (r, id) = (s.rect, &s.id);
+        let (r, id) = (s.anchor_frame(), &s.id);
         let rank = Rank(false, !owns(id), gap_between(r, ends));
         let (before, after) = match axis {
             Axis::X => (

@@ -1,0 +1,21 @@
+Check a .kash file and render it to SVG, PNG, JPEG or WebP
+
+Usage: kashika render [OPTIONS] --output <OUTPUT> <FILE>
+
+Arguments:
+  <FILE>  Input .kash file, or `-` for stdin
+
+Options:
+      --format <FORMAT>          [default: text] [possible values: text, json]
+      --fail-on <FAIL_ON>        [default: warn] [possible values: error, warn, never]
+      --max <MAX>                Maximum number of diagnostics to print [default: 50]
+      --stdin-name <STDIN_NAME>  File name to report for stdin input
+      --allow-path               Allow file references outside the input file's directory
+      --include <FILE>           Allow this one file outside the input file's directory (repeatable; relative to the current directory)
+      --show-suppressed          Also list suppressed findings
+      --summary                  Also print the number of findings per diagnostic code
+      --focus <FOCUS>            Only report warnings that involve these ids (comma-separated); errors are always reported
+  -o, --output <OUTPUT>          Output file (.svg, .png, .jpg, .jpeg or .webp); an existing file is left untouched when there are errors, unless --force
+      --force                    Write output even when there are errors
+      --debug                    Overlay rulers, element ids, anchor dots and diagnostic markers
+  -h, --help                     Print help

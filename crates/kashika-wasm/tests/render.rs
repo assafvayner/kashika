@@ -23,7 +23,13 @@ fn file_references_are_not_found() {
 fn force_renders_despite_errors() {
     let r = render(BROKEN, true);
     assert_eq!(r.errors, 1);
-    assert!(r.svg.is_some());
+    let svg = r.svg.unwrap();
+    let at = svg
+        .find("<g id=\"kashika-overlay\">\n")
+        .expect("overlay group");
+    assert!(svg[at..].contains("aria-label=\"error[file]\""), "{svg}");
+    assert!(svg.ends_with("</g>\n</svg>\n"));
+    assert!(!render(CLEAN, true).svg.unwrap().contains("kashika-overlay"));
 }
 
 #[test]

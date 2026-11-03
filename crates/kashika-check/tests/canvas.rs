@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn shapes_and_lines_beyond_the_canvas() {
@@ -17,6 +18,8 @@ fn shapes_and_lines_beyond_the_canvas() {
         d[1].message,
         "line l extends beyond the 800x600 canvas (bottom by 110px)"
     );
+    assert_eq!(d[0].span, Span::new(2, 1, 2, 32));
+    assert_eq!(d[1].span, Span::new(3, 1, 3, 24));
     assert!(lint("out-of-canvas", "box a at (700,540) size (100,60)\n").is_empty());
 }
 

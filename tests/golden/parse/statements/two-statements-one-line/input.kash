@@ -1,0 +1,6 @@
+// spec: 2, 3
+// dump: ast
+// A second statement on the same line is an error, and still parses.
+diagram "two" size (200,100)
+box a at (10,10) size (40,20) box b at (100,10) size (40,20)
+line a.right -> b.left

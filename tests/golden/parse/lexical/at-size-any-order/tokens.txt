@@ -1,0 +1,226 @@
+1:17-1:18  Newline
+2:21-2:22  Newline
+3:84-3:85  Newline
+4:1-4:8  Ident "diagram"
+4:9-4:20  Str "any order"
+4:21-4:25  Ident "grid"
+4:25-4:26  Eq
+4:26-4:28  Num 10
+4:29-4:33  Ident "size"
+4:34-4:35  LParen
+4:35-4:38  Num 400
+4:38-4:39  Comma
+4:39-4:42  Num 420
+4:42-4:43  RParen
+4:44-4:53  Ident "clearance"
+4:53-4:54  Eq
+4:54-4:55  Num 4
+4:55-4:56  Newline
+5:1-5:4  Ident "box"
+5:5-5:6  Ident "a"
+5:7-5:11  Ident "size"
+5:12-5:13  LParen
+5:13-5:16  Num 100
+5:16-5:17  Comma
+5:17-5:19  Num 60
+5:19-5:20  RParen
+5:21-5:23  Ident "at"
+5:24-5:25  LParen
+5:25-5:27  Num 20
+5:27-5:28  Comma
+5:28-5:30  Num 20
+5:30-5:31  RParen
+5:32-5:37  Ident "style"
+5:37-5:38  Eq
+5:38-5:45  Ident "service"
+5:45-5:46  Newline
+6:1-6:4  Ident "box"
+6:5-6:6  Ident "b"
+6:7-6:10  Str "B"
+6:11-6:16  Ident "style"
+6:16-6:17  Eq
+6:17-6:26  Ident "datastore"
+6:27-6:29  Ident "at"
+6:30-6:31  LParen
+6:31-6:34  Num 200
+6:34-6:35  Comma
+6:35-6:37  Num 20
+6:37-6:38  RParen
+6:39-6:42  Ident "pin"
+6:42-6:43  Eq
+6:43-6:45  Ident "tl"
+6:46-6:50  Ident "size"
+6:51-6:52  LParen
+6:52-6:55  Num 100
+6:55-6:56  Comma
+6:56-6:58  Num 60
+6:58-6:59  RParen
+6:60-6:65  Ident "shape"
+6:65-6:66  Eq
+6:66-6:73  Ident "rounded"
+6:73-6:74  Newline
+7:1-7:6  Ident "group"
+7:7-7:8  Ident "g"
+7:9-7:12  Str "G"
+7:13-7:17  Ident "size"
+7:18-7:19  LParen
+7:19-7:22  Num 360
+7:22-7:23  Comma
+7:23-7:26  Num 120
+7:26-7:27  RParen
+7:28-7:33  Ident "style"
+7:33-7:34  Eq
+7:34-7:42  Ident "boundary"
+7:43-7:45  Ident "at"
+7:46-7:47  LParen
+7:47-7:49  Num 20
+7:49-7:50  Comma
+7:50-7:53  Num 140
+7:53-7:54  RParen
+7:55-7:56  LBrace
+7:56-7:57  Newline
+8:3-8:11  Ident "junction"
+8:12-8:13  Ident "j"
+8:14-8:17  Ident "dot"
+8:18-8:20  Ident "at"
+8:21-8:22  LParen
+8:22-8:24  Num 40
+8:24-8:25  Comma
+8:25-8:27  Num 60
+8:27-8:28  RParen
+8:28-8:29  Newline
+9:3-9:7  Ident "text"
+9:8-9:14  Str "note"
+9:15-9:20  Ident "muted"
+9:21-9:23  Ident "at"
+9:24-9:25  LParen
+9:25-9:28  Num 120
+9:28-9:29  Comma
+9:29-9:31  Num 60
+9:31-9:32  RParen
+9:33-9:37  Ident "size"
+9:37-9:38  Eq
+9:38-9:40  Num 12
+9:40-9:41  Newline
+10:1-10:2  RBrace
+10:2-10:3  Newline
+11:1-11:4  Ident "box"
+11:5-11:6  Ident "c"
+11:7-11:9  Ident "at"
+11:10-11:11  LParen
+11:11-11:14  Num 200
+11:14-11:15  Comma
+11:15-11:18  Num 180
+11:18-11:19  RParen
+11:20-11:24  Ident "size"
+11:25-11:26  LParen
+11:26-11:29  Num 120
+11:29-11:30  Comma
+11:30-11:32  Num 60
+11:32-11:33  RParen
+11:34-11:35  LBrace
+11:35-11:36  Newline
+12:3-12:7  Ident "text"
+12:8-12:11  Str "x"
+12:12-12:17  Ident "muted"
+12:18-12:20  Ident "at"
+12:21-12:22  LParen
+12:22-12:24  Num 20
+12:24-12:25  Comma
+12:25-12:27  Num 20
+12:27-12:28  RParen
+12:28-12:29  Newline
+13:1-13:2  RBrace
+13:2-13:3  Newline
+14:1-14:4  Ident "box"
+14:5-14:6  Ident "d"
+14:7-14:10  Str "D"
+14:11-14:19  Ident "sublabel"
+14:19-14:20  Eq
+14:20-14:24  Str "v2"
+14:25-14:27  Ident "at"
+14:28-14:29  LParen
+14:29-14:31  Num 20
+14:31-14:32  Comma
+14:32-14:35  Num 280
+14:35-14:36  RParen
+14:37-14:41  Ident "size"
+14:42-14:43  LParen
+14:43-14:46  Num 100
+14:46-14:47  Comma
+14:47-14:49  Num 60
+14:49-14:50  RParen
+14:50-14:51  Newline
+15:1-15:4  Ident "box"
+15:5-15:6  Ident "e"
+15:7-15:10  Str "E"
+15:11-15:13  Ident "at"
+15:14-15:15  LParen
+15:15-15:18  Num 140
+15:18-15:19  Comma
+15:19-15:22  Num 280
+15:22-15:23  RParen
+15:24-15:28  Ident "size"
+15:29-15:30  LParen
+15:30-15:32  Num 60
+15:32-15:33  Comma
+15:33-15:35  Num 40
+15:35-15:36  RParen
+15:37-15:42  Ident "shape"
+15:42-15:43  Eq
+15:43-15:50  Ident "rounded"
+15:51-15:56  Ident "style"
+15:56-15:57  Eq
+15:57-15:64  Ident "service"
+15:65-15:68  Ident "pin"
+15:68-15:69  Eq
+15:69-15:71  Ident "tl"
+15:71-15:72  Newline
+16:1-16:4  Ident "box"
+16:5-16:6  Ident "f"
+16:7-16:10  Str "F"
+16:11-16:13  Ident "at"
+16:14-16:15  LParen
+16:15-16:18  Num 240
+16:18-16:19  Comma
+16:19-16:22  Num 280
+16:22-16:23  RParen
+16:24-16:28  Ident "size"
+16:29-16:30  LParen
+16:30-16:32  Num 60
+16:32-16:33  Comma
+16:33-16:35  Num 40
+16:35-16:36  RParen
+16:37-16:40  Ident "pin"
+16:40-16:41  Eq
+16:41-16:43  Ident "tl"
+16:44-16:49  Ident "style"
+16:49-16:50  Eq
+16:50-16:57  Ident "service"
+16:58-16:63  Ident "shape"
+16:63-16:64  Eq
+16:64-16:71  Ident "rounded"
+16:71-16:72  Newline
+17:1-17:5  Ident "line"
+17:6-17:7  Ident "l"
+17:8-17:9  Ident "e"
+17:9-17:10  Dot
+17:10-17:16  Ident "bottom"
+17:17-17:19  Arrow
+17:20-17:21  Ident "v"
+17:22-17:24  Num 40
+17:25-17:30  Ident "label"
+17:30-17:31  Eq
+17:31-17:34  Str "x"
+17:35-17:38  Ident "end"
+17:38-17:39  Eq
+17:39-17:44  Ident "arrow"
+17:45-17:50  Ident "start"
+17:50-17:51  Eq
+17:51-17:54  Ident "dot"
+17:54-17:55  Newline
+18:1-18:1  Eof
+comments:
+1:1-1:17  "// spec: 2, 3, 6"
+2:1-2:21  "// dump: ast, tokens"
+3:1-3:84  "// `at`, `size` and attributes mix in any order on every statement that takes them."

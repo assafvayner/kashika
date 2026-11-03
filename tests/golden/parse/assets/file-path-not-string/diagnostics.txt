@@ -1,0 +1,3 @@
+error[parse] 4:8-4:11: expected a string, found `lib`
+error[parse] 5:9-5:11: expected a file path string, found `at`
+error[parse] 6:9-6:13: expected a file path string, found `icon`

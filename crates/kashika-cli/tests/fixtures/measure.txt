@@ -1,0 +1,127 @@
+size	weight	string	width	height	lines
+10	normal		0.0	12.5	1
+10	normal	 	2.81	12.5	1
+10	normal	AV	13.8	12.5	1
+10	normal	To	12.45	12.5	1
+10	normal	Wa	15.47	12.5	1
+10	normal	iiii	9.69	12.5	1
+10	normal	MMMM	36.13	12.5	1
+10	normal	a\tb	22.99	12.5	1
+10	normal	**b** `c`	15.12	12.5	1
+10	normal	🚀	10.0	12.5	1
+10	normal	👩\u{200d}💻	10.0	12.5	1
+10	normal	🇺🇸🇺	20.0	12.5	1
+10	normal	1\u{fe0f}⃣	10.0	12.5	1
+10	normal	⚠	10.25	12.5	1
+10	normal	⚠\u{fe0f}	10.0	12.5	1
+10	normal	┌─┐	18.0	12.5	1
+10	normal	日本	13.13	12.5	1
+10	normal	مرحبا	32.81	12.5	1
+10	normal	café	20.86	12.5	1
+10	normal	xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx	2729.49	12.5	1
+10	normal	a\nb\nc	6.12	37.5	3
+10	bold		0.0	12.5	1
+10	bold	 	2.37	12.5	1
+10	bold	AV	14.93	12.5	1
+10	bold	To	12.81	12.5	1
+10	bold	Wa	16.18	12.5	1
+10	bold	iiii	10.84	12.5	1
+10	bold	MMMM	37.27	12.5	1
+10	bold	a\tb	21.58	12.5	1
+10	bold	**b** `c`	14.67	12.5	1
+10	bold	🚀	10.0	12.5	1
+10	bold	👩\u{200d}💻	10.0	12.5	1
+10	bold	🇺🇸🇺	20.0	12.5	1
+10	bold	1\u{fe0f}⃣	10.0	12.5	1
+10	bold	⚠	10.25	12.5	1
+10	bold	⚠\u{fe0f}	10.0	12.5	1
+10	bold	┌─┐	18.0	12.5	1
+10	bold	日本	13.13	12.5	1
+10	bold	مرحبا	32.81	12.5	1
+10	bold	café	21.63	12.5	1
+10	bold	xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx	2900.39	12.5	1
+10	bold	a\nb\nc	6.3	37.5	3
+14	normal		0.0	17.5	1
+14	normal	 	3.94	17.5	1
+14	normal	AV	19.32	17.5	1
+14	normal	To	17.43	17.5	1
+14	normal	Wa	21.66	17.5	1
+14	normal	iiii	13.56	17.5	1
+14	normal	MMMM	50.59	17.5	1
+14	normal	a\tb	32.18	17.5	1
+14	normal	**b** `c`	21.16	17.5	1
+14	normal	🚀	14.0	17.5	1
+14	normal	👩\u{200d}💻	14.0	17.5	1
+14	normal	🇺🇸🇺	28.0	17.5	1
+14	normal	1\u{fe0f}⃣	14.0	17.5	1
+14	normal	⚠	14.36	17.5	1
+14	normal	⚠\u{fe0f}	14.0	17.5	1
+14	normal	┌─┐	25.2	17.5	1
+14	normal	日本	18.38	17.5	1
+14	normal	مرحبا	45.94	17.5	1
+14	normal	café	29.2	17.5	1
+14	normal	xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx	3821.29	17.5	1
+14	normal	a\nb\nc	8.57	52.5	3
+14	bold		0.0	17.5	1
+14	bold	 	3.32	17.5	1
+14	bold	AV	20.9	17.5	1
+14	bold	To	17.93	17.5	1
+14	bold	Wa	22.65	17.5	1
+14	bold	iiii	15.18	17.5	1
+14	bold	MMMM	52.17	17.5	1
+14	bold	a\tb	30.21	17.5	1
+14	bold	**b** `c`	20.54	17.5	1
+14	bold	🚀	14.0	17.5	1
+14	bold	👩\u{200d}💻	14.0	17.5	1
+14	bold	🇺🇸🇺	28.0	17.5	1
+14	bold	1\u{fe0f}⃣	14.0	17.5	1
+14	bold	⚠	14.36	17.5	1
+14	bold	⚠\u{fe0f}	14.0	17.5	1
+14	bold	┌─┐	25.2	17.5	1
+14	bold	日本	18.38	17.5	1
+14	bold	مرحبا	45.94	17.5	1
+14	bold	café	30.28	17.5	1
+14	bold	xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx	4060.55	17.5	1
+14	bold	a\nb\nc	8.83	52.5	3
+28	normal		0.0	35.0	1
+28	normal	 	7.88	35.0	1
+28	normal	AV	38.64	35.0	1
+28	normal	To	34.86	35.0	1
+28	normal	Wa	43.31	35.0	1
+28	normal	iiii	27.13	35.0	1
+28	normal	MMMM	101.17	35.0	1
+28	normal	a\tb	64.37	35.0	1
+28	normal	**b** `c`	42.33	35.0	1
+28	normal	🚀	28.0	35.0	1
+28	normal	👩\u{200d}💻	28.0	35.0	1
+28	normal	🇺🇸🇺	56.0	35.0	1
+28	normal	1\u{fe0f}⃣	28.0	35.0	1
+28	normal	⚠	28.71	35.0	1
+28	normal	⚠\u{fe0f}	28.0	35.0	1
+28	normal	┌─┐	50.4	35.0	1
+28	normal	日本	36.75	35.0	1
+28	normal	مرحبا	91.88	35.0	1
+28	normal	café	58.41	35.0	1
+28	normal	xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx	7642.58	35.0	1
+28	normal	a\nb\nc	17.14	105.0	3
+28	bold		0.0	35.0	1
+28	bold	 	6.63	35.0	1
+28	bold	AV	41.81	35.0	1
+28	bold	To	35.86	35.0	1
+28	bold	Wa	45.31	35.0	1
+28	bold	iiii	30.35	35.0	1
+28	bold	MMMM	104.34	35.0	1
+28	bold	a\tb	60.43	35.0	1
+28	bold	**b** `c`	41.08	35.0	1
+28	bold	🚀	28.0	35.0	1
+28	bold	👩\u{200d}💻	28.0	35.0	1
+28	bold	🇺🇸🇺	56.0	35.0	1
+28	bold	1\u{fe0f}⃣	28.0	35.0	1
+28	bold	⚠	28.71	35.0	1
+28	bold	⚠\u{fe0f}	28.0	35.0	1
+28	bold	┌─┐	50.4	35.0	1
+28	bold	日本	36.75	35.0	1
+28	bold	مرحبا	91.88	35.0	1
+28	bold	café	60.55	35.0	1
+28	bold	xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx	8121.09	35.0	1
+28	bold	a\nb\nc	17.65	105.0	3

@@ -1,0 +1,2 @@
+error[parse] 5:31-5:34: expected end of statement, found `box`
+  = help: each statement starts on its own line

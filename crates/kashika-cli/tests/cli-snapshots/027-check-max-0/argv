@@ -1,0 +1,4 @@
+check
+$FIXTURES/mistakes.kash
+--max
+0

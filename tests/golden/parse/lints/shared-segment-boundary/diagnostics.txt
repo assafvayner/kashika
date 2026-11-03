@@ -1,0 +1,5 @@
+warn[shared-segment] 7:1-7:33: flag_b runs along flag_a for 1.5px, from (118.5,300) to (120,300)
+  = help: nearest free lane: y=294
+  = help: free y-intervals across x 118.5..120: 0..94, 106..294, 306..600
+  elements: [{"from":[118.5,300],"id":"flag_b","kind":"line","segment":1,"span":{"col":1,"end_col":33,"end_line":7,"line":7},"to":[218.5,300]},{"from":[20,300],"id":"flag_a","kind":"line","segment":1,"span":{"col":1,"end_col":30,"end_line":6,"line":6},"to":[120,300]}]
+  facts: {"free":{"axis":"y","band":[118.5,120],"intervals":[[0,94],[106,294],[306,600]]},"from":[118.5,300],"lane":{"at":294,"axis":"y"},"length":1.5,"to":[120,300]}

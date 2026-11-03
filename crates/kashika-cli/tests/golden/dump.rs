@@ -3,10 +3,13 @@ use serde_json::Value;
 
 const FOLD_WIDTH: usize = 100;
 
-/// The parser's AST as `{:#?}`, with spans written `line:col-end_line:end_col` and
-/// short leaf-only groups folded onto one line.
-pub fn ast(file: &kashika_syntax::ast::File) -> String {
+/// The parser's AST as `{:#?}`, with spans written `line:col-end_line:end_col` (or left
+/// out with `strip_spans`) and short leaf-only groups folded onto one line.
+pub fn ast(file: &kashika_syntax::ast::File, strip_spans: bool) -> String {
     let mut lines: Vec<String> = format!("{file:#?}").lines().map(str::to_string).collect();
+    if strip_spans {
+        lines = without_spans(&lines);
+    }
     loop {
         let folded = fold_once(&lines);
         if folded == lines {
@@ -21,6 +24,26 @@ pub fn ast(file: &kashika_syntax::ast::File) -> String {
 
 fn indent(s: &str) -> usize {
     s.len() - s.trim_start().len()
+}
+
+/// Drops every multi-line `Span { .. }` block of a `{:#?}` dump.
+fn without_spans(lines: &[String]) -> Vec<String> {
+    let mut out = Vec::with_capacity(lines.len());
+    let mut skip_to: Option<usize> = None;
+    for l in lines {
+        if let Some(ind) = skip_to {
+            if indent(l) == ind && l.trim_start().starts_with('}') {
+                skip_to = None;
+            }
+            continue;
+        }
+        if l.ends_with("Span {") {
+            skip_to = Some(indent(l));
+            continue;
+        }
+        out.push(l.clone());
+    }
+    out
 }
 
 fn opener(s: &str) -> Option<char> {
@@ -222,4 +245,60 @@ pub fn diagnostics(diags: &[Value]) -> String {
         &format!("this is kashika {}", env!("CARGO_PKG_VERSION")),
         "this is kashika <tool>",
     )
+}
+
+/// One line per token, `L:C-L:C  Kind`, with identifier, string and color values quoted
+/// and numbers as their source text, then a `comments:` section with each comment's span
+/// and quoted source text.
+pub fn tokens(src: &str) -> String {
+    use kashika_syntax::Tok;
+    let (toks, comments, _) = kashika_syntax::lex_with_comments(src);
+    let text = kashika_syntax::SourceText::new(src);
+    let mut out = String::new();
+    for t in &toks {
+        let s = &t.span;
+        let kind = match &t.tok {
+            Tok::Ident(v) => format!("Ident {v:?}"),
+            Tok::Num(_) => format!("Num {}", text.span(*s)),
+            Tok::Str(v) => format!("Str {v:?}"),
+            Tok::Color(c) => format!("Color {c:?}"),
+            other => format!("{other:?}"),
+        };
+        out.push_str(&format!(
+            "{}:{}-{}:{}  {kind}\n",
+            s.line, s.col, s.end_line, s.end_col
+        ));
+    }
+    out.push_str("comments:\n");
+    for c in &comments {
+        let s = &c.span;
+        out.push_str(&format!(
+            "{}:{}-{}:{}  {:?}\n",
+            s.line, s.col, s.end_line, s.end_col, c.text
+        ));
+    }
+    out
+}
+
+/// The source text of every token and comment in order, without carriage returns, which
+/// are whitespace.
+pub fn token_texts(src: &str) -> Vec<String> {
+    use kashika_syntax::Tok;
+    let (toks, comments, _) = kashika_syntax::lex_with_comments(src);
+    let text = kashika_syntax::SourceText::new(src);
+    let mut items: Vec<(u32, u32, String)> = toks
+        .iter()
+        .filter(|t| !matches!(t.tok, Tok::Newline | Tok::Eof))
+        .map(|t| (t.span.line, t.span.col, text.span(t.span)))
+        .chain(
+            comments
+                .into_iter()
+                .map(|c| (c.span.line, c.span.col, c.text)),
+        )
+        .collect();
+    items.sort_by_key(|(line, col, _)| (*line, *col));
+    items
+        .into_iter()
+        .map(|(_, _, s)| s.replace('\r', ""))
+        .collect()
 }

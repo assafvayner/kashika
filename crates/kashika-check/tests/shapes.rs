@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_geom::{Pt, boundary_nearest, point_in_polygon};
 
 const DIAMOND: &str = "box d at (100,100) size (100,100) shape=diamond\n";
 const CYLINDER: &str = "box db at (100,100) size (100,100) shape=cylinder\n";
@@ -234,4 +235,143 @@ fn icons_shrink_the_text_area_without_warnings() {
     );
     assert!(kashika_check::check(&s).is_empty());
     assert!(s.shapes[0].text_area.x >= 100.0 + 24.0);
+}
+
+#[test]
+fn ports_name_the_side_the_line_leaves_from() {
+    let scene = scene_src(
+        "diagram \"p\" size (400,300)\nbox s at (100,100) size (120,80) shape=diamond\nline l s.left@0.3 -> (0,124)\nline m s.top@0.2 -> (124,0)\n",
+    );
+    let ctx = kashika_check::ctx::Ctx::new(&scene);
+    let ports: Vec<(String, &str, f64)> = kashika_check::ports::ports(&ctx)
+        .into_iter()
+        .map(|p| (p.line, p.side, (p.t * 100.0).round() / 100.0))
+        .collect();
+    assert_eq!(
+        ports,
+        vec![("l".into(), "left", 0.3), ("m".into(), "top", 0.2)]
+    );
+}
+
+const SIDES: [(&str, &str); 4] = [
+    ("top", "v -100"),
+    ("bottom", "v 100"),
+    ("left", "h -100"),
+    ("right", "h 100"),
+];
+
+#[test]
+fn every_shape_side_and_t_is_a_clean_port() {
+    let mut table = String::new();
+    for shape in kashika_model::SHAPES {
+        for (side, step) in SIDES {
+            for t in [0.2, 0.5, 0.8] {
+                let at = format!("{} {side}@{t}", shape.name);
+                let s = scene(&format!(
+                    "box s at (200,200) size (120,80) shape={}\nline l s.{side}@{t} -> {step}\n",
+                    shape.name
+                ));
+                let poly = kashika_check::outline::polygon(&s.shapes[0]);
+                let start = s.lines[0].path[0].from();
+                let off = kashika_geom::boundary_nearest(start, &poly).0;
+                assert!(off <= 0.5, "{at}: {start:?} is {off} from the outline");
+                let found: Vec<_> = kashika_check::check(&s)
+                    .into_iter()
+                    .filter(|d| ["through", "near", "endpoint-off-edge"].contains(&d.code))
+                    .collect();
+                assert!(found.is_empty(), "{at}: {found:#?}");
+                let ctx = kashika_check::ctx::Ctx::new(&s);
+                let ports = kashika_check::ports::ports(&ctx);
+                assert_eq!(ports.len(), 1, "{at}: {ports:#?}");
+                let reported = (ports[0].side, (ports[0].t * 100.0).round() / 100.0);
+                assert_eq!(reported, (side, t), "{at}");
+                table.push_str(&format!("{at} -> {}@{}\n", reported.0, reported.1));
+            }
+        }
+    }
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/snapshots/ports.txt");
+    if std::env::var_os("KASHIKA_BLESS").is_some_and(|v| v == "1") {
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(&path, &table).unwrap();
+        return;
+    }
+    let expected = std::fs::read_to_string(&path).unwrap_or_default();
+    assert!(
+        table == expected,
+        "ports table differs from {}; if intended, run: KASHIKA_BLESS=1 cargo test -p kashika-check --test shapes\n{}",
+        path.display(),
+        diff_lines(&expected, &table)
+    );
+}
+
+fn diff_lines(expected: &str, actual: &str) -> String {
+    let (e, a): (Vec<_>, Vec<_>) = (expected.lines().collect(), actual.lines().collect());
+    let mut out: String = e
+        .iter()
+        .zip(&a)
+        .filter(|(e, a)| e != a)
+        .map(|(e, a)| format!("-{e}\n+{a}\n"))
+        .collect();
+    if e.len() != a.len() {
+        out.push_str(&format!("{} lines expected, {} actual\n", e.len(), a.len()));
+    }
+    out
+}
+
+/// A line that cuts the box corner `c` (`d` points inward), entering and leaving the bounding
+/// box `m` px from the corner along each edge.
+fn corner_chord(c: Pt, d: Pt, m: f64) -> (Pt, Pt) {
+    (
+        Pt::new(c.x + (m + 10.0) * d.x, c.y - 10.0 * d.y),
+        Pt::new(c.x - 10.0 * d.x, c.y + (m + 10.0) * d.y),
+    )
+}
+
+fn clear_of(a: Pt, b: Pt, poly: &[Pt]) -> bool {
+    (0..=200).all(|i| {
+        let s = i as f64 / 200.0;
+        let p = Pt::new(a.x + (b.x - a.x) * s, a.y + (b.y - a.y) * s);
+        !point_in_polygon(p, poly) && boundary_nearest(p, poly).0 > 1.0
+    })
+}
+
+#[test]
+fn lines_across_a_bounding_box_corner_outside_the_outline_are_not_through() {
+    // Skipped: these outlines fill their bounding-box corners (`rounded` to within a few
+    // pixels), so no line cuts a corner without crossing them.
+    const FILLED: &[&str] = &["rect", "rounded", "predefined-process"];
+    let corners = [
+        (Pt::new(200.0, 200.0), Pt::new(1.0, 1.0)),
+        (Pt::new(320.0, 200.0), Pt::new(-1.0, 1.0)),
+        (Pt::new(320.0, 280.0), Pt::new(-1.0, -1.0)),
+        (Pt::new(200.0, 280.0), Pt::new(1.0, -1.0)),
+    ];
+    let line = |box_src: &str, (a, b): (Pt, Pt)| {
+        format!("{box_src}line l ({},{}) -> ({},{})\n", a.x, a.y, b.x, b.y)
+    };
+    let rect = "box s at (200,200) size (120,80)\n";
+    let d = lint(
+        "through",
+        &line(rect, corner_chord(corners[0].0, corners[0].1, 6.0)),
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    let mut filled = Vec::new();
+    for shape in kashika_model::SHAPES {
+        let box_src = format!("box s at (200,200) size (120,80) shape={}\n", shape.name);
+        let poly = kashika_check::outline::polygon(&scene(&box_src).shapes[0]);
+        let chord = corners.iter().find_map(|&(c, d)| {
+            (4..=20)
+                .rev()
+                .map(|m| corner_chord(c, d, m as f64))
+                .find(|&(a, b)| clear_of(a, b, &poly))
+        });
+        let Some(chord) = chord else {
+            filled.push(shape.name);
+            continue;
+        };
+        let src = line(&box_src, chord);
+        let found = lint("through", &src);
+        assert!(found.is_empty(), "{}: {src}{found:#?}", shape.name);
+    }
+    assert_eq!(filled, FILLED);
 }

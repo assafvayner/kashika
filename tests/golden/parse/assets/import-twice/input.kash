@@ -1,0 +1,7 @@
+// spec: 3a
+// dump: scene
+// Importing the same library twice registers its definitions once, silently.
+diagram "import twice" size (300,120)
+import "lib/a.kash"
+import "lib/a.kash"
+box a "x" at (20,20) size (80,60) style=svc

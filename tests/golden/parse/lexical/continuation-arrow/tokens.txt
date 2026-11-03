@@ -1,0 +1,73 @@
+1:14-1:15  Newline
+2:21-2:22  Newline
+3:68-3:69  Newline
+4:1-4:8  Ident "diagram"
+4:9-4:20  Str "continued"
+4:21-4:25  Ident "size"
+4:26-4:27  LParen
+4:27-4:30  Num 300
+4:30-4:31  Comma
+4:31-4:34  Num 200
+4:34-4:35  RParen
+4:35-4:36  Newline
+5:1-5:4  Ident "box"
+5:5-5:6  Ident "a"
+5:7-5:9  Ident "at"
+5:10-5:11  LParen
+5:11-5:13  Num 20
+5:13-5:14  Comma
+5:14-5:16  Num 20
+5:16-5:17  RParen
+5:18-5:22  Ident "size"
+5:23-5:24  LParen
+5:24-5:26  Num 60
+5:26-5:27  Comma
+5:27-5:29  Num 40
+5:29-5:30  RParen
+5:30-5:31  Newline
+6:1-6:4  Ident "box"
+6:5-6:6  Ident "b"
+6:7-6:9  Ident "at"
+6:10-6:11  LParen
+6:11-6:14  Num 200
+6:14-6:15  Comma
+6:15-6:18  Num 120
+6:18-6:19  RParen
+6:20-6:24  Ident "size"
+6:25-6:26  LParen
+6:26-6:28  Num 60
+6:28-6:29  Comma
+6:29-6:31  Num 40
+6:31-6:32  RParen
+6:32-6:33  Newline
+7:1-7:5  Ident "line"
+7:6-7:7  Ident "l"
+7:8-7:9  Ident "a"
+7:9-7:10  Dot
+7:10-7:16  Ident "bottom"
+7:16-7:17  Newline
+8:3-8:5  Arrow
+8:6-8:7  Ident "y"
+8:8-8:11  Num 100
+8:11-8:12  Newline
+9:1-9:2  Newline
+10:3-10:5  Arrow
+10:6-10:8  Ident "vh"
+10:9-10:10  Ident "b"
+10:10-10:11  Dot
+10:11-10:15  Ident "left"
+10:15-10:16  Newline
+11:3-11:6  Ident "end"
+11:6-11:7  Eq
+11:7-11:12  Ident "arrow"
+11:13-11:18  Ident "label"
+11:18-11:19  Eq
+11:19-11:23  Str "ok"
+11:23-11:24  Newline
+12:3-12:8  Ident "ortho"
+12:8-12:9  Newline
+13:1-13:1  Eof
+comments:
+1:1-1:14  "// spec: 2, 5"
+2:1-2:21  "// dump: ast, tokens"
+3:1-3:68  "// A line continues while the next non-blank line starts with `->`."

@@ -1,0 +1,6 @@
+$FIXTURES/crossing.kash:5:1: warn[cross]: v1 crosses ab at (200,150)
+    5 | line v1 (200,20) -> v 260
+    4 | line ab a.right -> b.left end=arrow
+      = help: segment 1 runs at x=200; free x-intervals across y 20..280: 0..14, 386..400
+      = help: if intentional: allow=cross:ab on v1
+0 errors, 1 warning (1 suppressed) · crossings=2 wire=720px · output: written

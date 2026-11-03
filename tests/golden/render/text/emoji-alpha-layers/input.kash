@@ -1,0 +1,5 @@
+// spec: 6
+// raster: png
+// Emoji whose COLR layers carry alpha render as layer paths with `fill-opacity`.
+diagram "emoji alpha" size (300,60) background=#ffffff
+text "🧊 🫧 🎯 🍿" at (10,30) align=left font-size=28

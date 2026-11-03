@@ -1,5 +1,5 @@
 // spec: 2
-// dump: ast
+// dump: ast, tokens
 // An unclosed /* is a parse error and swallows the rest of the file.
 diagram "unclosed" size (200,100)
 box a at (10,10) size (40,30)

@@ -1,5 +1,110 @@
+use kashika_diag::Diagnostic;
 use kashika_syntax::ast::*;
 use kashika_syntax::parse;
+
+type Diag<'a> = (&'a str, (u32, u32, u32, u32), &'a str, Vec<&'a str>);
+
+/// `(code, (line, col, end_line, end_col), message, help)`.
+fn diag(d: &Diagnostic) -> Diag<'_> {
+    let s = d.span;
+    (
+        d.code,
+        (s.line, s.col, s.end_line, s.end_col),
+        d.message.as_str(),
+        d.help.iter().map(String::as_str).collect(),
+    )
+}
+
+fn diags(d: &[Diagnostic]) -> Vec<Diag<'_>> {
+    d.iter().map(diag).collect()
+}
+
+fn num(n: f64) -> String {
+    format!("{n}")
+}
+
+fn rf(r: &Ref) -> String {
+    let mut s = r.id.name.clone();
+    if let Some(a) = &r.anchor {
+        s.push('.');
+        s.push_str(&a.name.name);
+        if let Some(t) = a.t {
+            s.push_str(&format!("@{t}"));
+        }
+    }
+    s
+}
+
+fn off(o: &Offset) -> String {
+    format!(
+        "{}({},{})",
+        if o.neg { '-' } else { '+' },
+        num(o.dx),
+        num(o.dy)
+    )
+}
+
+fn coord(c: &Coord) -> String {
+    match c {
+        Coord::Num(n) => num(*n),
+        Coord::Axis { r, axis } => {
+            format!("{}.{}", rf(r), if *axis == Axis::X { 'x' } else { 'y' })
+        }
+    }
+}
+
+/// A point written back in compact source form.
+fn pt(p: &Point) -> String {
+    match p {
+        Point::Lit { x, y, .. } => format!("({},{})", coord(x), coord(y)),
+        Point::Ref { r, offset, .. } => {
+            format!("{}{}", rf(r), offset.as_ref().map(off).unwrap_or_default())
+        }
+        Point::Group { inner, .. } => format!("({})", pt(inner)),
+        Point::Shifted { base, offsets, .. } => {
+            format!(
+                "{}{}",
+                pt(base),
+                offsets.iter().map(off).collect::<String>()
+            )
+        }
+    }
+}
+
+fn target(t: &Target) -> String {
+    match t {
+        Target::Num(n) => num(*n),
+        Target::Point(p) => pt(p),
+    }
+}
+
+fn at_t(t: Option<f64>) -> String {
+    t.map(|t| format!("@{t}")).unwrap_or_default()
+}
+
+/// A segment written back in compact source form.
+fn seg(k: &SegKind) -> String {
+    match k {
+        SegKind::To(p) => pt(p),
+        SegKind::H(n) => format!("h {}", num(*n)),
+        SegKind::V(n) => format!("v {}", num(*n)),
+        SegKind::X(t) => format!("x {}", target(t)),
+        SegKind::Y(t) => format!("y {}", target(t)),
+        SegKind::Hv(p) => format!("hv {}", pt(p)),
+        SegKind::Vh(p) => format!("vh {}", pt(p)),
+        SegKind::Vhv { t, to } => format!("vhv{} {}", at_t(*t), pt(to)),
+        SegKind::Hvh { t, to } => format!("hvh{} {}", at_t(*t), pt(to)),
+        SegKind::Curve { side, amount, to } => format!(
+            "curve {} {} {}",
+            if *side == Side::Left { "left" } else { "right" },
+            num(*amount),
+            pt(to)
+        ),
+        SegKind::CurveVia { c1, c2, to } => {
+            format!("curve via {} {} {}", pt(c1), pt(c2), pt(to))
+        }
+    }
+}
 
 fn parse_ok(src: &str) -> File {
     let (file, diags) = parse(src);
@@ -49,37 +154,36 @@ fn parses_every_segment_kind() {
         panic!("expected line")
     };
     assert_eq!(l.id.as_ref().unwrap().name, "l1");
-    let kinds: Vec<&str> = l
-        .segs
-        .iter()
-        .map(|s| match s.kind {
-            SegKind::To(_) => "to",
-            SegKind::H(_) => "h",
-            SegKind::V(_) => "v",
-            SegKind::X(_) => "x",
-            SegKind::Y(_) => "y",
-            SegKind::Hv(_) => "hv",
-            SegKind::Vh(_) => "vh",
-            SegKind::Vhv { .. } => "vhv",
-            SegKind::Hvh { .. } => "hvh",
-            SegKind::Curve { .. } => "curve",
-            SegKind::CurveVia { .. } => "via",
-        })
-        .collect();
+    assert_eq!(pt(&l.start), "a.right");
+    let segs: Vec<String> = l.segs.iter().map(|s| seg(&s.kind)).collect();
     assert_eq!(
-        kinds,
+        segs,
         [
-            "h", "v", "x", "y", "hv", "vh", "vhv", "hvh", "curve", "via", "to"
+            "h 10",
+            "v -20",
+            "x 50",
+            "y b.top",
+            "hv c.left@0.25",
+            "vh (1,2)",
+            "vhv g.top",
+            "hvh@0.25 (3,4)",
+            "curve left 30 d.top",
+            "curve via (0,0) (5,5) e.bottom",
+            "f.left+(0,-4)",
         ]
     );
-    assert_eq!(l.segs[1].kind, SegKind::V(-20.0));
-    assert!(matches!(&l.segs[6].kind, SegKind::Vhv { t: None, .. }));
-    assert!(matches!(&l.segs[7].kind, SegKind::Hvh { t: Some(t), .. } if *t == 0.25));
-    assert!(
-        matches!(&l.segs[8].kind, SegKind::Curve { side: Side::Left, amount, .. } if *amount == 30.0)
+    let attrs: Vec<(&str, &Value)> = l
+        .attrs
+        .iter()
+        .map(|a| (a.key.name.as_str(), &a.value))
+        .collect();
+    assert_eq!(
+        attrs,
+        [
+            ("end", &Value::Word("arrow".into())),
+            ("ortho", &Value::Flag)
+        ]
     );
-    assert_eq!(l.attrs.len(), 2);
-    assert_eq!(l.attrs[1].value, Value::Flag);
 }
 
 #[test]
@@ -157,24 +261,52 @@ fn parses_groups_styles_comments_and_allow_lists() {
 
 #[test]
 fn recovers_and_reports_multiple_errors() {
-    let (f, diags) = parse(
+    let (f, d) = parse(
         "bx a at (0,0) size (1,1)\nbox b at (0,0) size (1,1)\nline c.top ->\nbox d at (0,0) size (1,1)\n",
     );
-    assert_eq!(diags.len(), 2, "{diags:#?}");
-    assert!(
-        diags[0]
-            .help
-            .iter()
-            .any(|h| h.contains("did you mean `box`?"))
+    assert_eq!(
+        diags(&d),
+        [
+            (
+                "parse",
+                (1, 1, 1, 3),
+                "expected a statement (diagram, style, box, group, junction, text, line, arrow, import, shape, image), found `bx`",
+                vec!["did you mean `box`?"]
+            ),
+            (
+                "parse",
+                (3, 12, 3, 14),
+                "`->` must be followed by a segment on the same line",
+                vec![
+                    "to continue a line, start the next physical line with `->`, e.g. `line a x.right` then `  -> y.left`"
+                ]
+            ),
+        ]
     );
-    assert!(diags[1].message.contains("must be followed by a segment"));
-    assert_eq!(f.stmts.len(), 2);
+    let ids: Vec<&str> = f
+        .stmts
+        .iter()
+        .map(|s| match s {
+            Stmt::Box(b) => b.id.name.as_str(),
+            _ => "?",
+        })
+        .collect();
+    assert_eq!(ids, ["b", "d"]);
 }
 
 #[test]
 fn unclosed_group_is_reported() {
-    let (_, diags) = parse("group g at (0,0) size (1,1) {\n box a at (0,0) size (1,1)\n");
-    assert!(diags.iter().any(|d| d.message.contains("expected `}`")));
+    let (f, d) = parse("group g at (0,0) size (1,1) {\n box a at (0,0) size (1,1)\n");
+    assert_eq!(
+        diags(&d),
+        [(
+            "parse",
+            (3, 1, 3, 1),
+            "expected `}`, found end of file",
+            vec![]
+        )]
+    );
+    assert!(matches!(&f.stmts[..], [Stmt::Group(g)] if g.children.len() == 1));
 }
 
 #[test]
@@ -262,6 +394,35 @@ fn statements_end_at_a_newline() {
 }
 
 #[test]
+fn a_statement_keyword_after_a_statement_starts_a_new_one() {
+    let (f, d) = parse("box a at (0,0) size (1,1) box b at (0,0) size (1,1)\n");
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].code, "parse");
+    assert_eq!(d[0].span, kashika_diag::Span::new(1, 27, 1, 30));
+    assert_eq!(d[0].message, "expected end of statement, found `box`");
+    assert_eq!(d[0].help, ["each statement starts on its own line"]);
+    let ids: Vec<_> = f
+        .stmts
+        .iter()
+        .map(|s| match s {
+            Stmt::Box(n) => n.id.name.as_str(),
+            _ => panic!("expected a box, got {s:#?}"),
+        })
+        .collect();
+    assert_eq!(ids, ["a", "b"]);
+}
+
+#[test]
+fn statement_keywords_with_eq_are_attributes() {
+    let f = parse_ok("box a at (0,0) size (1,1) shape=cylinder style=s\n");
+    let Stmt::Box(n) = &f.stmts[0] else {
+        panic!("expected box")
+    };
+    let keys: Vec<_> = n.attrs.iter().map(|a| a.key.name.as_str()).collect();
+    assert_eq!(keys, ["shape", "style"]);
+}
+
+#[test]
 fn arrow_continuation_skips_blank_and_comment_lines() {
     let f = parse_ok(
         "line a.top\n\n  // first hop\n  -> y 40\n  /* second\n     hop */\n  -> h 10 // trailing\n\n  end=arrow\nbox c at (0,0) size (1,1)\n",
@@ -330,8 +491,15 @@ fn junction_with_dot_flag() {
 #[test]
 fn line_needs_a_segment() {
     let (_, d) = parse("line (0,0)\n");
-    assert_eq!(d[0].code, "parse");
-    assert!(d[0].message.contains("`->`"), "{d:#?}");
+    assert_eq!(
+        diags(&d),
+        [(
+            "parse",
+            (1, 11, 1, 12),
+            "expected `->` followed by a segment, found end of line",
+            vec![]
+        )]
+    );
 }
 
 #[test]
@@ -397,14 +565,30 @@ fn shape_body_errors_recover() {
     let (f, d) = parse(
         "shape a {\n  pth \"M 0 0\"\n}\nshape b {\n  outline 1\n}\nshape c {\n  path \"M 0 0\"\n  path \"M 1 1\"\n}\nbox z at (0,0) size (1,1)\n",
     );
-    let got: Vec<_> = d.iter().map(|x| (x.code, x.span.line)).collect();
     assert_eq!(
-        got,
-        vec![("parse", 2), ("parse", 4), ("parse", 9)],
-        "{d:#?}"
+        diags(&d),
+        [
+            (
+                "parse",
+                (2, 3, 2, 6),
+                "expected `path`, `outline` or `text-area` in a shape body, found `pth`",
+                vec!["did you mean `path`?"]
+            ),
+            (
+                "parse",
+                (4, 1, 6, 2),
+                "shape `b` needs a `path`",
+                vec!["e.g. `path \"M 0 0 L 1 0 L 1 1 L 0 1 Z\"`"]
+            ),
+            (
+                "parse",
+                (9, 3, 9, 7),
+                "duplicate `path` in shape body",
+                vec![]
+            ),
+        ]
     );
-    assert_eq!(d[0].help, vec!["did you mean `path`?".to_string()]);
-    assert!(d[1].message.contains("needs a `path`"), "{}", d[1].message);
+    assert_eq!(f.stmts.len(), 2);
     assert!(matches!(f.stmts.last(), Some(Stmt::Box(_))));
     assert!(matches!(&f.stmts[0], Stmt::Shape(s) if s.name.name == "c"));
 }
@@ -412,11 +596,14 @@ fn shape_body_errors_recover() {
 #[test]
 fn image_needs_a_file_string() {
     let (_, d) = parse("image logo at (0,0) size (1,1)\n");
-    assert_eq!(d[0].code, "parse");
-    assert!(
-        d[0].message.contains("a file path string"),
-        "{}",
-        d[0].message
+    assert_eq!(
+        diags(&d),
+        [(
+            "parse",
+            (1, 12, 1, 14),
+            "expected a file path string, found `at`",
+            vec![]
+        )]
     );
 }
 
@@ -436,10 +623,16 @@ fn image_inside_a_group_parses() {
 
 #[test]
 fn unclosed_shape_block_is_reported() {
-    let (f, diags) = parse("shape s {\n  path \"M 0 0\"\n");
-    assert_eq!(diags.len(), 1, "{diags:#?}");
-    assert_eq!(diags[0].code, "parse");
-    assert!(diags[0].message.contains("expected `}`"), "{diags:#?}");
+    let (f, d) = parse("shape s {\n  path \"M 0 0\"\n");
+    assert_eq!(
+        diags(&d),
+        [(
+            "parse",
+            (3, 1, 3, 1),
+            "expected `}`, found end of file",
+            vec![]
+        )]
+    );
     assert!(f.stmts.is_empty());
 }
 
@@ -498,14 +691,16 @@ fn nested_groups(depth: usize, close: bool) -> String {
 #[test]
 fn group_nesting_is_limited() {
     parse_ok(&nested_groups(64, true));
-    for close in [true, false] {
-        let (f, diags) = parse(&nested_groups(20_000, close));
-        assert!(
-            diags
-                .iter()
-                .any(|d| d.code == "parse" && d.message.contains("nested more than 64")),
-            "{:#?}",
-            &diags[..diags.len().min(3)]
+    for (close, end) in [(true, (39_936, 2)), (false, (20_000, 36))] {
+        let (f, d) = parse(&nested_groups(20_000, close));
+        assert_eq!(
+            diag(&d[0]),
+            (
+                "parse",
+                (65, 1, end.0, end.1),
+                "groups are nested more than 64 deep",
+                vec!["flatten the hierarchy; ids are global, so children need no parent"]
+            )
         );
         assert_eq!(f.stmts.len(), 1);
     }
@@ -520,9 +715,17 @@ fn group_nesting_is_limited() {
 #[test]
 fn unknown_string_escapes_are_parse_errors() {
     let (_, d) = parse("text \"a\\qb\" at (0,0)\n");
-    assert_eq!(d.len(), 1, "{d:#?}");
-    assert_eq!(d[0].code, "parse");
-    assert!(d[0].message.contains("`\\q`"), "{}", d[0].message);
+    assert_eq!(
+        diags(&d),
+        [(
+            "parse",
+            (1, 8, 1, 10),
+            "unknown escape `\\q`",
+            vec![
+                "strings support `\\\"`, `\\\\`, `\\n`, `\\*` and `\\``; write `\\\\` for a backslash"
+            ]
+        )]
+    );
     parse_ok("text \"\\\" \\\\ \\n \\* \\`\" at (0,0)\n");
 }
 
@@ -535,18 +738,24 @@ fn leading_byte_order_mark_is_skipped() {
 #[test]
 fn segment_keywords_are_reserved_ids() {
     for kw in ["h", "v", "x", "y", "hv", "vh", "curve"] {
-        for src in [
-            format!("box {kw} at (0,0) size (1,1)\n"),
-            format!("group {kw} at (0,0) size (1,1) {{\n}}\n"),
-            format!("junction {kw} at (0,0)\n"),
-            format!("text {kw} \"t\" at (0,0)\n"),
-            format!("line {kw} (0,0) -> h 1\n"),
+        let end = |col: usize| (1, col as u32, 1, (col + kw.len()) as u32);
+        let message = format!("`{kw}` is a reserved word and cannot be an id");
+        let help = format!(
+            "segment keywords (h v x y hv vh vhv hvh curve) are reserved; pick another name, e.g. `{kw}_1`"
+        );
+        for (src, col) in [
+            (format!("box {kw} at (0,0) size (1,1)\n"), 5),
+            (format!("group {kw} at (0,0) size (1,1) {{\n}}\n"), 7),
+            (format!("junction {kw} at (0,0)\n"), 10),
+            (format!("text {kw} \"t\" at (0,0)\n"), 6),
+            (format!("line {kw} (0,0) -> h 1\n"), 6),
         ] {
             let (_, d) = parse(&src);
-            assert_eq!(d.len(), 1, "{src}: {d:#?}");
-            assert_eq!(d[0].code, "parse");
-            assert!(d[0].message.contains("reserved"), "{}", d[0].message);
-            assert!(!d[0].help.is_empty());
+            assert_eq!(
+                diags(&d),
+                [("parse", end(col), message.as_str(), vec![help.as_str()])],
+                "{src}"
+            );
         }
     }
     parse_ok("box hx at (0,0) size (1,1)\njunction curves at (0,0)\n");
@@ -628,21 +837,25 @@ fn reserved_id_statements_are_dropped() {
 
 #[test]
 fn hash_comment_is_one_error_with_help() {
-    for src in [
-        "# a note\nbox a at (0,0) size (1,1)\n",
-        "#note\nbox a at (0,0) size (1,1)\n",
-        "  # indented\nbox a at (0,0) size (1,1)\n",
+    let hash = |col: u32| {
+        (
+            "parse",
+            (1, col, 1, col + 1),
+            "`#` does not start a comment",
+            vec!["comments start with `//`; `#` only starts a color like `#rrggbb`"],
+        )
+    };
+    for (src, col) in [
+        ("# a note\nbox a at (0,0) size (1,1)\n", 1),
+        ("#note\nbox a at (0,0) size (1,1)\n", 1),
+        ("  # indented\nbox a at (0,0) size (1,1)\n", 3),
     ] {
         let (f, d) = parse(src);
-        assert_eq!(d.len(), 1, "{src:?}: {d:#?}");
-        assert_eq!(d[0].code, "parse");
-        assert!(d[0].message.contains("comment"), "{}", d[0].message);
-        assert!(d[0].help.iter().any(|h| h.contains("`//`")), "{d:#?}");
+        assert_eq!(diags(&d), [hash(col)], "{src:?}");
         assert_eq!(f.stmts.len(), 1);
     }
     let (_, d) = parse("box a at (0,0) size (1,1) # trailing\n");
-    assert_eq!(d.len(), 1, "{d:#?}");
-    assert!(d[0].help.iter().any(|h| h.contains("`//`")), "{d:#?}");
+    assert_eq!(diags(&d), [hash(27)]);
 }
 
 #[test]
@@ -682,18 +895,48 @@ fn at_size_and_attributes_come_in_any_order() {
 
 #[test]
 fn duplicate_or_missing_at_and_size_are_parse_errors() {
-    for (src, msg) in [
-        ("box a at (0,0) size (1,1) at (2,2)\n", "duplicate `at`"),
-        ("box a size (1,1) at (0,0) size (2,2)\n", "duplicate `size`"),
-        ("diagram \"t\" size (1,1) size (2,2)\n", "duplicate `size`"),
-        ("junction j at (0,0) at (1,1)\n", "duplicate `at`"),
-        ("box a fill=red size (1,1)\n", "expected `at`"),
-        ("image i \"x.png\" at (0,0) fit=cover\n", "expected `size`"),
+    let one_at = "a statement takes one `at`; remove the other";
+    let one_size = "a statement takes one `size`; remove the other";
+    for (src, span, msg, help) in [
+        (
+            "box a at (0,0) size (1,1) at (2,2)\n",
+            (1, 27, 1, 29),
+            "duplicate `at`",
+            vec![one_at],
+        ),
+        (
+            "box a size (1,1) at (0,0) size (2,2)\n",
+            (1, 27, 1, 31),
+            "duplicate `size`",
+            vec![one_size],
+        ),
+        (
+            "diagram \"t\" size (1,1) size (2,2)\n",
+            (1, 24, 1, 28),
+            "duplicate `size`",
+            vec![one_size],
+        ),
+        (
+            "junction j at (0,0) at (1,1)\n",
+            (1, 21, 1, 23),
+            "duplicate `at`",
+            vec![one_at],
+        ),
+        (
+            "box a fill=red size (1,1)\n",
+            (1, 26, 1, 27),
+            "expected `at`, found end of line",
+            vec![],
+        ),
+        (
+            "image i \"x.png\" at (0,0) fit=cover\n",
+            (1, 35, 1, 36),
+            "expected `size`, found end of line",
+            vec![],
+        ),
     ] {
         let (f, d) = parse(src);
-        assert_eq!(d.len(), 1, "{src:?}: {d:#?}");
-        assert_eq!(d[0].code, "parse");
-        assert!(d[0].message.contains(msg), "{src:?}: {}", d[0].message);
+        assert_eq!(diags(&d), [("parse", span, msg, help)], "{src:?}");
         assert!(f.stmts.is_empty(), "{src:?}");
     }
 }

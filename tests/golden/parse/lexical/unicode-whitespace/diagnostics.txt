@@ -1,0 +1,4 @@
+error[parse] 5:4-5:5: unexpected non-ASCII whitespace `U+00A0`
+  = help: replace it with a space
+error[parse] 6:30-6:31: unexpected non-ASCII whitespace `U+200B`
+  = help: replace it with a space

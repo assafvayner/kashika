@@ -1,0 +1,6 @@
+error: invalid value 'warning' for '--fail-on <FAIL_ON>'
+  [possible values: error, warn, never]
+
+  tip: a similar value exists: 'warn'
+
+For more information, try '--help'.

@@ -1,0 +1,153 @@
+File {
+    stmts: [
+        Diagram(
+            Diagram {
+                title: "values",
+                size: Some(Size { w: Some(300.0), h: Some(200.0) }),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "allow", span: 4:33-4:38 },
+                        at_t: None,
+                        value: Word("overlap,near"),
+                        span: 4:33-4:51,
+                    },
+                ],
+                span: 4:1-4:51,
+            },
+        ),
+        Style(
+            StyleDef {
+                name: "chip",
+                attrs: [
+                    Attr {
+                        key: Ident { name: "size", span: 5:14-5:18 },
+                        at_t: None,
+                        value: Size(Size { w: Some(10.0), h: Some(10.0) }),
+                        span: 5:14-5:26,
+                    },
+                ],
+                span: 5:1-5:28,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "a", span: 6:5-6:6 },
+                label: None,
+                at: Lit { x: Num(20.0), y: Num(20.0), span: 6:10-6:17 },
+                size: Some(Size { w: Some(80.0), h: Some(60.0) }),
+                attrs: [
+                    Attr {
+                        key: Ident { name: "fill", span: 6:31-6:35 },
+                        at_t: None,
+                        value: Color("#abc"),
+                        span: 6:31-6:40,
+                    },
+                    Attr {
+                        key: Ident { name: "font-size", span: 6:41-6:50 },
+                        at_t: None,
+                        value: Num(12.0),
+                        span: 6:41-6:53,
+                    },
+                    Attr {
+                        key: Ident { name: "shape", span: 6:54-6:59 },
+                        at_t: None,
+                        value: Word("diamond"),
+                        span: 6:54-6:67,
+                    },
+                    Attr {
+                        key: Ident { name: "padding", span: 6:68-6:75 },
+                        at_t: None,
+                        value: Pair(3.0, 7.0),
+                        span: 6:68-6:81,
+                    },
+                    Attr {
+                        key: Ident { name: "pin", span: 6:82-6:85 },
+                        at_t: None,
+                        value: AnchorAt("top", 0.25),
+                        span: 6:82-6:94,
+                    },
+                    Attr {
+                        key: Ident { name: "reason", span: 6:95-6:101 },
+                        at_t: None,
+                        value: Str("s"),
+                        span: 6:95-6:105,
+                    },
+                ],
+                block: None,
+                span: 6:1-6:105,
+            },
+        ),
+        Box(
+            Node {
+                id: Ident { name: "c", span: 7:5-7:6 },
+                label: None,
+                at: Lit { x: Num(200.0), y: Num(100.0), span: 7:10-7:19 },
+                size: None,
+                attrs: [
+                    Attr {
+                        key: Ident { name: "style", span: 7:20-7:25 },
+                        at_t: None,
+                        value: Word("chip"),
+                        span: 7:20-7:30,
+                    },
+                ],
+                block: None,
+                span: 7:1-7:30,
+            },
+        ),
+        Line(
+            Line {
+                id: Some(Ident { name: "l", span: 8:6-8:7 }),
+                arrow: false,
+                start: Ref {
+                    r: Ref {
+                        id: Ident { name: "a", span: 8:8-8:9 },
+                        anchor: Some(
+                            Anchor { name: Ident { name: "right", span: 8:10-8:15 }, t: None },
+                        ),
+                    },
+                    offset: None,
+                    span: 8:8-8:15,
+                },
+                segs: [
+                    Seg {
+                        kind: Hv(
+                            Ref {
+                                r: Ref {
+                                    id: Ident { name: "c", span: 8:22-8:23 },
+                                    anchor: Some(
+                                        Anchor {
+                                            name: Ident { name: "top", span: 8:24-8:27 },
+                                            t: None,
+                                        },
+                                    ),
+                                },
+                                offset: None,
+                                span: 8:22-8:27,
+                            },
+                        ),
+                        span: 8:19-8:27,
+                    },
+                ],
+                attrs: [
+                    Attr {
+                        key: Ident { name: "ortho", span: 8:28-8:33 },
+                        at_t: None,
+                        value: Flag,
+                        span: 8:28-8:33,
+                    },
+                    Attr {
+                        key: Ident { name: "label", span: 8:34-8:39 },
+                        at_t: Some(0.5),
+                        value: Str("mid"),
+                        span: 8:34-8:49,
+                    },
+                ],
+                span: 8:1-8:49,
+            },
+        ),
+    ],
+    first_stmt: Some(4:1-4:8),
+    failed_ids: [],
+    failed_diagram: false,
+}

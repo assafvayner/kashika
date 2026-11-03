@@ -1,0 +1,157 @@
+1:11-1:12  Newline
+2:16-2:17  Newline
+3:157-3:158  Newline
+4:1-4:8  Ident "diagram"
+4:9-4:18  Str "numbers"
+4:19-4:23  Ident "size"
+4:24-4:25  LParen
+4:25-4:28  Num 300
+4:28-4:29  Comma
+4:29-4:32  Num 200
+4:32-4:33  RParen
+4:33-4:34  Newline
+5:1-5:4  Ident "box"
+5:5-5:7  Ident "n1"
+5:8-5:10  Ident "at"
+5:11-5:12  LParen
+5:12-5:13  Dot
+5:13-5:14  Num 5
+5:14-5:15  Comma
+5:15-5:17  Num 10
+5:17-5:18  RParen
+5:19-5:23  Ident "size"
+5:24-5:25  LParen
+5:25-5:27  Num 10
+5:27-5:28  Comma
+5:28-5:30  Num 10
+5:30-5:31  RParen
+5:31-5:32  Newline
+6:1-6:4  Ident "box"
+6:5-6:7  Ident "n2"
+6:8-6:10  Ident "at"
+6:11-6:12  LParen
+6:12-6:13  Num 5
+6:13-6:14  Dot
+6:14-6:15  Comma
+6:15-6:17  Num 30
+6:17-6:18  RParen
+6:19-6:23  Ident "size"
+6:24-6:25  LParen
+6:25-6:27  Num 10
+6:27-6:28  Comma
+6:28-6:30  Num 10
+6:30-6:31  RParen
+6:31-6:32  Newline
+7:1-7:4  Ident "box"
+7:5-7:7  Ident "n3"
+7:8-7:10  Ident "at"
+7:11-7:12  LParen
+7:12-7:13  Num 1
+7:13-7:14  Ident "e"
+7:14-7:15  Comma
+7:15-7:17  Num 50
+7:17-7:18  RParen
+7:19-7:23  Ident "size"
+7:24-7:25  LParen
+7:25-7:27  Num 10
+7:27-7:28  Comma
+7:28-7:30  Num 10
+7:30-7:31  RParen
+7:31-7:32  Newline
+8:1-8:4  Ident "box"
+8:5-8:7  Ident "n4"
+8:8-8:10  Ident "at"
+8:11-8:12  LParen
+8:12-8:18  Num 1.5E-3
+8:18-8:19  Comma
+8:19-8:21  Num 70
+8:21-8:22  RParen
+8:23-8:27  Ident "size"
+8:28-8:29  LParen
+8:29-8:31  Num 10
+8:31-8:32  Comma
+8:32-8:34  Num 10
+8:34-8:35  RParen
+8:35-8:36  Newline
+9:1-9:4  Ident "box"
+9:5-9:7  Ident "n5"
+9:8-9:10  Ident "at"
+9:11-9:12  LParen
+9:12-9:13  Minus
+9:14-9:15  Num 5
+9:15-9:16  Comma
+9:16-9:18  Num 90
+9:18-9:19  RParen
+9:20-9:24  Ident "size"
+9:25-9:26  LParen
+9:26-9:28  Num 10
+9:28-9:29  Comma
+9:29-9:31  Num 10
+9:31-9:32  RParen
+9:32-9:33  Newline
+10:1-10:4  Ident "box"
+10:5-10:7  Ident "n6"
+10:8-10:10  Ident "at"
+10:11-10:12  LParen
+10:12-10:14  Num -0
+10:14-10:15  Comma
+10:15-10:18  Num 110
+10:18-10:19  RParen
+10:20-10:24  Ident "size"
+10:25-10:26  LParen
+10:26-10:28  Num 10
+10:28-10:29  Comma
+10:29-10:31  Num 10
+10:31-10:32  RParen
+10:32-10:33  Newline
+11:1-11:4  Ident "box"
+11:5-11:7  Ident "n7"
+11:8-11:10  Ident "at"
+11:11-11:12  LParen
+11:12-11:16  Num -0.0
+11:16-11:17  Comma
+11:17-11:20  Num 130
+11:20-11:21  RParen
+11:22-11:26  Ident "size"
+11:27-11:28  LParen
+11:28-11:30  Num 10
+11:30-11:31  Comma
+11:31-11:33  Num 10
+11:33-11:34  RParen
+11:34-11:35  Newline
+12:1-12:4  Ident "box"
+12:5-12:7  Ident "n8"
+12:8-12:10  Ident "at"
+12:11-12:12  LParen
+12:12-12:15  Num 007
+12:15-12:16  Comma
+12:16-12:19  Num 150
+12:19-12:20  RParen
+12:21-12:25  Ident "size"
+12:26-12:27  LParen
+12:27-12:29  Num 10
+12:29-12:30  Comma
+12:30-12:32  Num 10
+12:32-12:33  RParen
+12:33-12:34  Newline
+13:1-13:4  Ident "box"
+13:5-13:7  Ident "n9"
+13:8-13:10  Ident "at"
+13:11-13:12  LParen
+13:12-13:13  Num 1
+13:13-13:17  Ident "_000"
+13:17-13:18  Comma
+13:18-13:21  Num 170
+13:21-13:22  RParen
+13:23-13:27  Ident "size"
+13:28-13:29  LParen
+13:29-13:31  Num 10
+13:31-13:32  Comma
+13:32-13:34  Num 10
+13:34-13:35  RParen
+13:35-13:36  Newline
+14:1-14:1  Eof
+comments:
+1:1-1:11  "// spec: 2"
+2:1-2:16  "// dump: tokens"
+3:1-3:157  "// Number edge cases, one per line: leading and trailing dots, a bare and a capital exponent, a split minus, negative zero, leading zeros and an underscore."

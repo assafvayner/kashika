@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn collinear_overlap_is_reported_with_the_nearest_free_lane() {
@@ -15,6 +16,7 @@ fn collinear_overlap_is_reported_with_the_nearest_free_lane() {
     );
     assert_eq!(d[0].elements[0].id, "b");
     assert_eq!(d[0].elements[1].id, "a");
+    assert_eq!(d[0].span, Span::new(4, 1, 4, 33));
     assert_eq!(
         d[0].help,
         vec![
@@ -45,5 +47,18 @@ fn parallel_or_tiny_overlaps_are_not_shared() {
             "line a (0,100) -> h 100\nline b (99.5,100) -> h 100\n"
         )
         .is_empty()
+    );
+}
+
+#[test]
+fn overlap_must_exceed_1px() {
+    let d = lint(
+        "shared-segment",
+        "line clean_a (20,100) -> h 100\nline clean_b (119,100) -> h 100\nline flag_a (20,300) -> h 100\nline flag_b (118.5,300) -> h 100\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "flag_b runs along flag_a for 1.5px, from (118.5,300) to (120,300)"
     );
 }

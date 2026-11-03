@@ -1,0 +1,8 @@
+// spec: 3
+// An unknown statement keyword, at top level and inside a group, gets a suggestion.
+diagram "kw" size (200,100)
+bx a at (10,10) size (40,20)
+group g at (100,10) size (90,80) {
+  lien (10,10) -> (80,10)
+  box b at (20,30) size (40,20)
+}

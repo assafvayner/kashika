@@ -1,0 +1,49 @@
+1:11-1:12  Newline
+2:16-2:17  Newline
+3:89-3:90  Newline
+4:1-4:8  Ident "diagram"
+4:9-4:15  Str "hash"
+4:16-4:20  Ident "size"
+4:21-4:22  LParen
+4:22-4:25  Num 300
+4:25-4:26  Comma
+4:26-4:29  Num 200
+4:29-4:30  RParen
+4:30-4:31  Newline
+5:1-5:4  Ident "box"
+5:5-5:6  Ident "a"
+5:6-5:11  Color "#note"
+5:12-5:14  Ident "at"
+5:15-5:16  LParen
+5:16-5:17  Num 0
+5:17-5:18  Comma
+5:18-5:19  Num 0
+5:19-5:20  RParen
+5:21-5:25  Ident "size"
+5:26-5:27  LParen
+5:27-5:28  Num 1
+5:28-5:29  Comma
+5:29-5:30  Num 1
+5:30-5:31  RParen
+5:31-5:32  Newline
+6:5-6:6  Newline
+7:1-7:4  Ident "box"
+7:5-7:6  Ident "b"
+7:7-7:9  Ident "at"
+7:10-7:11  LParen
+7:11-7:13  Num 10
+7:13-7:14  Comma
+7:14-7:16  Num 10
+7:16-7:17  RParen
+7:18-7:22  Ident "size"
+7:23-7:24  LParen
+7:24-7:26  Num 40
+7:26-7:27  Comma
+7:27-7:29  Num 30
+7:29-7:30  RParen
+7:30-7:31  Newline
+8:1-8:1  Eof
+comments:
+1:1-1:11  "// spec: 2"
+2:1-2:16  "// dump: tokens"
+3:1-3:89  "// `#` right after an identifier is not part of it, and `#fff` cannot start a statement."

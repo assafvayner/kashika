@@ -1,0 +1,7 @@
+// spec: 2
+// dump: tokens
+// `#` right after an identifier is not part of it, and `#fff` cannot start a statement.
+diagram "hash" size (300,200)
+box a#note at (0,0) size (1,1)
+#fff
+box b at (10,10) size (40,30)

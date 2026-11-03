@@ -21,9 +21,11 @@ The CLI renders `.kash` files to SVG, PNG, JPEG or WebP and runs geometric check
 
 - Comments: `//` to end of line, and `/* ... */` block comments, both outside strings. Block comments don't nest. A block comment that spans lines counts as one line break, so it never joins two statements. An unclosed `/*` is a `parse` error. `#` is never a comment character: a `#` that begins a line, or stands alone outside an attribute value, is one `parse` error suggesting `//`, and the rest of that line is skipped.
 - A UTF-8 byte order mark at the start of the file is ignored.
+- Line endings are LF or CRLF. A CR not followed by LF is whitespace, not a line break.
 - Strings: `"..."` with escapes `\"`, `\\`, `\n`, and the markup escapes `\*` and `` \` `` (§6). Any other escape, such as `\q`, is a `parse` error.
 - Identifiers: `[a-zA-Z_][a-zA-Z0-9_-]*`, where a `-` that starts `->` or `-(` ends the identifier (`a->b`, `db.top-(10,0)`). **Ids are unique across the whole file** (boxes, groups, images, junctions, lines, texts) and are always referenced by bare id. There are no dotted paths. Only the names of imported shapes and styles are dotted (`shape=aws.s3`, §3a); shape and style names are separate from ids.
   Identifiers are ASCII only: a run of other characters, such as the `é` in `café`, is one `parse` error.
+- Non-ASCII whitespace (NBSP, zero-width space, …) is an error with code `parse`; only space, tab, CR and LF separate tokens.
 - The segment keywords `h`, `v`, `x`, `y`, `hv`, `vh`, `vhv`, `hvh` and `curve` are reserved: declaring an id with one of these names is a `parse` error, since it could not be used as a bare segment target. So is the statement keyword `arrow` (§5). Like any statement that fails to parse, the statement is dropped, so it is never resolved or linted.
 - Numbers: integers or decimals, optionally negative. Exponent notation (`1e5`) is not supported and is a `parse` error. Colors: `#rgb`, `#rrggbb` or `#rrggbbaa`, one of the 148 CSS Color Module Level 4 names (`steelblue`, `rebeccapurple`; case-insensitive, no `transparent`), or `none` where a style allows it. A name resolves to lowercase `#rrggbb` hex, so the scene, the SVG and `low-contrast` only ever see hex. An unknown word where a color is expected is an `attr` error with a did-you-mean over the names.
 - **Statements** end at a newline, except in three cases:
@@ -37,6 +39,7 @@ The CLI renders `.kash` files to SVG, PNG, JPEG or WebP and runs geometric check
       ortho
     ```
   - when the next non-blank line starts with an attribute (`key=` or `key@t=`) or, on a `line` or `arrow`, with a line flag (`ortho`). Neither can begin a new statement, because no statement keyword is followed by `=` or `@` and no statement keyword is also a flag.
+- A second statement on the same line (`box a at (0,0) box b at (0,50)`) is a `parse` error at its keyword. The first statement ends there and the second still parses. A statement keyword followed by `=` or `@` is an attribute (`shape=`, `style=`).
 - Attributes are `key=value` pairs in any order. Unknown or duplicate attributes are errors.
 - After a statement's id and label, `at <point>`, `size (w,h)` and attributes come in any order: `box a "A" style=service size (120,60) at (20,20)` is the same box as the form in §3. A missing `at`, a missing `size` on a statement that requires one (§3), or a repeated `at` or `size`, is a `parse` error that drops the statement.
 - `auto` is a size axis, not a word: it is recognized only inside `size (…)` (`size (120, auto)`), so it remains a valid id.
@@ -152,7 +155,7 @@ Library files may contain only `shape`, `style` and `import`; any other statemen
 - **SVG sanitizing:** scripts, external references and `foreignObject` are stripped. An `<image>` survives only as a `data:` URI; an SVG that loses an `<image>` or a `foreignObject` this way is `svg-dropped`.
 - **SVG text:** `<text>` in an SVG file is set in the bundled fonts and embedded as glyph outlines. Any family other than `monospace` (or JetBrains Mono by name), including one that is not bundled, uses Inter; `monospace` uses JetBrains Mono. Characters the family lacks fall back to the other bundled fonts, emoji included.
 - **Image size limits:** a PNG or JPEG, attached or embedded in an SVG, is judged by its header before any pixel is decoded and is a `file` error beyond 8,192 px per side or 32,000,000 px in total. Raster output has its own, larger canvas cap (§8).
-- **File size limits:** an image or SVG file (`image`, `icon=`, `shape ... from`) may be at most 16 MiB, and an imported library at most 1 MiB; a larger file is a `file` error, refused before it is read in full.
+- **File size limits:** an image or SVG file (`image`, `icon=`, `shape ... from`) may be at most 16 MiB, and an imported library at most 1 MiB; a larger file is a `file` error, refused before it is read in full. An imported library that is not valid UTF-8 is a `file` error.
 - **SVG nesting:** an SVG, or an SVG embedded in one as a `data:` image, whose elements nest more than 256 deep is a `file` error, refused before it is parsed.
 - **Import fan-out:** each library file is read and parsed once, however often it is imported. Each (file, namespace) pair registers its definitions once; more than 1,000 such library instances in one diagram is a `file` error, reported once. A chain where every library imports the next under two namespaces doubles at each level and reaches the limit after about ten levels.
 - **Self-contained output:** images are embedded in SVG output and rasterized into PNG output.
@@ -386,7 +389,7 @@ Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`
 - `check` on a library file (§3a) reports only the errors in its definitions and prints no metrics; `render` on one is a usage error (exit 3).
 - `inspect` never fails on errors in the file; it exits 0 except on usage or I/O errors.
 - `format` is an alias of `fmt`, and `references` and `docs` are aliases of `ref`.
-- `fmt` exits 2 on a parse error. `icons --search` with no match exits 1 and a directory argument that isn't one exits 3. `measure` takes several texts; one gives a single result, several give one each. Numeric options (`--radius`, `route --max`, `--corridors`) reject non-finite or out-of-range values with exit 3.
+- `fmt` keeps the file's line endings: CRLF everywhere, including inside block comments, when the first line ends in CRLF, else LF. It exits 2 on a parse error. `icons --search` with no match exits 1 and a directory argument that isn't one exits 3. `measure` takes several texts; one gives a single result, several give one each. Numeric options (`--radius`, `route --max`, `--corridors`) reject non-finite or out-of-range values with exit 3.
 - A JSON tool error (exit 3) carries the schema of the command that failed.
 
 **Versioning.** The optional `kashika="MAJOR.MINOR.PATCH"` on the `diagram` line is the minimum tool version that can process the file, always written with all three parts. A tool accepts a file when the file's version is at most the tool's version and the major versions are equal; anything else, including a bare number or a malformed string, is a `version` error. A prerelease or build of the tool, such as `0.1.0-dev0`, is compared as its release (`0.1.0`); files themselves never name a prerelease. Releases that add language features bump the tool's minor version, so authors set `kashika=` to the release that introduced the newest feature they use. `kashika="…"` written as a statement of its own before `diagram` is a `parse` error whose help moves it onto the `diagram` line; that line doesn't also make `diagram` misplaced.
@@ -401,7 +404,7 @@ Common flags: `--format text|json`, `--fail-on error|warn|never` (default `warn`
 
 ### Exit codes
 
-`0` clean, `1` warnings (when `--fail-on warn`), `2` errors, `3` usage or I/O failure.
+`0` clean, `1` warnings (when `--fail-on warn`), `2` errors, `3` usage or I/O failure. A closed stdout or stderr (`kashika check f.kash | head -1`) ends the command quietly with the exit code it would have had.
 
 ### Text output
 
@@ -452,7 +455,7 @@ The fields:
 
 Prints the resolved geometry: every shape's bounding box and anchors in both canvas and local frames, every line's vertices, segment kinds and arc length, every label's bounding box, and the placement dependency graph.
 
-- `--ports` lists, for each shape side, which anchors are already used and by which lines.
+- `--ports` lists, for each shape side, which anchors are already used and by which lines. Where two sides' anchors meet at one outline point (on a `diamond`, `left@0.3` and `top@0.2` project onto the same edge), an endpoint there is listed on the side its line leaves toward; `port-crowding` help names the same side.
 - `--corridors` lists the free horizontal and vertical intervals within a rectangle, clear of the same things as the `free` fact.
 - The text output starts with the canvas size (`canvas 640x320`) when it lists everything.
 - `--format json` writes one object with schema `kashika.inspect/1`: `canvas` (`[w, h]`, after any `auto` axis is fitted), `shapes` (with `bbox`, `local_bbox`, `anchors`, `local_anchors`, and `image` with `path`, `natural`, `aspect` and `fit` for images and SVG-file shapes), `junctions`, `texts`, `lines` (with `vertices`, `segments`, `length`, `labels`), `placement`, and `ports`/`corridors` when requested. Positional ids limit the output to those elements. An unknown id is a usage error.
@@ -464,7 +467,7 @@ Prints the resolved geometry: every shape's bounding box and anchors in both can
 kashika route <file|-> <from> <to> [corner|arc|bezier] [--line <id>] [--radius N] [--max N]
 ```
 
-Suggests up to `--max` (default 3) candidate paths from `<from>` to `<to>`. Both are points, e.g. `app1.bottom` or `pg.left@0.25`, parsed and resolved exactly as in a `line` statement (anchors, `@t`, offsets, junctions and mixed points); each must be a single point, or it is a usage error. References and mixed points are written into the suggestions as given. It **never edits the file**; the author chooses which suggestion, if any, to paste.
+Suggests up to `--max` (default 3) candidate paths from `<from>` to `<to>`. Both are points, e.g. `app1.bottom` or `pg.left@0.25`, parsed and resolved exactly as in a `line` statement (anchors, `@t`, offsets, junctions and mixed points); each must be a single point, or it is a usage error. References and mixed points are written into the suggestions as given. It **never edits the file**; the author chooses which suggestion, if any, to paste. Input with errors is reported like `check` (text with source lines, or JSON `diagnostics`; its warnings too, without the metrics), with no suggestions, and `route` exits 2; warnings alone don't stop it. A `<from>` or `<to>` that doesn't resolve is also an error (exit 2).
 
 - **The third parameter sets the style** of the suggestions (default `corner`):
 

@@ -1,0 +1,13 @@
+// spec: 8, 7
+// flags: debug, force
+// `--debug --force` on a dark canvas: a junction guide, `near` and `cross` markers, and two errors on the `diagram` line listed at the top left.
+diagram "overlay" size (330,170) background=#0f172a bogus=1 margin=5
+box a "A" at (20,50) size (70,50)
+box b "B" at (240,50) size (70,50)
+junction j at (165,125) dot
+line a_j a.bottom -> vh j
+line j_b j -> hv b.bottom end=arrow
+line a_b a.right -> b.left end=arrow
+line drop (165,35) -> v 70
+line rail1 (20,140) -> h 60
+line rail2 (20,145) -> h 60

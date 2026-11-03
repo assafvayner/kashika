@@ -1,5 +1,5 @@
 // spec: 5
-// dump: scene
+// dump: ast, scene
 // `vhv` and `hvh` make two elbows with the middle run halfway, or `t` of the way with `@t`; an aligned target is one straight run.
 diagram "elbow pairs" size (400,300) allow=cross
 box a at (20,20) size (60,40)

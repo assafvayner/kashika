@@ -1,0 +1,6 @@
+render
+$FIXTURES/crossing.kash
+-o
+$TMP/out.svg
+--fail-on
+never

@@ -1,0 +1,4 @@
+check
+$FIXTURES/crossing.kash
+--show-suppressed
+--summary

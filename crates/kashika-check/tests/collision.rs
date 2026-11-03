@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn label_over_a_box_suggests_clear_positions() {
@@ -67,6 +68,7 @@ fn label_over_its_own_arrowhead() {
         d[0].message,
         "label \"hello\" of l collides with the end arrowhead of l"
     );
+    assert_eq!(d[0].span, Span::new(2, 35, 2, 48));
     assert_eq!(d[0].elements[1].id, "l");
     assert_eq!(
         d[0].help,
@@ -320,4 +322,34 @@ fn label_over_its_own_crows_foot() {
         )
         .is_empty()
     );
+}
+
+#[test]
+fn every_marker_names_its_outline() {
+    for (end, name) in [
+        ("arrow", "arrowhead"),
+        ("open", "arrowhead"),
+        ("triangle", "triangle"),
+        ("diamond", "diamond"),
+        ("hollow-diamond", "diamond"),
+        ("dot", "dot"),
+        ("circle", "circle"),
+        ("one", "bar"),
+        ("many", "crow's foot"),
+        ("one-many", "crow's foot"),
+        ("zero-one", "bar and circle"),
+        ("zero-many", "crow's foot"),
+    ] {
+        let d = lint(
+            "label-collision",
+            &format!("line l (20,100) -> h 60 end={end} label@0.95=\"x\"\n"),
+        );
+        assert_eq!(
+            d.iter().map(|d| d.message.as_str()).collect::<Vec<_>>(),
+            [format!(
+                "label \"x\" of l collides with the end {name} of l"
+            )],
+            "end={end}"
+        );
+    }
 }

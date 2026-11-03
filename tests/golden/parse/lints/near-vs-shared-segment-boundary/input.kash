@@ -1,0 +1,7 @@
+// spec: 7
+// Parallel lines 0.5px apart share a segment; 0.6px apart they are `near` instead.
+diagram "near vs shared" size (800,600)
+line shared_a (20,100) -> h 300
+line shared_b (20,100.5) -> h 300
+line near_a (20,300) -> h 300
+line near_b (20,300.6) -> h 300

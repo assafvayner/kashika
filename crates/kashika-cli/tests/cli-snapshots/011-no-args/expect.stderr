@@ -1,0 +1,20 @@
+Diagrams you place exactly; kashika checks the geometry
+
+Usage: kashika <COMMAND>
+
+Commands:
+  check    Check a .kash file and report diagnostics
+  render   Check a .kash file and render it to SVG, PNG, JPEG or WebP
+  route    Suggest ready-to-paste paths between two points; never edits the file
+  measure  Print the exact width and height of a label, with markup applied
+  ref      Print the language reference, or one topic of it [aliases: references, docs]
+  icons    List bundled icons and the importable icons and shapes in directories
+  inspect  Print the resolved geometry: shapes, anchors, lines, labels and the placement graph
+  fmt      Rewrite a .kash file in canonical layout (whitespace only) [alias: format]
+  help     Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+
+Exit codes: 0 clean; 1 warnings (check/render with --fail-on warn), `fmt --check` with changes, or `route`/`icons --search` with no result; 2 errors; 3 usage or I/O failure.

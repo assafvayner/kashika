@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use kashika_diag::Span;
 
 #[test]
 fn child_outside_its_group() {
@@ -14,6 +15,7 @@ fn child_outside_its_group() {
         "box 'a' extends outside group 'g' (right by 30px)"
     );
     assert_eq!(d[0].facts["overflow"], serde_json::json!({"right": 30.0}));
+    assert_eq!(d[0].span, Span::new(3, 3, 3, 33));
 }
 
 #[test]

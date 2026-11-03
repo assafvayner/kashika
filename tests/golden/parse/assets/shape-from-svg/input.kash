@@ -1,5 +1,5 @@
 // spec: 3a
-// dump: scene
+// dump: ast, scene
 // `shape from` an SVG with bbox/hull outlines and inside/below text areas.
 diagram "svg shapes" size (500,200)
 shape tri from "tri.svg"

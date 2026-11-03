@@ -26,6 +26,7 @@ wasm-bindgen = "0.2.121"
 clap = { version = "4", features = ["derive"] }
 sha2 = "0.10"
 insta = "1"
+proptest = { version = "1", default-features = false, features = ["std"] }
 libtest-mimic = "0.8"
 similar = "2"
 assert_cmd = "2"
@@ -39,3 +40,4 @@ jpeg-encoder = { version = "=0.7.1", default-features = false, features = ["std"
 image-webp = { version = "=0.2.4", default-features = false }
 imagesize = "=0.13.0"
 base64 = "=0.22.1"
+roxmltree = "=0.20.0"

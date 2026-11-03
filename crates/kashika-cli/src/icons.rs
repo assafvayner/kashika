@@ -33,7 +33,7 @@ pub fn run(a: &IconsArgs) -> std::process::ExitCode {
         );
     }
     let entries = list(&dirs, a.search.as_deref());
-    print!(
+    crate::out!(
         "{}",
         match a.format {
             Format::Text => crate::term::text(&text(&entries)).into_owned(),
@@ -42,7 +42,7 @@ pub fn run(a: &IconsArgs) -> std::process::ExitCode {
     );
     match (&a.search, entries.is_empty()) {
         (Some(term), true) => {
-            eprintln!(
+            crate::errln!(
                 "kashika: no icons or shapes match `{}`",
                 crate::term::line(term)
             );

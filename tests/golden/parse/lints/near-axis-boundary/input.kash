@@ -1,0 +1,7 @@
+// spec: 7
+// `near-axis` flags a slant above 0.5px and up to 5°: 26.3px over 300 is clean, 26.2px is flagged; 0.5px is clean, 0.6px is flagged.
+diagram "near axis boundary" size (800,600)
+line steep_clean (20,40) -> (320,66.3)
+line steep_flag (420,40) -> (720,66.2)
+line slight_clean (20,300) -> (320,300.5)
+line slight_flag (420,300) -> (720,300.6)

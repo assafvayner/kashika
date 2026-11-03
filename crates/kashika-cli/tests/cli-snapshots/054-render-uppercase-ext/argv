@@ -1,0 +1,4 @@
+render
+$FIXTURES/basic.kash
+-o
+$TMP/out.SVG
