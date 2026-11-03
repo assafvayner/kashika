@@ -58,9 +58,18 @@ fn sequences_form_one_ligature_glyph() {
         assert_eq!(width(s), 14.0, "{s:?}");
         assert!(outline(&runs(s), 14.0, 0.0, 0.0).is_empty(), "{s:?}");
     }
-    let layers = |s: &str| color_layers(&runs(s), 14.0, 0.0, 0.0);
-    assert_ne!(layers("👍🏽"), layers("👍"));
-    assert_ne!(layers("👩\u{200D}💻"), layers("👩"));
+    let first = |s: &str| {
+        let l = color_layers(&runs(s), 14.0, 0.0, 0.0);
+        (l.len(), l[0].color)
+    };
+    assert_eq!(first("👍"), (2, Some([0xff, 0xdb, 0x5e, 255])));
+    assert_eq!(
+        first("👍🏽"),
+        (2, Some([0xd4, 0xab, 0x88, 255])),
+        "medium skin tone"
+    );
+    assert_eq!(first("👩"), (6, Some([0xff, 0xac, 0x33, 255])));
+    assert_eq!(first("👩\u{200D}💻"), (14, Some([0x92, 0x66, 0xcc, 255])));
     assert_eq!(width("🇺🇸🇺"), 28.0);
 }
 

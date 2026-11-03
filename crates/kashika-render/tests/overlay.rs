@@ -74,8 +74,29 @@ fn overlay_is_deterministic() {
 fn debug_draws_rulers_ids_and_anchor_dots() {
     let (scene, diags) = compile(SRC);
     let s = render_svg_with(&scene, &diags, DEBUG);
-    assert!(s.contains("M 100 0 V 10"), "x ruler tick at 100");
-    assert!(s.contains("M 0 100 H 10"), "y ruler tick at 100");
+    let len = |v: u32| match v {
+        0 | 100 | 200 | 300 => 10,
+        50 | 150 | 250 => 6,
+        _ => 3,
+    };
+    let x: Vec<String> = (0..=300)
+        .step_by(10)
+        .map(|v| format!("M {v} 0 V {}", len(v)))
+        .collect();
+    let y: Vec<String> = (0..=200)
+        .step_by(10)
+        .map(|v| format!("M 0 {v} H {}", len(v)))
+        .collect();
+    let ruler = format!(
+        "<path d=\"{} {}\" fill=\"none\" stroke=\"#94a3b8\" stroke-width=\"1\"/>\n",
+        x.join(" "),
+        y.join(" ")
+    );
+    assert_eq!(s.matches(&ruler).count(), 1, "{s}");
+    for v in ["100", "200", "300"] {
+        let n = s.matches(&format!("aria-label=\"{v}\"")).count();
+        assert_eq!(n, if v == "300" { 1 } else { 2 }, "ruler label {v}");
+    }
     for label in ["100", "a", "b", "ab"] {
         assert!(s.contains(&format!("aria-label=\"{label}\"")), "{label}");
     }
