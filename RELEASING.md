@@ -1,8 +1,9 @@
 # Releasing
 
-All crates in `crates/` are published to crates.io at one shared version. The CLI is the `kashika` crate (directory `crates/kashika-cli`, binary `kashika`).
+All crates in `crates/` except `kashika-wasm` (`publish = false`) are published to crates.io at one shared version. The CLI is the `kashika` crate (directory `crates/kashika-cli`, binary `kashika`).
 
 1. Bump the version in the root `Cargo.toml`: `version` under `[workspace.package]` and the `=X.Y.Z` pin on every `kashika-*` entry in `[workspace.dependencies]`. Then run `cargo check --workspace` to update `Cargo.lock`.
+   The VS Code extension (`editors/vscode`) is versioned apart, since the Marketplace takes only plain `X.Y.Z`: bump `version` in its `package.json` and `package-lock.json` when releasing it.
 2. Add a section for the new version to `CHANGELOG.md`.
 3. Check everything on a clean tree:
 
