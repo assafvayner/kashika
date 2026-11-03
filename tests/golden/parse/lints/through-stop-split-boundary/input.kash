@@ -1,0 +1,7 @@
+// spec: 7
+// A straight pass within a quarter of a box's height of its middle suggests splitting there: 15px off on an 80x60 box does, 15.1px does not.
+diagram "stop split boundary" size (800,600)
+box m at (100,100) size (80,60)
+box n at (500,100) size (80,60)
+line split (20,115) -> h 240
+line no_split (420,114.9) -> h 240

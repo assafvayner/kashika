@@ -77,3 +77,13 @@ fn markers_on_thick_lines_need_more_room() {
     assert_eq!(d.len(), 1, "{d:#?}");
     assert_eq!(d[0].message, "l2 and l1 meet 'a' 10px apart (minimum 16px)");
 }
+
+#[test]
+fn exactly_8px_apart_is_not_crowded() {
+    let d = lint(
+        "port-crowding",
+        "box a at (100,200) size (100,60)\nbox b at (500,200) size (100,60)\nline a1 a.top@0.5 -> v -100\nline a2 a.top@0.58 -> v -100\nline b1 b.top@0.5 -> v -100\nline b2 b.top@0.579 -> v -100\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(d[0].message, "b2 and b1 meet 'b' 7.9px apart (minimum 8px)");
+}

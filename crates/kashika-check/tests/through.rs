@@ -140,3 +140,26 @@ fn normal_attachments_to_own_boxes_are_not_flagged() {
         assert!(d.is_empty(), "{src}: {d:#?}");
     }
 }
+
+#[test]
+fn split_help_stops_past_a_quarter_of_the_height_off_center() {
+    let d = lint(
+        "through",
+        "box m at (100,100) size (80,60)\nbox n at (500,100) size (80,60)\nline split (20,115) -> h 240\nline no_split (420,114.9) -> h 240\n",
+    );
+    assert_eq!(d.len(), 2, "{d:#?}");
+    assert_eq!(d[0].message, "split passes through box 'm'");
+    assert_eq!(
+        d[0].help[1],
+        "if 'm' is a stop on this path, split the line at it: one line ending at 'm'.left, another starting at 'm'.right"
+    );
+    assert_eq!(d[1].message, "no_split passes through box 'n'");
+    assert!(
+        !d[1]
+            .help
+            .iter()
+            .any(|h| h.contains("is a stop on this path")),
+        "{:#?}",
+        d[1].help
+    );
+}

@@ -1,0 +1,8 @@
+warn[near-axis] 5:29-5:39: segment 1 of steep_flag is 26.2px (4.99°) off horizontal, from (420,40) to (720,66.2)
+  = help: move one end 26.2px in y so both ends share it, or use `hv`/`vh` (or an `x`/`y` target) for a deliberate elbow
+  elements: [{"from":[420,40],"id":"steep_flag","kind":"line","segment":1,"span":{"col":1,"end_col":39,"end_line":5,"line":5},"to":[720,66.2]}]
+  facts: {"degrees":4.99,"offset":26.2}
+warn[near-axis] 7:31-7:42: segment 1 of slight_flag is 0.6px (0.11°) off horizontal, from (420,300) to (720,300.6)
+  = help: move one end 0.6px in y so both ends share it, or use `hv`/`vh` (or an `x`/`y` target) for a deliberate elbow
+  elements: [{"from":[420,300],"id":"slight_flag","kind":"line","segment":1,"span":{"col":1,"end_col":42,"end_line":7,"line":7},"to":[720,300.6]}]
+  facts: {"degrees":0.11,"offset":0.6}

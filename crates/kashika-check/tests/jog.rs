@@ -87,3 +87,16 @@ fn allow_suppresses() {
     assert_eq!(d.len(), 1);
     assert!(d[0].suppressed);
 }
+
+#[test]
+fn a_step_equal_to_clearance_is_not_a_jog() {
+    let d = lint(
+        "jog",
+        "line clean (20,100) -> h 100 -> v 6 -> h 100\nline flag (20,300) -> h 100 -> v 5.9 -> h 100\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "segment 2 of flag jogs 5.9px in y between two horizontal runs, from (120,300) to (120,305.9)"
+    );
+}

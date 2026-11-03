@@ -47,3 +47,16 @@ fn parallel_or_tiny_overlaps_are_not_shared() {
         .is_empty()
     );
 }
+
+#[test]
+fn overlap_must_exceed_1px() {
+    let d = lint(
+        "shared-segment",
+        "line clean_a (20,100) -> h 100\nline clean_b (119,100) -> h 100\nline flag_a (20,300) -> h 100\nline flag_b (118.5,300) -> h 100\n",
+    );
+    assert_eq!(d.len(), 1, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "flag_b runs along flag_a for 1.5px, from (118.5,300) to (120,300)"
+    );
+}

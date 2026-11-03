@@ -39,3 +39,20 @@ fn literal_endpoint_near_an_outline() {
         .is_empty()
     );
 }
+
+#[test]
+fn snap_distance_of_8px_is_inclusive() {
+    let d = lint(
+        "endpoint-off-edge",
+        "box a at (100,100) size (100,80)\nline end_flag (0,110) -> (92,110)\nline end_clean (0,125) -> (91.9,125)\nline start_flag (92,140) -> (0,140)\nline start_clean (91.9,155) -> (0,155)\n",
+    );
+    assert_eq!(d.len(), 2, "{d:#?}");
+    assert_eq!(
+        d[0].message,
+        "end_flag ends at (92,110), 8px from the outline of 'a'"
+    );
+    assert_eq!(
+        d[1].message,
+        "start_flag starts at (92,140), 8px from the outline of 'a'"
+    );
+}

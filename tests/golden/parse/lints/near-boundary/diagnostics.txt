@@ -1,0 +1,8 @@
+warn[near] 7:1-7:35: box_flag runs 5.9px from box 'b' (clearance 6)
+  = help: segment 1 runs at y=165.9; free y-intervals across x 420..680: 0..94, 166..600
+  elements: [{"from":[420,165.9],"id":"box_flag","kind":"line","segment":1,"span":{"col":1,"end_col":35,"end_line":7,"line":7},"to":[680,165.9]},{"bbox":[[500,100],[600,160]],"id":"b","kind":"box","span":{"col":1,"end_col":33,"end_line":5,"line":5}}]
+  facts: {"clearance":6,"distance":5.9,"free":{"axis":"y","band":[420,680],"intervals":[[0,94],[166,600]]}}
+warn[near] 11:1-11:31: run_flag runs 4px from run_base2 for 21px (clearance 6)
+  = help: segment 1 runs at y=454; free y-intervals across x 20..41: 0..160, 172..294, 310..444, 456..600
+  elements: [{"from":[20,454],"id":"run_flag","kind":"line","segment":1,"span":{"col":1,"end_col":31,"end_line":11,"line":11},"to":[41,454]},{"from":[20,450],"id":"run_base2","kind":"line","segment":1,"span":{"col":1,"end_col":33,"end_line":10,"line":10},"to":[320,450]}]
+  facts: {"clearance":6,"distance":4,"free":{"axis":"y","band":[20,41],"intervals":[[0,160],[172,294],[310,444],[456,600]]},"length":21}
