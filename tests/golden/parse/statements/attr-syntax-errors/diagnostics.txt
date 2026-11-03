@@ -1,0 +1,4 @@
+error[parse] 6:36-6:39: expected `=`, found a string
+error[parse] 7:50-7:51: expected an anchor name before `@`, found end of line
+error[parse] 8:44-8:45: expected an identifier, found end of line
+error[parse] 10:3-10:4: expected an attribute, found `=`

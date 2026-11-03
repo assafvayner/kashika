@@ -1,0 +1,2 @@
+error[parse] 6:14-6:15: expected a point: `(x,y)` or a reference like `db.left`, found end of line
+error[parse] 7:3-7:6: expected `text` or `}` in a text block, found `box`

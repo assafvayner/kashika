@@ -1,0 +1,9 @@
+// spec: 3, 3a
+// `style`, `group` and `shape` need a name where they take one, and a `{` on the same line.
+diagram "braces" size (200,100)
+style s fill=#fff
+group g at (100,10) size (90,80)
+box a at (10,10) size (40,20)
+style { fill=#fff }
+shape { path "M 0 0 L 1 0 L 1 1 Z" }
+box b at (10,60) size (40,20)

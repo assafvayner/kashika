@@ -1,0 +1,4 @@
+error[parse] 6:25-6:26: expected `x` or `y`, found `z`
+error[parse] 7:25-7:26: expected `.`, found `,`
+error[parse] 8:27-8:28: expected `)`, found `.`
+error[parse] 9:16-9:17: expected a number or a reference like `db.left.x`, found `+`

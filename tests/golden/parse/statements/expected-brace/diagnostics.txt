@@ -1,0 +1,4 @@
+error[parse] 4:9-4:13: expected `{`, found `fill`
+error[parse] 5:33-5:34: expected `{`, found end of line
+error[parse] 7:7-7:8: expected a style name, found `{`
+error[parse] 8:7-8:8: expected a shape name, found `{`

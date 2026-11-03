@@ -1,0 +1,21 @@
+// spec: 2, 3
+// dump: ast
+// A line that starts with a token other than a keyword is skipped, and parsing resumes.
+diagram "stray" size (300,200)
+box a at (10,10) size (40,20)
+)
+box b at (70,10) size (40,20)
+,
+box c at (130,10) size (40,20)
+=
+box d at (190,10) size (40,20)
+.
+box e at (10,60) size (40,20)
++
+box f at (70,60) size (40,20)
+:
+box g at (130,60) size (40,20)
+@
+box k at (190,60) size (40,20)
+"hello"
+box i at (10,110) size (40,20)

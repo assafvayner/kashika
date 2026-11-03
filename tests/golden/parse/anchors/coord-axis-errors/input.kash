@@ -1,0 +1,9 @@
+// spec: 4
+// A mixed-point coordinate is a number or `<ref>.x`/`<ref>.y`; anything else is an error.
+diagram "axes" size (300,200)
+box a at (10,10) size (40,40)
+box b at (250,150) size (40,40)
+line a.right -> (b.left.z, 30)
+line a.bottom -> (b.left, 30)
+line a.left -> (0, a.top.y.y)
+line b.top -> (+, 30)

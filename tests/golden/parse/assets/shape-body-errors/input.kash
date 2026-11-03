@@ -1,0 +1,16 @@
+// spec: 3a
+// A shape body takes `path`, `outline` and `text-area` lines; a bad key or value drops the shape.
+diagram "shape bodies" size (200,100)
+shape typo {
+  pth "M 0 0 L 1 0 L 1 1 Z"
+}
+shape numeric {
+  5 "M 0 0 L 1 0 L 1 1 Z"
+}
+shape unquoted {
+  path M
+}
+shape ok {
+  path "M 0 0 L 1 0 L 1 1 Z"
+}
+box a at (10,10) size (60,40) shape=ok

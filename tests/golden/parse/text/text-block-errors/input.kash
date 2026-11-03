@@ -1,0 +1,9 @@
+// spec: 6
+// dump: ast
+// A bad text block item is dropped and the block's other items survive.
+diagram "text block" size (200,120)
+box t at (10,10) size (180,100) {
+  text "x" at
+  box q at (0,0) size (10,10)
+  text "y" at (20,20)
+}

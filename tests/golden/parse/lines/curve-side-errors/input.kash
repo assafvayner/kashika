@@ -1,0 +1,8 @@
+// spec: 5
+// `curve` takes `left <N>`, `right <N>` or `via`; a side needs a number before the point.
+diagram "curves" size (300,200)
+box a at (10,80) size (40,40)
+box b at (250,80) size (40,40)
+line a.top -> curve up 20 b.top
+line a.right -> curve left b.left
+line a.bottom -> curve 20 b.bottom

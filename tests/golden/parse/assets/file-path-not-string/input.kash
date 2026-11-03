@@ -1,0 +1,7 @@
+// spec: 3a
+// An image and an import take their file as a quoted string.
+diagram "paths" size (200,100)
+import lib
+image i at (10,10) size (40,40)
+image j icon.svg at (60,10) size (40,40)
+box a at (120,10) size (60,40)

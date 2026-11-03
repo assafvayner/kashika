@@ -1,0 +1,7 @@
+// spec: 3a
+// `import … as` needs a namespace name after `as`.
+diagram "import as" size (200,100)
+import "lib.kash" as
+import "lib.kash" as 5
+import "lib.kash" as ok
+box a at (10,10) size (60,40) style=ok.svc
