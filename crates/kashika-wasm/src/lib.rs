@@ -34,6 +34,7 @@ pub fn render(src: &str, force: bool) -> Rendered {
             kashika_render::render_svg_with(&scene, diags.iter().filter(|d| !d.suppressed), overlay)
         })
     });
+    kashika_diag::sort(&mut diags);
     Rendered {
         svg,
         errors: count(&diags, Severity::Error),
@@ -53,6 +54,21 @@ fn count(diags: &[Diagnostic], severity: Severity) -> usize {
 #[wasm_bindgen(js_name = render)]
 pub fn render_json(src: &str, force: bool) -> String {
     serde_json::to_string(&render(src, force)).expect("a report serializes to JSON")
+}
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console, js_name = error)]
+    fn console_error(message: &str);
+}
+
+/// Reports a panic's message and location on the JS console before wasm aborts, instead
+/// of an opaque `unreachable` trap.
+#[wasm_bindgen(start)]
+pub fn init() {
+    std::panic::set_hook(Box::new(|info| {
+        console_error(&format!("kashika panicked: {info}"))
+    }));
 }
 
 /// The Kashika version these bindings were built from.

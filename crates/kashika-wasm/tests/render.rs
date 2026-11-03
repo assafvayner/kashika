@@ -48,3 +48,10 @@ fn matches_the_cli_render_of_the_upload_example() {
     let svg = render(src, false).svg.unwrap();
     assert_eq!(svg, include_str!("../../../examples/upload/upload.svg"));
 }
+
+#[test]
+fn diagnostics_are_sorted_when_there_is_no_scene() {
+    let r = render("box a \"A\" at (0,0) size (10,10)\nbox b\n", false);
+    let lines: Vec<_> = r.diagnostics.iter().map(|d| d.span.line).collect();
+    assert!(lines.windows(2).all(|w| w[0] <= w[1]), "{lines:?}");
+}
