@@ -8,7 +8,8 @@
     "check": "tsc --noEmit",
     "test": "vitest run",
     "golden": "vitest run test/golden",
-    "bench": "tsx bench/bench.ts"
+    "bench": "tsx bench/bench.ts",
+    "gen-icons": "tsx scripts/gen-icons.ts"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
