@@ -5,6 +5,7 @@ import type { Engine } from "./engine/types.js";
 import {
   type ChatEntry,
   type Project,
+  deleteProject,
   listProjects,
   newId,
   saveProject,
@@ -135,9 +136,23 @@ export class AppState {
     return listProjects();
   }
 
+  async deleteProject(id: string): Promise<void> {
+    if (id === this.project.id) {
+      this.stop();
+      if (this.saveTimer !== null) clearTimeout(this.saveTimer);
+      this.saveTimer = null;
+      this.running = false;
+      this.newProject();
+    }
+    await deleteProject(id);
+  }
+
   scheduleSave(): void {
     if (this.saveTimer !== null) clearTimeout(this.saveTimer);
-    this.saveTimer = setTimeout(() => this.persist(), 500);
+    this.saveTimer = setTimeout(() => {
+      this.saveTimer = null;
+      this.persist();
+    }, 500);
   }
 
   private persist(): void {

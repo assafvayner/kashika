@@ -105,4 +105,21 @@ describe("AppState", () => {
     await app.send("hi");
     expect(app.session).toBeNull();
   });
+
+  it("does not resurrect a deleted current project", async () => {
+    const app = new TestState(engine, null);
+    app.open({
+      id: "gone",
+      title: "G",
+      source: SRC,
+      chat: [],
+      selection: null,
+      updated: 1,
+    });
+    await app.saveNow();
+    app.scheduleSave();
+    await app.deleteProject("gone");
+    await new Promise((r) => setTimeout(r, 700));
+    expect((await listProjects()).map((p) => p.id)).not.toContain("gone");
+  });
 });
