@@ -14,7 +14,7 @@ export class CustomProvider implements Provider {
   private readonly token: string;
   constructor(
     private readonly config: CustomConfig,
-    private readonly fetchImpl: typeof fetch = fetch,
+    private readonly fetchImpl: typeof fetch = (...args) => fetch(...args),
   ) {
     this.url = config.url
       .trim()

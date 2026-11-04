@@ -36,7 +36,7 @@ export class HuggingFaceProvider implements Provider {
   readonly id = "huggingface";
   constructor(
     private readonly token: () => string | null,
-    private readonly fetchImpl: typeof fetch = fetch,
+    private readonly fetchImpl: typeof fetch = (...args) => fetch(...args),
   ) {}
 
   async listModels(): Promise<ModelRow[]> {

@@ -108,3 +108,24 @@ describe("CustomProvider", () => {
     expect(auth).toBe("Bearer t");
   });
 });
+
+describe("default fetch", () => {
+  it("is called unbound", async () => {
+    const original = globalThis.fetch;
+    globalThis.fetch = function (this: unknown) {
+      if (this !== undefined && this !== globalThis) throw new TypeError("Illegal invocation");
+      return Promise.resolve(Response.json({ data: [{ id: "x" }] }));
+    } as typeof fetch;
+    try {
+      await expect(new HuggingFaceProvider(() => "t").listModels()).resolves.toBeDefined();
+      const rows = await new CustomProvider({
+        url: "https://e/v1",
+        token: "",
+        model: "m",
+      }).listModels();
+      expect(rows.map((r) => r.id)).toEqual(["x"]);
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+});
