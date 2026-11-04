@@ -9,7 +9,7 @@ use kashika_model::Scene;
 use kashika_route::{Error, Request, Style, Suggestion};
 use serde::Serialize;
 
-use crate::{icons, inspect, known_ids, measure, ref_cmd, report, route_cmd, scene_ids};
+use crate::{icons, inspect, measure, ref_cmd, report, route_cmd};
 
 /// The input name the text reports show.
 pub const NAME: &str = "diagram.kash";
@@ -77,21 +77,14 @@ pub fn inspect(
     ids: &[String],
     ports: bool,
 ) -> Result<(String, inspect::Inspect), String> {
-    let (scene, mut diags) = kashika_model::compile_with(src, &kashika_model::Options::default());
-    diags.retain(|d| !d.suppressed);
-    let ctx = Ctx::new(&scene);
-    let lints: usize = kashika_check::check_bounded(&ctx, 0, &|d| !d.suppressed)
-        .omitted
-        .iter()
-        .map(|o| o.count)
-        .sum();
-    known_ids(&scene_ids(&scene), ids, "inspect")?;
-    let req = inspect::Request {
+    let data = crate::inspect_data(
+        NAME,
+        src,
+        &kashika_model::Options::default(),
         ids,
         ports,
-        corridors: None,
-    };
-    let data = inspect::build(NAME, src, &scene, &diags, lints, &req);
+        None,
+    )?;
     Ok((crate::term::text(&inspect::text(&data)).into_owned(), data))
 }
 
@@ -155,16 +148,9 @@ pub fn route(
             &report::Opts::bare(),
             None,
         ))),
-        Err(Error::Endpoints(diags)) => {
-            let mut out = String::new();
-            for d in &diags {
-                out.push_str(&format!("{NAME}: error[{}]: {}\n", d.code, d.message));
-                for h in &d.help {
-                    out.push_str(&format!("      = help: {h}\n"));
-                }
-            }
-            Err(RouteError::Endpoints(out))
-        }
+        Err(Error::Endpoints(diags)) => Err(RouteError::Endpoints(route_cmd::endpoints_text(
+            NAME, &diags,
+        ))),
     }
 }
 

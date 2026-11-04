@@ -387,23 +387,10 @@ fn run_inspect(a: &InspectArgs) -> ExitCode {
         Ok(o) => o,
         Err(msg) => return fail(&msg),
     };
-    let (scene, mut diags) = kashika_model::compile_with(&src, &opts);
-    diags.retain(|d| !d.suppressed);
-    let ctx = kashika_check::ctx::Ctx::new(&scene);
-    let lints: usize = kashika_check::check_bounded(&ctx, 0, &|d| !d.suppressed)
-        .omitted
-        .iter()
-        .map(|o| o.count)
-        .sum();
-    if let Err(msg) = known_ids(&scene_ids(&scene), &a.ids, "inspect") {
-        return fail(&msg);
-    }
-    let req = inspect::Request {
-        ids: &a.ids,
-        ports: a.ports,
-        corridors: a.corridors,
+    let data = match inspect_data(&name, &src, &opts, &a.ids, a.ports, a.corridors) {
+        Ok(d) => d,
+        Err(msg) => return fail(&msg),
     };
-    let data = inspect::build(&name, &src, &scene, &diags, lints, &req);
     match a.format {
         Format::Text => crate::out!("{}", term::text(&inspect::text(&data))),
         Format::Json => match serde_json::to_string(&data) {
@@ -412,6 +399,31 @@ fn run_inspect(a: &InspectArgs) -> ExitCode {
         },
     }
     ExitCode::from(0)
+}
+
+pub(crate) fn inspect_data(
+    name: &str,
+    src: &str,
+    opts: &kashika_model::Options,
+    ids: &[String],
+    ports: bool,
+    corridors: Option<Rect>,
+) -> Result<inspect::Inspect, String> {
+    let (scene, mut diags) = kashika_model::compile_with(src, opts);
+    diags.retain(|d| !d.suppressed);
+    let ctx = kashika_check::ctx::Ctx::new(&scene);
+    let lints: usize = kashika_check::check_bounded(&ctx, 0, &|d| !d.suppressed)
+        .omitted
+        .iter()
+        .map(|o| o.count)
+        .sum();
+    known_ids(&scene_ids(&scene), ids, "inspect")?;
+    let req = inspect::Request {
+        ids,
+        ports,
+        corridors,
+    };
+    Ok(inspect::build(name, src, &scene, &diags, lints, &req))
 }
 
 fn parse_rect(s: &str) -> Result<Rect, String> {

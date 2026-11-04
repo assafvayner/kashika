@@ -166,5 +166,13 @@ fn elements_for_hit_testing() {
     );
     assert_eq!(a.bbox, [[30.0, 40.0], [110.0, 80.0]]);
     assert!(els.iter().any(|e| e.id == "t" && e.kind == "text"));
-    assert!(api::elements("box a\n").iter().all(|e| e.id == "a"));
+    assert!(api::elements("box a\n").is_empty());
+}
+
+#[test]
+fn inspect_escapes_control_characters_like_the_cli() {
+    let src = "diagram \"t\" size (200,100)\nbox a \"A\u{1b}B\" at (20,20) size (80,40)\n";
+    let text = api::inspect(src, &[], false).unwrap().0;
+    assert!(!text.contains('\u{1b}'), "{text:?}");
+    assert_eq!(text, cli(src, &["inspect", "-"]));
 }

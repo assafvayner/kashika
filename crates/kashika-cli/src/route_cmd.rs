@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::Args;
+use kashika_diag::Diagnostic;
 use kashika_geom::fmt_num as num;
 use kashika_route::{Error, Request, Style, Suggestion};
 
@@ -104,13 +105,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
             ExitCode::from(2)
         }
         Err(Error::Endpoints(diags)) => {
-            let name = term::line(&name);
-            for d in &diags {
-                crate::outln!("{name}: error[{}]: {}", d.code, term::line(&d.message));
-                for h in &d.help {
-                    crate::outln!("      = help: {}", term::line(h));
-                }
-            }
+            crate::out!("{}", endpoints_text(&name, &diags));
             ExitCode::from(2)
         }
         Ok(s) => {
@@ -133,6 +128,22 @@ pub fn run(a: &RouteArgs) -> ExitCode {
             ExitCode::from(u8::from(s.candidates.is_empty()))
         }
     }
+}
+
+pub fn endpoints_text(name: &str, diags: &[Diagnostic]) -> String {
+    let name = term::line(name);
+    let mut out = String::new();
+    for d in diags {
+        out.push_str(&format!(
+            "{name}: error[{}]: {}\n",
+            d.code,
+            term::line(&d.message)
+        ));
+        for h in &d.help {
+            out.push_str(&format!("      = help: {}\n", term::line(h)));
+        }
+    }
+    out
 }
 
 pub fn text(s: &Suggestion) -> String {
