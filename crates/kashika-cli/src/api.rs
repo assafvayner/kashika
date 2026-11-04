@@ -210,7 +210,8 @@ pub fn elements(src: &str) -> Vec<Elem> {
     elements_of(&scene)
 }
 
-fn elements_of(scene: &Scene) -> Vec<Elem> {
+/// Every shape and text of a compiled scene, with its box.
+pub fn elements_of(scene: &Scene) -> Vec<Elem> {
     let depth_of = |parent: &Option<String>| {
         parent
             .as_ref()

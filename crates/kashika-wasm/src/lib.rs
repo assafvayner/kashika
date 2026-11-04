@@ -3,6 +3,7 @@
 //! and `fmt` as JSON over a source string. There is no file system: imports, images and
 //! `icons=` directories report not found, while built-in shapes and bundled icons work.
 
+use kashika::api;
 use kashika_diag::{Diagnostic, Severity};
 use serde::Serialize;
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -16,6 +17,8 @@ pub struct Rendered {
     pub warnings: usize,
     /// Every diagnostic, suppressed ones included, in report order.
     pub diagnostics: Vec<Diagnostic>,
+    /// Every shape and text with its box; empty when the source is a library.
+    pub elements: Vec<api::Elem>,
 }
 
 /// Compiles, checks and renders `src`. With `force`, a diagram with errors still renders,
@@ -23,6 +26,11 @@ pub struct Rendered {
 pub fn render(src: &str, force: bool) -> Rendered {
     let compiled = kashika_model::compile_file(src, &kashika_model::Options::default());
     let mut diags = compiled.diags;
+    let elements = compiled
+        .scene
+        .as_ref()
+        .map(api::elements_of)
+        .unwrap_or_default();
     let svg = compiled.scene.and_then(|scene| {
         diags.extend(kashika_check::check(&scene));
         kashika_diag::sort(&mut diags);
@@ -41,6 +49,7 @@ pub fn render(src: &str, force: bool) -> Rendered {
         errors: count(&diags, Severity::Error),
         warnings: count(&diags, Severity::Warn),
         diagnostics: diags,
+        elements,
     }
 }
 
@@ -54,7 +63,7 @@ fn count(diags: &[Diagnostic], severity: Severity) -> usize {
 /// `render` as a JSON string: `{svg, errors, warnings, diagnostics}`.
 #[wasm_bindgen(js_name = render)]
 pub fn render_json(src: &str, force: bool) -> String {
-    serde_json::to_string(&render(src, force)).expect("a report serializes to JSON")
+    json(&render(src, force))
 }
 
 #[wasm_bindgen]
@@ -77,8 +86,6 @@ pub fn init() {
 pub fn version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
-
-use kashika::api;
 
 fn json<T: Serialize>(v: &T) -> String {
     serde_json::to_string(v).expect("a report serializes to JSON")
