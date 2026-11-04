@@ -21,12 +21,14 @@ npm run dev
 
 ## Login in local development
 
-In the Space, `hf_oauth: true` in `space/README.md` makes the Hub inject the OAuth client id. Locally, create an OAuth app at https://huggingface.co/settings/applications with the redirect URL `http://localhost:5173/` and the `inference-api` scope, then put its id in `.env.local`:
+In the Space, `hf_oauth: true` in `space/README.md` makes the Hub inject the OAuth client id. Locally, create an OAuth app at https://huggingface.co/settings/applications with the redirect URL `http://localhost:5173/` and the `openid`, `profile` and `inference-api` scopes, then put its id in `.env.local`:
 
 ```
 VITE_OAUTH_CLIENT_ID=...
 VITE_OAUTH_REDIRECT_URL=http://localhost:5173/
 ```
+
+The `VITE_OAUTH_*` variables are read only by `npm run dev`; built output gets the client id from the Space.
 
 Without a login, a custom OpenAI-compatible endpoint (base URL, token, model) works from the model picker. That is also how to use Claude, OpenAI or Gemini for now, through an OpenAI-compatible gateway; native providers are a planned follow-up.
 
