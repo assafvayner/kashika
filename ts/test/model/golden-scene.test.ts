@@ -1,54 +1,11 @@
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { type Diagnostic, sort } from "../../src/diag/index.js";
-import { lines } from "../../src/diag/rust.js";
 import { diagnostics, pretty } from "../../src/geom/dump.js";
-import { Options, compileLibraryWith, compileWith } from "../../src/model/index.js";
-
-const GOLDEN = join(import.meta.dirname, "../../../tests/golden");
-
-/// Every directory under `dir` holding an `input.kash`; case directories are not searched further.
-function caseDirs(dir: string, out: string[] = []): string[] {
-  if (existsSync(join(dir, "input.kash"))) {
-    out.push(dir);
-    return out;
-  }
-  for (const name of readdirSync(dir).sort()) {
-    const p = join(dir, name);
-    if (statSync(p).isDirectory()) caseDirs(p, out);
-  }
-  return out;
-}
-
-interface Directives {
-  allowPath: boolean;
-  iconPath: string | null;
-  include: string[];
-}
-
-/// The `// key: value` lines at the top of `input.kash`, as the Rust golden harness reads them.
-function directives(src: string): Directives {
-  const d: Directives = { allowPath: false, iconPath: null, include: [] };
-  const text = src.startsWith("﻿") ? src.slice(1) : src;
-  for (const line of lines(text)) {
-    if (!line.startsWith("// ")) break;
-    const body = line.slice(3);
-    const at = body.indexOf(": ");
-    if (at < 0) continue;
-    const key = body.slice(0, at);
-    if (!/^[a-z-]*$/.test(key)) continue;
-    const values = body
-      .slice(at + 2)
-      .split(/[, ]/)
-      .filter((v) => v !== "");
-    if (key === "flags" && values.includes("allow-path")) d.allowPath = true;
-    if (key === "icon-path") d.iconPath = values[0] ?? null;
-    if (key === "include") d.include.push(...values);
-  }
-  return d;
-}
+import { compileLibraryWith, compileWith } from "../../src/model/index.js";
+import { GOLDEN, caseDirs, caseOptions } from "../support/golden.js";
 
 /// `diagnostics.txt` without its `warn[...]` blocks, which the lints (a later task) produce.
 function withoutWarnings(text: string): string {
@@ -76,13 +33,7 @@ describe("golden parse cases: scene.json and error diagnostics", () => {
   for (const dir of cases) {
     it(relative(GOLDEN, dir), () => {
       const src = readFileSync(join(dir, "input.kash"), "utf8");
-      const d = directives(src);
-      const opts = new Options({
-        path: join(dir, "input.kash"),
-        allowPath: d.allowPath,
-        iconPath: d.iconPath === null ? [] : [join(dir, d.iconPath)],
-        include: d.include.map((p) => join(dir, p)),
-      });
+      const opts = caseOptions(dir, src);
       let diags: Diagnostic[];
       const lib = compileLibraryWith(src, opts);
       if (lib !== null) {
