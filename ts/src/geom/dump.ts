@@ -134,11 +134,11 @@ function isScalar(v: Json): boolean {
 }
 
 function values(o: JsonObject): Json[] {
-  return o instanceof Map ? [...o.values()] : Object.values(o);
+  return entries(o).map(([, v]) => v);
 }
 
 function size(o: JsonObject): number {
-  return o instanceof Map ? o.size : Object.keys(o).length;
+  return entries(o).length;
 }
 
 function flat(v: Json): boolean {

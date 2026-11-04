@@ -6,6 +6,12 @@ export class Float {
   constructor(readonly v: number) {}
 }
 
+/// A serialized struct: `serde_json::to_string` writes its fields in declaration order,
+/// where `to_value` (and so `entries`) sorts them like any map.
+export class Ordered {
+  constructor(readonly fields: [string, Json][]) {}
+}
+
 export type Json =
   | null
   | boolean
@@ -13,10 +19,11 @@ export type Json =
   | string
   | Float
   | Json[]
+  | Ordered
   | Map<string, Json>
   | { [key: string]: Json };
 
-export type JsonObject = Map<string, Json> | { [key: string]: Json };
+export type JsonObject = Ordered | Map<string, Json> | { [key: string]: Json };
 
 export function isObject(v: Json | undefined): v is JsonObject {
   return (
@@ -30,7 +37,8 @@ export function isObject(v: Json | undefined): v is JsonObject {
 
 /// The object's entries sorted by key, as serde_json's `BTreeMap`-backed `Map` keeps them.
 export function entries(o: JsonObject): [string, Json][] {
-  const es = o instanceof Map ? [...o.entries()] : Object.entries(o);
+  const es =
+    o instanceof Ordered ? [...o.fields] : o instanceof Map ? [...o.entries()] : Object.entries(o);
   return es.sort((a, b) => cmpStr(a[0], b[0]));
 }
 
@@ -38,6 +46,7 @@ export function entries(o: JsonObject): [string, Json][] {
 export function get(v: Json | undefined, key: string | number): Json {
   if (typeof key === "number") return Array.isArray(v) ? (v[key] ?? null) : null;
   if (!isObject(v)) return null;
+  if (v instanceof Ordered) return v.fields.find(([k]) => k === key)?.[1] ?? null;
   return (v instanceof Map ? v.get(key) : v[key]) ?? null;
 }
 
@@ -91,7 +100,15 @@ export function numberString(v: number): string {
   return Number.isSafeInteger(v) ? String(v) : ryuF64(v);
 }
 
-/// Compact JSON like `serde_json::to_string` of a `Value`.
+/// `v` as `serde_json::to_value` makes it: every `Ordered` struct becomes a sorted map.
+export function toValue(v: Json): Json {
+  if (Array.isArray(v)) return v.map(toValue);
+  if (isObject(v)) return new Map(entries(v).map(([k, x]) => [k, toValue(x)]));
+  return v;
+}
+
+/// Compact JSON like `serde_json::to_string`: `Ordered` structs keep their field order and
+/// maps are sorted by key.
 export function toJsonString(v: Json): string {
   if (v === null) return "null";
   if (typeof v === "boolean") return v ? "true" : "false";
@@ -99,6 +116,9 @@ export function toJsonString(v: Json): string {
   if (typeof v === "string") return jsonString(v);
   if (v instanceof Float) return ryuF64(v.v);
   if (Array.isArray(v)) return `[${v.map(toJsonString).join(",")}]`;
+  if (v instanceof Ordered) {
+    return `{${v.fields.map(([k, x]) => `${jsonString(k)}:${toJsonString(x)}`).join(",")}}`;
+  }
   return `{${entries(v)
     .map(([k, x]) => `${jsonString(k)}:${toJsonString(x)}`)
     .join(",")}}`;

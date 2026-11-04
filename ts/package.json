@@ -9,7 +9,8 @@
     "test": "vitest run",
     "golden": "vitest run test/golden",
     "bench": "tsx bench/bench.ts",
-    "gen-icons": "tsx scripts/gen-icons.ts"
+    "gen-icons": "tsx scripts/gen-icons.ts",
+    "parity": "tsx scripts/test-parity.ts"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -1,5 +1,5 @@
 import { ERROR_CODES, LINT_CODES } from "./codes.js";
-import { Float, type Json, get } from "./json.js";
+import { Float, type Json, Ordered, get } from "./json.js";
 import { cmpStr, cmpTuple } from "./rust.js";
 
 export class Span {
@@ -32,7 +32,12 @@ export class Span {
   }
 
   toJson(): Json {
-    return { line: this.line, col: this.col, end_line: this.endLine, end_col: this.endCol };
+    return new Ordered([
+      ["line", this.line],
+      ["col", this.col],
+      ["end_line", this.endLine],
+      ["end_col", this.endCol],
+    ]);
   }
 }
 
@@ -73,14 +78,18 @@ export class Element {
   }
 
   toJson(): Json {
-    const o: { [key: string]: Json } = { id: this.id, kind: this.kind, span: this.span.toJson() };
-    if (this.segment !== null) o["segment"] = this.segment;
-    if (this.from !== null) o["from"] = pairJson(this.from);
-    if (this.to !== null) o["to"] = pairJson(this.to);
-    if (this.bbox !== null) o["bbox"] = this.bbox.map(pairJson);
-    if (this.frame !== null) o["frame"] = this.frame;
-    if (this.localBbox !== null) o["local_bbox"] = this.localBbox.map(pairJson);
-    return o;
+    const o: [string, Json][] = [
+      ["id", this.id],
+      ["kind", this.kind],
+      ["span", this.span.toJson()],
+    ];
+    if (this.segment !== null) o.push(["segment", this.segment]);
+    if (this.from !== null) o.push(["from", pairJson(this.from)]);
+    if (this.to !== null) o.push(["to", pairJson(this.to)]);
+    if (this.bbox !== null) o.push(["bbox", this.bbox.map(pairJson)]);
+    if (this.frame !== null) o.push(["frame", this.frame]);
+    if (this.localBbox !== null) o.push(["local_bbox", this.localBbox.map(pairJson)]);
+    return new Ordered(o);
   }
 }
 
@@ -94,7 +103,11 @@ export class Suggestion {
   ) {}
 
   toJson(): Json {
-    return { span: this.span.toJson(), replacement: this.replacement, ripple: [...this.ripple] };
+    return new Ordered([
+      ["span", this.span.toJson()],
+      ["replacement", this.replacement],
+      ["ripple", [...this.ripple]],
+    ]);
   }
 }
 
@@ -150,19 +163,19 @@ export class Diagnostic {
   }
 
   toJson(): Json {
-    const o: { [key: string]: Json } = {
-      severity: this.severity,
-      code: this.code,
-      message: this.message,
-      span: this.span.toJson(),
-    };
-    if (this.elements.length > 0) o["elements"] = this.elements.map((e) => e.toJson());
-    if (this.facts.size > 0) o["facts"] = new Map(this.facts);
-    if (this.help.length > 0) o["help"] = [...this.help];
-    o["suggestions"] = this.suggestions.map((s) => s.toJson());
-    if (this.suppressed) o["suppressed"] = true;
-    if (this.reason !== null) o["reason"] = this.reason;
-    return o;
+    const o: [string, Json][] = [
+      ["severity", this.severity],
+      ["code", this.code],
+      ["message", this.message],
+      ["span", this.span.toJson()],
+    ];
+    if (this.elements.length > 0) o.push(["elements", this.elements.map((e) => e.toJson())]);
+    if (this.facts.size > 0) o.push(["facts", new Map(this.facts)]);
+    if (this.help.length > 0) o.push(["help", [...this.help]]);
+    o.push(["suggestions", this.suggestions.map((s) => s.toJson())]);
+    if (this.suppressed) o.push(["suppressed", true]);
+    if (this.reason !== null) o.push(["reason", this.reason]);
+    return new Ordered(o);
   }
 }
 
