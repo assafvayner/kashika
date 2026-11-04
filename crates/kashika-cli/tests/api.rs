@@ -11,6 +11,7 @@ const LIBRARY: &str = "style s { fill=\"#ffffff\" }\nbox a\n";
 /// Runs the CLI on stdin with `args`, naming the input like the API does.
 fn cli(src: &str, args: &[&str]) -> String {
     let mut child = Command::new(env!("CARGO_BIN_EXE_kashika"))
+        .env_remove("KASHIKA_ICON_PATH")
         .args(args)
         .args(["--stdin-name", api::NAME])
         .stdin(Stdio::piped())
@@ -50,4 +51,10 @@ fn format_reformats_or_reports() {
     );
     let err = api::format("box a \"A\" at (\n").unwrap_err();
     assert!(err.contains("error[parse]"), "{err}");
+}
+
+#[test]
+fn format_error_matches_the_cli_report() {
+    let src = "box a \"A\" at (\n";
+    assert_eq!(api::format(src).unwrap_err(), cli(src, &["fmt", "-"]));
 }

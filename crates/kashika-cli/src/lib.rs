@@ -295,16 +295,12 @@ fn run(c: &Common, render: Option<RenderOpts>) -> ExitCode {
         c.focus.is_empty() || d.elements.iter().any(|e| c.focus.contains(&e.id))
     };
     let ctx = kashika_check::ctx::Ctx::new(&scene);
-    let found = kashika_check::check_bounded(&ctx, c.max.max(report::KEEP), &focus);
-    let metrics = found.metrics(&scene);
-    let mut all: Vec<(kashika_diag::Diagnostic, Vec<kashika_check::Deferred>)> = diags
-        .into_iter()
-        .map(|d| (d, Vec::new()))
-        .chain(found.diags.into_iter().zip(found.deferred))
-        .collect();
-    all.sort_by(|a, b| kashika_diag::order(&a.0, &b.0));
-    let (mut diags, deferred): (Vec<_>, Vec<_>) = all.into_iter().unzip();
-    let omitted = found.omitted;
+    let report::Linted {
+        mut diags,
+        deferred,
+        omitted,
+        metrics,
+    } = report::lint(&scene, &ctx, diags, c.max.max(report::KEEP), &focus);
     let report::Counts { errors, warns, .. } = report::counts(&diags, &omitted);
     let output = match &render {
         None => None,
