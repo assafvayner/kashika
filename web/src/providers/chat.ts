@@ -1,5 +1,11 @@
 import { parseSse } from "./sse.js";
-import { type ChatEvent, type ChatRequest, ProviderError, type ToolCall } from "./types.js";
+import {
+  type ChatEvent,
+  type ChatRequest,
+  type Message,
+  ProviderError,
+  type ToolCall,
+} from "./types.js";
 
 export interface Endpoint {
   /** Base URL ending in `/v1`, no trailing slash. */
@@ -12,7 +18,7 @@ interface Chunk {
     delta?: {
       content?: string | null;
       tool_calls?: {
-        index: number;
+        index?: number;
         id?: string;
         function?: { name?: string; arguments?: string };
       }[];
@@ -20,6 +26,30 @@ interface Chunk {
     finish_reason?: string | null;
   }[];
   error?: { message?: string } | string;
+}
+
+const toWire = (m: Message) =>
+  m.role === "assistant" && m.tool_calls?.length
+    ? {
+        role: "assistant",
+        content: m.content,
+        tool_calls: m.tool_calls.map((c) => ({
+          id: c.id,
+          type: "function",
+          function: { name: c.name, arguments: c.arguments },
+        })),
+      }
+    : m;
+
+function httpErrorMessage(status: number, statusText: string, text: string): string {
+  try {
+    const j = JSON.parse(text) as { error?: { message?: string } | string } | null;
+    const m = typeof j?.error === "string" ? j.error : j?.error?.message;
+    if (m) return `${status}: ${m}`;
+  } catch {
+    // not JSON, fall through to the excerpt
+  }
+  return `${status} ${statusText}: ${text.slice(0, 500)}`;
 }
 
 /** One streaming chat completion in the OpenAI format, with tool calls assembled from deltas. */
@@ -31,7 +61,7 @@ export async function* streamChat(
 ): AsyncGenerator<ChatEvent> {
   const body = {
     model: req.model,
-    messages: req.messages,
+    messages: req.messages.map(toWire),
     stream: true,
     ...(req.tools.length > 0
       ? {
@@ -49,11 +79,13 @@ export async function* streamChat(
     body: JSON.stringify(body),
     signal,
   });
-  if (!res.ok || res.body === null) {
+  if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new ProviderError(`${res.status} ${res.statusText}: ${text.slice(0, 500)}`, res.status);
+    throw new ProviderError(httpErrorMessage(res.status, res.statusText, text), res.status);
   }
-  const calls = new Map<number, ToolCall>();
+  if (res.body === null) throw new ProviderError("empty response body", res.status);
+  const calls: ToolCall[] = [];
+  const current = new Map<number, ToolCall>();
   let finish: string | null = null;
   for await (const raw of parseSse(res.body)) {
     const chunk = raw as Chunk;
@@ -66,15 +98,20 @@ export async function* streamChat(
     const text = choice.delta?.content;
     if (typeof text === "string" && text !== "") yield { type: "text_delta", text };
     for (const tc of choice.delta?.tool_calls ?? []) {
-      const call = calls.get(tc.index) ?? { id: "", name: "", arguments: "" };
+      const index = tc.index ?? 0;
+      let call = current.get(index);
+      if (call === undefined || (tc.id && call.id !== "" && tc.id !== call.id)) {
+        call = { id: "", name: "", arguments: "" };
+        current.set(index, call);
+        calls.push(call);
+      }
       if (tc.id) call.id = tc.id;
-      if (tc.function?.name) call.name += tc.function.name;
+      if (tc.function?.name && call.name === "") call.name = tc.function.name;
       if (tc.function?.arguments) call.arguments += tc.function.arguments;
-      calls.set(tc.index, call);
     }
     if (choice.finish_reason) finish = choice.finish_reason;
   }
-  for (const [, call] of [...calls.entries()].sort((a, b) => a[0] - b[0])) {
+  for (const call of calls) {
     if (call.id === "") call.id = `call_${Math.random().toString(36).slice(2, 10)}`;
     yield { type: "tool_call", call };
   }

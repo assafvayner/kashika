@@ -48,7 +48,7 @@ describe("parseSse", () => {
 });
 
 describe("streamChat", () => {
-  const base = { url: "https://x/v1", headers: {}, model: "m" };
+  const base = { url: "https://x/v1", headers: {} };
   const req = { model: "m", messages: [{ role: "user" as const, content: "hi" }], tools: [] };
 
   it("yields text and accumulates tool call arguments", async () => {
@@ -90,9 +90,22 @@ describe("streamChat", () => {
       body = JSON.parse(init!.body as string);
       return sse([delta({ content: "ok" }, "stop")])(_u, init);
     };
+    const messages = [
+      ...req.messages,
+      {
+        role: "assistant" as const,
+        content: null,
+        tool_calls: [{ id: "c1", name: "write_source", arguments: '{"source":"x"}' }],
+      },
+      { role: "tool" as const, tool_call_id: "c1", content: "ok" },
+    ];
     for await (const _ of streamChat(
       base,
-      { ...req, tools: [{ name: "t", description: "d", parameters: { type: "object" } }] },
+      {
+        ...req,
+        messages,
+        tools: [{ name: "t", description: "d", parameters: { type: "object" } }],
+      },
       new AbortController().signal,
       fetchImpl,
     )) {
@@ -103,5 +116,60 @@ describe("streamChat", () => {
       stream: true,
       tools: [{ type: "function", function: { name: "t", description: "d" } }],
     });
+    const sent = (body as { messages: unknown[] }).messages;
+    expect(sent[1]).toEqual({
+      role: "assistant",
+      content: null,
+      tool_calls: [
+        {
+          id: "c1",
+          type: "function",
+          function: { name: "write_source", arguments: '{"source":"x"}' },
+        },
+      ],
+    });
+    expect(sent[2]).toEqual({ role: "tool", tool_call_id: "c1", content: "ok" });
+  });
+
+  it("does not repeat a name sent in every delta", async () => {
+    const fetchImpl = sse([
+      delta({ tool_calls: [{ index: 0, id: "c1", function: { name: "w", arguments: "{" } }] }),
+      delta({ tool_calls: [{ index: 0, function: { name: "w", arguments: "}" } }] }, "tool_calls"),
+    ]);
+    const events = [];
+    for await (const e of streamChat(base, req, new AbortController().signal, fetchImpl))
+      events.push(e);
+    expect(events[0]).toEqual({
+      type: "tool_call",
+      call: { id: "c1", name: "w", arguments: "{}" },
+    });
+  });
+
+  it("throws on an in-stream error chunk", async () => {
+    const fetchImpl = sse([`data: ${JSON.stringify({ error: { message: "boom" } })}\n\n`]);
+    const it = streamChat(base, req, new AbortController().signal, fetchImpl);
+    await expect(it.next()).rejects.toThrow("boom");
+  });
+
+  it("throws ProviderError on malformed stream data", async () => {
+    const fetchImpl = sse(["data: {oops\n\n"]);
+    const it = streamChat(base, req, new AbortController().signal, fetchImpl);
+    await expect(it.next()).rejects.toMatchObject({
+      name: "Error",
+      message: "malformed stream data: {oops",
+      status: null,
+    });
+  });
+
+  it("processes a trailing line without a newline", async () => {
+    const stream = new ReadableStream({
+      start(c) {
+        c.enqueue(new TextEncoder().encode('data: {"a":1}'));
+        c.close();
+      },
+    });
+    const out: unknown[] = [];
+    for await (const v of parseSse(stream)) out.push(v);
+    expect(out).toEqual([{ a: 1 }]);
   });
 });
