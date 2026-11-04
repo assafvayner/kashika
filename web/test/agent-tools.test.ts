@@ -17,6 +17,9 @@ describe("systemPrompt", () => {
     expect(p).toContain("## Topics");
     expect(p).not.toMatch(/`kashika (check|render|route|inspect|ref|measure|icons)/);
     expect(p).toContain("write_source");
+    expect(p).not.toMatch(/file\.kash|`[^`]*--[a-z]|\bCLI\b|^---$|render and look/im);
+    expect(p).not.toMatch(/\| `cli` \|/);
+    expect(p).toMatch(/\| `limits` \|/);
   });
 });
 
@@ -43,6 +46,19 @@ describe("runTool", () => {
     expect(runTool(engine, d, "inspect", { ids: ["zz"] })).toMatch(/^error: unknown id/);
     expect(runTool(engine, d, "nope", {})).toMatch(/^error: unknown tool/);
     expect(runTool(engine, d, "write_source", {})).toMatch(/^error: /);
+  });
+  it("coerces loose arguments and reports bad ones", () => {
+    const d = doc();
+    expect(runTool(engine, d, "inspect", { ids: "a" })).toContain("a");
+    expect(runTool(engine, d, "measure", { text: "Hello", size: "20" })).toMatch(/width=/);
+    expect(runTool(engine, d, "route", { from: "a.right", to: "b.left", max: "99" })).toMatch(
+      /^#1/,
+    );
+    expect(runTool(engine, d, "route", { from: "a.right", to: "b.left", style: "wavy" })).toMatch(
+      /^error: unknown style `wavy`/,
+    );
+    expect(runTool(engine, d, "icons", { search: "zzzqqq" })).toBe("no icons match `zzzqqq`");
+    expect(runTool(engine, d, "ref", {})).toBe("error: ref needs a topic");
   });
   it("every tool has a definition", () => {
     expect(TOOL_DEFS.map((t) => t.name).sort()).toEqual([
