@@ -31,12 +31,39 @@
   let list = $state<HTMLDivElement | null>(null);
   let input = $state<HTMLTextAreaElement | null>(null);
   let openStep = $state<string | null>(null);
+  let elapsed = $state(0);
+
+  $effect(() => {
+    if (!running) return;
+    const start = Date.now();
+    elapsed = 0;
+    const t = setInterval(() => (elapsed = Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(t);
+  });
+
+  const status = $derived.by(() => {
+    const m = chat.at(-1);
+    if (!running || m?.role !== "assistant") return "";
+    const step = m.steps?.at(-1);
+    if (step && step.summary.endsWith("…")) return `running ${step.summary.slice(0, -1)}`;
+    if (m.text) return "writing";
+    if (m.thinking) return "thinking";
+    return "waiting for the model";
+  });
 
   $effect(() => {
     void chat.length;
     void chat.at(-1)?.text;
+    void chat.at(-1)?.thinking;
     list?.scrollTo?.({ top: list.scrollHeight });
   });
+
+  function scrollThinking(node: HTMLElement) {
+    $effect(() => {
+      void chat.at(-1)?.thinking;
+      node.scrollTop = node.scrollHeight;
+    });
+  }
 
   $effect(() => {
     void draft;
@@ -64,6 +91,12 @@
   <div class="list" bind:this={list}>
     {#each chat as m, i (i)}
       <div class="msg {m.role}">
+        {#if m.thinking}
+          <details class="thinking" open={running && i === chat.length - 1}>
+            <summary>Thinking</summary>
+            <div class="reasoning" use:scrollThinking>{m.thinking}</div>
+          </details>
+        {/if}
         {#if m.steps && m.steps.length > 0}
           <div class="steps">
             {#each m.steps as s, j (j)}
@@ -76,10 +109,10 @@
             {/each}
           </div>
         {/if}
-        {#if m.text}<div class="text">{m.text}</div>{/if}
+        {#if m.text.trim()}<div class="text">{m.text.trim()}</div>{/if}
       </div>
     {/each}
-    {#if running}<div class="working">working…</div>{/if}
+    {#if running}<div class="working">{status}… {elapsed}s</div>{/if}
     {#if error && !running}
       {#if error.status === 429}
         <p class="warn">Rate limited by the model provider. Wait a moment, then retry.</p>
@@ -177,6 +210,25 @@
   .working {
     color: var(--muted);
     font-size: 12px;
+  }
+  .thinking {
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .thinking summary {
+    cursor: pointer;
+    user-select: none;
+  }
+  .reasoning {
+    max-height: 160px;
+    overflow: auto;
+    margin-top: 4px;
+    padding-left: 8px;
+    border-left: 2px solid var(--border);
+    white-space: pre-wrap;
+    font-size: 12px;
+    line-height: 1.4;
   }
   .composer {
     display: flex;

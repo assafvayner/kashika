@@ -36,6 +36,44 @@ describe("Chat", () => {
     expect(onsend).toHaveBeenCalledWith("move this");
   });
 
+  it("shows thinking and a live status while running", async () => {
+    vi.useFakeTimers();
+    try {
+      render(Chat, {
+        chat: [
+          { role: "user", text: "draw" },
+          { role: "assistant", text: "", thinking: "Let me plan the layout", steps: [] },
+        ],
+        running: true,
+        ready: true,
+        selection: null,
+        onsend: () => {},
+        onstop: () => {},
+        onclear: () => {},
+      });
+      expect(screen.getByText("Let me plan the layout")).toBeTruthy();
+      expect((screen.getByText("Thinking").parentElement as HTMLDetailsElement).open).toBe(true);
+      expect(screen.getByText(/thinking… 0s/)).toBeTruthy();
+      await vi.advanceTimersByTimeAsync(2100);
+      expect(screen.getByText(/thinking… 2s/)).toBeTruthy();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("names the running tool in the status", () => {
+    render(Chat, {
+      chat: [{ role: "assistant", text: "", steps: [{ summary: "write_source…", result: "" }] }],
+      running: true,
+      ready: true,
+      selection: null,
+      onsend: () => {},
+      onstop: () => {},
+      onclear: () => {},
+    });
+    expect(screen.getByText(/running write_source… 0s/)).toBeTruthy();
+  });
+
   it("prompts to log in when not ready", () => {
     render(Chat, {
       chat: [],

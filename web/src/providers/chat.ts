@@ -17,6 +17,8 @@ interface Chunk {
   choices?: {
     delta?: {
       content?: string | null;
+      reasoning_content?: string | null;
+      reasoning?: string | null;
       tool_calls?: {
         index?: number;
         id?: string;
@@ -97,6 +99,9 @@ export async function* streamChat(
     if (choice === undefined) continue;
     const text = choice.delta?.content;
     if (typeof text === "string" && text !== "") yield { type: "text_delta", text };
+    const reasoning = choice.delta?.reasoning_content ?? choice.delta?.reasoning;
+    if (typeof reasoning === "string" && reasoning !== "")
+      yield { type: "reasoning_delta", text: reasoning };
     for (const tc of choice.delta?.tool_calls ?? []) {
       const index = tc.index ?? 0;
       let call = current.get(index);

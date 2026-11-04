@@ -30,6 +30,10 @@ const write = (id: string, source: string): ChatEvent => ({
   call: { id, name: "write_source", arguments: JSON.stringify({ source }) },
 });
 
+/** Event types without the per-call `model_start` markers. */
+const types = (events: AgentEvent[]) =>
+  events.map((e) => e.type).filter((t) => t !== "model_start");
+
 async function run(agent: Agent, text: string): Promise<AgentEvent[]> {
   const out: AgentEvent[] = [];
   for await (const e of agent.run(text)) out.push(e);
@@ -52,7 +56,7 @@ describe("Agent", () => {
     const agent = new Agent({ engine, doc, provider: p, model: "m", budget: 20 });
     const events = await run(agent, "add a box B");
     expect(doc.source).toContain("box b");
-    expect(events.map((e) => e.type)).toEqual(["tool_start", "tool_result", "text", "done"]);
+    expect(types(events)).toEqual(["tool_start", "tool_result", "text", "done"]);
     expect(p.requests[0]!.messages[0]!.role).toBe("system");
     expect(p.requests[0]!.messages.at(-1)).toMatchObject({ role: "user" });
     expect((p.requests[0]!.messages.at(-1) as { content: string }).content).toContain(
@@ -64,6 +68,30 @@ describe("Agent", () => {
       role: "assistant",
       content: "[write_source: 0 errors, 0 warnings]\nAdded B.",
     });
+  });
+
+  it("forwards reasoning as thinking events and marks each model call", async () => {
+    const doc = new Document(engine, SRC);
+    const provider = scripted([
+      [{ type: "reasoning_delta", text: "plan" }, write("c1", SRC)],
+      [
+        { type: "reasoning_delta", text: "done" },
+        { type: "text_delta", text: "ok" },
+      ],
+    ]);
+    const agent = new Agent({ engine, doc, provider, model: "m", budget: 5 });
+    const events = await run(agent, "go");
+    expect(events.map((ev) => ev.type)).toEqual([
+      "model_start",
+      "thinking",
+      "tool_start",
+      "tool_result",
+      "model_start",
+      "thinking",
+      "text",
+      "done",
+    ]);
+    expect(agent.history.at(-1)?.content).not.toContain("plan");
   });
 
   it("collapses tool results after the turn", async () => {
@@ -205,7 +233,7 @@ describe("Agent", () => {
     const agent = new Agent({ engine, doc, provider: p, model: "m", budget: 5 });
     const events = await run(agent, "x");
     expect(doc.source).toBe(SRC);
-    expect(events[1]).toMatchObject({
+    expect(events.filter((e) => e.type !== "model_start")[1]).toMatchObject({
       type: "tool_result",
       summary: "[write_source: invalid arguments]",
     });

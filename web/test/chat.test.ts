@@ -74,6 +74,24 @@ describe("streamChat", () => {
     ]);
   });
 
+  it("yields reasoning deltas", async () => {
+    const fetchImpl = sse([
+      delta({ content: "", reasoning_content: "hmm" }),
+      delta({ reasoning: " more" }),
+      delta({ content: "ok" }, "stop"),
+      "data: [DONE]\n\n",
+    ]);
+    const events = [];
+    for await (const e of streamChat(base, req, new AbortController().signal, fetchImpl))
+      events.push(e);
+    expect(events).toEqual([
+      { type: "reasoning_delta", text: "hmm" },
+      { type: "reasoning_delta", text: " more" },
+      { type: "text_delta", text: "ok" },
+      { type: "finish", reason: "stop" },
+    ]);
+  });
+
   it("throws ProviderError with the status", async () => {
     const fetchImpl: typeof fetch = async () => new Response("nope", { status: 401 });
     const it = streamChat(base, req, new AbortController().signal, fetchImpl)[

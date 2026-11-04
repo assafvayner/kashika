@@ -253,6 +253,12 @@ export class AppState {
       case "text":
         reply.text += ev.text;
         break;
+      case "model_start":
+        if (reply.thinking) reply.thinking += "\n\n";
+        break;
+      case "thinking":
+        reply.thinking = (reply.thinking ?? "") + ev.text;
+        break;
       case "tool_start":
         reply.steps!.push({ summary: `${ev.call.name}…`, result: "" });
         break;

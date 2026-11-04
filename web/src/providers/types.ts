@@ -25,6 +25,7 @@ export interface ChatRequest {
 
 export type ChatEvent =
   | { type: "text_delta"; text: string }
+  | { type: "reasoning_delta"; text: string }
   | { type: "tool_call"; call: ToolCall }
   | { type: "finish"; reason: string | null };
 

@@ -5,6 +5,8 @@ export interface ChatEntry {
   text: string;
   /** Tool step summaries shown under an assistant message. */
   steps?: { summary: string; result: string }[];
+  /** The model's reasoning stream, when the provider sends one. */
+  thinking?: string;
 }
 
 export interface Project {

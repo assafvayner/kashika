@@ -6,6 +6,8 @@ import { TOOL_DEFS, runTool } from "./tools.js";
 
 export type AgentEvent =
   | { type: "text"; text: string }
+  | { type: "thinking"; text: string }
+  | { type: "model_start" }
   | { type: "tool_start"; call: ToolCall }
   | { type: "tool_result"; call: ToolCall; result: string; summary: string }
   | { type: "done" }
@@ -73,6 +75,7 @@ export class Agent {
       for (;;) {
         let text = "";
         const calls: ToolCall[] = [];
+        yield { type: "model_start" };
         for await (const ev of provider.chat(
           { model, messages: [...turn], tools: TOOL_DEFS },
           signal,
@@ -80,6 +83,8 @@ export class Agent {
           if (ev.type === "text_delta") {
             text += ev.text;
             yield { type: "text", text: ev.text };
+          } else if (ev.type === "reasoning_delta") {
+            yield { type: "thinking", text: ev.text };
           } else if (ev.type === "tool_call") {
             calls.push(ev.call);
           }
