@@ -29,12 +29,20 @@
 
   let draft = $state("");
   let list = $state<HTMLDivElement | null>(null);
+  let input = $state<HTMLTextAreaElement | null>(null);
   let openStep = $state<string | null>(null);
 
   $effect(() => {
     void chat.length;
     void chat.at(-1)?.text;
     list?.scrollTo?.({ top: list.scrollHeight });
+  });
+
+  $effect(() => {
+    void draft;
+    if (!input) return;
+    input.style.height = "auto";
+    input.style.height = `${input.scrollHeight}px`;
   });
 
   function send() {
@@ -72,7 +80,12 @@
       </div>
     {/each}
     {#if running}<div class="working">working…</div>{/if}
-    {#if error && !running}<button class="retry" onclick={onretry}>Retry</button>{/if}
+    {#if error && !running}
+      {#if error.status === 429}
+        <p class="warn">Rate limited by the model provider. Wait a moment, then retry.</p>
+      {/if}
+      <button class="retry" onclick={onretry}>Retry</button>
+    {/if}
   </div>
   <div class="composer">
     {#if !ready}
@@ -89,6 +102,7 @@
       >
     {/if}
     <textarea
+      bind:this={input}
       bind:value={draft}
       onkeydown={onKey}
       rows="2"
@@ -113,6 +127,7 @@
   }
   .list {
     flex: 1;
+    min-height: 0;
     overflow: auto;
     padding: 12px;
     display: flex;
@@ -199,6 +214,11 @@
     max-width: 100%;
     flex-basis: 100%;
   }
+  .warn {
+    margin: 0;
+    font-size: 13px;
+    color: var(--warn);
+  }
   .retry {
     align-self: flex-start;
     border: 1px solid var(--border);
@@ -222,6 +242,11 @@
     background: var(--bg);
     min-width: 0;
     width: 100%;
+    max-height: 50vh;
+    overflow-y: auto;
+    box-sizing: border-box;
+    font: inherit;
+    line-height: 1.4;
   }
   .send {
     width: 100%;

@@ -90,13 +90,13 @@
     {#if tab === "huggingface"}
       {#if app.session === null}
         <p>Log in with Hugging Face to use inference providers.</p>
-        <button onclick={() => void login()}>Log in</button>
+        <button class="primary" onclick={() => void login()}>Log in</button>
         <p class="muted">
           Opens in a new tab when running inside huggingface.co; come back here or continue in the
           new tab.
         </p>
       {:else}
-        <input placeholder="Search models" bind:value={search} />
+        <input class="search" placeholder="Search models" bind:value={search} />
         {#if hfErr}<p class="err">{hfErr}</p>{/if}
         <ul>
           {#each shown as m (m.id)}
@@ -115,8 +115,10 @@
       <label>Token <input bind:value={custom.token} type="password" /></label>
       <label>Model <input bind:value={custom.model} placeholder="model id" /></label>
       <p class="muted">Saved in this browser's localStorage, token included.</p>
-      <button onclick={saveCustom} disabled={custom.url === "" || custom.model === ""}
-        >Use this endpoint</button
+      <button
+        class="primary"
+        onclick={saveCustom}
+        disabled={custom.url === "" || custom.model === ""}>Use this endpoint</button
       >
     {/if}
     <label class="budget"
@@ -137,25 +139,78 @@
   .dialog {
     background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgb(0 0 0 / 0.18);
     width: min(560px, 92vw);
     max-height: 80vh;
     overflow: auto;
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
+  }
+  button {
+    font: inherit;
+    cursor: pointer;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--fg);
+    padding: 6px 14px;
+    transition:
+      background 0.12s,
+      border-color 0.12s,
+      color 0.12s;
+  }
+  button:hover {
+    background: var(--panel);
+  }
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  button:disabled {
+    opacity: 0.5;
+    cursor: default;
   }
   .tabs {
     display: flex;
-    gap: 8px;
+    align-items: center;
+    gap: 4px;
+    padding: 3px;
+    border-radius: 999px;
+    background: var(--panel);
+  }
+  .tabs button {
+    border: 0;
+    background: none;
+    color: var(--muted);
+    padding: 6px 14px;
+  }
+  .tabs button.active {
+    background: var(--bg);
+    color: var(--fg);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
   }
   .tabs .close {
     margin-left: auto;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    font-size: 18px;
+    line-height: 1;
   }
-  button.active {
+  .tabs .close:hover {
+    background: var(--bg);
+  }
+  .primary {
+    align-self: flex-start;
+    background: var(--accent);
     border-color: var(--accent);
-    color: var(--accent);
+    color: #fff;
+  }
+  .primary:hover {
+    background: color-mix(in srgb, var(--accent) 88%, black);
   }
   ul {
     list-style: none;
@@ -163,33 +218,71 @@
     padding: 0;
     max-height: 40vh;
     overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
   li button {
     width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
     text-align: left;
-    border: 0;
+    border: 1px solid transparent;
+    border-radius: 8px;
     background: none;
-    padding: 6px 8px;
-    cursor: pointer;
+    padding: 7px 10px;
   }
   li button:hover {
     background: var(--panel);
+  }
+  li button.active {
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    color: var(--accent);
+  }
+  li button.active::after {
+    content: "✓";
+    margin-left: auto;
   }
   label {
     display: flex;
     flex-direction: column;
     gap: 4px;
     font-size: 13px;
+    color: var(--muted);
   }
   input {
+    font: inherit;
+    color: var(--fg);
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 6px 8px;
+    border-radius: 8px;
+    padding: 7px 10px;
     background: var(--bg);
+  }
+  input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+    border-color: transparent;
+  }
+  .budget {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .budget input {
+    width: 80px;
   }
   .muted {
     color: var(--muted);
     font-size: 12px;
+    margin: 0;
+  }
+  p {
+    margin: 0;
   }
   .err {
     color: var(--error);

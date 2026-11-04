@@ -13,11 +13,16 @@ function parseLine(raw: string): { done: boolean; value?: unknown } {
   }
 }
 
-/** Parses an SSE byte stream into the JSON of each `data:` line, stopping at `[DONE]`. */
+/**
+ * Parses an SSE byte stream into the JSON of each `data:` line, stopping at `[DONE]`.
+ * After `[DONE]` the rest of the body is drained so the connection closes normally;
+ * the stream is cancelled only when the consumer stops early.
+ */
 export async function* parseSse(stream: ReadableStream<Uint8Array>): AsyncGenerator<unknown> {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
   let buf = "";
+  let finished = false;
   try {
     for (;;) {
       const { value, done } = await reader.read();
@@ -28,14 +33,19 @@ export async function* parseSse(stream: ReadableStream<Uint8Array>): AsyncGenera
         const line = buf.slice(0, nl);
         buf = buf.slice(nl + 1);
         const r = parseLine(line);
-        if (r.done) return;
+        if (r.done) {
+          while (!(await reader.read()).done);
+          finished = true;
+          return;
+        }
         if (r.value !== undefined) yield r.value;
       }
     }
     const r = parseLine(buf + decoder.decode());
     if (!r.done && r.value !== undefined) yield r.value;
+    finished = true;
   } finally {
-    await reader.cancel().catch(() => {});
+    if (!finished) await reader.cancel().catch(() => {});
     reader.releaseLock();
   }
 }

@@ -127,6 +127,22 @@ describe("Chat retry", () => {
     });
     await fireEvent.click(screen.getByText("Retry"));
     expect(onretry).toHaveBeenCalled();
+    expect(screen.queryByText(/rate limited/i)).toBeNull();
+  });
+
+  it("warns on a 429", () => {
+    render(Chat, {
+      chat: [{ role: "assistant", text: "Error: 429: too many requests", steps: [] }],
+      running: false,
+      ready: true,
+      selection: null,
+      onsend: () => {},
+      onstop: () => {},
+      onclear: () => {},
+      error: { message: "429: too many requests", status: 429 },
+    });
+    expect(screen.getByText(/rate limited/i)).toBeTruthy();
+    expect(screen.getByText("Retry")).toBeTruthy();
   });
 });
 

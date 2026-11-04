@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { streamChat } from "../src/providers/chat.js";
 import { parseSse } from "../src/providers/sse.js";
@@ -159,6 +159,40 @@ describe("streamChat", () => {
       message: "malformed stream data: {oops",
       status: null,
     });
+  });
+
+  it("drains the body after [DONE] instead of cancelling", async () => {
+    const cancel = vi.fn();
+    let pulls = 0;
+    const stream = new ReadableStream<Uint8Array>({
+      pull(c) {
+        pulls++;
+        if (pulls === 1) c.enqueue(new TextEncoder().encode('data: {"a":1}\n\ndata: [DONE]\n'));
+        else if (pulls === 2) c.enqueue(new TextEncoder().encode("\n"));
+        else c.close();
+      },
+      cancel,
+    });
+    const out: unknown[] = [];
+    for await (const v of parseSse(stream)) out.push(v);
+    expect(out).toEqual([{ a: 1 }]);
+    expect(pulls).toBe(3);
+    expect(cancel).not.toHaveBeenCalled();
+  });
+
+  it("cancels the body when the consumer stops early", async () => {
+    const cancel = vi.fn();
+    const stream = new ReadableStream<Uint8Array>({
+      pull(c) {
+        c.enqueue(new TextEncoder().encode('data: {"a":1}\n'));
+      },
+      cancel,
+    });
+    for await (const v of parseSse(stream)) {
+      expect(v).toEqual({ a: 1 });
+      break;
+    }
+    expect(cancel).toHaveBeenCalled();
   });
 
   it("processes a trailing line without a newline", async () => {

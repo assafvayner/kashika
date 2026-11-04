@@ -55,21 +55,23 @@
     </div>
     <button onclick={() => fileInput?.click()}>Import</button>
     <input bind:this={fileInput} type="file" accept=".kash" hidden onchange={picked} />
-    <button onclick={() => exportSvg(title(), app.doc.result.svg ?? "")}>SVG</button>
-    <button onclick={() => void exportPng(title(), app.doc.result.svg ?? "", pngScale)}>PNG</button>
+    <button onclick={() => exportSvg(title(), app.doc.result.svg ?? "")}>Export SVG</button>
+    <button onclick={() => void exportPng(title(), app.doc.result.svg ?? "", pngScale)}
+      >Export PNG</button
+    >
     <select bind:value={pngScale} title="PNG scale" aria-label="PNG scale">
       <option value={1}>1x</option>
       <option value={2}>2x</option>
       <option value={4}>4x</option>
     </select>
-    <button onclick={() => exportKash(title(), app.doc.source)}>.kash</button>
+    <button onclick={() => exportKash(title(), app.doc.source)}>Export .kash</button>
     <button onclick={() => void share()}
       >{shared === "copied" ? "Link copied" : shared === "failed" ? "Copy failed" : "Share"}</button
     >
     <button
       class:active={app.drawerOpen}
       onclick={() => (app.drawerOpen = !app.drawerOpen)}
-      title="Source">&lt;/&gt;</button
+      title="Source (debug only)">Source (debug only)</button
     >
     {#if shareUrl}
       <input
