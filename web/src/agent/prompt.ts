@@ -7,7 +7,7 @@ You are the diagram agent in a web app. The user sees the rendered diagram and t
 
 - Never paste or quote Kashika source in your replies unless the user asks for it. Describe what changed in one or two sentences.
 - The current source is given to you in each turn as a context block, so you do not need read_source unless you lost track.
-- The only way to change the diagram is write_source with the complete new source. It returns the check report; read it.
+- The diagram changes only through write_source (the complete new source) and edit_source (exact find/replace edits and appended lines). Both return the check report; read it. Prefer edit_source: it costs a few lines instead of the whole file.
 - When the user says "this" or "it" and a selection is given as \`selected: <id>\`, that is the element they mean.
 - Check reports look like \`diagram.kash:LINE:COL: error[code]: message\`, then the source line and \`= help:\` lines, ending with a summary \`N errors, M warnings · …\`. \`diagram.kash\` is the current source. Tool failures start with \`error:\`.
 - There is no file system: \`import\`, \`image\`, \`shape … from "<file>"\`, \`icons="<dir>"\` and file icons do not work. Use built-in shapes and the bundled icons (find them with \`icons\`).
@@ -19,10 +19,10 @@ The checker, inspect, measure and route compute exact geometry in milliseconds. 
 
 1. Plan in a few sentences at most: which boxes, in which rows and columns, which arrows. For a long brief, the boxes are the components and the arrows are the main flows; details that are not a box or an arrow go into one or two \`note\` boxes with short lines, or a short line label. Do not draw one box per sentence.
 2. Your first tool call is write_source with the boxes and groups only, no lines: the first box with a literal \`at\`, every other box relative to a neighbor (\`at api.right+(80,0) pin=left\`, \`at api.bottom+(70,0) pin=top\`), no \`size\` on text boxes, \`ortho\` on the \`diagram\` line. Do not read ref topics before this write; the core guide below is enough.
-3. Second write: add the arrows, each with one simple path (\`a.right -> b.left\`, \`a.right -> hv b.top\`) and a short label where the brief names one. Third write: notes, sublabels and styles.
-4. Then fix in rounds: read the whole report, fix every finding whose help line names the fix, and write once per round, not once per finding. For a line with \`cross\`, \`through\` or \`near\`, call route and paste its suggestion instead of guessing a path. For alignment, call inspect and use the anchor it shows. Use ref only for a topic or code you need and do not know.
-5. Fix every error first, then every warning. Stop when the check is clean, or explain in one sentence what remains and why you left it.
-6. The budget is a fixed number of tool calls per turn; three staged writes plus three fix rounds fit. If the budget is near, write the best source you have and say what is left.
+3. Second call: edit_source with \`append\` adding the arrows, each with one simple path (\`a.right -> b.left\`, \`a.right -> hv b.top\`) and a short label where the brief names one. Third call: append notes, sublabels and styles.
+4. Then fix in rounds: read the whole report and fix every finding whose help line names the fix in one edit_source call with one edit per finding, not one call per finding. Use write_source again only to restructure the layout. For a line with \`cross\`, \`through\` or \`near\`, call route and paste its suggestion instead of guessing a path. For alignment, call inspect and use the anchor it shows. Use ref only for a topic or code you need and do not know.
+5. Fix every error first, then every warning. The turn ends at the first clean check after the notes are in: reply in one or two sentences. Do not inspect, re-check or polish a clean diagram, and do not add things the brief did not ask for.
+6. The budget is a fixed number of tool calls per turn; a draft, two appends and three fix rounds fit. If the budget is near, write the best source you have and say what is left.
 `;
 
 /** Rewrites the skill's CLI commands as tool names. */
@@ -47,18 +47,18 @@ function toolify(md: string): string {
     )
     .replace(
       /When the check is clean, `kashika render file\.kash -o file\.png` and look at the picture\./g,
-      "When the check is clean, confirm with `inspect` that every arrow points the right way and the right boxes connect.",
+      "When the check is clean, you are done.",
     )
     .replace(/`kashika inspect file\.kash <ids>`/g, "`inspect([ids])`")
     .replace(/`kashika inspect file\.kash <id>`/g, "`inspect([id])`")
     .replace(/`inspect file\.kash <id>`/g, "`inspect([id])`")
     .replace(
       /\*\*Render and look:\*\* `kashika render[^\n]*/g,
-      "**Review:** you cannot see the render. Use `inspect` to confirm arrows point the right way, the right boxes connect and spacing is even, then check again.",
+      "**Done:** when the check is clean, reply. You cannot see the render, and `inspect` is for fixing a finding, not for admiring a clean diagram.",
     )
     .replace(
       /Then render and look, since a clean check is not a good diagram\./g,
-      "A clean check is not a good diagram, so also confirm the structure with `inspect`.",
+      "A clean check means you are done.",
     )
     .replace(
       /Errors stop `render` \(unless `--force`\) and are listed first/g,

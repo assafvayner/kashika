@@ -22,6 +22,30 @@ export const TOOL_DEFS: ToolDef[] = [
       additionalProperties: false,
     },
   },
+  {
+    name: "edit_source",
+    description:
+      "Edit the current .kash source in place and get the check report back. Each edit replaces one exact occurrence of `find` with `replace` (empty `replace` deletes it); `append` adds lines at the end. Nothing is applied if an edit does not match exactly once. Much cheaper than write_source for fixes and additions.",
+    parameters: {
+      type: "object",
+      properties: {
+        edits: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              find: { type: "string", description: "Exact text that occurs once in the source." },
+              replace: { type: "string" },
+            },
+            required: ["find", "replace"],
+            additionalProperties: false,
+          },
+        },
+        append: { type: "string", description: "Lines to add at the end of the source." },
+      },
+      additionalProperties: false,
+    },
+  },
   { name: "check", description: "The check report for the current source.", parameters: NO_ARGS },
   {
     name: "inspect",
@@ -108,6 +132,39 @@ const num = (a: Args, k: string): number | undefined => {
 
 const STYLES = ["corner", "arc", "bezier"] as const;
 
+/** The check report, with a nudge to fix every finding in one round. */
+function report(engine: Engine, source: string): string {
+  const text = engine.check(source).text;
+  return /\b0 errors, 0 warnings\b/.test(text)
+    ? text
+    : `${text}\nFix all of these in one edit_source call, then read the new report.`;
+}
+
+/** Applies the edits in order; returns the new source or an `error:` line, applying nothing. */
+function applyEdits(source: string, args: Args): string {
+  const raw = args["edits"];
+  const edits = Array.isArray(raw) ? (raw as unknown[]) : [];
+  const append = str(args, "append");
+  if (edits.length === 0 && append === undefined)
+    return "error: edit_source needs `edits` (a list of {find, replace}) or `append`";
+  let out = source;
+  for (const [i, e] of edits.entries()) {
+    const o = typeof e === "object" && e !== null ? (e as Args) : {};
+    const find = str(o, "find");
+    const replace = str(o, "replace") ?? "";
+    if (find === undefined || find === "") return `error: edit ${i + 1} needs a non-empty \`find\``;
+    const first = out.indexOf(find);
+    if (first === -1) return `error: edit ${i + 1}: \`find\` is not in the source; nothing applied`;
+    if (out.indexOf(find, first + find.length) !== -1)
+      return `error: edit ${i + 1}: \`find\` occurs more than once; include more context; nothing applied`;
+    out = out.slice(0, first) + replace + out.slice(first + find.length);
+  }
+  if (append !== undefined && append !== "") {
+    out = `${out.replace(/\n*$/, "")}\n${append.replace(/\n*$/, "")}\n`;
+  }
+  return out;
+}
+
 /** Runs one tool and returns its text result; errors are returned as `error: ...` text for the model. */
 export function runTool(engine: Engine, doc: Document, name: string, args: Args): string {
   try {
@@ -118,7 +175,13 @@ export function runTool(engine: Engine, doc: Document, name: string, args: Args)
         const source = str(args, "source");
         if (source === undefined) return "error: write_source needs a `source` string";
         doc.set(source, "agent");
-        return engine.check(source).text;
+        return report(engine, source);
+      }
+      case "edit_source": {
+        const source = applyEdits(doc.source, args);
+        if (source.startsWith("error: ")) return source;
+        doc.set(source, "agent");
+        return report(engine, source);
       }
       case "check":
         return engine.check(doc.source).text;

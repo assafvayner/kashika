@@ -30,7 +30,8 @@ function summarize(name: string, args: string, result: string): string {
   const first = result.split("\n").find((l) => l.trim() !== "") ?? "";
   const m = /(\d+) errors?, (\d+) warnings?/.exec(result);
   const tail = m ? m[0] : first.slice(0, 80);
-  return `[${name}${name === "write_source" ? "" : ` ${args.slice(0, 60)}`}: ${tail}]`;
+  const quiet = name === "write_source" || name === "edit_source";
+  return `[${name}${quiet ? "" : ` ${args.slice(0, 60)}`}: ${tail}]`;
 }
 
 export class Agent {

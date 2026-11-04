@@ -31,6 +31,34 @@ describe("runTool", () => {
     expect(d.source).toContain("line ab");
     expect(out).toContain("0 errors, 0 warnings");
   });
+  it("edit_source applies exact edits and appends, or applies nothing", () => {
+    const d = doc();
+    const out = runTool(engine, d, "edit_source", {
+      edits: [{ find: 'box b "B" at (200,20)', replace: 'box b "Bee" at (200,20)' }],
+      append: "line ab a.right -> b.left",
+    });
+    expect(d.source).toContain('"Bee"');
+    expect(d.source).toMatch(/line ab a\.right -> b\.left\n$/);
+    expect(out).toContain("0 errors, 0 warnings");
+    expect(out).not.toContain("Fix all of these");
+    const before = d.source;
+    expect(runTool(engine, d, "edit_source", { edits: [{ find: "zzz", replace: "" }] })).toMatch(
+      /^error: edit 1: `find` is not in the source/,
+    );
+    expect(
+      runTool(engine, d, "edit_source", {
+        edits: [
+          { find: "box a", replace: "box a" },
+          { find: "size (80,40)", replace: "" },
+        ],
+      }),
+    ).toMatch(/^error: edit 2: `find` occurs more than once/);
+    expect(runTool(engine, d, "edit_source", {})).toMatch(/^error: edit_source needs/);
+    expect(d.source).toBe(before);
+    expect(
+      runTool(engine, d, "edit_source", { edits: [{ find: "line ab", replace: "line ab zz" }] }),
+    ).toMatch(/Fix all of these in one edit_source call/);
+  });
   it("read_source, check, inspect, route, measure, ref, icons", () => {
     const d = doc();
     expect(runTool(engine, d, "read_source", {})).toBe(SRC);
@@ -63,6 +91,7 @@ describe("runTool", () => {
   it("every tool has a definition", () => {
     expect(TOOL_DEFS.map((t) => t.name).sort()).toEqual([
       "check",
+      "edit_source",
       "icons",
       "inspect",
       "measure",
