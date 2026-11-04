@@ -1,11 +1,26 @@
-import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { render as tsRender } from "../src/wasm-api.js";
 
-const ROOT = join(import.meta.dirname, "../..");
+/// Whether this is the `tsc` output under `dist/` (plain JavaScript) or the source run through `tsx`.
+const COMPILED = import.meta.filename.endsWith(".js");
+const ROOT = repoRoot(import.meta.dirname);
+const WASM_API = COMPILED
+  ? join(import.meta.dirname, "../src/wasm-api.js")
+  : join(import.meta.dirname, "../src/wasm-api.ts");
+
+function repoRoot(from: string): string {
+  let dir = from;
+  while (!existsSync(join(dir, "Cargo.toml"))) {
+    const parent = dirname(dir);
+    if (parent === dir) throw new Error(`no Cargo.toml above ${from}`);
+    dir = parent;
+  }
+  return dir;
+}
 const WASM_PKG = join(ROOT, "crates/kashika-wasm/pkg/kashika_wasm.js");
 const ITERATIONS = Number(process.env.BENCH_ITERATIONS ?? 20);
 const WARMUP = 3;
@@ -78,11 +93,14 @@ function coldStart(which: "wasm" | "ts", file: string): number {
   const script =
     which === "wasm"
       ? `const t=process.hrtime.bigint();const w=require(${JSON.stringify(WASM_PKG)});w.render(require("fs").readFileSync(${JSON.stringify(file)},"utf8"),false);console.log(Number(process.hrtime.bigint()-t)/1e6)`
-      : `const t=process.hrtime.bigint();const {render}=await import(${JSON.stringify(join(import.meta.dirname, "../src/wasm-api.ts"))});render(require("fs").readFileSync(${JSON.stringify(file)},"utf8"),false);console.log(Number(process.hrtime.bigint()-t)/1e6)`;
+      : `const t=process.hrtime.bigint();const {render}=await import(${JSON.stringify(WASM_API)});render(require("fs").readFileSync(${JSON.stringify(file)},"utf8"),false);console.log(Number(process.hrtime.bigint()-t)/1e6)`;
+  const module = `const require=(await import("node:module")).createRequire(import.meta.url);${script}`;
   const args =
     which === "wasm"
       ? ["-e", script]
-      : ["--import", "tsx/esm", "--input-type=module", "-e", `const require=(await import("node:module")).createRequire(import.meta.url);${script}`];
+      : COMPILED
+        ? ["--input-type=module", "-e", module]
+        : ["--import", "tsx/esm", "--input-type=module", "-e", module];
   const run = spawnSync(process.execPath, args, { cwd: join(ROOT, "ts"), encoding: "utf8" });
   if (run.status !== 0) throw new Error(`${which} cold start failed:\n${run.stderr}`);
   return Number(run.stdout.trim());
@@ -121,7 +139,9 @@ function main(): void {
   const cold = { wasm: coldStart("wasm", upload), ts: coldStart("ts", upload) };
 
   const lines: string[] = [];
-  lines.push("# kashika-wasm vs TypeScript: `render(src, false)`");
+  lines.push(
+    `# kashika-wasm vs TypeScript (${COMPILED ? "compiled to JavaScript with tsc" : "source via tsx"}): \`render(src, false)\``,
+  );
   lines.push("");
   lines.push(
     `Node ${process.version}, ${process.platform} ${process.arch}, wasm ${wasm.version()}, ${ITERATIONS} iterations after ${WARMUP} warm-ups, median and p90 wall time in ms.`,
@@ -145,11 +165,11 @@ function main(): void {
   lines.push(`Sum of medians: wasm ${fmt(wasmTotal)} ms, ts ${fmt(tsTotal)} ms (ratio ${(tsTotal / wasmTotal).toFixed(2)}).`);
   lines.push("");
   lines.push(
-    `Cold start (fresh process, load + first render of \`examples/upload/upload.kash\`): wasm ${fmt(cold.wasm)} ms, ts ${fmt(cold.ts)} ms (the TS number includes tsx transpilation of the sources and parsing the four fonts).`,
+    `Cold start (fresh process, load + first render of \`examples/upload/upload.kash\`): wasm ${fmt(cold.wasm)} ms, ts ${fmt(cold.ts)} ms (the TS number includes ${COMPILED ? "loading the compiled modules" : "tsx transpilation of the sources"} and parsing the four fonts).`,
   );
   lines.push("");
   const report = lines.join("\n");
-  writeFileSync(join(import.meta.dirname, "results.md"), report);
+  writeFileSync(join(ROOT, "ts/bench", COMPILED ? "results-compiled.md" : "results.md"), report);
   console.log(report);
 }
 

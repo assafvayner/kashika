@@ -3,7 +3,9 @@
   "version": "0.1.0-dev0",
   "private": true,
   "type": "module",
-  "bin": { "kashika": "bin/kashika.js" },
+  "bin": {
+    "kashika": "bin/kashika.js"
+  },
   "scripts": {
     "check": "tsc --noEmit",
     "test": "vitest run",
@@ -12,7 +14,9 @@
     "gen-icons": "tsx scripts/gen-icons.ts",
     "parity": "tsx scripts/test-parity.ts",
     "fmt": "prettier --write src test bench scripts bin",
-    "fmt:check": "prettier --check src test bench scripts bin"
+    "fmt:check": "prettier --check src test bench scripts bin",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && cp -R src/text/fonts dist/src/text/ && cp src/model/icons/bundled.json dist/src/model/icons/ && cp -R src/cli/ref dist/src/cli/",
+    "bench:compiled": "npm run build && node dist/bench/bench.js"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
