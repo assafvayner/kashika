@@ -60,7 +60,7 @@ fn count(diags: &[Diagnostic], severity: Severity) -> usize {
         .count()
 }
 
-/// `render` as a JSON string: `{svg, errors, warnings, diagnostics}`.
+/// `render` as a JSON string: `{svg, errors, warnings, diagnostics, elements}`.
 #[wasm_bindgen(js_name = render)]
 pub fn render_json(src: &str, force: bool) -> String {
     json(&render(src, force))

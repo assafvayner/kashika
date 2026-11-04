@@ -12,11 +12,13 @@
   let projectsOpen = $state(false);
   let shared = $state<"idle" | "copied" | "failed">("idle");
   let shareUrl = $state<string | null>(null);
+  let pngScale = $state(2);
   let fileInput = $state<HTMLInputElement | null>(null);
 
   async function share() {
-    const url = `${location.origin}${location.pathname}#${await encodeShare(app.doc.source)}`;
+    let url = "";
     try {
+      url = `${location.origin}${location.pathname}#${await encodeShare(app.doc.source)}`;
       await navigator.clipboard.writeText(url);
       shared = "copied";
       shareUrl = null;
@@ -28,7 +30,7 @@
   }
 
   function title() {
-    return app.doc.title.replace(/[^\w.-]+/g, "_") || "diagram";
+    return app.title.replace(/[^\w.-]+/g, "_") || "diagram";
   }
 
   function picked(e: Event) {
@@ -43,13 +45,18 @@
   <div class="left">
     <strong>kashika</strong>
     <div class="projects">
-      <button onclick={() => (projectsOpen = !projectsOpen)}>{app.doc.title} ▾</button>
+      <button onclick={() => (projectsOpen = !projectsOpen)}>{app.title} ▾</button>
       {#if projectsOpen}<ProjectsMenu {app} onclose={() => (projectsOpen = false)} />{/if}
     </div>
     <button onclick={() => fileInput?.click()}>Import</button>
     <input bind:this={fileInput} type="file" accept=".kash" hidden onchange={picked} />
     <button onclick={() => exportSvg(title(), app.doc.result.svg ?? "")}>SVG</button>
-    <button onclick={() => void exportPng(title(), app.doc.result.svg ?? "")}>PNG</button>
+    <button onclick={() => void exportPng(title(), app.doc.result.svg ?? "", pngScale)}>PNG</button>
+    <select bind:value={pngScale} title="PNG scale" aria-label="PNG scale">
+      <option value={1}>1x</option>
+      <option value={2}>2x</option>
+      <option value={4}>4x</option>
+    </select>
     <button onclick={() => exportKash(title(), app.doc.source)}>.kash</button>
     <button onclick={() => void share()}
       >{shared === "copied" ? "Link copied" : shared === "failed" ? "Copy failed" : "Share"}</button

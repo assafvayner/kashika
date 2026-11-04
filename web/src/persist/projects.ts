@@ -10,6 +10,8 @@ export interface ChatEntry {
 export interface Project {
   id: string;
   title: string;
+  /** Set by rename; overrides the diagram title when present. */
+  customTitle?: string;
   source: string;
   chat: ChatEntry[];
   /** The agent's collapsed history, so a reloaded project keeps its context. */

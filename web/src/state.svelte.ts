@@ -55,6 +55,17 @@ export class AppState {
     return this.settings.custom.url === "" ? null : new CustomProvider(this.settings.custom);
   }
 
+  get title(): string {
+    return this.project.customTitle ?? this.doc.title;
+  }
+
+  rename(title: string): void {
+    const customTitle = title.trim();
+    const { customTitle: _drop, ...rest } = this.project;
+    this.project = customTitle === "" ? rest : { ...rest, customTitle };
+    this.scheduleSave();
+  }
+
   get model(): string | null {
     return this.settings.provider === "huggingface"
       ? (this.settings.hfModel ?? DEFAULT_MODEL)
@@ -169,7 +180,7 @@ export class AppState {
   async saveNow(): Promise<void> {
     const record: Project = $state.snapshot({
       ...this.project,
-      title: this.doc.title,
+      title: this.project.customTitle ?? this.doc.title,
       source: this.doc.source,
       selection: this.doc.selection,
       history: this.agent?.history ?? this.project.history,

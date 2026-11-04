@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Project } from "../persist/projects.js";
+  import { type Project, loadProject, saveProject } from "../persist/projects.js";
   import type { AppState } from "../state.svelte.js";
 
   let { app, onclose }: { app: AppState; onclose: () => void } = $props();
@@ -18,6 +18,39 @@
   function openProject(p: Project) {
     if (p.id !== app.project.id) app.open(p);
     onclose();
+  }
+
+  let editing = $state<string | null>(null);
+
+  function startEdit(p: Project, ev: MouseEvent) {
+    ev.stopPropagation();
+    editing = p.id;
+  }
+
+  async function commit(p: Project, value: string) {
+    if (editing !== p.id) return;
+    editing = null;
+    const customTitle = value.trim();
+    if (p.id === app.project.id) {
+      app.rename(customTitle);
+      projects = projects.map((q) => (q.id === p.id ? { ...q, title: app.title } : q));
+      return;
+    }
+    const rec = await loadProject(p.id);
+    if (rec === null) return;
+    const { customTitle: _drop, ...rest } = rec;
+    const next: Project = customTitle === "" ? rest : { ...rest, customTitle };
+    next.title = customTitle || p.title;
+    await saveProject(next);
+    projects = projects.map((q) => (q.id === p.id ? next : q));
+  }
+
+  function editKey(p: Project, ev: KeyboardEvent) {
+    if (ev.key === "Enter") void commit(p, (ev.currentTarget as HTMLInputElement).value);
+    else if (ev.key === "Escape") {
+      ev.stopPropagation();
+      editing = null;
+    }
   }
 
   function onWindowClick(ev: MouseEvent) {
@@ -42,7 +75,21 @@
   <ul>
     {#each projects as p (p.id)}
       <li class:current={p.id === app.project.id}>
-        <button class="open" onclick={() => openProject(p)}>{p.title}</button>
+        {#if editing === p.id}
+          <!-- svelte-ignore a11y_autofocus -->
+          <input
+            class="open"
+            autofocus
+            value={p.id === app.project.id ? app.title : p.title}
+            onkeydown={(ev) => editKey(p, ev)}
+            onblur={(ev) => void commit(p, ev.currentTarget.value)}
+          />
+        {:else}
+          <button class="open" onclick={() => openProject(p)}
+            >{p.id === app.project.id ? app.title : p.title}</button
+          >
+        {/if}
+        <button title="Rename" onclick={(ev) => startEdit(p, ev)}>✎</button>
         <button title="Duplicate" onclick={() => duplicate(p)}>⧉</button>
         <button title="Delete" onclick={() => void remove(p)}>🗑</button>
       </li>

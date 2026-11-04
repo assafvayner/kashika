@@ -89,6 +89,21 @@ describe("AppState", () => {
     expect((await stored("p1"))!.history).toEqual([{ role: "user", content: "hi" }]);
   });
 
+  it("rename persists across saves and clearing returns to the diagram title", async () => {
+    const app = new TestState(engine, session);
+    app.open({ id: "r1", title: "x", source: SRC, chat: [], selection: null, updated: 1 });
+    app.rename("Mine");
+    await app.saveNow();
+    expect(app.title).toBe("Mine");
+    expect((await stored("r1"))!.title).toBe("Mine");
+    expect((await stored("r1"))!.customTitle).toBe("Mine");
+    app.rename("");
+    await app.saveNow();
+    expect(app.title).toBe("t");
+    expect((await stored("r1"))!.title).toBe("t");
+    expect((await stored("r1"))!.customTitle).toBeUndefined();
+  });
+
   it("keeps the turn's history after the settings change", async () => {
     const app = new TestState(engine, session);
     app.fake = scripted(turns());
