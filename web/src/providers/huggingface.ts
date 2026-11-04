@@ -1,5 +1,11 @@
 import { streamChat } from "./chat.js";
-import type { ChatEvent, ChatRequest, ModelRow, Provider } from "./types.js";
+import {
+  type ChatEvent,
+  type ChatRequest,
+  type ModelRow,
+  type Provider,
+  ProviderError,
+} from "./types.js";
 
 export const ROUTER = "https://router.huggingface.co/v1";
 export const HUB = "https://huggingface.co";
@@ -41,18 +47,22 @@ export class HuggingFaceProvider implements Provider {
     try {
       const res = await this.fetchImpl(
         `${HUB}/api/models?inference_provider=all&filter=conversational&sort=trendingScore&limit=200`,
+        { signal: AbortSignal.timeout(5000) },
       );
-      if (res.ok) trending = (await res.json()) as { id: string }[];
+      if (res.ok) {
+        const json: unknown = await res.json();
+        if (Array.isArray(json)) trending = json as { id: string }[];
+      }
     } catch {
       trending = [];
     }
     return rankModels(router, trending);
   }
 
-  chat(req: ChatRequest, signal: AbortSignal): AsyncIterable<ChatEvent> {
+  async *chat(req: ChatRequest, signal: AbortSignal): AsyncGenerator<ChatEvent> {
     const token = this.token();
-    if (token === null) throw new Error("not logged in");
-    return streamChat(
+    if (token === null) throw new ProviderError("not logged in", 401);
+    yield* streamChat(
       { url: ROUTER, headers: { authorization: `Bearer ${token}` } },
       req,
       signal,

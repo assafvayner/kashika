@@ -2,7 +2,7 @@ import { streamChat } from "./chat.js";
 import type { ChatEvent, ChatRequest, ModelRow, Provider } from "./types.js";
 
 export interface CustomConfig {
-  /** Base URL of an OpenAI-compatible API, with or without a trailing slash. */
+  /** Base URL including the API prefix, e.g. https://api.example.com/v1. */
   url: string;
   token: string;
   model: string;
@@ -11,15 +11,20 @@ export interface CustomConfig {
 export class CustomProvider implements Provider {
   readonly id = "openai-compatible";
   private readonly url: string;
+  private readonly token: string;
   constructor(
     private readonly config: CustomConfig,
     private readonly fetchImpl: typeof fetch = fetch,
   ) {
-    this.url = config.url.replace(/\/+$/, "");
+    this.url = config.url
+      .trim()
+      .replace(/\/+$/, "")
+      .replace(/\/chat\/completions$/, "");
+    this.token = config.token.trim();
   }
 
   private headers(): Record<string, string> {
-    return this.config.token === "" ? {} : { authorization: `Bearer ${this.config.token}` };
+    return this.token === "" ? {} : { authorization: `Bearer ${this.token}` };
   }
 
   async listModels(): Promise<ModelRow[]> {

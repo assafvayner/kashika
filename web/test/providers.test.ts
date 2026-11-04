@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { CustomProvider } from "../src/providers/custom.js";
-import { DEFAULT_MODEL, HuggingFaceProvider, rankModels } from "../src/providers/huggingface.js";
+import { HuggingFaceProvider, rankModels } from "../src/providers/huggingface.js";
 
 const router = {
   data: [
@@ -25,27 +25,47 @@ describe("rankModels", () => {
     expect(rows.map((r) => r.id)).toEqual(["org/c", "org/a", "org/b"]);
     expect(rows[0]!.provider).toBe("p");
   });
-  it("falls back to the default when there is no trending list", () => {
+  it("orders unranked models alphabetically", () => {
     const rows = rankModels(router, []);
     expect(rows.map((r) => r.id)).toEqual(["org/a", "org/b", "org/c"]);
-    expect(DEFAULT_MODEL).toBe("deepseek-ai/DeepSeek-V4.1-Flash-1017");
   });
 });
 
 describe("HuggingFaceProvider", () => {
-  it("lists through both APIs and tolerates a failing trending call", async () => {
+  it("ranks by the Hub trending list", async () => {
     const fetchImpl: typeof fetch = async (url) => {
       const u = String(url);
       if (u.startsWith("https://router.huggingface.co/v1/models")) return Response.json(router);
+      expect(u).toContain("inference_provider=all");
+      expect(u).toContain("sort=trendingScore");
+      return Response.json([{ id: "org/c" }]);
+    };
+    const p = new HuggingFaceProvider(() => "tok", fetchImpl);
+    expect((await p.listModels()).map((r) => r.id)).toEqual(["org/c", "org/a", "org/b"]);
+  });
+  it("tolerates a failing trending call", async () => {
+    const fetchImpl: typeof fetch = async (url) => {
+      if (String(url).startsWith("https://router.huggingface.co/v1/models"))
+        return Response.json(router);
       return new Response("down", { status: 500 });
     };
     const p = new HuggingFaceProvider(() => "tok", fetchImpl);
     expect((await p.listModels()).map((r) => r.id)).toEqual(["org/a", "org/b", "org/c"]);
   });
+  it("rejects chat on first next() with 401 when logged out", async () => {
+    const p = new HuggingFaceProvider(
+      () => null,
+      async () => new Response("x"),
+    );
+    const it = p
+      .chat({ model: "m", messages: [], tools: [] }, new AbortController().signal)
+      [Symbol.asyncIterator]();
+    await expect(it.next()).rejects.toMatchObject({ status: 401 });
+  });
   it("sends the bearer token to the router", async () => {
     let auth = "";
     const fetchImpl: typeof fetch = async (_u, init) => {
-      auth = (init!.headers as Record<string, string>)["authorization"]!;
+      auth = new Headers(init!.headers).get("authorization")!;
       return new Response("x", { status: 500 });
     };
     const p = new HuggingFaceProvider(() => "tok", fetchImpl);
@@ -71,5 +91,20 @@ describe("CustomProvider", () => {
         await new CustomProvider({ url: "https://e/v1", token: "", model: "z" }, bad).listModels()
       ).map((r) => r.id),
     ).toEqual(["z"]);
+  });
+  it("normalizes a pasted chat completions URL and sends the trimmed token", async () => {
+    let seen = "";
+    let auth: string | null = null;
+    const f: typeof fetch = async (url, init) => {
+      seen = String(url);
+      auth = new Headers(init!.headers).get("authorization");
+      return Response.json({ data: [{ id: "x" }] });
+    };
+    await new CustomProvider(
+      { url: "https://e/v1/chat/completions/", token: " t ", model: "" },
+      f,
+    ).listModels();
+    expect(seen).toBe("https://e/v1/models");
+    expect(auth).toBe("Bearer t");
   });
 });
