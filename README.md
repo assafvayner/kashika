@@ -1,4 +1,9 @@
-# Kashika
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo/kashika-logo-dark.svg">
+    <img src="assets/logo/kashika-logo.svg" alt="Kashika" height="80">
+  </picture>
+</h1>
 
 A text-to-diagram language for technical designs, written mainly by AI coding agents. There is no auto-layout: you place every box and route every line, and `kashika` checks the geometry for you.
 

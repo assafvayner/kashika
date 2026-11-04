@@ -1,0 +1,5 @@
+shape head {
+  path "M 0.9 0.05 Q 1 0 1 0.1 L 1 0.9 Q 1 1 0.9 0.95 L 0.08 0.54 Q 0 0.5 0.08 0.46 Z"
+}
+style ink { fill=white stroke=none }
+style seal { fill=#c0262d stroke=none radius=26 }
