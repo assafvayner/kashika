@@ -4,12 +4,12 @@ pub mod api;
 mod fmt_cmd;
 pub mod icons;
 pub mod inspect;
-pub mod measure;
-pub mod output;
-pub mod ref_cmd;
+pub(crate) mod measure;
+pub(crate) mod output;
+pub(crate) mod ref_cmd;
 pub mod report;
-pub mod route_cmd;
-pub mod term;
+pub(crate) mod route_cmd;
+pub(crate) mod term;
 
 use std::hash::BuildHasher;
 use std::io::{Read, Write};
@@ -212,6 +212,8 @@ enum FailOn {
     Never,
 }
 
+/// The binary's entry point.
+#[doc(hidden)]
 pub fn main() -> ExitCode {
     let cli = match Cli::try_parse() {
         Ok(cli) => cli,
