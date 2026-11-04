@@ -14,10 +14,12 @@ In dependency order (`crates/`):
 - `kashika-check`: warning lints (one file each under `src/lints/`), suppression, metrics, free intervals and ports, built on a shared `Ctx` of shape polygons and flattened line pieces. `Ctx::boxes()` is boxes and images: the opaque shapes lines must avoid.
 - `kashika-route`: `kashika route` path suggestions. Each candidate is compiled as a real `line` and scored with `kashika_check::check`, so it ranks by the `cross` plus `group-transit` findings (each counted alike, listed apart), then the `near`/`shared-segment` findings `check` reports (`through` drops it), then segments and length.
 - `kashika-render`: `Scene` to SVG, PNG, JPEG and WebP (resvg, jpeg-encoder, image-webp), with images and icons embedded as `data:` URIs, and the `render --force`/`--debug` overlay.
-- `kashika-wasm`: WebAssembly bindings (`render`, `version`) that check and render a source string to SVG with no file system, for editors and Markdown previews. Not published to crates.io; build the npm package with `wasm-pack build crates/kashika-wasm --target nodejs`.
-- `kashika-cli`: the `kashika` package and binary (`check`, `render`, `inspect`, `route`, `measure`, `fmt`, `icons`, `ref`), text and JSON reports. `ref` pages are Markdown in `crates/kashika-cli/ref/`.
+- `kashika-wasm`: WebAssembly bindings that check, render, inspect, route, measure and format a source string (plus `ref`, `icons`, `elements`) with no file system, for editors, Markdown previews and the web app. They wrap `kashika::api`. Not published to crates.io; build the npm package with `wasm-pack build crates/kashika-wasm --target nodejs`.
+- `kashika-cli`: the `kashika` package, a library (`src/lib.rs`, with the pure string-in, value-out `src/api.rs` that `kashika-wasm` calls) and the binary (`check`, `render`, `inspect`, `route`, `measure`, `fmt`, `icons`, `ref`), text and JSON reports. `ref` pages are Markdown in `crates/kashika-cli/ref/`.
 
 `editors/vscode/` is the VS Code extension: it renders ```` ```kashika ```` Markdown fences through `kashika-wasm` and highlights `.kash` files. Its README has the npm commands.
+
+`web/` is the web app, a Vite + Svelte 5 static Hugging Face Space where an in-browser agent writes `.kash` source through `kashika-wasm`. Its README has the npm commands and `deploy.sh`.
 
 ## Commands
 
