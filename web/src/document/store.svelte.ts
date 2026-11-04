@@ -6,7 +6,7 @@ const HISTORY = 100;
 
 export class Document {
   source = $state("");
-  result = $state<RenderResult>({
+  result = $state.raw<RenderResult>({
     svg: null,
     errors: 0,
     warnings: 0,
@@ -16,7 +16,7 @@ export class Document {
   selection = $state<string | null>(null);
   /** Bumped on every change, for autosave. */
   version = $state(0);
-  private history: string[] = [];
+  private history = $state.raw<{ source: string; origin: Origin }[]>([]);
 
   constructor(
     private readonly engine: Engine,
@@ -32,21 +32,23 @@ export class Document {
 
   get title(): string {
     const m = /^\s*diagram\s+"((?:[^"\\]|\\.)*)"/m.exec(this.source);
-    return m?.[1] ? m[1] : "Untitled";
+    const title = m?.[1]?.replace(/\\n/g, " ").replace(/\\(.)/g, "$1");
+    return title ? title : "Untitled";
   }
 
   /** Replaces the source and re-renders. Every change goes through here. */
-  set(source: string, _origin: Origin): RenderResult {
+  set(source: string, origin: Origin): RenderResult {
     if (source === this.source) return this.result;
-    this.history.push(this.source);
-    if (this.history.length > HISTORY) this.history.shift();
+    this.history = [...this.history.slice(-(HISTORY - 1)), { source: this.source, origin }];
     this.apply(source);
     return this.result;
   }
 
   undo(): void {
-    const prev = this.history.pop();
-    if (prev !== undefined) this.apply(prev);
+    const prev = this.history.at(-1);
+    if (prev === undefined) return;
+    this.history = this.history.slice(0, -1);
+    this.apply(prev.source);
   }
 
   private apply(source: string): void {

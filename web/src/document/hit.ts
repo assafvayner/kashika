@@ -6,7 +6,7 @@ export function hitTest(elements: readonly Elem[], x: number, y: number): string
   for (const e of elements) {
     const [[x1, y1], [x2, y2]] = e.bbox;
     if (x < x1 || x > x2 || y < y1 || y > y2) continue;
-    if (best === null || e.depth > best.depth) best = e;
+    if (best === null || e.depth >= best.depth) best = e;
   }
   return best?.id ?? null;
 }
