@@ -1,4 +1,10 @@
-# Kashika web app
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="../assets/logo/kashika-logo-dark.svg">
+    <img src="../assets/logo/kashika-logo.svg" alt="Kashika" height="60">
+  </picture>
+  web app
+</h1>
 
 An agent-first diagram tool, deployed as a Hugging Face static Space. The user describes a diagram in chat; an in-browser agent writes Kashika source through `kashika-wasm` and the canvas shows the result. There is no server: models are called from the browser through Hugging Face inference providers (after OAuth login) or any OpenAI-compatible endpoint.
 

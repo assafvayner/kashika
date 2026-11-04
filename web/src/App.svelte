@@ -1,4 +1,5 @@
 <script lang="ts">
+  import mark from "../../assets/logo/kashika-mark.svg";
   import { onMount } from "svelte";
 
   import { completeLogin, login } from "./auth.js";
@@ -108,7 +109,7 @@
   </div>
   {#if pickerOpen}<ModelPicker {app} onclose={() => (pickerOpen = false)} />{/if}
 {:else}
-  <p class="loading">Loading…</p>
+  <p class="loading"><img src={mark} alt="" width="48" height="48" /> Loading…</p>
 {/if}
 
 <style>
@@ -146,6 +147,14 @@
   }
   .right {
     width: min(420px, 40%);
+  }
+  .loading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .loading img {
+    border-radius: 10px;
   }
   .loading,
   .error {

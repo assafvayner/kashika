@@ -1,4 +1,5 @@
 <script lang="ts">
+  import mark from "../../../assets/logo/kashika-mark.svg";
   import { login } from "../auth.js";
   import { exportKash, exportPng, exportSvg } from "../persist/export.js";
   import { encodeShare } from "../persist/share.js";
@@ -44,7 +45,10 @@
 
 <header>
   <div class="left">
-    <strong>kashika</strong>
+    <a class="brand" href="https://github.com/assafvayner/kashika" target="_blank" rel="noreferrer">
+      <img src={mark} alt="" width="22" height="22" />
+      <strong>kashika</strong>
+    </a>
     <div class="projects">
       <button onclick={() => (projectsOpen = !projectsOpen)}>{app.title} ▾</button>
       {#if projectsOpen}<ProjectsMenu {app} onclose={() => (projectsOpen = false)} />{/if}
@@ -88,6 +92,18 @@
 </header>
 
 <style>
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: inherit;
+    text-decoration: none;
+    margin-right: 4px;
+  }
+  .brand img {
+    display: block;
+    border-radius: 5px;
+  }
   header {
     display: flex;
     justify-content: space-between;
