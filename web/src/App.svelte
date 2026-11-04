@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { completeLogin } from "./auth.js";
+  import { completeLogin, login } from "./auth.js";
   import { loadEngine } from "./engine/index.js";
   import { listProjects } from "./persist/projects.js";
   import { decodeShare } from "./persist/share.js";
@@ -98,6 +98,8 @@
           onsend={(t) => void app?.send(t)}
           onstop={() => app?.stop()}
           error={app.lastError}
+          onlogin={() => void login()}
+          onpick={() => (pickerOpen = true)}
           onretry={() => void app?.retry()}
           onclear={() => app && (app.doc.selection = null)}
         />

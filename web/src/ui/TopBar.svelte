@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { login } from "../auth.js";
   import { exportKash, exportPng, exportSvg } from "../persist/export.js";
   import { encodeShare } from "../persist/share.js";
   import type { AppState } from "../state.svelte.js";
@@ -80,6 +81,8 @@
     {#if app.session}
       <button onclick={() => app.logout()} title="Log out">{app.session.name || "logged in"}</button
       >
+    {:else}
+      <button onclick={() => void login()}>Log in</button>
     {/if}
   </div>
 </header>

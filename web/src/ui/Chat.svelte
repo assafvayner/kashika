@@ -11,6 +11,8 @@
     onclear,
     error = null,
     onretry = () => {},
+    onlogin = () => {},
+    onpick = () => {},
   }: {
     chat: ChatEntry[];
     running: boolean;
@@ -21,6 +23,8 @@
     onclear: () => void;
     error?: { message: string; status: number | null } | null;
     onretry?: () => void;
+    onlogin?: () => void;
+    onpick?: () => void;
   } = $props();
 
   let draft = $state("");
@@ -72,7 +76,11 @@
   </div>
   <div class="composer">
     {#if !ready}
-      <p class="hint">Log in or add an endpoint to start.</p>
+      <p class="hint">Not connected. Log in or add an endpoint to start.</p>
+      <div class="connect">
+        <button onclick={onlogin}>Log in with Hugging Face</button>
+        <button onclick={onpick}>Use a custom endpoint</button>
+      </div>
     {/if}
     {#if selection}
       <span class="chip"
@@ -161,6 +169,19 @@
     gap: 6px;
     padding: 8px;
     border-top: 1px solid var(--border);
+  }
+  .connect {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+  }
+  .connect button {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px;
+    background: var(--bg);
+    cursor: pointer;
   }
   .hint {
     width: 100%;

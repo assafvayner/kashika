@@ -129,3 +129,25 @@ describe("Chat retry", () => {
     expect(onretry).toHaveBeenCalled();
   });
 });
+
+describe("Chat login", () => {
+  it("offers login and custom endpoint when not ready", async () => {
+    const onlogin = vi.fn();
+    const onpick = vi.fn();
+    render(Chat, {
+      chat: [],
+      running: false,
+      ready: false,
+      selection: null,
+      onsend: () => {},
+      onstop: () => {},
+      onclear: () => {},
+      onlogin,
+      onpick,
+    });
+    await fireEvent.click(screen.getByText("Log in with Hugging Face"));
+    await fireEvent.click(screen.getByText("Use a custom endpoint"));
+    expect(onlogin).toHaveBeenCalled();
+    expect(onpick).toHaveBeenCalled();
+  });
+});

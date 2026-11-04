@@ -45,6 +45,7 @@ export async function completeLogin(): Promise<Session | null> {
 
 /** Starts the login. In a Space the client id and scopes come from the Space config; locally from env. */
 export async function login(): Promise<void> {
+  const popup = window.self !== window.top ? window.open("", "_blank") : null;
   const clientId = import.meta.env.DEV
     ? (import.meta.env["VITE_OAUTH_CLIENT_ID"] as string | undefined)
     : undefined;
@@ -52,9 +53,11 @@ export async function login(): Promise<void> {
     (import.meta.env.DEV
       ? (import.meta.env["VITE_OAUTH_REDIRECT_URL"] as string | undefined)
       : undefined) || location.origin + location.pathname;
-  location.href = await oauthLoginUrl({
+  const url = await oauthLoginUrl({
     clientId: clientId || undefined,
     redirectUrl,
     scopes: clientId ? "openid profile inference-api" : undefined,
   });
+  if (popup) popup.location.href = url;
+  else location.href = url;
 }

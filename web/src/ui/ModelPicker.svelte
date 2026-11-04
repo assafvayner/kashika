@@ -91,6 +91,10 @@
       {#if app.session === null}
         <p>Log in with Hugging Face to use inference providers.</p>
         <button onclick={() => void login()}>Log in</button>
+        <p class="muted">
+          Opens in a new tab when running inside huggingface.co; come back here or continue in the
+          new tab.
+        </p>
       {:else}
         <input placeholder="Search models" bind:value={search} />
         {#if hfErr}<p class="err">{hfErr}</p>{/if}
