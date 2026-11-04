@@ -25,7 +25,13 @@ export function clearSession(): void {
 
 /** Completes a login redirect if the URL carries one, storing the session and cleaning the URL. */
 export async function completeLogin(): Promise<Session | null> {
-  const r = await oauthHandleRedirectIfPresent();
+  let r;
+  try {
+    r = await oauthHandleRedirectIfPresent();
+  } catch {
+    history.replaceState(null, "", location.pathname + location.hash);
+    return loadSession();
+  }
   if (r === false) return loadSession();
   const s: Session = {
     token: r.accessToken,
@@ -39,11 +45,16 @@ export async function completeLogin(): Promise<Session | null> {
 
 /** Starts the login. In a Space the client id and scopes come from the Space config; locally from env. */
 export async function login(): Promise<void> {
-  const clientId = import.meta.env["VITE_OAUTH_CLIENT_ID"] as string | undefined;
-  const redirectUrl = import.meta.env["VITE_OAUTH_REDIRECT_URL"] as string | undefined;
+  const clientId = import.meta.env.DEV
+    ? (import.meta.env["VITE_OAUTH_CLIENT_ID"] as string | undefined)
+    : undefined;
+  const redirectUrl =
+    (import.meta.env.DEV
+      ? (import.meta.env["VITE_OAUTH_REDIRECT_URL"] as string | undefined)
+      : undefined) || location.origin + location.pathname;
   location.href = await oauthLoginUrl({
     clientId: clientId || undefined,
-    redirectUrl: redirectUrl || undefined,
+    redirectUrl,
     scopes: clientId ? "openid profile inference-api" : undefined,
   });
 }

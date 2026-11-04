@@ -11,7 +11,7 @@ import {
 } from "./persist/projects.js";
 import { type Settings, loadSettings, saveSettings } from "./persist/settings.js";
 import { CustomProvider } from "./providers/custom.js";
-import { HuggingFaceProvider } from "./providers/huggingface.js";
+import { DEFAULT_MODEL, HuggingFaceProvider } from "./providers/huggingface.js";
 import type { ModelRow, Provider } from "./providers/types.js";
 
 const STARTER = `diagram "Untitled"
@@ -32,6 +32,7 @@ export class AppState {
   models = $state<ModelRow[]>([]);
   modelsError = $state<string | null>(null);
   running = $state(false);
+  saveError = $state<string | null>(null);
   drawerOpen = $state(false);
   private agent: Agent | null = null;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -55,14 +56,14 @@ export class AppState {
 
   get model(): string | null {
     return this.settings.provider === "huggingface"
-      ? this.settings.hfModel
+      ? (this.settings.hfModel ?? DEFAULT_MODEL)
       : this.settings.custom.model || null;
   }
 
   updateSettings(patch: Partial<Settings>): void {
     this.settings = { ...this.settings, ...patch };
     saveSettings(this.settings);
-    this.agent = null;
+    this.dropAgent();
   }
 
   private dropExpiredSession(): void {
@@ -91,20 +92,29 @@ export class AppState {
   logout(): void {
     clearSession();
     this.session = null;
-    this.agent = null;
+    this.dropAgent();
+  }
+
+  private dropAgent(): void {
+    if (this.agent !== null) {
+      this.project = { ...this.project, history: [...this.agent.history] };
+      this.agent = null;
+    }
   }
 
   /** Opens a project into the document and chat. */
   open(p: Project): void {
-    if (this.saveTimer !== null) {
-      clearTimeout(this.saveTimer);
+    this.stop();
+    this.dropAgent();
+    if (this.saveTimer !== null || this.running) {
+      if (this.saveTimer !== null) clearTimeout(this.saveTimer);
       this.saveTimer = null;
-      void this.saveNow();
+      this.persist();
     }
+    this.running = false;
     this.project = p;
     this.doc = new Document(this.engine, p.source);
     this.doc.selection = p.selection;
-    this.agent = null;
   }
 
   newProject(source = STARTER): Project {
@@ -127,7 +137,18 @@ export class AppState {
 
   scheduleSave(): void {
     if (this.saveTimer !== null) clearTimeout(this.saveTimer);
-    this.saveTimer = setTimeout(() => void this.saveNow(), 500);
+    this.saveTimer = setTimeout(() => this.persist(), 500);
+  }
+
+  private persist(): void {
+    this.saveNow().then(
+      () => {
+        this.saveError = null;
+      },
+      (e: unknown) => {
+        this.saveError = e instanceof Error ? e.message : String(e);
+      },
+    );
   }
 
   async saveNow(): Promise<void> {
@@ -159,23 +180,27 @@ export class AppState {
       });
       this.agent.history = this.project.history ?? [];
     }
+    const id = this.project.id;
     this.running = true;
     const chat = [...this.project.chat, { role: "user", text } as ChatEntry];
     const reply: ChatEntry = { role: "assistant", text: "", steps: [] };
     chat.push(reply);
     this.project = { ...this.project, chat };
     const update = () => {
+      if (this.project.id !== id) return;
       this.project = { ...this.project, chat: [...chat] };
     };
     try {
       for await (const ev of this.agent.run(text)) {
         this.apply(reply, ev);
         update();
-        if (ev.type === "tool_result") this.scheduleSave();
+        if (ev.type === "tool_result" && this.project.id === id) this.scheduleSave();
       }
     } finally {
-      this.running = false;
-      this.scheduleSave();
+      if (this.project.id === id) {
+        this.running = false;
+        this.scheduleSave();
+      }
     }
   }
 
