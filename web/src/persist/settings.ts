@@ -21,11 +21,30 @@ export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw === null) return { ...DEFAULT_SETTINGS };
-    const v = JSON.parse(raw) as Partial<Settings>;
+    const v: unknown = JSON.parse(raw);
+    if (typeof v !== "object" || v === null) return { ...DEFAULT_SETTINGS };
+    const o = v as Record<string, unknown>;
+    const c =
+      typeof o.custom === "object" && o.custom !== null
+        ? (o.custom as Record<string, unknown>)
+        : {};
+    const str = (x: unknown, d: string) => (typeof x === "string" ? x : d);
+    const d = DEFAULT_SETTINGS;
     return {
-      ...DEFAULT_SETTINGS,
-      ...v,
-      custom: { ...DEFAULT_SETTINGS.custom, ...(v.custom ?? {}) },
+      provider:
+        o.provider === "huggingface" || o.provider === "openai-compatible"
+          ? o.provider
+          : d.provider,
+      hfModel: typeof o.hfModel === "string" || o.hfModel === null ? o.hfModel : d.hfModel,
+      custom: {
+        url: str(c.url, d.custom.url),
+        token: str(c.token, d.custom.token),
+        model: str(c.model, d.custom.model),
+      },
+      budget:
+        typeof o.budget === "number" && Number.isFinite(o.budget) && o.budget >= 1
+          ? o.budget
+          : d.budget,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };

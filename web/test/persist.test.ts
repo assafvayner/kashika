@@ -14,6 +14,11 @@ describe("share", () => {
     expect(await decodeShare("nothing")).toBeNull();
     expect(await decodeShare("k=!!!")).toBeNull();
   });
+
+  it("rejects input that decompresses past 1 MiB", async () => {
+    const frag = await encodeShare("a".repeat(2 * 1024 * 1024));
+    expect(await decodeShare(frag)).toBeNull();
+  });
 });
 
 describe("settings", () => {
@@ -24,6 +29,27 @@ describe("settings", () => {
     expect(loadSettings()).toMatchObject({ provider: "openai-compatible", budget: 5 });
     localStorage.setItem("kashika.settings", "{broken");
     expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it("falls back field by field on corrupt values", () => {
+    localStorage.setItem(
+      "kashika.settings",
+      JSON.stringify({
+        provider: "nope",
+        budget: "lots",
+        hfModel: 3,
+        custom: { url: 1, model: "m" },
+      }),
+    );
+    expect(loadSettings()).toEqual({
+      ...DEFAULT_SETTINGS,
+      custom: { ...DEFAULT_SETTINGS.custom, model: "m" },
+    });
+    localStorage.setItem(
+      "kashika.settings",
+      JSON.stringify({ budget: 0, provider: "openai-compatible" }),
+    );
+    expect(loadSettings()).toMatchObject({ budget: 20, provider: "openai-compatible" });
   });
 });
 
@@ -50,5 +76,21 @@ describe("projects", () => {
     await deleteProject("p1");
     expect((await listProjects()).map((p) => p.id)).toEqual(["p2"]);
     expect(await loadProject("p1")).toBeNull();
+  });
+
+  it("resolves after commit and rejects on un-clonable records", async () => {
+    await saveProject({ id: "p3", title: "T", source: "s", chat: [], selection: null, updated: 3 });
+    expect((await loadProject("p3"))?.source).toBe("s");
+    const bad = {
+      id: "p4",
+      title: "T",
+      source: "s",
+      chat: [],
+      selection: null,
+      updated: 4,
+      f: () => 1,
+    };
+    await expect(saveProject(bad)).rejects.toBeDefined();
+    expect(await loadProject("p4")).toBeNull();
   });
 });

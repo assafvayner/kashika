@@ -1,11 +1,32 @@
 const PREFIX = "k=";
 
+const MAX_DECODED = 1024 * 1024;
+
 async function pipe(
   bytes: Uint8Array<ArrayBuffer>,
   stream: CompressionStream | DecompressionStream,
+  max = Infinity,
 ): Promise<Uint8Array<ArrayBuffer>> {
-  const out = new Response(bytes).body!.pipeThrough(stream);
-  return new Uint8Array(await new Response(out).arrayBuffer());
+  const reader = new Response(bytes).body!.pipeThrough(stream).getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.length;
+    if (size > max) {
+      await reader.cancel();
+      throw new Error("too large");
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(size);
+  let at = 0;
+  for (const c of chunks) {
+    out.set(c, at);
+    at += c.length;
+  }
+  return out;
 }
 
 function toBase64Url(bytes: Uint8Array): string {
@@ -32,6 +53,7 @@ export async function decodeShare(fragment: string): Promise<string | null> {
     const bytes = await pipe(
       fromBase64Url(fragment.slice(PREFIX.length)),
       new DecompressionStream("deflate-raw"),
+      MAX_DECODED,
     );
     return new TextDecoder().decode(bytes);
   } catch {

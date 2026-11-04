@@ -37,15 +37,27 @@ function tx<T>(mode: IDBTransactionMode, f: (store: IDBObjectStore) => IDBReques
   return open().then(
     (db) =>
       new Promise<T>((resolve, reject) => {
-        const req = f(db.transaction(STORE, mode).objectStore(STORE));
-        req.onsuccess = () => {
-          resolve(req.result);
+        try {
+          const t = db.transaction(STORE, mode);
+          let result: T;
+          const req = f(t.objectStore(STORE));
+          req.onsuccess = () => {
+            result = req.result;
+          };
+          t.oncomplete = () => {
+            db.close();
+            resolve(result);
+          };
+          const fail = () => {
+            db.close();
+            reject(t.error ?? req.error);
+          };
+          t.onerror = fail;
+          t.onabort = fail;
+        } catch (e) {
           db.close();
-        };
-        req.onerror = () => {
-          reject(req.error);
-          db.close();
-        };
+          reject(e);
+        }
       }),
   );
 }

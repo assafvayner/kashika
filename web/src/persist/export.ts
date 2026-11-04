@@ -4,7 +4,7 @@ export function download(name: string, blob: Blob): void {
   a.href = url;
   a.download = name;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 export function exportSvg(title: string, svg: string): void {
@@ -32,7 +32,8 @@ export async function exportPng(title: string, svg: string, scale = 2): Promise<
     ctx.scale(scale, scale);
     ctx.drawImage(img, 0, 0);
     const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/png"));
-    if (blob !== null) download(`${title}.png`, blob);
+    if (blob === null) throw new Error("cannot encode the PNG");
+    download(`${title}.png`, blob);
   } finally {
     URL.revokeObjectURL(url);
   }
