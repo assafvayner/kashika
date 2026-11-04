@@ -1,6 +1,7 @@
-//! Checks and renders Kashika source to SVG in WebAssembly, for editors and Markdown
-//! previews. There is no file system: imports, images and `icons=` directories report
-//! not found, while built-in shapes and bundled icons work.
+//! Checks and renders Kashika source in WebAssembly, for editors, Markdown previews and the
+//! web app: `render`, plus the CLI's `check`, `inspect`, `route`, `measure`, `ref`, `icons`
+//! and `fmt` as JSON over a source string. There is no file system: imports, images and
+//! `icons=` directories report not found, while built-in shapes and bundled icons work.
 
 use kashika_diag::{Diagnostic, Severity};
 use serde::Serialize;
@@ -75,4 +76,101 @@ pub fn init() {
 #[wasm_bindgen]
 pub fn version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
+}
+
+use kashika::api;
+
+fn json<T: Serialize>(v: &T) -> String {
+    serde_json::to_string(v).expect("a report serializes to JSON")
+}
+
+fn error(msg: &str) -> String {
+    json(&serde_json::json!({ "error": msg }))
+}
+
+/// `kashika check` as JSON: `{errors, warnings, diagnostics, text}`.
+#[wasm_bindgen]
+pub fn check(src: &str) -> String {
+    json(&api::check(src))
+}
+
+/// `kashika inspect` as JSON: `{text, report}`, or `{error}` for an unknown id.
+#[wasm_bindgen]
+pub fn inspect(src: &str, ids: Vec<String>, ports: bool) -> String {
+    match api::inspect(src, &ids, ports) {
+        Ok((text, report)) => json(&serde_json::json!({ "text": text, "report": report })),
+        Err(e) => error(&e),
+    }
+}
+
+/// `kashika route` as JSON: `{text, suggestion}`, or `{error, kind}` with `kind` one of
+/// `usage`, `input` (the check report) or `endpoints`.
+#[wasm_bindgen]
+pub fn route(
+    src: &str,
+    from: Option<String>,
+    to: Option<String>,
+    style: &str,
+    line: Option<String>,
+    radius: f64,
+    max: usize,
+) -> String {
+    match api::route(
+        src,
+        from.as_deref(),
+        to.as_deref(),
+        style,
+        line.as_deref(),
+        radius,
+        max,
+    ) {
+        Ok((text, s)) => json(&serde_json::json!({ "text": text, "suggestion": s })),
+        Err(e) => {
+            let (kind, msg) = match e {
+                api::RouteError::Usage(m) => ("usage", m),
+                api::RouteError::Input(m) => ("input", m),
+                api::RouteError::Endpoints(m) => ("endpoints", m),
+            };
+            json(&serde_json::json!({ "error": msg, "kind": kind }))
+        }
+    }
+}
+
+/// `kashika measure` as JSON: `{width, height, lines}` or `{error}`.
+#[wasm_bindgen]
+pub fn measure(text: &str, size: f64, bold: bool) -> String {
+    match api::measure(text, size, bold) {
+        Ok(m) => json(&m),
+        Err(e) => error(&e),
+    }
+}
+
+/// `kashika ref [topic]` as JSON: `{page}` or `{error}`.
+#[wasm_bindgen(js_name = ref)]
+pub fn ref_page(topic: Option<String>) -> String {
+    match api::ref_page(topic.as_deref()) {
+        Ok(page) => json(&serde_json::json!({ "page": page })),
+        Err(e) => error(&e),
+    }
+}
+
+/// `kashika icons [--search term]` as JSON: `{icons: [{name, path, size, library, matched_keyword}]}`.
+#[wasm_bindgen]
+pub fn icons(search: Option<String>) -> String {
+    json(&serde_json::json!({ "icons": api::icons(search.as_deref()) }))
+}
+
+/// `kashika fmt` as JSON: `{source}` or `{error}` (the parse report).
+#[wasm_bindgen]
+pub fn format(src: &str) -> String {
+    match api::format(src) {
+        Ok(source) => json(&serde_json::json!({ "source": source })),
+        Err(e) => error(&e),
+    }
+}
+
+/// Every shape and text with its box, as JSON `{elements: [{id, kind, parent, depth, bbox}]}`.
+#[wasm_bindgen]
+pub fn elements(src: &str) -> String {
+    json(&serde_json::json!({ "elements": api::elements(src) }))
 }
