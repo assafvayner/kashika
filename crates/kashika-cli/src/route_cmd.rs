@@ -135,7 +135,7 @@ pub fn run(a: &RouteArgs) -> ExitCode {
     }
 }
 
-fn text(s: &Suggestion) -> String {
+pub fn text(s: &Suggestion) -> String {
     let mut out = candidates_text(s);
     if let Some(id) = s.existing_lines.first() {
         out.push_str(&format!(
