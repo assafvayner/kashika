@@ -20,7 +20,9 @@ You are the diagram agent in a web app. The user sees the rendered diagram and t
 /** Rewrites the skill's CLI commands as tool names. */
 function toolify(md: string): string {
   return md
-    .replace(/\*\*run `kashika ref` first\*\*/g, "**the core guide is below**")
+    .replace(/^(\| the core guide:[^\n|]*\| )`kashika ref` \|$/m, "$1below |")
+    .replace("`diagram` comes first, then any `import`s.", "`diagram` comes first.")
+    .replace("with an `icon=` or `image`;", "with a bundled `icon=`;")
     .replace(
       /`kashika ref <code>`, e\.g\. `kashika ref through`/g,
       '`ref("<code>")`, e.g. `ref("through")`',
@@ -71,8 +73,8 @@ export function systemPrompt(engine: Engine): string {
   const skillBody = skill
     .replace(/^---\n[\s\S]*?\n---\n+/, "")
     .replace(
-      "the `kashika` CLI checks the geometry and renders SVG or PNG. The full language reference is built into the tool:",
-      "the app checks the geometry and renders it for the user. The full language reference is:",
+      "the `kashika` CLI checks the geometry and renders SVG or PNG. The full language reference is built into the tool: **run `kashika ref` first**, then the topics it lists as you need them.",
+      "the app checks the geometry and renders it for the user. The core guide to the language is below; fetch the topics it lists with `ref` as you need them.",
     );
   const guide = toolify(engine.ref()).replace(
     /`ref <topic>` prints one of these; `ref\("<code>"\)` explains a diagnostic\./,
