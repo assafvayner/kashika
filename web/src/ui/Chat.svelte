@@ -9,6 +9,7 @@
     onsend,
     onstop,
     onclear,
+    error = null,
     onretry = () => {},
   }: {
     chat: ChatEntry[];
@@ -18,6 +19,7 @@
     onsend: (text: string) => void;
     onstop: () => void;
     onclear: () => void;
+    error?: { message: string; status: number | null } | null;
     onretry?: () => void;
   } = $props();
 
@@ -30,10 +32,6 @@
     void chat.at(-1)?.text;
     list?.scrollTo?.({ top: list.scrollHeight });
   });
-
-  const failed = $derived(
-    !running && /(^|\n)Error: /.test(chat.at(-1)?.role === "assistant" ? chat.at(-1)!.text : ""),
-  );
 
   function send() {
     const text = draft.trim();
@@ -70,7 +68,7 @@
       </div>
     {/each}
     {#if running}<div class="working">working…</div>{/if}
-    {#if failed}<button class="retry" onclick={onretry}>Retry</button>{/if}
+    {#if error && !running}<button class="retry" onclick={onretry}>Retry</button>{/if}
   </div>
   <div class="composer">
     {#if !ready}

@@ -234,7 +234,7 @@ export class AppState {
   }
 
   async retry(): Promise<void> {
-    if (this.running) return;
+    if (this.running || this.provider === null || this.model === null) return;
     const chat = [...this.project.chat];
     if (chat.at(-1)?.role === "assistant") chat.pop();
     const last = chat.at(-1);
@@ -265,13 +265,14 @@ export class AppState {
         break;
       }
       case "stopped":
-        reply.text += `\n\nStopped after ${ev.steps} steps.`;
+        reply.text += `${reply.text ? "\n\n" : ""}Stopped after ${ev.steps} steps.`;
         break;
-      case "error":
-        reply.text += `\n\nError: ${ev.message}`;
+      case "error": {
+        reply.text += `${reply.text ? "\n\n" : ""}Error: ${ev.message}`;
+        const status = /^(\d{3})/.exec(ev.message)?.[1];
         this.lastError = {
           message: ev.message,
-          status: /^(\d{3})/.exec(ev.message)?.[1] ? Number(/^(\d{3})/.exec(ev.message)![1]) : null,
+          status: status === undefined ? null : Number(status),
         };
         if (
           (/^401/.test(ev.message) || /^not logged in/i.test(ev.message)) &&
@@ -281,6 +282,7 @@ export class AppState {
           this.loginRequested = true;
         }
         break;
+      }
       case "done":
         break;
     }

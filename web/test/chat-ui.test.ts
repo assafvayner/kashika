@@ -122,6 +122,7 @@ describe("Chat retry", () => {
       onsend: () => {},
       onstop: () => {},
       onclear: () => {},
+      error: { message: "500 upstream failed", status: 500 },
       onretry,
     });
     await fireEvent.click(screen.getByText("Retry"));

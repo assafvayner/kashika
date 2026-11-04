@@ -97,6 +97,7 @@
           selection={app.doc.selection}
           onsend={(t) => void app?.send(t)}
           onstop={() => app?.stop()}
+          error={app.lastError}
           onretry={() => void app?.retry()}
           onclear={() => app && (app.doc.selection = null)}
         />
