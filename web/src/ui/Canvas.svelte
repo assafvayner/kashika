@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { tick } from "svelte";
+
   import { hitTest } from "../document/hit.js";
   import type { Document } from "../document/store.svelte.js";
 
@@ -48,6 +50,31 @@
   function onUp() {
     drag = null;
   }
+
+  let fitted: { w: number; h: number } | null = null;
+
+  $effect(() => {
+    const svg = doc.result.svg;
+    if (!svg || !host) {
+      if (!svg) fitted = null;
+      return;
+    }
+    void tick().then(() => {
+      if (drag || !canvas?.clientWidth || !canvas.clientHeight) return;
+      const el = host?.querySelector("svg");
+      const w = Number.parseFloat(el?.getAttribute("width") ?? "");
+      const h = Number.parseFloat(el?.getAttribute("height") ?? "");
+      if (!(w > 0 && h > 0)) return;
+      const grew =
+        fitted === null ||
+        Math.abs(w - fitted.w) / fitted.w > 0.25 ||
+        Math.abs(h - fitted.h) / fitted.h > 0.25;
+      if (grew) {
+        fitted = { w, h };
+        fit();
+      }
+    });
+  });
 
   export function fit() {
     const svg = host?.querySelector("svg");

@@ -106,3 +106,25 @@ describe("ModelPicker", () => {
     expect(btn.disabled).toBe(true);
   });
 });
+
+describe("Chat retry", () => {
+  it("shows Retry after an error and calls onretry", async () => {
+    const chat: ChatEntry[] = [
+      { role: "user", text: "draw" },
+      { role: "assistant", text: "\n\nError: 500 upstream failed", steps: [] },
+    ];
+    const onretry = vi.fn();
+    render(Chat, {
+      chat,
+      running: false,
+      ready: true,
+      selection: null,
+      onsend: () => {},
+      onstop: () => {},
+      onclear: () => {},
+      onretry,
+    });
+    await fireEvent.click(screen.getByText("Retry"));
+    expect(onretry).toHaveBeenCalled();
+  });
+});

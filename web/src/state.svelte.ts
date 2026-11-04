@@ -34,6 +34,8 @@ export class AppState {
   modelsError = $state<string | null>(null);
   running = $state(false);
   saveError = $state<string | null>(null);
+  lastError = $state<{ message: string; status: number | null } | null>(null);
+  loginRequested = $state(false);
   drawerOpen = $state(false);
   private agent: Agent | null = null;
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
@@ -208,6 +210,7 @@ export class AppState {
     }
     const id = this.project.id;
     this.running = true;
+    this.lastError = null;
     const chat = [...this.project.chat, { role: "user", text } as ChatEntry];
     const reply: ChatEntry = { role: "assistant", text: "", steps: [] };
     chat.push(reply);
@@ -228,6 +231,17 @@ export class AppState {
         this.scheduleSave();
       }
     }
+  }
+
+  async retry(): Promise<void> {
+    if (this.running) return;
+    const chat = [...this.project.chat];
+    if (chat.at(-1)?.role === "assistant") chat.pop();
+    const last = chat.at(-1);
+    if (last?.role !== "user") return;
+    chat.pop();
+    this.project = { ...this.project, chat };
+    await this.send(last.text);
   }
 
   stop(): void {
@@ -255,11 +269,17 @@ export class AppState {
         break;
       case "error":
         reply.text += `\n\nError: ${ev.message}`;
+        this.lastError = {
+          message: ev.message,
+          status: /^(\d{3})/.exec(ev.message)?.[1] ? Number(/^(\d{3})/.exec(ev.message)![1]) : null,
+        };
         if (
           (/^401/.test(ev.message) || /^not logged in/i.test(ev.message)) &&
           this.settings.provider === "huggingface"
-        )
+        ) {
           this.logout();
+          this.loginRequested = true;
+        }
         break;
       case "done":
         break;

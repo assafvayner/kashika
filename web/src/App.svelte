@@ -46,6 +46,13 @@
   });
 
   $effect(() => {
+    if (app?.loginRequested) {
+      pickerOpen = true;
+      app.loginRequested = false;
+    }
+  });
+
+  $effect(() => {
     if (!app) return;
     void app.doc.version;
     void app.doc.selection;
@@ -90,6 +97,7 @@
           selection={app.doc.selection}
           onsend={(t) => void app?.send(t)}
           onstop={() => app?.stop()}
+          onretry={() => void app?.retry()}
           onclear={() => app && (app.doc.selection = null)}
         />
       </div>
