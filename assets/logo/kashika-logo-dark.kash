@@ -1,0 +1,9 @@
+diagram "kashika" size (360, 120) allow=low-contrast
+import "lib.kash"
+group seal at (6, 6) size (108, 108) style=seal {
+  box bar at (15, 20) size (78, 10) shape=rounded radius=5 style=ink
+  box node at (22, 40) size (35, 29) shape=rounded radius=7 style=ink
+  box tip at (45, 73) size (18, 22) shape=head style=ink
+}
+line hook bar.bottom@0.756 -> (80, 90) -> tip.right stroke=white stroke-width=10 radius=11
+text word "**kashika**" at (134, 60) font-size=56 color=#f0f6fc text-align=left
