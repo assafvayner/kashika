@@ -2,7 +2,8 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { type Diagnostic } from "../../src/diag/index.js";
+import { type Diagnostic, sort } from "../../src/diag/index.js";
+import { check } from "../../src/check/index.js";
 import { lines } from "../../src/diag/rust.js";
 import { Options, type Scene, compileFile } from "../../src/model/index.js";
 import { renderSvgWith } from "../../src/render/index.js";
@@ -56,10 +57,11 @@ function directives(src: string): Directives {
   return d;
 }
 
-/// The diagnostics `kashika render` reports for `scene`: the compile diagnostics, and the
-/// lints once the check module is ported.
-function collectDiagnostics(_scene: Scene, diags: Diagnostic[]): Diagnostic[] {
-  return diags;
+/// The diagnostics `kashika render` reports for `scene`: compile diagnostics and lints, sorted.
+function collectDiagnostics(scene: Scene, diags: Diagnostic[]): Diagnostic[] {
+  const all = [...diags, ...check(scene)];
+  sort(all);
+  return all;
 }
 
 /// Renders like `kashika render input.kash -o out.svg --show-suppressed` in the case directory.
@@ -82,10 +84,6 @@ function render(dir: string): string {
 
 const cases = caseDirs(join(GOLDEN, "render"));
 
-/// Cases whose `out.svg` marks lint warnings (`--debug`), which `collectDiagnostics` does not
-/// report until the check module is ported. They are expected to fail until then.
-const PENDING_CHECK: ReadonlySet<string> = new Set(["render/cli/debug-overlay"]);
-
 describe("golden render cases: out.svg", () => {
   it("finds the cases", () => {
     expect(cases.length).toBeGreaterThan(50);
@@ -97,8 +95,7 @@ describe("golden render cases: out.svg", () => {
   for (const dir of cases) {
     const name = relative(GOLDEN, dir);
     const reason = DIVERGENT.get(name);
-    const test = PENDING_CHECK.has(name) ? it.fails : it;
-    test(reason === undefined ? name : `${name} (divergent: ${reason})`, () => {
+    it(reason === undefined ? name : `${name} (divergent: ${reason})`, () => {
       const got = render(dir);
       const want = readFileSync(join(dir, "out.svg"), "utf8");
       if (reason === undefined) {

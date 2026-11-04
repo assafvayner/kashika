@@ -1,7 +1,8 @@
 import { expect, test } from "vitest";
 
 import { Diagnostic, Span } from "../../src/diag/index.js";
-import { type Scene, compile } from "../../src/model/index.js";
+import { compile } from "../../src/model/index.js";
+import { check } from "../../src/check/index.js";
 import { Overlay, renderSvg, renderSvgWith } from "../../src/render/index.js";
 
 const SRC =
@@ -63,22 +64,7 @@ test("debug_draws_rulers_ids_and_anchor_dots", () => {
   expect(count(s, 'r="1.5" fill="#2563eb"')).toBe(18);
 });
 
-type Check = (scene: Scene) => Diagnostic[];
-
-/// `check` from the lint module, or `null` until that module exists.
-async function loadCheck(): Promise<Check | null> {
-  const path = "../../src/check/index.js";
-  try {
-    const m = (await import(/* @vite-ignore */ path)) as { check?: Check };
-    return m.check ?? null;
-  } catch {
-    return null;
-  }
-}
-
-const check = await loadCheck();
-
-test.skipIf(check === null)("debug_marks_a_through_warning_at_its_entry_point", () => {
+test("debug_marks_a_through_warning_at_its_entry_point", () => {
   const src =
     'diagram "t" size (300,100)\n' +
     "box a at (10,30) size (40,40)\n" +
@@ -86,7 +72,7 @@ test.skipIf(check === null)("debug_marks_a_through_warning_at_its_entry_point", 
     "box b at (240,30) size (40,40)\n" +
     "line ab a.right -> b.left\n";
   const [scene] = compile(src);
-  const d = check!(scene).find((d) => d.code === "through");
+  const d = check(scene).find((d) => d.code === "through");
   expect(d).toBeDefined();
   const s = renderSvgWith(scene, [d!], DEBUG);
   expect(s).toContain('<circle cx="120" cy="50" r="6" fill="none" stroke="#ea580c"');
