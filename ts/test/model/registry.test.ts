@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import { BUNDLED_ICONS, bundledIcon, ICON_KEYWORDS } from "../../src/model/icons.js";
 import { SHAPES } from "../../src/model/shapes.js";
+import { STYLES } from "../../src/model/style.js";
 
 function unique(names: Iterable<string>): boolean {
   const seen = new Set<string>();
@@ -40,6 +41,10 @@ describe("registry", () => {
 
   test("bundled_icons_keep_the_keywords_file_order", () => {
     expect([...BUNDLED_ICONS]).toEqual(ICON_KEYWORDS.map(([n]) => n));
+  });
+
+  test("every_builtin_style_has_a_unique_name", () => {
+    expect(unique(STYLES.map((s) => s.name))).toBe(true);
   });
 
   test("bundled_icon_entries_are_typed", () => {
