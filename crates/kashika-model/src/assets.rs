@@ -122,6 +122,13 @@ pub fn probe(bytes: &[u8], is_svg: bool) -> Result<(f64, f64), String> {
     decode(String::new(), bytes, is_svg, None).map(|a| a.natural)
 }
 
+/// Decodes a bundled icon as the renderer does, for the TypeScript port's precomputed data.
+#[doc(hidden)]
+pub fn decode_bundled_icon(name: &str, color: &str) -> Result<Asset, String> {
+    let (_, src) = crate::icons::bundled(name).ok_or_else(|| format!("no bundled icon {name}"))?;
+    decode(format!("builtin:{name}"), src.as_bytes(), true, Some(color))
+}
+
 fn decode(path: String, bytes: &[u8], is_svg: bool, color: Option<&str>) -> Result<Asset, String> {
     if is_svg {
         svg(path, bytes, color)
