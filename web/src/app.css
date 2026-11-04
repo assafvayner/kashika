@@ -11,6 +11,7 @@
     system-ui,
     -apple-system,
     sans-serif;
+  color-scheme: light dark;
   color: var(--fg);
   background: var(--bg);
 }
@@ -22,6 +23,8 @@
     --border: #30363d;
     --accent: #58a6ff;
     --panel: #161b22;
+    --error: #f85149;
+    --warn: #d29922;
   }
 }
 * {
@@ -29,7 +32,7 @@
 }
 body {
   margin: 0;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 #app {
