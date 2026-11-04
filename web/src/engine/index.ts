@@ -21,9 +21,7 @@ function parse<T>(json: string): T {
 
 class WasmEngine implements Engine {
   render(source: string): RenderResult {
-    const r = parse<Omit<RenderResult, "elements">>(wasm.render(source, true));
-    const { elements } = parse<{ elements: RenderResult["elements"] }>(wasm.elements(source));
-    return { ...r, elements };
+    return parse<RenderResult>(wasm.render(source, true));
   }
   check(source: string): CheckResult {
     return parse(wasm.check(source));
@@ -65,8 +63,11 @@ let loaded: Promise<Engine> | undefined;
 
 /** Loads the wasm once. `bytes` is for Node (tests); in the browser the module URL resolves itself. */
 export function loadEngine(bytes?: Uint8Array): Promise<Engine> {
-  loaded ??= init(bytes === undefined ? undefined : { module_or_path: bytes }).then(
-    () => new WasmEngine(),
-  );
+  loaded ??= init(bytes === undefined ? undefined : { module_or_path: bytes })
+    .then(() => new WasmEngine())
+    .catch((e) => {
+      loaded = undefined;
+      throw e;
+    });
   return loaded;
 }

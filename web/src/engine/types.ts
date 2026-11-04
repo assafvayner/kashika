@@ -31,7 +31,7 @@ export interface Elem {
 }
 
 export interface RenderResult {
-  /** Always present: a force render, with error markers when there are errors. */
+  /** Present unless the source is a library or does not parse to a scene. */
   svg: string | null;
   errors: number;
   warnings: number;
@@ -73,6 +73,7 @@ export class EngineError extends Error {
     public readonly kind: string = "error",
   ) {
     super(message);
+    this.name = "EngineError";
   }
 }
 

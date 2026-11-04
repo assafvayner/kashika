@@ -47,4 +47,18 @@ describe("engine", () => {
     expect(engine.icons("database").some((i) => i.name === "cylinder")).toBe(true);
     expect(engine.version()).toMatch(/^\d/);
   });
+
+  it("reports error paths", () => {
+    const broken = 'diagram "t" size (100,100)\nbox a "A" at (0,0) size (80,40) icon="x.svg"\n';
+    expect(engine.check(broken).errors).toBeGreaterThan(0);
+    expect(engine.render(broken).elements.length).toBeGreaterThan(0);
+    expect(() => engine.route(SRC, "a.right", "zz.left")).toThrow(
+      expect.objectContaining({ kind: "endpoints" }),
+    );
+    expect(() => engine.route(broken, "a.right", "a.left")).toThrow(
+      expect.objectContaining({ kind: "input" }),
+    );
+    expect(() => engine.measure("x", 0)).toThrow(EngineError);
+    expect(() => engine.format("box a (\n")).toThrow(EngineError);
+  });
 });
