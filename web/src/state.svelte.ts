@@ -46,7 +46,7 @@ export class AppState {
 
   get provider(): Provider | null {
     if (this.settings.provider === "huggingface") {
-      return this.session === null
+      return this.session === null || this.session.expires <= Date.now()
         ? null
         : new HuggingFaceProvider(() => this.session?.token ?? null);
     }
@@ -65,7 +65,12 @@ export class AppState {
     this.agent = null;
   }
 
+  private dropExpiredSession(): void {
+    if (this.session !== null && this.session.expires <= Date.now()) this.logout();
+  }
+
   async loadModels(): Promise<void> {
+    this.dropExpiredSession();
     const p = this.provider;
     if (p === null) return;
     this.modelsError = null;
@@ -126,19 +131,21 @@ export class AppState {
   }
 
   async saveNow(): Promise<void> {
-    this.project = {
+    const record: Project = $state.snapshot({
       ...this.project,
       title: this.doc.title,
       source: this.doc.source,
       selection: this.doc.selection,
-      history: this.agent?.history,
+      history: this.agent?.history ?? this.project.history,
       updated: Date.now(),
-    };
-    await saveProject(this.project);
+    });
+    this.project = record;
+    await saveProject($state.snapshot(record));
   }
 
   /** Runs one chat turn, appending to `project.chat` as events arrive. */
   async send(text: string): Promise<void> {
+    this.dropExpiredSession();
     const p = this.provider;
     const model = this.model;
     if (p === null || model === null || this.running) return;
