@@ -25,4 +25,4 @@ box api at (20, 100) size (200, 90) style=service text-align=left {
 
 - Items stack top to bottom, `gap` apart. Each takes `font-size`, `color`, `text-align` and `muted` (`size` and `align` are aliases).
 - An item with `at (x,y)` is absolute, in box-local coordinates (`at` is its alignment point and vertical center), and leaves the stack. This is how to put text anywhere inside a shape: `box a … { text "x" at (100,60) }`.
-- Don't combine `label`/`sublabel` with stacked items (`text-conflict`); absolute items are fine. A block of one or two plain items is `block-reducible`: use the `label`/`sublabel` from the help.
+- Don't combine `label`/`sublabel` with stacked items (`text-conflict`); absolute items are fine, as long as they don't overlap the label or each other (`text-overlap`). A block of one or two plain items is `block-reducible`: use the `label`/`sublabel` from the help.
