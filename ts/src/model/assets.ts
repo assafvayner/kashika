@@ -308,7 +308,8 @@ function bundledSvg(path: string, name: string, color: string | null): Asset | n
 /// output, and any other file is parsed, stripped of scripts, event handlers,
 /// `foreignObject` and external references, its shapes and text written as paths and the
 /// rest written back as it was, so the `out.svg` of render goldens that embed an SVG file
-/// differ from the Rust output.
+/// differ from the Rust output. The output is embedded as a `data:` image URI, where browsers
+/// run no scripts and fetch nothing, and `<style>` content and `url(...)` references are kept as is.
 function svg(path: string, bytes: Uint8Array, color: string | null): Result<Asset, string> {
   const depth = checkDepth(bytes);
   if (!depth.ok) return depth;

@@ -10,10 +10,13 @@
     "golden": "vitest run test/golden",
     "bench": "tsx bench/bench.ts",
     "gen-icons": "tsx scripts/gen-icons.ts",
-    "parity": "tsx scripts/test-parity.ts"
+    "parity": "tsx scripts/test-parity.ts",
+    "fmt": "prettier --write src test bench scripts bin",
+    "fmt:check": "prettier --check src test bench scripts bin"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "prettier": "^3.3.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"

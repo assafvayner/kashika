@@ -19,6 +19,13 @@ In dependency order (`crates/`):
 
 `editors/vscode/` is the VS Code extension: it renders ```` ```kashika ```` Markdown fences through `kashika-wasm` and highlights `.kash` files. Its README has the npm commands.
 
+## TypeScript port (`ts/`)
+
+`ts/` is an experimental TypeScript port that mirrors the crates file by file under `ts/src/<crate>/`. See `ts/README.md` for known divergences. From `ts/` (Node 22+, `npm install` first): `npm run check` (tsc), `npm test`, `npm run golden`, `npm run parity`, `npm run fmt:check`.
+
+- `ts/test/golden` runs against the same `tests/golden` corpus, read-only; it never blesses.
+- A language change must keep both implementations passing.
+
 ## Commands
 
 ```sh

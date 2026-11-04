@@ -56,7 +56,7 @@ const dirs = discover(join(GOLDEN, "parse"));
 
 describe("golden parse cases", () => {
   it("finds the cases", () => {
-    expect(dirs.length).toBeGreaterThan(200);
+    expect(dirs.length).toBe(238);
   });
   for (const dir of dirs) {
     const c = Case.load(GOLDEN, dir);

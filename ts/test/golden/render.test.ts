@@ -74,7 +74,7 @@ const dirs = discover(join(GOLDEN, "render"));
 
 describe("golden render cases", () => {
   it("finds the cases", () => {
-    expect(dirs.length).toBeGreaterThan(50);
+    expect(dirs.length).toBe(62);
   });
   it("lists only existing cases as divergent", () => {
     const names = new Set(dirs.map((d) => Case.load(GOLDEN, d).name));
