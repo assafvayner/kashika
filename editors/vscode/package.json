@@ -5,6 +5,7 @@
   "version": "0.1.0",
   "publisher": "assafvayner",
   "license": "Apache-2.0",
+  "icon": "media/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/assafvayner/kashika",
