@@ -16,6 +16,14 @@
   let app = $state<AppState | null>(null);
   let pickerOpen = $state(false);
   let error = $state<string | null>(null);
+  let notice = $state<string | null>(null);
+  let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function notify(msg: string) {
+    notice = msg;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => (notice = null), 3000);
+  }
 
   onMount(async () => {
     try {
@@ -51,7 +59,9 @@
   function onDrop(ev: DragEvent) {
     ev.preventDefault();
     const f = ev.dataTransfer?.files[0];
-    if (f && f.name.endsWith(".kash")) void importFile(f);
+    if (!f) return;
+    if (f.name.endsWith(".kash")) void importFile(f);
+    else notify("Only .kash files can be imported.");
   }
 </script>
 
@@ -62,7 +72,10 @@
     <TopBar {app} onpick={() => (pickerOpen = true)} onimport={importFile} />
     <div class="body">
       <div class="left">
-        <div class="canvas"><Canvas doc={app.doc} /></div>
+        <div class="canvas">
+          <Canvas doc={app.doc} />
+          {#if notice}<div class="notice">{notice}</div>{/if}
+        </div>
         {#if app.drawerOpen}
           <SourceDrawer doc={app.doc} engine={app.engine} onchange={() => app?.scheduleSave()} />
         {:else}
@@ -107,6 +120,18 @@
   .canvas {
     flex: 1;
     min-height: 0;
+    position: relative;
+  }
+  .notice {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
   }
   .right {
     width: min(420px, 40%);

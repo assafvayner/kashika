@@ -1,36 +1,81 @@
 <script lang="ts">
+  import { untrack } from "svelte";
+
   import { login } from "../auth.js";
+  import { HuggingFaceProvider } from "../providers/huggingface.js";
+  import type { ModelRow } from "../providers/types.js";
   import type { AppState } from "../state.svelte.js";
 
   let { app, onclose }: { app: AppState; onclose: () => void } = $props();
-  let tab = $state(app.settings.provider);
+  let tab = $state(untrack(() => app.settings.provider));
   let search = $state("");
-  let custom = $state({ ...app.settings.custom });
-  let budget = $state(app.settings.budget);
+  let custom = $state(untrack(() => ({ ...app.settings.custom })));
+  let budget = $state(untrack(() => app.settings.budget));
+  let hfModels = $state<ModelRow[]>([]);
+  let hfError = $state<string | null>(null);
+  let dialog = $state<HTMLDivElement | null>(null);
 
-  const shown = $derived(
-    app.models.filter((m) => m.id.toLowerCase().includes(search.toLowerCase())),
-  );
+  const hfActive = $derived(app.settings.provider === "huggingface");
+  const hfList = $derived(hfActive ? app.models : hfModels);
+  const hfErr = $derived(hfActive ? app.modelsError : hfError);
+  const shown = $derived(hfList.filter((m) => m.id.toLowerCase().includes(search.toLowerCase())));
+
+  $effect(() => {
+    dialog?.focus();
+  });
+
+  $effect(() => {
+    if (tab !== "huggingface" || hfActive || app.session === null) return;
+    let live = true;
+    hfError = null;
+    new HuggingFaceProvider(() => app.session?.token ?? null)
+      .listModels()
+      .then((m) => live && (hfModels = m))
+      .catch((e) => live && (hfError = e instanceof Error ? e.message : String(e)));
+    return () => {
+      live = false;
+    };
+  });
+
+  function clampedBudget(): number {
+    return Math.max(1, Math.min(100, Math.floor(Number(budget) || 20)));
+  }
+
+  function close() {
+    const b = clampedBudget();
+    if (b !== app.settings.budget) app.updateSettings({ budget: b });
+    onclose();
+  }
 
   function pickHf(id: string) {
-    app.updateSettings({ provider: "huggingface", hfModel: id, budget });
+    app.updateSettings({ provider: "huggingface", hfModel: id, budget: clampedBudget() });
     onclose();
   }
 
   function saveCustom() {
-    app.updateSettings({ provider: "openai-compatible", custom: { ...custom }, budget });
+    app.updateSettings({
+      provider: "openai-compatible",
+      custom: { ...custom },
+      budget: clampedBudget(),
+    });
     void app.loadModels();
     onclose();
   }
+
+  function onKey(ev: KeyboardEvent) {
+    if (ev.key === "Escape") close();
+  }
 </script>
 
-<div class="backdrop" role="presentation" onclick={onclose}>
+<div class="backdrop" role="presentation" onclick={close}>
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
   <div
     class="dialog"
     role="dialog"
     tabindex="-1"
     aria-label="Model"
+    bind:this={dialog}
+    onkeydown={onKey}
     onclick={(e) => e.stopPropagation()}
   >
     <div class="tabs">
@@ -40,7 +85,7 @@
       <button class:active={tab === "openai-compatible"} onclick={() => (tab = "openai-compatible")}
         >Custom endpoint</button
       >
-      <button class="close" onclick={onclose}>×</button>
+      <button class="close" onclick={close}>×</button>
     </div>
     {#if tab === "huggingface"}
       {#if app.session === null}
@@ -48,7 +93,7 @@
         <button onclick={() => void login()}>Log in</button>
       {:else}
         <input placeholder="Search models" bind:value={search} />
-        {#if app.modelsError}<p class="err">{app.modelsError}</p>{/if}
+        {#if hfErr}<p class="err">{hfErr}</p>{/if}
         <ul>
           {#each shown as m (m.id)}
             <li>

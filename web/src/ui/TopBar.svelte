@@ -10,14 +10,21 @@
     onimport,
   }: { app: AppState; onpick: () => void; onimport: (file: File) => void } = $props();
   let projectsOpen = $state(false);
-  let shared = $state(false);
+  let shared = $state<"idle" | "copied" | "failed">("idle");
+  let shareUrl = $state<string | null>(null);
   let fileInput = $state<HTMLInputElement | null>(null);
 
   async function share() {
     const url = `${location.origin}${location.pathname}#${await encodeShare(app.doc.source)}`;
-    await navigator.clipboard.writeText(url);
-    shared = true;
-    setTimeout(() => (shared = false), 1500);
+    try {
+      await navigator.clipboard.writeText(url);
+      shared = "copied";
+      shareUrl = null;
+    } catch {
+      shared = "failed";
+      shareUrl = url;
+    }
+    setTimeout(() => (shared = "idle"), 1500);
   }
 
   function title() {
@@ -44,12 +51,22 @@
     <button onclick={() => exportSvg(title(), app.doc.result.svg ?? "")}>SVG</button>
     <button onclick={() => void exportPng(title(), app.doc.result.svg ?? "")}>PNG</button>
     <button onclick={() => exportKash(title(), app.doc.source)}>.kash</button>
-    <button onclick={() => void share()}>{shared ? "Link copied" : "Share"}</button>
+    <button onclick={() => void share()}
+      >{shared === "copied" ? "Link copied" : shared === "failed" ? "Copy failed" : "Share"}</button
+    >
     <button
       class:active={app.drawerOpen}
       onclick={() => (app.drawerOpen = !app.drawerOpen)}
       title="Source">&lt;/&gt;</button
     >
+    {#if shareUrl}
+      <input
+        class="share-url"
+        readonly
+        value={shareUrl}
+        onfocus={(e) => e.currentTarget.select()}
+      />
+    {/if}
   </div>
   <div class="right">
     <button onclick={onpick}>{app.model ?? "Choose a model"}</button>
@@ -86,6 +103,10 @@
     border-radius: 6px;
     padding: 4px 8px;
     cursor: pointer;
+  }
+  .share-url {
+    width: 200px;
+    font-size: 12px;
   }
   button.active {
     border-color: var(--accent);

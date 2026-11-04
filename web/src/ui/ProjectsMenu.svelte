@@ -1,19 +1,32 @@
 <script lang="ts">
   import type { Project } from "../persist/projects.js";
-  import { deleteProject } from "../persist/projects.js";
   import type { AppState } from "../state.svelte.js";
 
   let { app, onclose }: { app: AppState; onclose: () => void } = $props();
   let projects = $state<Project[]>([]);
+  let menu = $state<HTMLDivElement | null>(null);
 
   $effect(() => {
     void app.projects().then((p) => (projects = p));
   });
 
   async function remove(p: Project) {
-    await deleteProject(p.id);
+    await app.deleteProject(p.id);
     projects = projects.filter((q) => q.id !== p.id);
-    if (p.id === app.project.id) app.newProject();
+  }
+
+  function openProject(p: Project) {
+    if (p.id !== app.project.id) app.open(p);
+    onclose();
+  }
+
+  function onWindowClick(ev: MouseEvent) {
+    const target = ev.target as Node;
+    if (menu && !menu.parentElement?.contains(target)) onclose();
+  }
+
+  function onWindowKey(ev: KeyboardEvent) {
+    if (ev.key === "Escape") onclose();
   }
 
   function duplicate(p: Project) {
@@ -22,12 +35,14 @@
   }
 </script>
 
-<div class="menu">
+<svelte:window onclick={onWindowClick} onkeydown={onWindowKey} />
+
+<div class="menu" bind:this={menu}>
   <button onclick={() => (app.newProject(), onclose())}>New diagram</button>
   <ul>
     {#each projects as p (p.id)}
       <li class:current={p.id === app.project.id}>
-        <button class="open" onclick={() => (app.open(p), onclose())}>{p.title}</button>
+        <button class="open" onclick={() => openProject(p)}>{p.title}</button>
         <button title="Duplicate" onclick={() => duplicate(p)}>⧉</button>
         <button title="Delete" onclick={() => void remove(p)}>🗑</button>
       </li>
