@@ -4,15 +4,12 @@
   import Diagnostics from "./Diagnostics.svelte";
 
   let { doc, engine, onchange }: { doc: Document; engine: Engine; onchange: () => void } = $props();
-  let text = $state("");
+  let text = $derived(doc.source);
   let timer: ReturnType<typeof setTimeout> | null = null;
   let fmtError = $state<string | null>(null);
 
-  $effect(() => {
-    text = doc.source;
-  });
-
   function apply() {
+    timer = null;
     doc.set(text, "user");
     onchange();
   }
@@ -22,7 +19,27 @@
     timer = setTimeout(apply, 300);
   }
 
+  function undo() {
+    if (timer !== null) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    doc.undo();
+    onchange();
+  }
+
+  $effect(() => () => {
+    if (timer !== null) {
+      clearTimeout(timer);
+      apply();
+    }
+  });
+
   function format() {
+    if (timer !== null) {
+      clearTimeout(timer);
+      timer = null;
+    }
     try {
       text = engine.format(text);
       fmtError = null;
@@ -37,7 +54,7 @@
   <div class="bar">
     <span>Source</span>
     <button onclick={format}>Format</button>
-    <button onclick={() => doc.undo()} disabled={!doc.canUndo}>Undo</button>
+    <button onclick={undo} disabled={!doc.canUndo}>Undo</button>
   </div>
   <textarea bind:value={text} oninput={onInput} spellcheck="false"></textarea>
   {#if fmtError}<pre class="fmt">{fmtError}</pre>{/if}

@@ -7,7 +7,9 @@
   let host = $state<HTMLDivElement | null>(null);
   let zoom = $state(1);
   let pan = $state({ x: 0, y: 0 });
-  let dragging: { x: number; y: number; px: number; py: number; moved: boolean } | null = null;
+  let canvas = $state<HTMLDivElement | null>(null);
+  let drag: { x: number; y: number; px: number; py: number } | null = null;
+  let dragged = false;
 
   const selected = $derived(doc.result.elements.find((e) => e.id === doc.selection) ?? null);
 
@@ -21,7 +23,7 @@
   }
 
   function onClick(ev: MouseEvent) {
-    if (dragging?.moved) return;
+    if (dragged) return;
     const p = svgPoint(ev);
     doc.selection = p === null ? null : hitTest(doc.result.elements, p.x, p.y);
   }
@@ -33,29 +35,40 @@
   }
 
   function onDown(ev: MouseEvent) {
-    dragging = { x: ev.clientX, y: ev.clientY, px: pan.x, py: pan.y, moved: false };
+    drag = { x: ev.clientX, y: ev.clientY, px: pan.x, py: pan.y };
+    dragged = false;
   }
   function onMove(ev: MouseEvent) {
-    if (!dragging) return;
-    const dx = ev.clientX - dragging.x;
-    const dy = ev.clientY - dragging.y;
-    if (Math.abs(dx) + Math.abs(dy) > 3) dragging.moved = true;
-    pan = { x: dragging.px + dx, y: dragging.py + dy };
+    if (!drag) return;
+    const dx = ev.clientX - drag.x;
+    const dy = ev.clientY - drag.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) dragged = true;
+    if (dragged) pan = { x: drag.px + dx, y: drag.py + dy };
   }
   function onUp() {
-    const moved = dragging?.moved ?? false;
-    dragging = null;
-    if (moved) setTimeout(() => (dragging = null), 0);
+    drag = null;
   }
 
   export function fit() {
-    zoom = 1;
-    pan = { x: 0, y: 0 };
+    const svg = host?.querySelector("svg");
+    const w = Number.parseFloat(svg?.getAttribute("width") ?? "");
+    const h = Number.parseFloat(svg?.getAttribute("height") ?? "");
+    const cw = canvas?.clientWidth ?? 0;
+    const ch = canvas?.clientHeight ?? 0;
+    if (!(w > 0 && h > 0 && cw > 0 && ch > 0)) {
+      zoom = 1;
+      pan = { x: 0, y: 0 };
+      return;
+    }
+    const scale = Math.min(cw / w, ch / h, 1);
+    zoom = scale;
+    pan = { x: (cw - w * scale) / 2 - 24 * scale, y: (ch - h * scale) / 2 - 24 * scale };
   }
 </script>
 
 <div
   class="canvas"
+  bind:this={canvas}
   role="presentation"
   onwheel={onWheel}
   onmousedown={onDown}
@@ -76,7 +89,7 @@
       {/if}
     </div>
   </div>
-  <button class="fit" onclick={fit} title="Reset view">⤢</button>
+  <button class="fit" onclick={fit} title="Fit">⤢</button>
 </div>
 
 <style>

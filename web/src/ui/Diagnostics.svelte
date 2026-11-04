@@ -18,7 +18,7 @@
     </button>
     {#if open}
       <ul>
-        {#each shown as d (d.code + d.span.line + d.span.col + d.message)}
+        {#each shown as d, i (i)}
           <li class={d.severity}>
             <code>{d.severity}[{d.code}]</code> line {d.span.line}: {d.message}
             {#each d.help ?? [] as h}
