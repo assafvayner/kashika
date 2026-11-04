@@ -65,6 +65,7 @@ export async function* streamChat(
     model: req.model,
     messages: req.messages.map(toWire),
     stream: true,
+    ...(req.reasoning === undefined ? {} : { reasoning_effort: req.reasoning }),
     ...(req.tools.length > 0
       ? {
           tools: req.tools.map((t) => ({

@@ -4,6 +4,7 @@
   import { login } from "../auth.js";
   import { HuggingFaceProvider } from "../providers/huggingface.js";
   import type { ModelRow } from "../providers/types.js";
+  import { REASONING } from "../persist/settings.js";
   import type { AppState } from "../state.svelte.js";
 
   let { app, onclose }: { app: AppState; onclose: () => void } = $props();
@@ -11,6 +12,7 @@
   let search = $state("");
   let custom = $state(untrack(() => ({ ...app.settings.custom })));
   let budget = $state(untrack(() => app.settings.budget));
+  let reasoning = $state(untrack(() => app.settings.reasoning));
   let hfModels = $state<ModelRow[]>([]);
   let hfError = $state<string | null>(null);
   let dialog = $state<HTMLDivElement | null>(null);
@@ -38,17 +40,23 @@
   });
 
   function clampedBudget(): number {
-    return Math.max(1, Math.min(100, Math.floor(Number(budget) || 20)));
+    return Math.max(1, Math.min(100, Math.floor(Number(budget) || 30)));
   }
 
   function close() {
     const b = clampedBudget();
-    if (b !== app.settings.budget) app.updateSettings({ budget: b });
+    if (b !== app.settings.budget || reasoning !== app.settings.reasoning)
+      app.updateSettings({ budget: b, reasoning });
     onclose();
   }
 
   function pickHf(id: string) {
-    app.updateSettings({ provider: "huggingface", hfModel: id, budget: clampedBudget() });
+    app.updateSettings({
+      provider: "huggingface",
+      hfModel: id,
+      budget: clampedBudget(),
+      reasoning,
+    });
     onclose();
   }
 
@@ -57,6 +65,7 @@
       provider: "openai-compatible",
       custom: { ...custom },
       budget: clampedBudget(),
+      reasoning,
     });
     void app.loadModels();
     onclose();
@@ -124,6 +133,17 @@
     <label class="budget"
       >Tool calls per turn <input type="number" min="1" max="100" bind:value={budget} /></label
     >
+    <label class="budget reasoning"
+      >Reasoning effort
+      <select bind:value={reasoning}>
+        {#each REASONING as r (r)}<option value={r}>{r === "default" ? "model default" : r}</option
+          >{/each}
+      </select></label
+    >
+    <p class="muted">
+      Low keeps thinking models from planning the whole layout in their head. Set it to model
+      default for endpoints that reject <code>reasoning_effort</code>.
+    </p>
   </div>
 </div>
 
@@ -275,6 +295,10 @@
   }
   .budget input {
     width: 80px;
+  }
+  .reasoning {
+    padding-top: 8px;
+    border-top: none;
   }
   .muted {
     color: var(--muted);

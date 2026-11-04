@@ -1,18 +1,24 @@
 import type { CustomConfig } from "../providers/custom.js";
 
+export type Reasoning = "default" | "low" | "medium" | "high";
+export const REASONING: Reasoning[] = ["default", "low", "medium", "high"];
+
 export interface Settings {
   provider: "huggingface" | "openai-compatible";
   /** Hub model id for the Hugging Face provider; null until the first list loads. */
   hfModel: string | null;
   custom: CustomConfig;
   budget: number;
+  /** Sent as `reasoning_effort`; "default" leaves it to the model. */
+  reasoning: Reasoning;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   provider: "huggingface",
   hfModel: null,
   custom: { url: "", token: "", model: "" },
-  budget: 20,
+  budget: 30,
+  reasoning: "low",
 };
 
 const KEY = "kashika.settings";
@@ -45,6 +51,9 @@ export function loadSettings(): Settings {
         typeof o.budget === "number" && Number.isFinite(o.budget) && o.budget >= 1
           ? o.budget
           : d.budget,
+      reasoning: (REASONING as string[]).includes(o.reasoning as string)
+        ? (o.reasoning as Reasoning)
+        : d.reasoning,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };

@@ -58,6 +58,14 @@
     list?.scrollTo?.({ top: list.scrollHeight });
   });
 
+  /** While it streams, only the tail is laid out: the block scrolls to the end anyway. */
+  const THINKING_TAIL = 4000;
+  function shownThinking(m: ChatEntry, i: number): string {
+    const t = m.thinking ?? "";
+    if (!running || i !== chat.length - 1 || t.length <= THINKING_TAIL) return t;
+    return `…${t.slice(-THINKING_TAIL)}`;
+  }
+
   function scrollThinking(node: HTMLElement) {
     $effect(() => {
       void chat.at(-1)?.thinking;
@@ -94,7 +102,7 @@
         {#if m.thinking}
           <details class="thinking" open={running && i === chat.length - 1}>
             <summary>Thinking</summary>
-            <div class="reasoning" use:scrollThinking>{m.thinking}</div>
+            <div class="reasoning" use:scrollThinking>{shownThinking(m, i)}</div>
           </details>
         {/if}
         {#if m.steps && m.steps.length > 0}

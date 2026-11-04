@@ -21,6 +21,7 @@ export interface AgentOptions {
   model: string;
   /** Tool calls per turn. */
   budget: number;
+  reasoning?: "low" | "medium" | "high";
 }
 
 const NUDGE = "Your reply was empty. Either call a tool or answer the user in a sentence.";
@@ -49,7 +50,7 @@ export class Agent {
       yield { type: "error", message: "agent is busy" };
       return;
     }
-    const { engine, doc, provider, model, budget } = this.opts;
+    const { engine, doc, provider, model, budget, reasoning } = this.opts;
     this.controller = new AbortController();
     const signal = this.controller.signal;
     this.system ??= systemPrompt(engine);
@@ -77,7 +78,7 @@ export class Agent {
         const calls: ToolCall[] = [];
         yield { type: "model_start" };
         for await (const ev of provider.chat(
-          { model, messages: [...turn], tools: TOOL_DEFS },
+          { model, messages: [...turn], tools: TOOL_DEFS, reasoning },
           signal,
         )) {
           if (ev.type === "text_delta") {

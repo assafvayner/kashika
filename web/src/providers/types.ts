@@ -21,6 +21,8 @@ export interface ChatRequest {
   model: string;
   messages: Message[];
   tools: ToolDef[];
+  /** `reasoning_effort` for the request; omitted when undefined. */
+  reasoning?: "low" | "medium" | "high";
 }
 
 export type ChatEvent =

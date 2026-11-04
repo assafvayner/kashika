@@ -134,6 +134,7 @@ describe("streamChat", () => {
       stream: true,
       tools: [{ type: "function", function: { name: "t", description: "d" } }],
     });
+    expect(body).not.toHaveProperty("reasoning_effort");
     const sent = (body as { messages: unknown[] }).messages;
     expect(sent[1]).toEqual({
       role: "assistant",
@@ -223,5 +224,27 @@ describe("streamChat", () => {
     const out: unknown[] = [];
     for await (const v of parseSse(stream)) out.push(v);
     expect(out).toEqual([{ a: 1 }]);
+  });
+});
+
+describe("streamChat reasoning", () => {
+  const base = { url: "https://x/v1", headers: {} };
+  const req = { model: "m", messages: [{ role: "user" as const, content: "hi" }], tools: [] };
+
+  it("sends reasoning_effort when asked", async () => {
+    let body: Record<string, unknown> = {};
+    const fetchImpl: typeof fetch = async (_u, init) => {
+      body = JSON.parse(init!.body as string) as Record<string, unknown>;
+      return sse([delta({ content: "ok" }, "stop")])(_u, init);
+    };
+    for await (const _ of streamChat(
+      base,
+      { ...req, reasoning: "low" },
+      new AbortController().signal,
+      fetchImpl,
+    )) {
+      void _;
+    }
+    expect(body.reasoning_effort).toBe("low");
   });
 });

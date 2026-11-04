@@ -205,6 +205,7 @@ export class AppState {
         provider: p,
         model,
         budget: this.settings.budget,
+        reasoning: this.settings.reasoning === "default" ? undefined : this.settings.reasoning,
       });
       this.agent.history = this.project.history ?? [];
     }
@@ -215,17 +216,28 @@ export class AppState {
     const reply: ChatEntry = { role: "assistant", text: "", steps: [] };
     chat.push(reply);
     this.project = { ...this.project, chat };
-    const update = () => {
+    // Deltas arrive faster than the chat can lay out a long thinking block, so
+    // streamed events are shown at most once per frame.
+    let pending: ReturnType<typeof setTimeout> | null = null;
+    const flush = () => {
+      pending = null;
       if (this.project.id !== id) return;
       this.project = { ...this.project, chat: [...chat] };
+    };
+    const update = (now: boolean) => {
+      if (now) {
+        if (pending !== null) clearTimeout(pending);
+        flush();
+      } else pending ??= setTimeout(flush, 32);
     };
     try {
       for await (const ev of this.agent.run(text)) {
         this.apply(reply, ev);
-        update();
+        update(ev.type !== "text" && ev.type !== "thinking");
         if (ev.type === "tool_result" && this.project.id === id) this.scheduleSave();
       }
     } finally {
+      update(true);
       if (this.project.id === id) {
         this.running = false;
         this.scheduleSave();

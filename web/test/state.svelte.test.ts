@@ -74,6 +74,28 @@ describe("AppState", () => {
     expect(reply.steps![0]!.summary).toContain("write_source");
   });
 
+  it("shows streamed deltas at most once per frame", async () => {
+    const app = new TestState(engine, session);
+    const deltas: ChatEvent[] = [];
+    for (let i = 0; i < 200; i++) deltas.push({ type: "reasoning_delta", text: "x" });
+    for (let i = 0; i < 200; i++) deltas.push({ type: "text_delta", text: "y" });
+    app.fake = scripted([[...deltas, { type: "finish", reason: "stop" }]]);
+    let versions = 0;
+    let last = app.project;
+    const t = setInterval(() => {
+      if (app.project !== last) {
+        versions++;
+        last = app.project;
+      }
+    }, 1);
+    await app.send("go");
+    clearInterval(t);
+    expect(versions).toBeLessThan(20);
+    const reply = app.project.chat[1]!;
+    expect(reply.thinking).toBe("x".repeat(200));
+    expect(reply.text).toBe("y".repeat(200));
+  });
+
   it("keeps stored history when saving an opened project", async () => {
     const app = new TestState(engine, null);
     app.open({
