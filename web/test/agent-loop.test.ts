@@ -110,6 +110,10 @@ describe("Agent", () => {
     const events = await run(agent, "loop");
     expect(events.at(-1)).toMatchObject({ type: "stopped", steps: 2 });
     expect(p.requests.length).toBe(3);
+    expect(agent.history.map((m) => m.role)).toEqual(["user", "assistant"]);
+    expect((agent.history.at(-1) as { content: string }).content).toContain(
+      "[stopped: step budget after 2 steps]",
+    );
   });
 
   it("includes the selection", async () => {
@@ -132,24 +136,41 @@ describe("Agent", () => {
       [{ type: "finish", reason: "stop" }],
       [{ type: "finish", reason: "stop" }],
     ]);
-    const events = await run(
-      new Agent({ engine, doc: new Document(engine, SRC), provider: p, model: "m", budget: 5 }),
-      "x",
-    );
+    const agent = new Agent({
+      engine,
+      doc: new Document(engine, SRC),
+      provider: p,
+      model: "m",
+      budget: 5,
+    });
+    const events = await run(agent, "x");
     expect(events.at(-1)).toMatchObject({ type: "error" });
+    expect((events.at(-1) as { message: string }).message).toContain("Try another model");
     expect(p.requests.length).toBe(2);
+    expect(p.requests[1]!.messages.at(-1)).toMatchObject({
+      role: "user",
+      content: expect.stringContaining("empty"),
+    });
+    expect(agent.history.map((m) => m.role)).toEqual(["user", "assistant"]);
+    expect((agent.history.at(-1) as { content: string }).content).toContain("[error:");
   });
 
   it("aborts", async () => {
+    let calls = 0;
     const p: Provider = {
       id: "openai-compatible",
       async listModels() {
         return [];
       },
       async *chat(_req, signal) {
-        await new Promise((_, reject) =>
-          signal.addEventListener("abort", () => reject(new DOMException("x", "AbortError"))),
-        );
+        calls += 1;
+        if (calls === 1) {
+          yield write("c1", SRC);
+          yield { type: "finish", reason: "tool_calls" };
+          return;
+        }
+        if (signal.aborted) throw new DOMException("x", "AbortError");
+        throw new Error("expected an aborted signal");
       },
     };
     const agent = new Agent({
@@ -160,11 +181,61 @@ describe("Agent", () => {
       budget: 5,
     });
     const events: AgentEvent[] = [];
-    const running = (async () => {
-      for await (const e of agent.run("x")) events.push(e);
-    })();
-    agent.stop();
-    await running;
-    expect(events.at(-1)).toMatchObject({ type: "stopped" });
+    for await (const e of agent.run("x")) {
+      events.push(e);
+      if (e.type === "tool_start") agent.stop();
+    }
+    expect(events.at(-1)).toMatchObject({ type: "stopped", steps: 1 });
+    expect(agent.history.at(-1)).toMatchObject({ role: "assistant" });
+    expect((agent.history.at(-1) as { content: string }).content).toContain("[stopped by user]");
+  });
+
+  it("answers invalid tool arguments with an error result", async () => {
+    const p = scripted([
+      [
+        { type: "tool_call", call: { id: "c1", name: "write_source", arguments: "{bad" } },
+        { type: "finish", reason: "tool_calls" },
+      ],
+      [
+        { type: "text_delta", text: "sorry" },
+        { type: "finish", reason: "stop" },
+      ],
+    ]);
+    const doc = new Document(engine, SRC);
+    const agent = new Agent({ engine, doc, provider: p, model: "m", budget: 5 });
+    const events = await run(agent, "x");
+    expect(doc.source).toBe(SRC);
+    expect(events[1]).toMatchObject({
+      type: "tool_result",
+      summary: "[write_source: invalid arguments]",
+    });
+    const tool = p.requests[1]!.messages.find((m) => m.role === "tool") as { content: string };
+    expect(tool.content).toContain("arguments are not valid JSON");
+    expect(events.at(-1)).toMatchObject({ type: "done" });
+  });
+
+  it("rejects a second run while busy", async () => {
+    const p = scripted([
+      [
+        { type: "text_delta", text: "ok" },
+        { type: "finish", reason: "stop" },
+      ],
+    ]);
+    const agent = new Agent({
+      engine,
+      doc: new Document(engine, SRC),
+      provider: p,
+      model: "m",
+      budget: 5,
+    });
+    const first = agent.run("a");
+    const firstEvents: AgentEvent[] = [];
+    const next = await first.next();
+    firstEvents.push(next.value as AgentEvent);
+    const second = await run(agent, "b");
+    expect(second).toEqual([{ type: "error", message: "agent is busy" }]);
+    for await (const e of first) firstEvents.push(e);
+    expect(firstEvents.at(-1)).toMatchObject({ type: "done" });
+    expect(agent.history).toHaveLength(2);
   });
 });

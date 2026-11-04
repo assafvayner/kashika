@@ -34,6 +34,7 @@ export class Agent {
   /** Chat history across turns: user and assistant messages, with tool activity collapsed. */
   history: Message[] = [];
   private controller: AbortController | null = null;
+  private system: string | null = null;
 
   constructor(private readonly opts: AgentOptions) {}
 
@@ -42,29 +43,32 @@ export class Agent {
   }
 
   async *run(userText: string): AsyncGenerator<AgentEvent> {
+    if (this.controller !== null) {
+      yield { type: "error", message: "agent is busy" };
+      return;
+    }
     const { engine, doc, provider, model, budget } = this.opts;
     this.controller = new AbortController();
     const signal = this.controller.signal;
+    this.system ??= systemPrompt(engine);
     const context = [
       userText,
       "",
-      doc.selection === null ? "" : `selected: ${doc.selection}`,
+      ...(doc.selection === null ? [] : [`selected: ${doc.selection}`]),
       "Current source:",
       "```kash",
       doc.source,
       "```",
-    ]
-      .filter((l, i) => i !== 2 || l !== "")
-      .join("\n");
-    this.history.push({ role: "user", content: userText });
+    ].join("\n");
     const turn: Message[] = [
-      { role: "system", content: systemPrompt(engine) },
-      ...this.history.slice(0, -1),
+      { role: "system", content: this.system },
+      ...this.history,
       { role: "user", content: context },
     ];
+    this.history.push({ role: "user", content: userText });
     const steps: string[] = [];
+    const texts: string[] = [];
     let nudged = false;
-    let finalText = "";
     try {
       for (;;) {
         let text = "";
@@ -82,10 +86,9 @@ export class Agent {
         }
         if (text === "" && calls.length === 0) {
           if (nudged) {
-            yield {
-              type: "error",
-              message: "The model returned nothing twice. Try another model.",
-            };
+            const message = "The model returned nothing twice. Try another model.";
+            this.finish(texts, steps, `[error: ${message}]`);
+            yield { type: "error", message };
             return;
           }
           nudged = true;
@@ -97,47 +100,56 @@ export class Agent {
           content: text === "" ? null : text,
           tool_calls: calls.length ? calls : undefined,
         });
-        finalText += text;
+        if (text !== "") texts.push(text);
         if (calls.length === 0) break;
         for (const call of calls) {
           if (steps.length >= budget) {
-            this.finish(finalText, steps);
+            this.finish(texts, steps, `[stopped: step budget after ${steps.length} steps]`);
             yield { type: "stopped", steps: steps.length };
             return;
           }
           yield { type: "tool_start", call };
-          let args: Record<string, unknown> = {};
+          let result = "";
+          let summary = "";
+          let args: Record<string, unknown> | null = null;
           try {
             args = JSON.parse(call.arguments === "" ? "{}" : call.arguments) as Record<
               string,
               unknown
             >;
-          } catch {
-            args = {};
+          } catch (e) {
+            result = `error: arguments are not valid JSON (${(e as Error).message}); send the call again with valid JSON`;
+            summary = `[${call.name}: invalid arguments]`;
           }
-          const result = runTool(engine, doc, call.name, args);
-          const summary = summarize(call.name, call.arguments, result);
+          if (args !== null) {
+            result = runTool(engine, doc, call.name, args);
+            summary = summarize(call.name, call.arguments, result);
+          }
           steps.push(summary);
           turn.push({ role: "tool", tool_call_id: call.id, content: result });
           yield { type: "tool_result", call, result, summary };
         }
       }
-      this.finish(finalText, steps);
+      this.finish(texts, steps);
       yield { type: "done" };
     } catch (e) {
-      this.finish(finalText, steps);
       if (signal.aborted) {
+        this.finish(texts, steps, "[stopped by user]");
         yield { type: "stopped", steps: steps.length };
       } else {
-        yield { type: "error", message: e instanceof Error ? e.message : String(e) };
+        const message = e instanceof Error ? e.message : String(e);
+        this.finish(texts, steps, `[error: ${message}]`);
+        yield { type: "error", message };
       }
     } finally {
-      this.controller = null;
+      if (this.controller?.signal === signal) this.controller = null;
     }
   }
 
-  private finish(text: string, steps: string[]): void {
-    const content = [...steps, text].filter((s) => s !== "").join("\n");
-    if (content !== "") this.history.push({ role: "assistant", content });
+  private finish(texts: string[], steps: string[], note?: string): void {
+    const content = [...steps, texts.join("\n"), ...(note ? [note] : [])]
+      .filter((s) => s !== "")
+      .join("\n");
+    this.history.push({ role: "assistant", content });
   }
 }
