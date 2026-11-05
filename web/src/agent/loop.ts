@@ -41,15 +41,31 @@ function summarize(name: string, args: string, result: string): string {
 const KEEP = 2;
 
 /**
+ * Turn size, in characters, past which old results collapse. Below it the turn stays
+ * append-only, which keeps provider prefix caches warm and the reports in view; above it the
+ * requests were reaching 300 KB and a minute each.
+ */
+const COMPACT_AT = 100_000;
+
+/**
  * The turn as the model sees it: every tool result but the last few collapses to its summary
  * line, and the arguments of the old writes go too, so a long turn stays a few tens of KB
  * instead of carrying every report. The current source then rides on the last result, since
  * the one in the first user message is stale after the first write.
  */
-export function compact(turn: Message[], source: string): Message[] {
+export function compact(turn: Message[], source: string, limit = COMPACT_AT): Message[] {
+  const size = turn.reduce(
+    (n, m) =>
+      n +
+      (m.content?.length ?? 0) +
+      (m.role === "assistant"
+        ? (m.tool_calls ?? []).reduce((k, c) => k + c.arguments.length, 0)
+        : 0),
+    0,
+  );
   const toolAt = turn.flatMap((m, i) => (m.role === "tool" ? [i] : []));
   const old = new Set(toolAt.slice(0, Math.max(0, toolAt.length - KEEP)));
-  if (old.size === 0) return turn.map(strip);
+  if (size < limit || old.size === 0) return turn.map(strip);
   const oldCalls = new Set<string>();
   const out = turn.map((m, i) => {
     if (m.role === "tool" && old.has(i)) {

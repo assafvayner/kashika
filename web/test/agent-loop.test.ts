@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { Agent, type AgentEvent } from "../src/agent/loop.js";
+import { Agent, type AgentEvent, compact } from "../src/agent/loop.js";
 import { Document } from "../src/document/store.svelte.js";
-import type { ChatEvent, ChatRequest, Provider } from "../src/providers/types.js";
+import type { ChatEvent, ChatRequest, Message, Provider } from "../src/providers/types.js";
 import { engine } from "./wasm.js";
 
 const SRC = 'diagram "t" size (300,200)\nbox a "A" at (20,20) size (80,40)\n';
@@ -94,7 +94,7 @@ describe("Agent", () => {
     expect(agent.history.at(-1)?.content).not.toContain("plan");
   });
 
-  it("collapses old tool results during the turn and restates the source", async () => {
+  it("collapses old tool results only once the turn is large", async () => {
     const srcs = [1, 2, 3, 4].map(
       (n) => SRC + `box b${n} "B${n}" at (110,${n * 45 - 25}) size (80,40)\n`,
     );
@@ -111,7 +111,32 @@ describe("Agent", () => {
     const doc = new Document(engine, SRC);
     const agent = new Agent({ engine, doc, provider: p, model: "m", budget: 20 });
     await run(agent, "four writes");
-    const last = p.requests[4]!.messages;
+    const sent = p.requests[4]!.messages;
+    expect(sent.filter((m) => m.role === "tool").every((m) => /^0 errors/.test(m.content))).toBe(
+      true,
+    );
+    expect(sent.some((m) => "summary" in m)).toBe(false);
+
+    const turn: Message[] = [
+      { role: "system", content: "sys" },
+      { role: "user", content: "four writes" },
+      ...srcs.flatMap((s, i): Message[] => [
+        {
+          role: "assistant",
+          content: null,
+          tool_calls: [
+            { id: `c${i}`, name: "write_source", arguments: JSON.stringify({ source: s }) },
+          ],
+        },
+        {
+          role: "tool",
+          tool_call_id: `c${i}`,
+          content: "0 errors, 0 warnings · crossings=0 wire=0px",
+          summary: "[write_source: 0 errors, 0 warnings]",
+        },
+      ]),
+    ];
+    const last = compact(turn, srcs[3]!, 0);
     const tools = last.filter((m) => m.role === "tool") as { content: string }[];
     expect(tools).toHaveLength(4);
     expect(tools[0]!.content).toBe("[write_source: 0 errors, 0 warnings] (report elided)");
@@ -122,8 +147,8 @@ describe("Agent", () => {
     expect(calls[0]!.arguments).toMatch(/^\{"elided": "\d+ chars"\}$/);
     expect(calls[3]!.arguments).toContain("box b4");
     expect(last.some((m) => "summary" in m)).toBe(false);
-    expect(p.requests[1]!.messages.filter((m) => m.role === "tool")[0]!.content).toMatch(
-      /^0 errors, 0 warnings/,
+    expect(compact(turn, srcs[3]!).filter((m) => m.role === "tool")[0]!.content).toMatch(
+      /^0 errors/,
     );
   });
   it("collapses tool results after the turn", async () => {
