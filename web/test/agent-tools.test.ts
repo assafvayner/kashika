@@ -69,6 +69,34 @@ describe("runTool", () => {
     expect(runTool(engine, d, "ref", { topic: "through" })).toMatch(/^# through/);
     expect(runTool(engine, d, "icons", { search: "database" })).toContain("cylinder");
   });
+  it("route batches lines, pairs and flagged lines", () => {
+    const d = new Document(
+      engine,
+      `diagram "r" size (400,300) ortho
+box a "A" at (20,20) size (80,40)
+box b "B" at (300,20) size (80,40)
+box c "C" at (300,200) size (80,40)
+line ac a.bottom -> c.left
+line bc b.bottom -> c.top
+`,
+    );
+    const auto = runTool(engine, d, "route", {});
+    expect(auto).toMatch(/^## ac\n#1 {2}crossings=/m);
+    expect(auto).toMatch(/^ {4}line ac /m);
+    expect(auto).not.toContain("## bc");
+    expect(auto).not.toContain("#2");
+    const picked = runTool(engine, d, "route", { lines: ["ac", "bc"], max: 2 });
+    expect(picked).toMatch(/^## ac\n#1 /m);
+    expect(picked).toMatch(/^## bc\n#1 /m);
+    const pairs = runTool(engine, d, "route", { pairs: [{ from: "a.right", to: "b.left" }] });
+    expect(pairs).toMatch(/^## a\.right -> b\.left\n#1 /m);
+    expect(runTool(engine, d, "route", { lines: ["zz"] })).toMatch(/^## zz\nerror: /m);
+    expect(runTool(engine, doc(), "route", {})).toMatch(/^no line has a finding/);
+    d.set(d.source + "line a.top -> c.top\n", "agent");
+    expect(runTool(engine, d, "route", {})).toContain(
+      "## line at source line 7\nerror: give this line an id",
+    );
+  });
   it("reports engine errors and unknown tools as text", () => {
     const d = doc();
     expect(runTool(engine, d, "inspect", { ids: ["zz"] })).toMatch(/^error: unknown id/);

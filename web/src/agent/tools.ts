@@ -1,5 +1,5 @@
 import type { Document } from "../document/store.svelte.js";
-import { type Engine, EngineError } from "../engine/types.js";
+import { type Engine, EngineError, type RouteOptions } from "../engine/types.js";
 import type { ToolDef } from "../providers/types.js";
 
 const NO_ARGS = { type: "object", properties: {}, additionalProperties: false };
@@ -67,7 +67,7 @@ export const TOOL_DEFS: ToolDef[] = [
   {
     name: "route",
     description:
-      "Ready-to-paste line statements, ranked by crossings. Takes from and to, or line. Points are written as in a line, e.g. a.right, b.top@0.25. Pass line to reroute an existing line.",
+      "Ready-to-paste line statements, ranked by crossings. With no arguments it reroutes every line the check flags (not-ortho, cross, through, near, shared-segment, group-transit) and returns one statement per line to paste over the old one. Pass lines (ids) to reroute chosen lines, pairs for new connections, or from and to for one. Points are written as in a line, e.g. a.right, b.top@0.25.",
     parameters: {
       type: "object",
       properties: {
@@ -78,7 +78,27 @@ export const TOOL_DEFS: ToolDef[] = [
           type: "string",
           description: "Id of an existing line to reroute instead of from/to.",
         },
-        max: { type: "integer", minimum: 1, maximum: 10 },
+        lines: {
+          type: "array",
+          items: { type: "string" },
+          description: "Ids of existing lines to reroute, one result each.",
+        },
+        pairs: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: { from: { type: "string" }, to: { type: "string" } },
+            required: ["from", "to"],
+            additionalProperties: false,
+          },
+          description: "New connections to route, one result each.",
+        },
+        max: {
+          type: "integer",
+          minimum: 1,
+          maximum: 10,
+          description: "Candidates per route; default 3 for one route, 1 for several.",
+        },
       },
       additionalProperties: false,
     },
@@ -166,6 +186,62 @@ function applyEdits(source: string, args: Args): string {
 }
 
 /** Runs one tool and returns its text result; errors are returned as `error: ...` text for the model. */
+/** Diagnostic codes a rerouted path fixes. */
+const ROUTABLE = ["not-ortho", "cross", "through", "near", "shared-segment", "group-transit"];
+
+/** Routes several lines or pairs; with neither, every line the check flags. */
+function routeMany(engine: Engine, source: string, args: Args, opts: RouteOptions): string {
+  const lines = Array.isArray(args["lines"]) ? (args["lines"] as unknown[]).map(String) : [];
+  const pairs = Array.isArray(args["pairs"])
+    ? (args["pairs"] as unknown[]).flatMap((p) => {
+        const o = p as Record<string, unknown>;
+        return typeof o?.["from"] === "string" && typeof o?.["to"] === "string"
+          ? [{ from: o["from"], to: o["to"] }]
+          : [];
+      })
+    : [];
+  const auto = lines.length === 0 && pairs.length === 0;
+  const unnamed: number[] = [];
+  if (auto) {
+    const rows = source.split("\n");
+    const seen = new Set<string>();
+    for (const d of engine.check(source).diagnostics) {
+      if (d.suppressed || !ROUTABLE.includes(d.code)) continue;
+      const row = rows[d.span.line - 1] ?? "";
+      const id = /^\s*(?:line|arrow)\s+([A-Za-z_][\w-]*)\s/.exec(row)?.[1];
+      if (id !== undefined && id !== "allow" && id !== "label") {
+        if (!seen.has(id)) {
+          seen.add(id);
+          lines.push(id);
+        }
+      } else if (/^\s*(?:line|arrow)\s/.test(row)) {
+        if (!unnamed.includes(d.span.line)) unnamed.push(d.span.line);
+      }
+    }
+    if (lines.length === 0 && unnamed.length === 0) {
+      return "no line has a finding that route fixes; pass lines, pairs, or from and to";
+    }
+  }
+  const one = (head: string, f: () => string) => {
+    try {
+      return `## ${head}\n${f().trimEnd()}\n`;
+    } catch (e) {
+      if (e instanceof EngineError) return `## ${head}\nerror: ${e.message.trimEnd()}\n`;
+      throw e;
+    }
+  };
+  const out = [
+    ...lines.map((id) => one(id, () => engine.route(source, null, null, { ...opts, line: id }))),
+    ...pairs.map((p) =>
+      one(`${p.from} -> ${p.to}`, () => engine.route(source, p.from, p.to, opts)),
+    ),
+  ];
+  for (const n of unnamed) {
+    out.push(`## line at source line ${n}\nerror: give this line an id to reroute it\n`);
+  }
+  return out.join("\n");
+}
+
 export function runTool(engine: Engine, doc: Document, name: string, args: Args): string {
   try {
     switch (name) {
@@ -199,12 +275,17 @@ export function runTool(engine: Engine, doc: Document, name: string, args: Args)
         if (!(STYLES as readonly string[]).includes(style)) {
           return `error: unknown style \`${style}\`; use corner, arc or bezier`;
         }
-        const max = num(args, "max");
-        return engine.route(doc.source, str(args, "from") ?? null, str(args, "to") ?? null, {
-          style: style as (typeof STYLES)[number],
-          line: str(args, "line"),
-          max: max === undefined ? undefined : Math.min(10, Math.max(1, Math.trunc(max))),
-        });
+        const raw = num(args, "max");
+        const max = raw === undefined ? undefined : Math.min(10, Math.max(1, Math.trunc(raw)));
+        const opts = { style: style as (typeof STYLES)[number] };
+        if (str(args, "from") !== undefined || str(args, "to") !== undefined || str(args, "line")) {
+          return engine.route(doc.source, str(args, "from") ?? null, str(args, "to") ?? null, {
+            ...opts,
+            line: str(args, "line"),
+            max,
+          });
+        }
+        return routeMany(engine, doc.source, args, { ...opts, max: max ?? 1 });
       }
       case "measure": {
         const text = str(args, "text");

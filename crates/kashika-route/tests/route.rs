@@ -538,6 +538,24 @@ group g \"G\" at (100,100) size (280,180) {\n\
 }\n";
 
 #[test]
+fn not_ortho_errors_do_not_stop_routing() {
+    let src = "diagram \"d\" size (300,200) ortho\n\
+box a at (10,10) size (40,20)\n\
+box b at (200,10) size (40,20)\n\
+box c at (200,150) size (40,20)\n\
+line ac a.bottom -> c.top\n\
+line bc b.bottom -> c.left\n";
+    let (scene, mut checked) = kashika_model::compile_with(src, &OPTS);
+    checked.extend(kashika_check::check(&scene));
+    assert!(checked.iter().any(|d| d.code == "not-ortho"));
+    let s = suggest(&req(src, "a.right", "b.left", Style::Corner)).unwrap();
+    assert!(!s.candidates.is_empty());
+    let s = reroute(src, "bc", Style::Corner).unwrap();
+    assert!(!s.candidates.is_empty());
+    assert!(s.candidates[0].statement.contains("line bc "));
+}
+
+#[test]
 fn input_with_errors_is_refused() {
     let src = "diagram \"e\" size (200,100)\n\
 box a at (10,10) size (40,20)\n\

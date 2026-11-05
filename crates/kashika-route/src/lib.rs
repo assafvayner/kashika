@@ -109,7 +109,10 @@ pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
     let (file, mut diags) = kashika_syntax::parse(req.src);
     let (scene, more) = kashika_model::resolve_with(&file, req.opts);
     diags.extend(more);
-    if diags.iter().any(|d| d.severity == Severity::Error) {
+    if diags
+        .iter()
+        .any(|d| d.severity == Severity::Error && d.code != "not-ortho")
+    {
         diags.extend(kashika_check::check(&scene));
         kashika_diag::sort(&mut diags);
         return Err(Error::Input(diags));
