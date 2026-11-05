@@ -11,6 +11,8 @@ export interface Settings {
   budget: number;
   /** Sent as `reasoning_effort`; "default" leaves it to the model. */
   reasoning: Reasoning;
+  /** Lets the agent read web pages through a reader proxy. */
+  fetch: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -19,6 +21,7 @@ export const DEFAULT_SETTINGS: Settings = {
   custom: { url: "", token: "", model: "" },
   budget: 30,
   reasoning: "low",
+  fetch: false,
 };
 
 const KEY = "kashika.settings";
@@ -54,6 +57,7 @@ export function loadSettings(): Settings {
       reasoning: (REASONING as string[]).includes(o.reasoning as string)
         ? (o.reasoning as Reasoning)
         : d.reasoning,
+      fetch: o.fetch === true,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };

@@ -2,6 +2,7 @@ import type { Document } from "../document/store.svelte.js";
 import type { Engine } from "../engine/types.js";
 import type { Message, Provider, ToolCall } from "../providers/types.js";
 import { systemPrompt } from "./prompt.js";
+import { FETCH_RULES, FETCH_TOOL, fetchPage } from "./fetch.js";
 import { TOOL_DEFS, runTool } from "./tools.js";
 
 export type AgentEvent =
@@ -22,6 +23,8 @@ export interface AgentOptions {
   /** Tool calls per turn. */
   budget: number;
   reasoning?: "low" | "medium" | "high";
+  /** Offers fetch_url, which reads pages through a reader proxy. */
+  fetch?: boolean;
 }
 
 const NUDGE = "Your reply was empty. Either call a tool or answer the user in a sentence.";
@@ -54,7 +57,8 @@ export class Agent {
     const { engine, doc, provider, model, budget, reasoning } = this.opts;
     this.controller = new AbortController();
     const signal = this.controller.signal;
-    this.system ??= systemPrompt(engine);
+    const tools = this.opts.fetch ? [...TOOL_DEFS, FETCH_TOOL] : TOOL_DEFS;
+    this.system ??= systemPrompt(engine) + (this.opts.fetch ? FETCH_RULES : "");
     const context = [
       userText,
       "",
@@ -79,7 +83,7 @@ export class Agent {
         const calls: ToolCall[] = [];
         yield { type: "model_start" };
         for await (const ev of provider.chat(
-          { model, messages: [...turn], tools: TOOL_DEFS, reasoning },
+          { model, messages: [...turn], tools, reasoning },
           signal,
         )) {
           if (ev.type === "text_delta") {
@@ -129,7 +133,10 @@ export class Agent {
             summary = `[${call.name}: invalid arguments]`;
           }
           if (args !== null) {
-            result = runTool(engine, doc, call.name, args);
+            result =
+              call.name === "fetch_url" && this.opts.fetch
+                ? await fetchPage(args, signal)
+                : runTool(engine, doc, call.name, args);
             summary = summarize(call.name, call.arguments, result);
           }
           steps.push(summary);

@@ -58,6 +58,11 @@ describe("settings", () => {
     expect(loadSettings().reasoning).toBe("high");
     localStorage.setItem("kashika.settings", JSON.stringify({ reasoning: "max" }));
     expect(loadSettings().reasoning).toBe("low");
+    expect(loadSettings().fetch).toBe(false);
+    localStorage.setItem("kashika.settings", JSON.stringify({ fetch: true }));
+    expect(loadSettings().fetch).toBe(true);
+    localStorage.setItem("kashika.settings", JSON.stringify({ fetch: "yes" }));
+    expect(loadSettings().fetch).toBe(false);
   });
 });
 

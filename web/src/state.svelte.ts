@@ -206,6 +206,7 @@ export class AppState {
         model,
         budget: this.settings.budget,
         reasoning: this.settings.reasoning === "default" ? undefined : this.settings.reasoning,
+        fetch: this.settings.fetch,
       });
       this.agent.history = this.project.history ?? [];
     }

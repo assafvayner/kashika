@@ -13,6 +13,7 @@
   let custom = $state(untrack(() => ({ ...app.settings.custom })));
   let budget = $state(untrack(() => app.settings.budget));
   let reasoning = $state(untrack(() => app.settings.reasoning));
+  let fetchPages = $state(untrack(() => app.settings.fetch));
   let hfModels = $state<ModelRow[]>([]);
   let hfError = $state<string | null>(null);
   let dialog = $state<HTMLDivElement | null>(null);
@@ -45,8 +46,12 @@
 
   function close() {
     const b = clampedBudget();
-    if (b !== app.settings.budget || reasoning !== app.settings.reasoning)
-      app.updateSettings({ budget: b, reasoning });
+    if (
+      b !== app.settings.budget ||
+      reasoning !== app.settings.reasoning ||
+      fetchPages !== app.settings.fetch
+    )
+      app.updateSettings({ budget: b, reasoning, fetch: fetchPages });
     onclose();
   }
 
@@ -56,6 +61,7 @@
       hfModel: id,
       budget: clampedBudget(),
       reasoning,
+      fetch: fetchPages,
     });
     onclose();
   }
@@ -66,6 +72,7 @@
       custom: { ...custom },
       budget: clampedBudget(),
       reasoning,
+      fetch: fetchPages,
     });
     void app.loadModels();
     onclose();
@@ -143,6 +150,12 @@
     <p class="muted">
       Low keeps thinking models from planning the whole layout in their head. Set it to model
       default for endpoints that reject <code>reasoning_effort</code>.
+    </p>
+    <label class="fetch"
+      ><input type="checkbox" bind:checked={fetchPages} /> Let the agent read web pages you link</label
+    >
+    <p class="muted">
+      Pages are read through <code>r.jina.ai</code>, so each URL the agent reads is sent there.
     </p>
   </div>
 </div>
