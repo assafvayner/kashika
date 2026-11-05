@@ -50,7 +50,7 @@ describe("settings", () => {
       JSON.stringify({ budget: 0, provider: "openai-compatible" }),
     );
     expect(loadSettings()).toMatchObject({
-      budget: 30,
+      budget: 40,
       provider: "openai-compatible",
       reasoning: "low",
     });
@@ -59,6 +59,12 @@ describe("settings", () => {
     localStorage.setItem("kashika.settings", JSON.stringify({ reasoning: "max" }));
     expect(loadSettings().reasoning).toBe("low");
     expect(loadSettings().fetch).toBe(false);
+    localStorage.setItem("kashika.settings", JSON.stringify({ budget: 25 }));
+    expect(loadSettings().budget).toBe(25);
+    localStorage.setItem("kashika.settings", JSON.stringify({ budget: 20 }));
+    expect(loadSettings().budget).toBe(40);
+    localStorage.setItem("kashika.settings", JSON.stringify({ budget: 30 }));
+    expect(loadSettings().budget).toBe(40);
     localStorage.setItem("kashika.settings", JSON.stringify({ fetch: true }));
     expect(loadSettings().fetch).toBe(true);
     localStorage.setItem("kashika.settings", JSON.stringify({ fetch: "yes" }));

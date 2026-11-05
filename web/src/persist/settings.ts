@@ -19,12 +19,15 @@ export const DEFAULT_SETTINGS: Settings = {
   provider: "huggingface",
   hfModel: null,
   custom: { url: "", token: "", model: "" },
-  budget: 30,
+  budget: 40,
   reasoning: "low",
   fetch: false,
 };
 
 const KEY = "kashika.settings";
+
+/** Budgets earlier versions saved as their default; a saved one of these takes the current default. */
+const OLD_DEFAULT_BUDGETS = [20, 30];
 
 export function loadSettings(): Settings {
   try {
@@ -51,7 +54,10 @@ export function loadSettings(): Settings {
         model: str(c.model, d.custom.model),
       },
       budget:
-        typeof o.budget === "number" && Number.isFinite(o.budget) && o.budget >= 1
+        typeof o.budget === "number" &&
+        Number.isFinite(o.budget) &&
+        o.budget >= 1 &&
+        !OLD_DEFAULT_BUDGETS.includes(o.budget)
           ? o.budget
           : d.budget,
       reasoning: (REASONING as string[]).includes(o.reasoning as string)

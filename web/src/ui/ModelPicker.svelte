@@ -41,7 +41,7 @@
   });
 
   function clampedBudget(): number {
-    return Math.max(1, Math.min(100, Math.floor(Number(budget) || 30)));
+    return Math.max(1, Math.min(100, Math.floor(Number(budget) || 40)));
   }
 
   function close() {
