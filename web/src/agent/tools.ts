@@ -189,7 +189,10 @@ function applyEdits(source: string, args: Args): string {
 /** Diagnostic codes a rerouted path fixes. */
 const ROUTABLE = ["not-ortho", "cross", "through", "near", "shared-segment", "group-transit"];
 
-/** Routes several lines or pairs; with neither, every line the check flags. */
+/**
+ * Routes several lines or pairs; with neither, every line the check flags. Each suggestion is
+ * applied to a working copy before the next is computed, so the results account for each other.
+ */
 function routeMany(engine: Engine, source: string, args: Args, opts: RouteOptions): string {
   const lines = Array.isArray(args["lines"]) ? (args["lines"] as unknown[]).map(String) : [];
   const pairs = Array.isArray(args["pairs"])
@@ -200,12 +203,17 @@ function routeMany(engine: Engine, source: string, args: Args, opts: RouteOption
           : [];
       })
     : [];
-  const auto = lines.length === 0 && pairs.length === 0;
+  const check = engine.check(source);
+  if (check.diagnostics.some((d) => d.severity === "error" && d.code !== "not-ortho")) {
+    return `fix these errors first, then route:\n${check.text.trimEnd()}\n`;
+  }
+  const rows = source.split("\n");
+  const stmt = (id: string) =>
+    new RegExp(`^\\s*(?:line|arrow)\\s+${id.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&")}\\s`);
   const unnamed: number[] = [];
-  if (auto) {
-    const rows = source.split("\n");
+  if (lines.length === 0 && pairs.length === 0) {
     const seen = new Set<string>();
-    for (const d of engine.check(source).diagnostics) {
+    for (const d of check.diagnostics) {
       if (d.suppressed || !ROUTABLE.includes(d.code)) continue;
       const row = rows[d.span.line - 1] ?? "";
       const id = /^\s*(?:line|arrow)\s+([A-Za-z_][\w-]*)\s/.exec(row)?.[1];
@@ -222,20 +230,35 @@ function routeMany(engine: Engine, source: string, args: Args, opts: RouteOption
       return "no line has a finding that route fixes; pass lines, pairs, or from and to";
     }
   }
-  const one = (head: string, f: () => string) => {
+  let work = rows;
+  const out: string[] = [];
+  const one = (head: string, f: () => { text: string; statement: string | null }) => {
     try {
-      return `## ${head}\n${f().trimEnd()}\n`;
+      const r = f();
+      out.push(`## ${head}\n${r.text.trimEnd()}\n`);
+      return r.statement;
     } catch (e) {
-      if (e instanceof EngineError) return `## ${head}\nerror: ${e.message.trimEnd()}\n`;
+      if (e instanceof EngineError) {
+        out.push(`## ${head}\nerror: ${e.message.trimEnd()}\n`);
+        return null;
+      }
       throw e;
     }
   };
-  const out = [
-    ...lines.map((id) => one(id, () => engine.route(source, null, null, { ...opts, line: id }))),
-    ...pairs.map((p) =>
-      one(`${p.from} -> ${p.to}`, () => engine.route(source, p.from, p.to, opts)),
-    ),
-  ];
+  for (const id of lines) {
+    const st = one(id, () => engine.routeFull(work.join("\n"), null, null, { ...opts, line: id }));
+    const at = work.findIndex((row) => stmt(id).test(row));
+    if (st !== null && at >= 0) {
+      const indent = /^\s*/.exec(work[at] ?? "")?.[0] ?? "";
+      work = [...work.slice(0, at), indent + st.trim(), ...work.slice(at + 1)];
+    }
+  }
+  for (const p of pairs) {
+    const st = one(`${p.from} -> ${p.to}`, () =>
+      engine.routeFull(work.join("\n"), p.from, p.to, opts),
+    );
+    if (st !== null) work = [...work, st.trim()];
+  }
   for (const n of unnamed) {
     out.push(`## line at source line ${n}\nerror: give this line an id to reroute it\n`);
   }

@@ -82,6 +82,13 @@ export interface Engine {
   check(source: string): CheckResult;
   inspect(source: string, ids?: string[], ports?: boolean): string;
   route(source: string, from: string | null, to: string | null, opts?: RouteOptions): string;
+  /** `route` with the first candidate's statement, for applying suggestions in sequence. */
+  routeFull(
+    source: string,
+    from: string | null,
+    to: string | null,
+    opts?: RouteOptions,
+  ): { text: string; statement: string | null };
   measure(text: string, size?: number, bold?: boolean): Measurement;
   format(source: string): string;
   ref(topic?: string): string;

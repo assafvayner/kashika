@@ -91,6 +91,10 @@ line bc b.bottom -> c.top
     const pairs = runTool(engine, d, "route", { pairs: [{ from: "a.right", to: "b.left" }] });
     expect(pairs).toMatch(/^## a\.right -> b\.left\n#1 /m);
     expect(runTool(engine, d, "route", { lines: ["zz"] })).toMatch(/^## zz\nerror: /m);
+    const broken = new Document(engine, d.source + "line zz a.rigth -> c.top\n");
+    const blocked = runTool(engine, broken, "route", {});
+    expect(blocked).toMatch(/^fix these errors first, then route:\n/);
+    expect(blocked.match(/unknown-anchor/g)).toHaveLength(1);
     expect(runTool(engine, doc(), "route", {})).toMatch(/^no line has a finding/);
     d.set(d.source + "line a.top -> c.top\n", "agent");
     expect(runTool(engine, d, "route", {})).toContain(

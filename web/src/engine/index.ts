@@ -30,7 +30,15 @@ class WasmEngine implements Engine {
     return parse<{ text: string }>(wasm.inspect(source, ids, ports)).text;
   }
   route(source: string, from: string | null, to: string | null, opts: RouteOptions = {}): string {
-    return parse<{ text: string }>(
+    return this.routeFull(source, from, to, opts).text;
+  }
+  routeFull(
+    source: string,
+    from: string | null,
+    to: string | null,
+    opts: RouteOptions = {},
+  ): { text: string; statement: string | null } {
+    const r = parse<{ text: string; suggestion: { candidates: { statement: string }[] } }>(
       wasm.route(
         source,
         from ?? undefined,
@@ -40,7 +48,8 @@ class WasmEngine implements Engine {
         opts.radius ?? 8,
         opts.max ?? 3,
       ),
-    ).text;
+    );
+    return { text: r.text, statement: r.suggestion.candidates[0]?.statement ?? null };
   }
   measure(text: string, size = 14, bold = false): Measurement {
     return parse(wasm.measure(text, size, bold));

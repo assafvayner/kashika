@@ -1,4 +1,5 @@
 error[parse] 6:36-6:39: expected `=`, found a string
+  = help: `label@t` is the position of the value that follows it: write `label@0.5="…"` as one attribute, not `label="…" label@0.5`
 error[parse] 7:50-7:51: expected an anchor name before `@`, found end of line
 error[parse] 8:44-8:45: expected an identifier, found end of line
 error[parse] 10:3-10:4: expected an attribute, found `=`
