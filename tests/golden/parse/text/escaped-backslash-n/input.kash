@@ -1,0 +1,4 @@
+// spec: 6, 7
+// A label with a literal backslash-n overflows on one line; the help says one backslash breaks the line.
+diagram "literal backslash n" size (300,120)
+box a "first line\\nsecond line\\nthird line" at (10,10) size (80,40)

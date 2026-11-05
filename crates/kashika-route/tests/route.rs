@@ -556,6 +556,20 @@ line bc b.bottom -> c.left\n";
 }
 
 #[test]
+fn text_and_attribute_errors_do_not_stop_routing() {
+    let src = "diagram \"d\" size (300,200)\n\
+box a \"A very long label that overflows\" at (10,10) size (40,20)\n\
+box b at (200,10) size (40,20)\n\
+line ab a.right -> b.left label=\"x\" label-side=left\n";
+    let (scene, mut checked) = kashika_model::compile_with(src, &OPTS);
+    checked.extend(kashika_check::check(&scene));
+    assert!(checked.iter().any(|d| d.code == "label-overflow"));
+    assert!(checked.iter().any(|d| d.code == "attr"));
+    let s = reroute(src, "ab", Style::Corner).unwrap();
+    assert!(!s.candidates.is_empty());
+}
+
+#[test]
 fn input_with_errors_is_refused() {
     let src = "diagram \"e\" size (200,100)\n\
 box a at (10,10) size (40,20)\n\

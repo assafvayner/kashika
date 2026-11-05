@@ -105,13 +105,26 @@ pub struct Request<'a> {
     pub opts: &'a kashika_model::Options,
 }
 
+/// Errors that leave every box where it is, so routing still means something: a routed path
+/// fixes `not-ortho`, and the rest concern text, labels and attribute values.
+const TOLERATED: &[&str] = &[
+    "not-ortho",
+    "attr",
+    "label-overflow",
+    "text-conflict",
+    "unknown-style",
+    "duplicate-style",
+    "degenerate-curve",
+    "zero-length",
+];
+
 pub fn suggest(req: &Request) -> Result<Suggestion, Error> {
     let (file, mut diags) = kashika_syntax::parse(req.src);
     let (scene, more) = kashika_model::resolve_with(&file, req.opts);
     diags.extend(more);
     if diags
         .iter()
-        .any(|d| d.severity == Severity::Error && d.code != "not-ortho")
+        .any(|d| d.severity == Severity::Error && !TOLERATED.contains(&d.code))
     {
         diags.extend(kashika_check::check(&scene));
         kashika_diag::sort(&mut diags);

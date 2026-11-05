@@ -403,7 +403,14 @@ pub(crate) fn layout_shape(s: &ShapeInput, diags: &mut Vec<Diagnostic>) -> Shape
         let blocks: Vec<&Block> = flow.iter().map(|x| &x.block).collect();
         let need = stack_size(&blocks, p.gap);
         if need.0 > area.w + TOLERANCE || need.1 > area.h + TOLERANCE {
-            diags.push(overflow(s, "its text", need, area, flow[0].span));
+            let d = overflow(s, "its text", need, area, flow[0].span);
+            diags.push(if flow.iter().any(|x| x.content.contains("\\n")) {
+                d.with_help(
+                    "the text contains `\\\\n`, a backslash followed by n: write `\\n` with one backslash to break the line",
+                )
+            } else {
+                d
+            });
         }
         let input: Vec<(&Block, HAlign)> =
             flow.iter().map(|x| (&x.block, halign(x.align))).collect();
