@@ -152,12 +152,27 @@ const num = (a: Args, k: string): number | undefined => {
 
 const STYLES = ["corner", "arc", "bezier"] as const;
 
-/** The check report, with a nudge to fix every finding in one round. */
+/** The check report, with a nudge saying which findings route fixes and to fix the rest in one round. */
 function report(engine: Engine, source: string): string {
-  const text = engine.check(source).text;
-  return /\b0 errors, 0 warnings\b/.test(text)
-    ? text
-    : `${text}\nFix all of these in one edit_source call, then read the new report.`;
+  const r = engine.check(source);
+  if (/\b0 errors, 0 warnings\b/.test(r.text)) return r.text;
+  const rows = source.split("\n");
+  const routable = new Set<string>();
+  for (const d of r.diagnostics) {
+    if (d.suppressed || !ROUTABLE.includes(d.code)) continue;
+    const id = /^\s*(?:line|arrow)\s+([A-Za-z_][\w-]*)\s/.exec(rows[d.span.line - 1] ?? "")?.[1];
+    if (id !== undefined && id !== "allow" && id !== "label") routable.add(id);
+  }
+  const rest = r.diagnostics.filter((d) => !d.suppressed && !ROUTABLE.includes(d.code)).length;
+  if (routable.size === 0) {
+    return `${r.text}\nFix all of these in one edit_source call, then read the new report.`;
+  }
+  const ids = [...routable].join(", ");
+  const others =
+    rest === 0
+      ? ""
+      : ` Fix the other ${rest} finding${rest === 1 ? "" : "s"} in that same edit_source call.`;
+  return `${r.text}\nThe path findings on ${ids} are route's job: call route with no arguments and paste its statement for each line, with no path of your own.${others}`;
 }
 
 /** Applies the edits in order; returns the new source or an `error:` line, applying nothing. */
@@ -234,7 +249,12 @@ function routeMany(engine: Engine, source: string, args: Args, opts: RouteOption
   const one = (head: string, f: () => { text: string; statement: string | null }) => {
     try {
       const r = f();
-      out.push(`## ${head}\n${r.text.trimEnd()}\n`);
+      const best = /^#1 {2}crossings=(\d+) \(([^)]*)\)/.exec(r.text);
+      const stuck =
+        best && Number(best[1]) > 0
+          ? `\nnote: every path from these anchors crosses ${best[2]}; pasting this still leaves that crossing. Change an anchor instead: when two lines run between the same two boxes, order their anchors the same way on both ends so they run side by side.\n`
+          : "";
+      out.push(`## ${head}\n${r.text.trimEnd()}\n${stuck}`);
       return r.statement;
     } catch (e) {
       if (!(e instanceof EngineError)) throw e;

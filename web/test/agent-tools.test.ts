@@ -58,6 +58,16 @@ describe("runTool", () => {
     expect(
       runTool(engine, d, "edit_source", { edits: [{ find: "line ab", replace: "line ab zz" }] }),
     ).toMatch(/Fix all of these in one edit_source call/);
+    const d2 = new Document(
+      engine,
+      `diagram "r" size (400,300) ortho
+box a "A" at (20,20) size (80,40)
+box c "C" at (300,200) size (80,40)
+`,
+    );
+    const nudge = runTool(engine, d2, "edit_source", { append: "line ac a.bottom -> c.left" });
+    expect(nudge).toMatch(/The path findings on ac are route's job: call route with no arguments/);
+    expect(nudge).not.toMatch(/Fix all of these/);
   });
   it("read_source, check, inspect, route, measure, ref, icons", () => {
     const d = doc();
