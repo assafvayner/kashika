@@ -167,12 +167,55 @@ function report(engine: Engine, source: string): string {
   if (routable.size === 0) {
     return `${r.text}\nFix all of these in one edit_source call, then read the new report.`;
   }
-  const ids = [...routable].join(", ");
   const others =
     rest === 0
       ? ""
-      : ` Fix the other ${rest} finding${rest === 1 ? "" : "s"} in that same edit_source call.`;
-  return `${r.text}\nThe path findings on ${ids} are route's job: call route with no arguments and paste its statement for each line, with no path of your own.${others}`;
+      : ` Fix the other ${rest} finding${rest === 1 ? "" : "s"} in the same edit_source call.`;
+  const routed = routeStatements(engine, source, [...routable], { style: "corner", max: 1 });
+  const lines = routed.map((x) =>
+    x.statement === null
+      ? `${x.id}: no clear path from these anchors; change an anchor or move a box`
+      : `${x.statement}${x.crossing === null ? "" : `   // still crosses ${x.crossing}: change an anchor`}`,
+  );
+  return `${r.text}\nroute's paths for the lines with path findings, ready to paste; replace each line with its statement below in one edit_source call, with no path of your own.${others}\n${lines.join("\n")}`;
+}
+
+/**
+ * The best route for each line id, each computed after the previous one is applied to a
+ * working copy, so the results account for each other.
+ */
+function routeStatements(
+  engine: Engine,
+  source: string,
+  ids: string[],
+  opts: RouteOptions,
+): { id: string; statement: string | null; crossing: string | null }[] {
+  let work = source.split("\n");
+  const out = [];
+  for (const id of ids) {
+    const at = work.findIndex((row) => stmtRe(id).test(row));
+    let statement: string | null = null;
+    let crossing: string | null = null;
+    try {
+      const r = engine.routeFull(work.join("\n"), null, null, { ...opts, line: id });
+      statement = r.statement?.trim() ?? null;
+      const best = /^#1 {2}crossings=(\d+) \(([^)]*)\)/.exec(r.text);
+      if (best && Number(best[1]) > 0) crossing = best[2] ?? null;
+    } catch (e) {
+      if (!(e instanceof EngineError)) throw e;
+    }
+    if (statement !== null && at >= 0) {
+      const indent = /^\s*/.exec(work[at] ?? "")?.[0] ?? "";
+      work = [...work.slice(0, at), indent + statement, ...work.slice(at + 1)];
+    }
+    out.push({ id, statement, crossing });
+  }
+  return out;
+}
+
+/** Matches the statement row of line `id`. */
+function stmtRe(id: string): RegExp {
+  return new RegExp(`^\\s*(?:line|arrow)\\s+${id.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&")}\\s`);
 }
 
 /** Applies the edits in order; returns the new source or an `error:` line, applying nothing. */
@@ -187,7 +230,11 @@ function applyEdits(source: string, args: Args): string {
     const o = typeof e === "object" && e !== null ? (e as Args) : {};
     const find = str(o, "find");
     const replace = str(o, "replace") ?? "";
-    if (find === undefined || find === "") return `error: edit ${i + 1} needs a non-empty \`find\``;
+    if (find === undefined || find === "") {
+      return typeof o["append"] === "string"
+        ? `error: edit ${i + 1}: \`append\` is an argument of edit_source itself, next to \`edits\`, not an edit; nothing applied`
+        : `error: edit ${i + 1} needs a non-empty \`find\``;
+    }
     const first = out.indexOf(find);
     if (first === -1) return `error: edit ${i + 1}: \`find\` is not in the source; nothing applied`;
     if (out.indexOf(find, first + find.length) !== -1)
@@ -222,8 +269,6 @@ function routeMany(engine: Engine, source: string, args: Args, opts: RouteOption
       })
     : [];
   const rows = source.split("\n");
-  const stmt = (id: string) =>
-    new RegExp(`^\\s*(?:line|arrow)\\s+${id.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&")}\\s`);
   const unnamed: number[] = [];
   if (lines.length === 0 && pairs.length === 0) {
     const seen = new Set<string>();
@@ -268,7 +313,7 @@ function routeMany(engine: Engine, source: string, args: Args, opts: RouteOption
       const st = one(id, () =>
         engine.routeFull(work.join("\n"), null, null, { ...opts, line: id }),
       );
-      const at = work.findIndex((row) => stmt(id).test(row));
+      const at = work.findIndex((row) => stmtRe(id).test(row));
       if (st !== null && at >= 0) {
         const indent = /^\s*/.exec(work[at] ?? "")?.[0] ?? "";
         work = [...work.slice(0, at), indent + st.trim(), ...work.slice(at + 1)];

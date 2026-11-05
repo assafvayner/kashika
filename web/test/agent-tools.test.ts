@@ -66,8 +66,12 @@ box c "C" at (300,200) size (80,40)
 `,
     );
     const nudge = runTool(engine, d2, "edit_source", { append: "line ac a.bottom -> c.left" });
-    expect(nudge).toMatch(/The path findings on ac are route's job: call route with no arguments/);
+    expect(nudge).toMatch(/route's paths for the lines with path findings, ready to paste/);
+    expect(nudge).toMatch(/^line ac a\.bottom -> .*c\.left$/m);
     expect(nudge).not.toMatch(/Fix all of these/);
+    expect(
+      runTool(engine, d2, "edit_source", { edits: [{ append: "line x a.top -> c.top" }] }),
+    ).toMatch(/^error: edit 1: `append` is an argument of edit_source itself/);
   });
   it("read_source, check, inspect, route, measure, ref, icons", () => {
     const d = doc();
