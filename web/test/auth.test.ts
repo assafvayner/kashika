@@ -9,74 +9,35 @@ vi.mock("@huggingface/hub", () => ({
   oauthLoginUrl: hub.loginUrl,
 }));
 
-import { completeLogin, listenForLogin, loadSession } from "../src/auth.js";
+import { completeLogin, loadSession } from "../src/auth.js";
 
-const result = {
-  accessToken: "tok",
-  accessTokenExpiresAt: new Date(Date.now() + 3600_000),
-  userInfo: { preferred_username: "ann", name: "Ann" },
-};
+describe("completeLogin", () => {
+  afterEach(() => sessionStorage.clear());
 
-describe("login popup", () => {
-  afterEach(() => {
-    sessionStorage.clear();
-    window.name = "";
-    Object.defineProperty(window, "opener", { value: null, configurable: true });
-    vi.restoreAllMocks();
-  });
-
-  it("hands the session to the opener and closes when it ran in the login popup", async () => {
-    hub.redirect.mockResolvedValueOnce(result);
-    const post = vi.fn();
-    window.name = "kashika-login";
-    Object.defineProperty(window, "opener", { value: { postMessage: post }, configurable: true });
-    const close = vi.spyOn(window, "close").mockImplementation(() => {});
+  it("stores the session from a redirect and cleans the URL", async () => {
+    hub.redirect.mockResolvedValueOnce({
+      accessToken: "tok",
+      accessTokenExpiresAt: new Date(Date.now() + 3600_000),
+      userInfo: { preferred_username: "ann", name: "Ann" },
+    });
+    const replace = vi.spyOn(history, "replaceState");
     const s = await completeLogin();
-    expect(s?.token).toBe("tok");
-    expect(post).toHaveBeenCalledWith({ type: "kashika-login", session: s }, location.origin);
-    expect(close).toHaveBeenCalled();
-  });
-
-  it("stays put when it is the main window", async () => {
-    hub.redirect.mockResolvedValueOnce(result);
-    const close = vi.spyOn(window, "close").mockImplementation(() => {});
-    expect((await completeLogin())?.name).toBe("ann");
-    expect(close).not.toHaveBeenCalled();
+    expect(s).toMatchObject({ token: "tok", name: "ann" });
     expect(loadSession()?.token).toBe("tok");
+    expect(replace).toHaveBeenCalled();
   });
 
-  it("accepts a session only from its own origin and shape", () => {
-    const cb = vi.fn();
-    const stop = listenForLogin(cb);
-    const session = { token: "t", expires: Date.now() + 1000, name: "n" };
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        origin: "https://evil.example",
-        data: { type: "kashika-login", session },
-      }),
+  it("returns the stored session when the URL carries no redirect", async () => {
+    hub.redirect.mockResolvedValueOnce(false);
+    sessionStorage.setItem(
+      "kashika.hf",
+      JSON.stringify({ token: "old", expires: Date.now() + 1000, name: "n" }),
     );
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        origin: location.origin,
-        data: { type: "kashika-login", session: { token: 1 } },
-      }),
-    );
-    expect(cb).not.toHaveBeenCalled();
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        origin: location.origin,
-        data: { type: "kashika-login", session },
-      }),
-    );
-    expect(cb).toHaveBeenCalledWith(session);
-    expect(loadSession()?.token).toBe("t");
-    stop();
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        origin: location.origin,
-        data: { type: "kashika-login", session },
-      }),
-    );
-    expect(cb).toHaveBeenCalledTimes(1);
+    expect((await completeLogin())?.token).toBe("old");
+  });
+
+  it("drops the redirect and keeps going when the exchange fails", async () => {
+    hub.redirect.mockRejectedValueOnce(new Error("Missing oauth nonce"));
+    expect(await completeLogin()).toBeNull();
   });
 });
