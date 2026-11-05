@@ -2,7 +2,7 @@
   import mark from "../../assets/logo/kashika-mark.svg";
   import { onMount } from "svelte";
 
-  import { completeLogin, login } from "./auth.js";
+  import { completeLogin, listenForLogin, login, prepareLogin } from "./auth.js";
   import { loadEngine } from "./engine/index.js";
   import { listProjects } from "./persist/projects.js";
   import { decodeShare } from "./persist/share.js";
@@ -41,10 +41,19 @@
       }
       app = a;
       void a.loadModels();
+      prepareLogin();
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
     }
   });
+
+  onMount(() =>
+    listenForLogin((s) => {
+      if (!app) return;
+      app.session = s;
+      void app.loadModels();
+    }),
+  );
 
   $effect(() => {
     if (app?.loginRequested) {

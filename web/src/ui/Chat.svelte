@@ -142,18 +142,19 @@
         <button onclick={onclear} title="Clear selection">×</button></span
       >
     {/if}
-    <textarea
-      bind:this={input}
-      bind:value={draft}
-      onkeydown={onKey}
-      rows="2"
-      placeholder={ready ? "Describe the diagram or a change…" : "Not connected"}
-      disabled={!ready}
-    ></textarea>
-    {#if running}
-      <button class="send" onclick={onstop}>Stop</button>
-    {:else}
-      <button class="send" onclick={send} disabled={!ready}>Send</button>
+    {#if ready}
+      <textarea
+        bind:this={input}
+        bind:value={draft}
+        onkeydown={onKey}
+        rows="2"
+        placeholder="Describe the diagram or a change…"
+      ></textarea>
+      {#if running}
+        <button class="send" onclick={onstop}>Stop</button>
+      {:else}
+        <button class="send" onclick={send}>Send</button>
+      {/if}
     {/if}
   </div>
 </div>
