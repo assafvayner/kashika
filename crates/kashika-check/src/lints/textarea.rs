@@ -1,5 +1,5 @@
 use kashika_diag::Diagnostic;
-use kashika_geom::fmt_num;
+use kashika_geom::{Rect, TOLERANCE, fmt_num};
 use kashika_model::TextRole;
 
 use crate::ctx::{Ctx, describe_overflow, overflow, overflow_fact};
@@ -34,12 +34,29 @@ pub fn text_outside_shape(ctx: &Ctx, out: &mut Sink) {
                 .with_fact("bbox", bbox(item.rect))
                 .with_fact("text_area", bbox(area))
                 .with_fact("overflow", overflow_fact(&over))
+                .with_help(shift_help(&over, item.rect, area))
                 .with_help(format!(
-                    "keep the item within the text area, local {}..{}",
+                    "the text area is local {}..{}",
                     local(area.x, area.y),
                     local(area.right(), area.bottom())
                 )),
             );
         }
     }
+}
+
+/// The `at` change that brings the item inside, or why none can.
+fn shift_help(over: &[(&str, f64)], item: Rect, area: Rect) -> String {
+    let by = |side: &str| over.iter().find(|(s, _)| *s == side).map(|(_, d)| *d);
+    if item.w > area.w + TOLERANCE || item.h > area.h + TOLERANCE {
+        return "the item is bigger than the text area: shorten it, break it with `\\n`, or enlarge the box".into();
+    }
+    let dx = by("left").unwrap_or_else(|| -by("right").unwrap_or(0.0));
+    let dy = by("top").unwrap_or_else(|| -by("bottom").unwrap_or(0.0));
+    let whole = |d: f64| if d < 0.0 { d.floor() } else { d.ceil() };
+    format!(
+        "add ({},{}) to its `at`",
+        fmt_num(whole(dx)),
+        fmt_num(whole(dy))
+    )
 }

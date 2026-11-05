@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { systemPrompt } from "../src/agent/prompt.js";
@@ -113,6 +115,24 @@ line bc b.bottom -> c.top
     d.set(d.source + "line a.top -> c.top\n", "agent");
     expect(runTool(engine, d, "route", {})).toContain(
       "## line at source line 7\nerror: give this line an id",
+    );
+  });
+  it("moves a line's anchors when every path from the given ones crosses", () => {
+    const d = new Document(engine, readFileSync("test/fixtures/crowded.kash", "utf8"));
+    const report = runTool(engine, d, "check", {});
+    expect(report).toMatch(/warn\[cross\]: cached crosses/);
+    const out = runTool(engine, d, "route", { lines: ["cached"] });
+    expect(out).toMatch(
+      /^## cached\n#1 {2}anchors moved\n {4}arrow cached l1\.\w+ -> .* label@0\.8="L1 data"$/m,
+    );
+    expect(out).toMatch(
+      /^note: anchors moved from l1\.top -> pod\.bottom to l1\.\w+ -> pod\.\w+: every path from the old ones crossed$/m,
+    );
+    const nudge = runTool(engine, d, "edit_source", {
+      edits: [{ find: 'label@0.8="L1 data"', replace: 'label@0.8="L1 data" stroke=steelblue' }],
+    });
+    expect(nudge).toMatch(
+      /^arrow cached l1\.\w+ -> .*stroke=steelblue {3}\/\/ anchors moved from l1\.top -> pod\.bottom to /m,
     );
   });
   it("reports engine errors and unknown tools as text", () => {

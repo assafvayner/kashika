@@ -1,6 +1,8 @@
 import init, * as wasm from "./pkg/kashika_wasm.js";
 import {
   type CheckResult,
+  type RouteEnd,
+  type RouteResult,
   type Engine,
   EngineError,
   type IconRow,
@@ -37,8 +39,21 @@ class WasmEngine implements Engine {
     from: string | null,
     to: string | null,
     opts: RouteOptions = {},
-  ): { text: string; statement: string | null } {
-    const r = parse<{ text: string; suggestion: { candidates: { statement: string }[] } }>(
+  ): RouteResult {
+    const r = parse<{
+      text: string;
+      suggestion: {
+        from: RouteEnd;
+        to: RouteEnd;
+        candidates: {
+          statement: string;
+          crossings: number;
+          transits: number;
+          near: number;
+          segments: number;
+        }[];
+      };
+    }>(
       wasm.route(
         source,
         from ?? undefined,
@@ -49,7 +64,23 @@ class WasmEngine implements Engine {
         opts.max ?? 3,
       ),
     );
-    return { text: r.text, statement: r.suggestion.candidates[0]?.statement ?? null };
+    const best = r.suggestion.candidates[0];
+    const crossed = /^#1 {2}crossings=\d+ \(([^)]*)\)/.exec(r.text)?.[1] ?? null;
+    const end = (e: RouteEnd): RouteEnd => ({
+      expr: e.expr ?? null,
+      owner: e.owner ?? null,
+      side: e.side ?? null,
+    });
+    return {
+      text: r.text,
+      statement: best?.statement ?? null,
+      crossings: best ? best.crossings + best.transits : 0,
+      crossed,
+      near: best?.near ?? 0,
+      segments: best?.segments ?? 0,
+      from: end(r.suggestion.from),
+      to: end(r.suggestion.to),
+    };
   }
   measure(text: string, size = 14, bold = false): Measurement {
     return parse(wasm.measure(text, size, bold));

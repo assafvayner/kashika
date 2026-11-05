@@ -172,12 +172,84 @@ function report(engine: Engine, source: string): string {
       ? ""
       : ` Fix the other ${rest} finding${rest === 1 ? "" : "s"} in the same edit_source call.`;
   const routed = routeStatements(engine, source, [...routable], { style: "corner", max: 1 });
-  const lines = routed.map((x) =>
-    x.statement === null
-      ? `${x.id}: no clear path from these anchors; change an anchor or move a box`
-      : `${x.statement}${x.crossing === null ? "" : `   // still crosses ${x.crossing}: change an anchor`}`,
-  );
+  const lines = routed.results.map(routedLine);
   return `${r.text}\nroute's paths for the lines with path findings, ready to paste; replace each line with its statement below in one edit_source call, with no path of your own.${others}\n${lines.join("\n")}`;
+}
+
+/** A routed line: its statement, whether its best path still crosses, and changed anchors. */
+interface Routed {
+  id: string;
+  statement: string | null;
+  crossed: string | null;
+  text: string;
+  /** Set when the anchors were changed to avoid a crossing: the old and new endpoints. */
+  rerouted: { from: string; to: string } | null;
+}
+
+const SIDES = ["top", "bottom", "left", "right"] as const;
+
+/** Splits a statement into keyword plus id, the path, and the attributes that follow it. */
+function splitStatement(statement: string): { head: string; path: string; attrs: string } {
+  const m =
+    /^((?:line|arrow)\s+\S+\s+)([\s\S]*?)(\s+(?:[a-z][a-z-]*(?:@[\d.]+)?=|ortho\b)[\s\S]*)?$/.exec(
+      statement.trim(),
+    );
+  if (!m) return { head: "", path: statement.trim(), attrs: "" };
+  return { head: m[1] ?? "", path: m[2] ?? "", attrs: m[3] ?? "" };
+}
+
+/**
+ * Routes line `id` in `source`. When every path from its anchors crosses something, tries the
+ * other sides of both boxes and takes the first clean one with the fewest near-misses, so the
+ * model gets a statement that checks clean instead of a path to argue with.
+ */
+function bestForLine(engine: Engine, source: string, id: string, opts: RouteOptions): Routed {
+  const r = engine.routeFull(source, null, null, { ...opts, line: id });
+  const out: Routed = {
+    id,
+    statement: r.statement?.trim() ?? null,
+    crossed: r.crossings > 0 ? r.crossed : null,
+    text: r.text,
+    rerouted: null,
+  };
+  if (r.crossings === 0 || r.statement === null) return out;
+  const { from, to } = r;
+  if (from.owner === null || to.owner === null || from.side === null || to.side === null) {
+    return out;
+  }
+  let best: { from: string; to: string; near: number; segments: number; statement: string } | null =
+    null;
+  for (const fs of SIDES) {
+    for (const ts of SIDES) {
+      const f = `${from.owner}.${fs}`;
+      const t = `${to.owner}.${ts}`;
+      let v;
+      try {
+        v = engine.routeFull(source, f, t, opts);
+      } catch (e) {
+        if (e instanceof EngineError) continue;
+        throw e;
+      }
+      if (v.statement === null || v.crossings > 0) continue;
+      if (
+        best === null ||
+        v.near < best.near ||
+        (v.near === best.near && v.segments < best.segments)
+      ) {
+        best = { from: f, to: t, near: v.near, segments: v.segments, statement: v.statement };
+      }
+    }
+  }
+  if (best === null) return out;
+  const orig = splitStatement(r.statement);
+  const path = splitStatement(best.statement).path;
+  out.statement = `${orig.head}${path}${orig.attrs}`.trim();
+  out.crossed = null;
+  out.rerouted = {
+    from: `${from.expr ?? ""} -> ${to.expr ?? ""}`,
+    to: `${best.from} -> ${best.to}`,
+  };
+  return out;
 }
 
 /**
@@ -189,28 +261,37 @@ function routeStatements(
   source: string,
   ids: string[],
   opts: RouteOptions,
-): { id: string; statement: string | null; crossing: string | null }[] {
+): { rows: string[]; results: Routed[] } {
   let work = source.split("\n");
-  const out = [];
+  const results: Routed[] = [];
   for (const id of ids) {
     const at = work.findIndex((row) => stmtRe(id).test(row));
-    let statement: string | null = null;
-    let crossing: string | null = null;
+    let r: Routed;
     try {
-      const r = engine.routeFull(work.join("\n"), null, null, { ...opts, line: id });
-      statement = r.statement?.trim() ?? null;
-      const best = /^#1 {2}crossings=(\d+) \(([^)]*)\)/.exec(r.text);
-      if (best && Number(best[1]) > 0) crossing = best[2] ?? null;
+      r = bestForLine(engine, work.join("\n"), id, opts);
     } catch (e) {
       if (!(e instanceof EngineError)) throw e;
+      r = { id, statement: null, crossed: null, text: `error: ${e.message}`, rerouted: null };
     }
-    if (statement !== null && at >= 0) {
+    if (r.statement !== null && at >= 0) {
       const indent = /^\s*/.exec(work[at] ?? "")?.[0] ?? "";
-      work = [...work.slice(0, at), indent + statement, ...work.slice(at + 1)];
+      work = [...work.slice(0, at), indent + r.statement, ...work.slice(at + 1)];
     }
-    out.push({ id, statement, crossing });
+    results.push(r);
   }
-  return out;
+  return { rows: work, results };
+}
+
+/** One line per routed statement, with a note when the anchors moved or a crossing remains. */
+function routedLine(r: Routed): string {
+  if (r.statement === null) return `${r.id}: no clear path from these anchors; move a box`;
+  const note =
+    r.rerouted !== null
+      ? `   // anchors moved from ${r.rerouted.from} to ${r.rerouted.to}: every path from the old ones crossed`
+      : r.crossed !== null
+        ? `   // still crosses ${r.crossed} from any side: move a box`
+        : "";
+  return `${r.statement}${note}`;
 }
 
 /** Matches the statement row of line `id`. */
@@ -291,39 +372,42 @@ function routeMany(engine: Engine, source: string, args: Args, opts: RouteOption
   }
   let work = rows;
   const out: string[] = [];
-  const one = (head: string, f: () => { text: string; statement: string | null }) => {
-    try {
-      const r = f();
-      const best = /^#1 {2}crossings=(\d+) \(([^)]*)\)/.exec(r.text);
-      const stuck =
-        best && Number(best[1]) > 0
-          ? `\nnote: every path from these anchors crosses ${best[2]}; pasting this still leaves that crossing. Change an anchor instead: when two lines run between the same two boxes, order their anchors the same way on both ends so they run side by side.\n`
-          : "";
-      out.push(`## ${head}\n${r.text.trimEnd()}\n${stuck}`);
-      return r.statement;
-    } catch (e) {
-      if (!(e instanceof EngineError)) throw e;
-      if (e.kind === "input") throw new Blocked(e.message);
-      out.push(`## ${head}\nerror: ${e.message.trimEnd()}\n`);
-      return null;
-    }
+  const blocked = (e: unknown) => {
+    if (!(e instanceof EngineError)) throw e;
+    if (e.kind === "input") throw new Blocked(e.message);
+    return e;
   };
   try {
     for (const id of lines) {
-      const st = one(id, () =>
-        engine.routeFull(work.join("\n"), null, null, { ...opts, line: id }),
-      );
       const at = work.findIndex((row) => stmtRe(id).test(row));
-      if (st !== null && at >= 0) {
+      let r: Routed;
+      try {
+        r = bestForLine(engine, work.join("\n"), id, opts);
+      } catch (e) {
+        out.push(`## ${id}\nerror: ${blocked(e).message.trimEnd()}\n`);
+        continue;
+      }
+      const note =
+        r.rerouted !== null || r.crossed !== null || r.statement === null
+          ? `note: ${routedLine(r).replace(/^.*\/\/ /, "")}\n`
+          : "";
+      const body =
+        r.rerouted === null ? r.text.trimEnd() : `#1  anchors moved\n    ${r.statement ?? ""}`;
+      out.push(`## ${id}\n${body}\n${note}`);
+      if (r.statement !== null && at >= 0) {
         const indent = /^\s*/.exec(work[at] ?? "")?.[0] ?? "";
-        work = [...work.slice(0, at), indent + st.trim(), ...work.slice(at + 1)];
+        work = [...work.slice(0, at), indent + r.statement, ...work.slice(at + 1)];
       }
     }
     for (const p of pairs) {
-      const st = one(`${p.from} -> ${p.to}`, () =>
-        engine.routeFull(work.join("\n"), p.from, p.to, opts),
-      );
-      if (st !== null) work = [...work, st.trim()];
+      const head = `${p.from} -> ${p.to}`;
+      try {
+        const v = engine.routeFull(work.join("\n"), p.from, p.to, opts);
+        out.push(`## ${head}\n${v.text.trimEnd()}\n`);
+        if (v.statement !== null) work = [...work, v.statement.trim()];
+      } catch (e) {
+        out.push(`## ${head}\nerror: ${blocked(e).message.trimEnd()}\n`);
+      }
     }
   } catch (e) {
     if (e instanceof Blocked)

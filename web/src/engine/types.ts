@@ -46,6 +46,28 @@ export interface CheckResult {
   text: string;
 }
 
+export interface RouteEnd {
+  /** Source text of the endpoint, such as `pod.left@0.25`; null for a literal point. */
+  expr: string | null;
+  /** The id the endpoint is anchored to. */
+  owner: string | null;
+  side: "top" | "bottom" | "left" | "right" | null;
+}
+
+export interface RouteResult {
+  text: string;
+  /** The best candidate's statement, or null when no path was found. */
+  statement: string | null;
+  /** Crossings and group transits of the best candidate. */
+  crossings: number;
+  /** What the best candidate crosses, as the report words it. */
+  crossed: string | null;
+  near: number;
+  segments: number;
+  from: RouteEnd;
+  to: RouteEnd;
+}
+
 export interface RouteOptions {
   style?: "corner" | "arc" | "bezier";
   line?: string;
@@ -88,7 +110,7 @@ export interface Engine {
     from: string | null,
     to: string | null,
     opts?: RouteOptions,
-  ): { text: string; statement: string | null };
+  ): RouteResult;
   measure(text: string, size?: number, bold?: boolean): Measurement;
   format(source: string): string;
   ref(topic?: string): string;
