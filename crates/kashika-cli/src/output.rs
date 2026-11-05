@@ -21,16 +21,19 @@ pub fn write_err(args: std::fmt::Arguments) {
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! out {
     ($($arg:tt)*) => { $crate::output::write_out(format_args!($($arg)*)) };
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! outln {
     ($($arg:tt)*) => { $crate::output::write_out(format_args!("{}\n", format_args!($($arg)*))) };
 }
 
 #[macro_export]
+#[doc(hidden)]
 macro_rules! errln {
     ($($arg:tt)*) => { $crate::output::write_err(format_args!("{}\n", format_args!($($arg)*))) };
 }

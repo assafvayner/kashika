@@ -44,6 +44,7 @@ pub const LINT_CODES: &[&str] = &[
     "off-grid",
     "block-reducible",
     "text-outside-shape",
+    "text-overlap",
     "image-distort",
     "svg-dropped",
     "missing-glyph",
