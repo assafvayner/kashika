@@ -9,7 +9,13 @@ export type Message =
   | { role: "system"; content: string }
   | { role: "user"; content: string }
   | { role: "assistant"; content: string | null; tool_calls?: ToolCall[] }
-  | { role: "tool"; tool_call_id: string; content: string };
+  | {
+      role: "tool";
+      tool_call_id: string;
+      content: string;
+      /** The step's one-line summary, kept by the agent loop; never sent. */
+      summary?: string;
+    };
 
 export interface ToolDef {
   name: string;

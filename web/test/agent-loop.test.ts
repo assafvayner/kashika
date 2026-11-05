@@ -94,6 +94,38 @@ describe("Agent", () => {
     expect(agent.history.at(-1)?.content).not.toContain("plan");
   });
 
+  it("collapses old tool results during the turn and restates the source", async () => {
+    const srcs = [1, 2, 3, 4].map(
+      (n) => SRC + `box b${n} "B${n}" at (110,${n * 45 - 25}) size (80,40)\n`,
+    );
+    const p = scripted([
+      ...srcs.map((s, i) => [
+        write(`c${i}`, s),
+        { type: "finish", reason: "tool_calls" } as ChatEvent,
+      ]),
+      [
+        { type: "text_delta", text: "ok" },
+        { type: "finish", reason: "stop" },
+      ],
+    ]);
+    const doc = new Document(engine, SRC);
+    const agent = new Agent({ engine, doc, provider: p, model: "m", budget: 20 });
+    await run(agent, "four writes");
+    const last = p.requests[4]!.messages;
+    const tools = last.filter((m) => m.role === "tool") as { content: string }[];
+    expect(tools).toHaveLength(4);
+    expect(tools[0]!.content).toBe("[write_source: 0 errors, 0 warnings] (report elided)");
+    expect(tools[1]!.content).toBe("[write_source: 0 errors, 0 warnings] (report elided)");
+    expect(tools[2]!.content).toMatch(/^0 errors, 0 warnings/);
+    expect(tools[3]!.content).toContain("Current source:\n```kash\n" + srcs[3]);
+    const calls = last.flatMap((m) => (m.role === "assistant" ? (m.tool_calls ?? []) : []));
+    expect(calls[0]!.arguments).toMatch(/^\{"elided": "\d+ chars"\}$/);
+    expect(calls[3]!.arguments).toContain("box b4");
+    expect(last.some((m) => "summary" in m)).toBe(false);
+    expect(p.requests[1]!.messages.filter((m) => m.role === "tool")[0]!.content).toMatch(
+      /^0 errors, 0 warnings/,
+    );
+  });
   it("collapses tool results after the turn", async () => {
     const p = scripted([
       [write("c1", SRC), { type: "finish", reason: "tool_calls" }],

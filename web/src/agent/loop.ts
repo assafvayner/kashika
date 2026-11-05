@@ -37,6 +37,51 @@ function summarize(name: string, args: string, result: string): string {
   return `[${name}${quiet ? "" : ` ${args.slice(0, 60)}`}: ${tail}]`;
 }
 
+/** Tool results kept in full at the end of the turn; older ones collapse to their summary. */
+const KEEP = 2;
+
+/**
+ * The turn as the model sees it: every tool result but the last few collapses to its summary
+ * line, and the arguments of the old writes go too, so a long turn stays a few tens of KB
+ * instead of carrying every report. The current source then rides on the last result, since
+ * the one in the first user message is stale after the first write.
+ */
+export function compact(turn: Message[], source: string): Message[] {
+  const toolAt = turn.flatMap((m, i) => (m.role === "tool" ? [i] : []));
+  const old = new Set(toolAt.slice(0, Math.max(0, toolAt.length - KEEP)));
+  if (old.size === 0) return turn.map(strip);
+  const oldCalls = new Set<string>();
+  const out = turn.map((m, i) => {
+    if (m.role === "tool" && old.has(i)) {
+      oldCalls.add(m.tool_call_id);
+      return strip({ ...m, content: `${m.summary ?? m.content.split("\n")[0]} (report elided)` });
+    }
+    return strip(m);
+  });
+  for (const m of out) {
+    if (m.role !== "assistant" || !m.tool_calls) continue;
+    m.tool_calls = m.tool_calls.map((c) =>
+      oldCalls.has(c.id) && (c.name === "write_source" || c.name === "edit_source")
+        ? { ...c, arguments: `{"elided": "${c.arguments.length} chars"}` }
+        : c,
+    );
+  }
+  const last = toolAt.at(-1);
+  if (last !== undefined) {
+    const m = out[last]!;
+    if (m.role === "tool") {
+      m.content = `${m.content}\n\nCurrent source:\n\`\`\`kash\n${source}\n\`\`\``;
+    }
+  }
+  return out;
+}
+
+function strip(m: Message): Message {
+  if (m.role !== "tool") return { ...m };
+  const { summary: _summary, ...rest } = m;
+  return rest;
+}
+
 export class Agent {
   /** Chat history across turns: user and assistant messages, with tool activity collapsed. */
   history: Message[] = [];
@@ -83,7 +128,7 @@ export class Agent {
         const calls: ToolCall[] = [];
         yield { type: "model_start" };
         for await (const ev of provider.chat(
-          { model, messages: [...turn], tools, reasoning },
+          { model, messages: compact(turn, doc.source), tools, reasoning },
           signal,
         )) {
           if (ev.type === "text_delta") {
@@ -140,7 +185,7 @@ export class Agent {
             summary = summarize(call.name, call.arguments, result);
           }
           steps.push(summary);
-          turn.push({ role: "tool", tool_call_id: call.id, content: result });
+          turn.push({ role: "tool", tool_call_id: call.id, content: result, summary });
           yield { type: "tool_result", call, result, summary };
         }
       }

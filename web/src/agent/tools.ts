@@ -182,8 +182,8 @@ interface Routed {
   statement: string | null;
   crossed: string | null;
   text: string;
-  /** Set when the anchors were changed to avoid a crossing: the old and new endpoints. */
-  rerouted: { from: string; to: string } | null;
+  /** Set when the anchors were changed to avoid a crossing or a shared segment. */
+  rerouted: { from: string; to: string; why: string } | null;
 }
 
 const SIDES = ["top", "bottom", "left", "right"] as const;
@@ -212,7 +212,7 @@ function bestForLine(engine: Engine, source: string, id: string, opts: RouteOpti
     text: r.text,
     rerouted: null,
   };
-  if (r.crossings === 0 || r.statement === null) return out;
+  if ((r.crossings === 0 && r.near === 0) || r.statement === null) return out;
   const { from, to } = r;
   if (from.owner === null || to.owner === null || from.side === null || to.side === null) {
     return out;
@@ -231,6 +231,7 @@ function bestForLine(engine: Engine, source: string, id: string, opts: RouteOpti
         throw e;
       }
       if (v.statement === null || v.crossings > 0) continue;
+      if (r.crossings === 0 && v.near >= r.near) continue;
       if (
         best === null ||
         v.near < best.near ||
@@ -248,6 +249,7 @@ function bestForLine(engine: Engine, source: string, id: string, opts: RouteOpti
   out.rerouted = {
     from: `${from.expr ?? ""} -> ${to.expr ?? ""}`,
     to: `${best.from} -> ${best.to}`,
+    why: r.crossings > 0 ? "crossed" : "ran along another line or box",
   };
   return out;
 }
@@ -287,7 +289,7 @@ function routedLine(r: Routed): string {
   if (r.statement === null) return `${r.id}: no clear path from these anchors; move a box`;
   const note =
     r.rerouted !== null
-      ? `   // anchors moved from ${r.rerouted.from} to ${r.rerouted.to}: every path from the old ones crossed`
+      ? `   // anchors moved from ${r.rerouted.from} to ${r.rerouted.to}: every path from the old ones ${r.rerouted.why}`
       : r.crossed !== null
         ? `   // still crosses ${r.crossed} from any side: move a box`
         : "";
