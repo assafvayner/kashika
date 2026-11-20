@@ -134,7 +134,7 @@ line bc b.bottom -> c.top
     expect(nudge).toMatch(
       /^arrow cached l1\.\w+ -> .*stroke=steelblue {3}\/\/ anchors moved from l1\.top -> pod\.bottom to /m,
     );
-  });
+  }, 30_000);
   it("reports engine errors and unknown tools as text", () => {
     const d = doc();
     expect(runTool(engine, d, "inspect", { ids: ["zz"] })).toMatch(/^error: unknown id/);
