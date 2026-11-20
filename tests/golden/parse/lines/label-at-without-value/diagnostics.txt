@@ -1,0 +1,2 @@
+error[parse] 6:50-6:60: expected `=`, found `label-side`
+  = help: `label@t` is the position of the value that follows it: write `label@0.25="…"` as one attribute, not `label="…" label@0.25`

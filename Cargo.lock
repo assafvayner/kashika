@@ -621,6 +621,7 @@ dependencies = [
 name = "kashika-wasm"
 version = "0.1.0-dev0"
 dependencies = [
+ "kashika",
  "kashika-check",
  "kashika-diag",
  "kashika-model",

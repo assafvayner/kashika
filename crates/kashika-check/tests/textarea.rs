@@ -19,7 +19,10 @@ fn item_past_the_right_edge() {
     assert_eq!(d[0].elements[0].id, "e");
     assert_eq!(
         d[0].help,
-        vec!["keep the item within the text area, local (8,8)..(152,52)".to_string()]
+        vec![
+            "add (-20,0) to its `at`".to_string(),
+            "the text area is local (8,8)..(152,52)".to_string()
+        ]
     );
 }
 

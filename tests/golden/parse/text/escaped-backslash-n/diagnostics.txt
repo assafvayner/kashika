@@ -1,0 +1,3 @@
+error[label-overflow] 4:1-4:70: its text needs 212.78x17.5px but the text area of `a` is 64x24px (too narrow by 148.78px)
+  = help: make `a` at least size (229,40), or shorten the text
+  = help: the text contains `\\n`, a backslash followed by n: write `\n` with one backslash to break the line

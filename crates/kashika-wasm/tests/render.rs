@@ -12,6 +12,15 @@ fn clean_source_renders_svg() {
 }
 
 #[test]
+fn render_carries_element_boxes() {
+    let r = render(CLEAN, false);
+    assert_eq!(r.elements[0].id, "a");
+    assert_eq!(r.elements[0].bbox, [[20.0, 20.0], [100.0, 60.0]]);
+    let json: serde_json::Value = serde_json::from_str(&render_json(CLEAN, false)).unwrap();
+    assert!(json["elements"].is_array());
+}
+
+#[test]
 fn file_references_are_not_found() {
     let r = render(BROKEN, false);
     assert_eq!(r.errors, 1);

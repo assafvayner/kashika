@@ -42,6 +42,40 @@ impl Opts<'_> {
 /// worked out in.
 pub type Deferrals<'a> = (&'a Ctx<'a>, &'a [Vec<Deferred>]);
 
+/// The resolver's diagnostics merged with the lints', in report order.
+pub struct Linted {
+    pub diags: Vec<Diagnostic>,
+    /// The help each diagnostic defers, in the same order.
+    pub deferred: Vec<Vec<Deferred>>,
+    pub omitted: Vec<Omitted>,
+    pub metrics: Metrics,
+}
+
+/// Runs the lints on `scene` and merges them with the resolver's `diags`.
+pub fn lint(
+    scene: &kashika_model::Scene,
+    ctx: &Ctx,
+    diags: Vec<Diagnostic>,
+    keep: usize,
+    focus: &dyn Fn(&Diagnostic) -> bool,
+) -> Linted {
+    let found = kashika_check::check_bounded(ctx, keep, focus);
+    let metrics = found.metrics(scene);
+    let mut all: Vec<(Diagnostic, Vec<Deferred>)> = diags
+        .into_iter()
+        .map(|d| (d, Vec::new()))
+        .chain(found.diags.into_iter().zip(found.deferred))
+        .collect();
+    all.sort_by(|a, b| kashika_diag::order(&a.0, &b.0));
+    let (diags, deferred) = all.into_iter().unzip();
+    Linted {
+        diags,
+        deferred,
+        omitted: found.omitted,
+        metrics,
+    }
+}
+
 /// How many warnings per code `check` keeps at least, so that memory stays bounded; the
 /// rest are only counted.
 pub const KEEP: usize = 1000;

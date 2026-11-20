@@ -1,0 +1,8 @@
+warn[text-overlap] 5:3-5:35: block item "RAM size cache" overlaps the label of box 'p' by 72×14.5px
+  = help: move it with `at`, or drop the label and put it in the block
+  elements: [{"bbox":[[20,20],[190,106]],"id":"p","kind":"box","span":{"col":1,"end_col":43,"end_line":4,"line":4}}]
+  facts: {"bbox":[[51.92,57.25],[158.08,74.75]],"other":[[69,54.25],[141,71.75]]}
+warn[text-overlap] 9:3-9:24: block item "two" overlaps block item "one" of box 'q' by 19.63×13.5px
+  = help: move one of them with `at`
+  elements: [{"bbox":[[220,20],[390,106]],"id":"q","kind":"box","span":{"col":1,"end_col":32,"end_line":7,"line":7}}]
+  facts: {"bbox":[[297.78,55.25],[322.22,72.75]],"other":[[292.59,51.25],[317.41,68.75]]}

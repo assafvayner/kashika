@@ -16,6 +16,7 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+kashika.workspace = true
 kashika-check.workspace = true
 kashika-diag.workspace = true
 kashika-model.workspace = true

@@ -16,6 +16,7 @@ mod overlap;
 mod shared;
 mod spill;
 mod textarea;
+mod textoverlap;
 mod through;
 mod transit;
 mod unused;
@@ -48,6 +49,7 @@ pub const ALL: &[Lint] = &[
     shared::shared_segment,
     spill::spill,
     textarea::text_outside_shape,
+    textoverlap::text_overlap,
     through::through,
     transit::group_transit,
 ];

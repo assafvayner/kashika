@@ -1,0 +1,6 @@
+// spec: 5, 7
+// `label@t` without `=` is a parse error whose help shows the one-attribute form.
+diagram "label at" size (300,100)
+box a "A" at (10,10) size (60,40)
+box b "B" at (200,10) size (60,40)
+line ab a.right -> b.left label="hop" label@0.25 label-side=above

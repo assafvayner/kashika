@@ -20,11 +20,11 @@ diagram "Checkout"
 box web "Web" at (20, 20) style=service
 box api "Payments API" at web.right+(100, 0) pin=left style=service
 box db "Orders DB" at api.bottom+(0, 60) pin=top shape=cylinder style=datastore
-arrow web_api web.right -> api.left label="HTTPS" ortho
-arrow api_db api.bottom -> db.top ortho
+arrow web_api web.right -> api.left label="HTTPS"
+arrow api_db api.bottom -> db.top
 ```
 
-The diagram has no `size`, so the canvas fits the drawing. `arrow` is a `line` with an arrowhead at the end, and `ortho` makes any diagonal hop an error (`diagram … ortho` sets it for every line).
+The diagram has no `size`, so the canvas fits the drawing. `arrow` is a `line` with an arrowhead at the end. Hops can be straight, elbowed (`hv`, `vh`), curved (`curve`) or rounded (`radius=`); pick what reads best, and add `ortho` (on a line, or on `diagram` for every line) only when a diagonal hop should count as an error.
 
 ## The loop
 

@@ -923,8 +923,14 @@ impl Parser<'_> {
             } else {
                 value
             }
-        } else if at_t.is_some() {
-            return self.error("`=`");
+        } else if let Some(t) = at_t {
+            let name = key.name.clone();
+            return self.error_help(
+                "`=`",
+                format!(
+                    "`{name}@t` is the position of the value that follows it: write `{name}@{t}=\"…\"` as one attribute, not `{name}=\"…\" {name}@{t}`"
+                ),
+            );
         } else {
             Value::Flag
         };

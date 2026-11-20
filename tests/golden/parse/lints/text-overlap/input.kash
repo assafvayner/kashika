@@ -1,0 +1,10 @@
+// spec: 6, 7
+// An absolute block item drawn over its box's label, and two absolute items over each other.
+diagram "text overlap" size (420,140)
+box p "Cache pod" at (20,20) size (170,86) {
+  text "RAM size cache" at (85,46)
+}
+box q at (220,20) size (170,86) {
+  text "one" at (85,40)
+  text "two" at (90,44)
+}

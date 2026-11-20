@@ -29,7 +29,7 @@ enum Weight {
 
 /// Applies the string escapes the lexer applies: `\n`, `\"` and `\\`. Markup escapes
 /// such as `\*` stay for the markup parser.
-fn unescape(s: &str) -> String {
+pub(crate) fn unescape(s: &str) -> String {
     let mut out = String::new();
     let mut chars = s.chars();
     while let Some(c) = chars.next() {

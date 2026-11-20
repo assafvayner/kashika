@@ -1,0 +1,25 @@
+diagram "Regional xorb cache"
+
+box client "Client" at (40, 40) style=service
+
+box lb "Cache pods" at client.right+(170, 0) pin=left style=service
+box pod "Cache pod" at client.bottom+(0, 80) pin=top style=service
+
+box dragonfly "Index / lock store (Dragonfly)" at lb.right+(170, 0) pin=left style=datastore
+
+box l2 "Shared tier (L2)\nS3 or GCS" at dragonfly.right+(170, 0) pin=left style=datastore
+box origin "Origin (L3)" at l2.right+(170, 0) pin=left style=datastore
+
+box ram "RAM cache" at pod.bottom+(0, 40) pin=top style=datastore
+box l1 "L1 disk cache (NVMe)" at ram.right+(150, 0) pin=left style=datastore
+
+box bridge "Bridge pods" at pod.bottom+(180, 0) pin=top style=service
+arrow req client.right -> lb.left label@0.3="ranged request"
+arrow size_ram pod.bottom@0.7 -> ram.top label@0.52="RAM"
+arrow size_df pod.right -> dragonfly.left@0.3 label@0.25="index store"
+arrow head pod.right -> x origin.tl+(-12,0) -> y origin.tl+(0,-12) -> hv origin.top@0.3 label@0.8="origin HEAD"
+arrow cached l1.top -> y bridge.tl+(0,-12) -> x pod.tr+(12,0) -> y pod.bl+(0,12) -> hv pod.bottom label@0.8="L1 data"
+arrow l2read l2.left -> x l2.tl+(-12,0) -> vh pod.right label@0.08="L2 data"
+arrow bridge_req bridge.right -> x l1.tr+(12,0) -> y ram.bl+(0,12) -> x pod.tl+(-12,0) -> vh pod.left label="range fetch"
+arrow lock pod.tr -> y dragonfly.bl+(0,12) -> x 374 -> y dragonfly.tl+(0,-12) -> hv dragonfly.top label@0.45="index + lock"
+arrow refetch l1.bottom -> y l1.bl+(0,12) -> x origin.tr+(12,0) -> y origin.tl+(0,-12) -> hv origin.top@0.7 label="refetch gap"
